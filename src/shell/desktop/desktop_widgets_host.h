@@ -30,7 +30,7 @@ public:
   void initialize(
       WaylandConnection& wayland, ConfigService* config, PipeWireSpectrum* pipewireSpectrum,
       const WeatherService* weather, RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient,
-      SystemMonitorService* sysmon
+      SystemMonitorService* sysmon, DesktopWidgetScriptDeps scriptDeps = {}
   );
   void show(const DesktopWidgetsSnapshot& snapshot);
   void hide();
@@ -58,6 +58,7 @@ private:
 
   void syncInstances();
   void createInstance(const DesktopWidgetState& state, const WaylandOutput& output);
+  void teardownInstance(DesktopWidgetInstance& instance);
   void buildScene(DesktopWidgetInstance& instance);
   void prepareFrame(DesktopWidgetInstance& instance, bool needsUpdate, bool needsLayout);
   [[nodiscard]] DesktopWidgetInstance* findInstance(const std::string& id);

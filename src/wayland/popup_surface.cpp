@@ -246,11 +246,15 @@ void PopupSurface::handlePopupConfigure(
   }
 }
 
-void PopupSurface::handlePopupDone(void* data, xdg_popup* /*popup*/) {
+void PopupSurface::handlePopupDone(void* data, xdg_popup* popup) {
   auto* self = static_cast<PopupSurface*>(data);
+  if (self->m_popup == nullptr || self->m_popup != popup) {
+    return;
+  }
   self->setRunning(false);
-  if (self->m_dismissedCallback) {
-    self->m_dismissedCallback();
+  auto callback = std::move(self->m_dismissedCallback);
+  if (callback) {
+    callback();
   }
 }
 
@@ -325,11 +329,13 @@ bool PopupSurface::initializeAsChild(xdg_surface* parentXdgSurface, wl_output* o
 
 void PopupSurface::destroyRoleObjects() {
   if (m_popup != nullptr) {
-    xdg_popup_destroy(m_popup);
+    xdg_popup* popup = m_popup;
     m_popup = nullptr;
+    xdg_popup_destroy(popup);
   }
   if (m_xdgSurface != nullptr) {
-    xdg_surface_destroy(m_xdgSurface);
+    xdg_surface* surface = m_xdgSurface;
     m_xdgSurface = nullptr;
+    xdg_surface_destroy(surface);
   }
 }

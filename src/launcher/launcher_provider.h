@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -17,7 +18,9 @@ struct LauncherResult {
   std::string glyphName;
   std::string iconName;
   std::string iconPath;
-  std::string actionText;
+  // A short string drawn in the leading icon slot in place of an icon (e.g. an
+  // emoji or a single symbol). When set, it replaces glyphName/iconName/iconPath.
+  std::string badge;
   // When launching an application via AppProvider, matches DesktopAction::id (primary Exec leaves this empty).
   std::string desktopActionId;
   std::string category;
@@ -48,7 +51,20 @@ public:
 
   [[nodiscard]] virtual std::vector<LauncherCategory> categories() const { return {}; }
 
+  // True for providers registered dynamically (plugin-backed). The panel can drop
+  // and re-add just these when the enabled plugin set changes.
+  [[nodiscard]] virtual bool isDynamic() const { return false; }
+
+  // Async providers (plugin-backed) deliver results after query() returns; the
+  // panel installs this callback so the provider can ask for the current query to
+  // be re-gathered when fresh results land. Synchronous providers ignore it.
+  virtual void setResultsChangedCallback(std::function<void()> /*callback*/) {}
+
   virtual void initialize() {}
+
+  // Called when the launcher panel closes. Async providers should drop any cached
+  // result set so a later session doesn't briefly show the previous query's results.
+  virtual void reset() {}
 
   [[nodiscard]] virtual std::vector<LauncherResult> query(std::string_view text) const = 0;
 

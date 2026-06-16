@@ -220,6 +220,10 @@ just build
 just run
 ```
 
+Unit tests are built automatically for debug builds and skipped for release builds. Build and run them with
+`just test` (use `just test release` to force them on for a release build). Override the default with the meson
+`-Dtests=enabled|disabled|auto` option.
+
 Meson installs the binary and shipped assets using the normal prefix layout:
 
 ```text

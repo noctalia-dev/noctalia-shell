@@ -120,6 +120,8 @@ namespace {
         && a.boxWidth == b.boxWidth
         && a.boxHeight == b.boxHeight
         && a.rotationRad == b.rotationRad
+        && a.flipX == b.flipX
+        && a.flipY == b.flipY
         && a.enabled == b.enabled
         && widgetSettingsEqual(a.settings, b.settings);
   }
@@ -215,6 +217,12 @@ namespace {
     }
     if (ovr.panelOverlap) {
       resolved.panelOverlap = *ovr.panelOverlap;
+    }
+    if (ovr.capsuleThickness) {
+      resolved.capsuleThickness = *ovr.capsuleThickness;
+    }
+    if (ovr.fontFamily) {
+      resolved.fontFamily = *ovr.fontFamily;
     }
     if (ovr.startWidgets) {
       resolved.startWidgets = *ovr.startWidgets;
@@ -373,6 +381,12 @@ namespace {
     widgetTable.insert_or_assign("box_width", static_cast<double>(widget.boxWidth));
     widgetTable.insert_or_assign("box_height", static_cast<double>(widget.boxHeight));
     widgetTable.insert_or_assign("rotation", static_cast<double>(widget.rotationRad));
+    if (widget.flipX) {
+      widgetTable.insert_or_assign("flip_x", true);
+    }
+    if (widget.flipY) {
+      widgetTable.insert_or_assign("flip_y", true);
+    }
     if (!widget.enabled) {
       widgetTable.insert_or_assign("enabled", false);
     }
@@ -492,6 +506,35 @@ namespace {
             // a reliable ordering source after round-trips).
             if (key == "behavior") {
               table.insert_or_assign("behavior_order", std::move(behaviorOrder));
+            }
+          } else if constexpr (std::is_same_v<T, std::vector<NotificationFilterConfig>>) {
+            toml::table filterTable;
+            toml::array filterOrder;
+            for (const auto& item : concrete) {
+              if (item.name.empty()) {
+                continue;
+              }
+              toml::table row;
+              row.insert_or_assign("enabled", item.enabled);
+              if (!item.match.empty()) {
+                row.insert_or_assign("match", item.match);
+              }
+              row.insert_or_assign("show_toast", item.showToast);
+              row.insert_or_assign("save_history", item.saveHistory);
+              row.insert_or_assign("play_sound", item.playSound);
+              if (!item.allowedUrgencies.empty()) {
+                toml::array urgencies;
+                for (const auto& urgency : item.allowedUrgencies) {
+                  urgencies.push_back(urgency);
+                }
+                row.insert_or_assign("allowed_urgencies", std::move(urgencies));
+              }
+              filterTable.insert_or_assign(item.name, std::move(row));
+              filterOrder.push_back(item.name);
+            }
+            table.insert_or_assign(key, std::move(filterTable));
+            if (key == "filter") {
+              table.insert_or_assign("filter_order", std::move(filterOrder));
             }
           } else if constexpr (std::is_same_v<T, std::vector<KeyChord>>) {
             toml::array array;
@@ -708,6 +751,9 @@ void ConfigService::addPluginSource(const PluginSourceConfig& source) {
     entry.insert_or_assign("location", src.location);
     if (src.autoUpdate) {
       entry.insert_or_assign("auto_update", true);
+    }
+    if (!src.enabled) {
+      entry.insert_or_assign("enabled", false);
     }
     return entry;
   };
@@ -1040,7 +1086,7 @@ std::optional<Config> ConfigService::configForOverrides(const toml::table& overr
   }
 
   try {
-    parseConfigTable(merged, parsed, false);
+    parseConfigTable(merged, parsed, false, false);
   } catch (const std::exception& e) {
     kLog.warn("effective override comparison parse failed: {}", e.what());
     return std::nullopt;

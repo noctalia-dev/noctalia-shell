@@ -81,6 +81,8 @@ public:
   void setOpenWallpaperPanel(std::function<void()> callback) { m_openWallpaperPanel = std::move(callback); }
   void setPluginManager(scripting::PluginManager* manager) { m_pluginManager = manager; }
   void setSyncGreeterAppearance(std::function<void()> callback) { m_syncGreeterAppearance = std::move(callback); }
+  void setResetLauncherUsage(std::function<void()> callback) { m_resetLauncherUsage = std::move(callback); }
+  void setResetScreenTime(std::function<void()> callback) { m_resetScreenTime = std::move(callback); }
   void setSaveWallpaperPaletteAsCustom(std::function<void()> callback) {
     m_saveWallpaperPaletteAsCustom = std::move(callback);
   }
@@ -124,20 +126,26 @@ private:
   void openActionsMenu();
   void openConfigExportDialog();
   void openBarWidgetAddPopup(const std::vector<std::string>& lanePath);
+  // Parameters are taken by value: opening the popup closes the editor sheet, which can own the control
+  // whose callback forwarded these arguments, so copies must outlive that destruction.
   void openSearchPickerPopup(
-      const std::string& title, const std::vector<settings::SelectOption>& options, const std::string& selectedValue,
-      const std::string& placeholder, const std::string& emptyText, const std::vector<std::string>& settingPath
+      std::string title, std::vector<settings::SelectOption> options, std::string selectedValue,
+      std::string placeholder, std::string emptyText, std::vector<std::string> settingPath
   );
   void openSessionActionEntryEditor(std::size_t index);
   void syncSessionActionInlineSummary(std::size_t index, const SessionPanelActionConfig& row);
   void openIdleBehaviorEntryEditor(std::size_t index);
   void openIdleBehaviorCreateEditor();
+  void openNotificationFilterEntryEditor(std::size_t index);
+  void openNotificationFilterCreateEditor();
   void openCalendarAccountEditor(std::optional<std::string> accountId);
   void openWidgetInspectorEditor(std::vector<std::string> laneListPath, std::string widgetName);
   void openCapsuleGroupEditor(std::vector<std::string> laneListPath, std::string groupId);
-  void openPluginSourceCreateEditor();
+  void openPluginSourceCreateEditor(std::optional<PluginSourceConfig> existing = std::nullopt);
   void openPluginSettingsEditor(std::string pluginId);
-  void openBarWidgetEditorSheet(std::string title, std::function<void(Flex&)> populate);
+  void openBarWidgetEditorSheet(
+      std::string title, std::function<void(Flex&)> populate, std::function<void()> removeAction = nullptr
+  );
   void closeWidgetInspectorPopup();
   void refreshIdleLiveStatusText();
   void saveSupportReport();
@@ -241,6 +249,7 @@ private:
   std::string m_selectedSection;
   std::string m_statusMessage;
   std::string m_pendingResetPageScope;
+  bool m_forceEnTranslation = false;
   bool m_showAdvanced = false;
   bool m_showOverriddenOnly = false;
   bool m_statusIsError = false;
@@ -248,6 +257,8 @@ private:
   std::function<void()> m_openLockscreenWidgetEditor;
   std::function<void()> m_openWallpaperPanel;
   std::function<void()> m_syncGreeterAppearance;
+  std::function<void()> m_resetLauncherUsage;
+  std::function<void()> m_resetScreenTime;
   std::function<void()> m_saveWallpaperPaletteAsCustom;
   std::function<void(std::string, std::string)> m_connectCalendarAccount;
 };

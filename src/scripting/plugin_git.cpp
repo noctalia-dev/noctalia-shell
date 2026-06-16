@@ -13,8 +13,9 @@ namespace scripting::plugin_git {
   namespace {
     using namespace std::chrono_literals;
 
-    // Network ops get a generous budget; local metadata ops are quick.
-    constexpr auto kNetworkTimeout = 120s;
+    // Hard backstop that kills a wedged git subprocess (e.g. a connect/DNS hang behind a
+    // proxy). Network ops also abort early via http.lowSpeed* below; local ops are quick.
+    constexpr auto kNetworkTimeout = 60s;
     constexpr auto kLocalTimeout = 20s;
     // File bodies we read (catalog.toml / plugin.toml) are small; cap defensively.
     constexpr std::size_t kFileCap = 4 * 1024 * 1024;
@@ -41,7 +42,13 @@ namespace scripting::plugin_git {
     run(std::vector<std::string> args, std::chrono::milliseconds timeout, std::size_t cap,
         std::vector<process::EnvOverride> extraEnv = {}) {
       if (!args.empty() && args.front() == "git") {
-        args.insert(args.begin() + 1, {"-c", "credential.interactive=false", "-c", "core.askPass=/bin/false"});
+        // Abort an HTTP transfer stalled below ~1 KB/s for 20s (a half-up proxy / wedged
+        // tunnel) instead of waiting out the hard timeout. Ignored by non-HTTP transports.
+        args.insert(
+            args.begin() + 1,
+            {"-c", "credential.interactive=false", "-c", "core.askPass=/bin/false", "-c", "http.lowSpeedLimit=1000",
+             "-c", "http.lowSpeedTime=20"}
+        );
       }
       process::RunOptions options;
       options.timeout = timeout;

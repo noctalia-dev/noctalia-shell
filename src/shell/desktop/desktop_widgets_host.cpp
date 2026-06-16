@@ -33,12 +33,12 @@ namespace {
 void DesktopWidgetsHost::initialize(
     WaylandConnection& wayland, ConfigService* config, PipeWireSpectrum* pipewireSpectrum,
     const WeatherService* weather, RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient,
-    SystemMonitorService* sysmon
+    SystemMonitorService* sysmon, DesktopWidgetScriptDeps scriptDeps
 ) {
   m_wayland = &wayland;
   m_config = config;
   m_renderContext = renderContext;
-  m_factory = std::make_unique<DesktopWidgetFactory>(pipewireSpectrum, weather, mpris, httpClient, sysmon);
+  m_factory = std::make_unique<DesktopWidgetFactory>(pipewireSpectrum, weather, mpris, httpClient, sysmon, scriptDeps);
 }
 
 void DesktopWidgetsHost::show(const DesktopWidgetsSnapshot& snapshot) {
@@ -48,6 +48,9 @@ void DesktopWidgetsHost::show(const DesktopWidgetsSnapshot& snapshot) {
 }
 
 void DesktopWidgetsHost::hide() {
+  for (auto& instance : m_instances) {
+    teardownInstance(*instance);
+  }
   m_visible = false;
   m_instances.clear();
 }
@@ -115,7 +118,11 @@ void DesktopWidgetsHost::syncInstances() {
 
   std::erase_if(m_instances, [this](const auto& instance) {
     const DesktopWidgetState* state = findStateById(m_snapshot, instance->state.id);
-    return state == nullptr || !state->enabled;
+    const bool remove = state == nullptr || !state->enabled;
+    if (remove) {
+      teardownInstance(*instance);
+    }
+    return remove;
   });
 
   for (const auto& state : m_snapshot.widgets) {
@@ -126,7 +133,13 @@ void DesktopWidgetsHost::syncInstances() {
     const WaylandOutput* output = desktop_widgets::resolveStateOutput(*m_wayland, state);
     if (output == nullptr) {
       // Explicitly bound widgets are hidden while their target output is unavailable.
-      std::erase_if(m_instances, [&state](const auto& instance) { return instance->state.id == state.id; });
+      std::erase_if(m_instances, [this, &state](const auto& instance) {
+        const bool remove = instance->state.id == state.id;
+        if (remove) {
+          teardownInstance(*instance);
+        }
+        return remove;
+      });
       continue;
     }
 
@@ -142,7 +155,13 @@ void DesktopWidgetsHost::syncInstances() {
         || existing->effectiveOutputName != effectiveOutputName;
 
     if (widgetDefinitionChanged) {
-      std::erase_if(m_instances, [&state](const auto& instance) { return instance->state.id == state.id; });
+      std::erase_if(m_instances, [this, &state](const auto& instance) {
+        const bool remove = instance->state.id == state.id;
+        if (remove) {
+          teardownInstance(*instance);
+        }
+        return remove;
+      });
       createInstance(state, *output);
       continue;
     }
@@ -162,7 +181,7 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
   }
 
   const float baseUiScale = m_config != nullptr ? m_config->config().shell.uiScale : 1.0f;
-  auto widget = m_factory->create(state.type, state.settings, desktop_widgets::widgetContentScale(baseUiScale, state));
+  auto widget = m_factory->create(state.type, state.settings, desktop_widgets::widgetContentScale(baseUiScale));
   if (widget == nullptr) {
     return;
   }
@@ -260,6 +279,30 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
   m_instances.push_back(std::move(instance));
 }
 
+void DesktopWidgetsHost::teardownInstance(DesktopWidgetInstance& instance) {
+  instance.animations.cancelAll();
+
+  if (instance.widget != nullptr) {
+    instance.widget->setAnimationManager(nullptr);
+    instance.widget->setFrameTickRequestCallback(nullptr);
+    instance.widget->setUpdateCallback(nullptr);
+    instance.widget->setLayoutCallback(nullptr);
+    instance.widget->setRedrawCallback(nullptr);
+  }
+
+  instance.inputDispatcher.setSceneRoot(nullptr);
+
+  if (instance.surface != nullptr) {
+    instance.surface->pauseFrameLoop();
+    instance.surface->setConfigureCallback(nullptr);
+    instance.surface->setPrepareFrameCallback(nullptr);
+    instance.surface->setFrameTickCallback(nullptr);
+    instance.surface->setUpdateCallback(nullptr);
+    instance.surface->setSceneRoot(nullptr);
+    instance.surface->setAnimationManager(nullptr);
+  }
+}
+
 void DesktopWidgetsHost::buildScene(DesktopWidgetInstance& instance) {
   if (instance.sceneRoot == nullptr) {
     instance.sceneRoot = std::make_unique<Node>();
@@ -294,7 +337,7 @@ void DesktopWidgetsHost::prepareFrame(DesktopWidgetInstance& instance, bool need
   buildScene(instance);
 
   const float baseUiScale = m_config != nullptr ? m_config->config().shell.uiScale : 1.0f;
-  instance.widget->setContentScale(desktop_widgets::widgetContentScale(baseUiScale, instance.state));
+  instance.widget->setContentScale(desktop_widgets::widgetContentScale(baseUiScale));
   instance.widget->setBox(instance.state.boxWidth, instance.state.boxHeight);
 
   if (needsUpdate) {
@@ -342,7 +385,10 @@ void DesktopWidgetsHost::prepareFrame(DesktopWidgetInstance& instance, bool need
         geometry.contentOffsetY - instance.intrinsicHeight * 0.5f
     );
     instance.transformNode->setRotation(instance.state.rotationRad);
-    instance.transformNode->setScale(1.0f);
+    float flipScaleX = 1.0f;
+    float flipScaleY = 1.0f;
+    desktop_widgets::widgetNodeScale(instance.state, flipScaleX, flipScaleY);
+    instance.transformNode->setScale(flipScaleX, flipScaleY);
   }
 }
 

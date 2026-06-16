@@ -133,6 +133,10 @@ namespace config_export {
         resolved.contactShadow = *ovr.contactShadow;
       if (ovr.panelOverlap)
         resolved.panelOverlap = *ovr.panelOverlap;
+      if (ovr.capsuleThickness)
+        resolved.capsuleThickness = *ovr.capsuleThickness;
+      if (ovr.fontFamily)
+        resolved.fontFamily = *ovr.fontFamily;
       if (ovr.startWidgets)
         resolved.startWidgets = *ovr.startWidgets;
       if (ovr.centerWidgets)
@@ -223,6 +227,12 @@ namespace config_export {
           item.insert_or_assign("box_width", static_cast<double>(widget.boxWidth));
           item.insert_or_assign("box_height", static_cast<double>(widget.boxHeight));
           item.insert_or_assign("rotation", static_cast<double>(widget.rotationRad));
+          if (widget.flipX) {
+            item.insert_or_assign("flip_x", true);
+          }
+          if (widget.flipY) {
+            item.insert_or_assign("flip_y", true);
+          }
           item.insert_or_assign("enabled", widget.enabled);
 
           toml::table settings;

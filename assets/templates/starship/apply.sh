@@ -29,6 +29,9 @@ else
         end_regex=$(printf '%s' "$marker_end" | sed 's/[[\.*^$()+?{|]/\\&/g')
         sed -i "/$begin_regex/,/$end_regex/d" "$config_file"
     fi
+
+    # Drop trailing blank lines so the leading newline below does not accumulate
+    sed -i -e :a -e '/^\n*$/{$d;N;ba}' "$config_file"
 fi
 
 {

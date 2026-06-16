@@ -27,6 +27,7 @@ class Button;
 class CompositorPlatform;
 class ConfigService;
 class DependencyService;
+class EasyEffectsService;
 class Flex;
 class HttpClient;
 class IdleInhibitor;
@@ -57,22 +58,23 @@ namespace scripting {
 }
 
 class AccountsService;
+class ThumbnailService;
 
 class ControlCenterPanel : public Panel {
 public:
   ControlCenterPanel(
-      NotificationManager* notifications, PipeWireService* audio, MprisService* mpris, ConfigService* config = nullptr,
-      HttpClient* httpClient = nullptr, WeatherService* weather = nullptr, PipeWireSpectrum* spectrum = nullptr,
-      UPowerService* upower = nullptr, PowerProfilesService* powerProfiles = nullptr,
-      INetworkService* network = nullptr, NetworkSecretAgent* networkSecrets = nullptr,
-      BluetoothService* bluetooth = nullptr, BluetoothAgent* bluetoothAgent = nullptr,
-      BrightnessService* brightness = nullptr, SystemMonitorService* sysmon = nullptr,
-      ScreenTimeService* screenTime = nullptr, GammaService* nightLight = nullptr,
-      noctalia::theme::ThemeService* theme = nullptr, IdleInhibitor* idleInhibitor = nullptr,
-      DependencyService* dependencies = nullptr, CompositorPlatform* platform = nullptr, IpcService* ipc = nullptr,
-      Wallpaper* wallpaper = nullptr, CalendarService* calendar = nullptr,
-      scripting::ScriptApiContext* scriptApi = nullptr, ClipboardService* clipboard = nullptr,
-      AccountsService* accounts = nullptr
+      NotificationManager* notifications, PipeWireService* audio, EasyEffectsService* easyEffects, MprisService* mpris,
+      ConfigService* config = nullptr, HttpClient* httpClient = nullptr, WeatherService* weather = nullptr,
+      PipeWireSpectrum* spectrum = nullptr, UPowerService* upower = nullptr,
+      PowerProfilesService* powerProfiles = nullptr, INetworkService* network = nullptr,
+      NetworkSecretAgent* networkSecrets = nullptr, BluetoothService* bluetooth = nullptr,
+      BluetoothAgent* bluetoothAgent = nullptr, BrightnessService* brightness = nullptr,
+      SystemMonitorService* sysmon = nullptr, ScreenTimeService* screenTime = nullptr,
+      GammaService* nightLight = nullptr, noctalia::theme::ThemeService* theme = nullptr,
+      IdleInhibitor* idleInhibitor = nullptr, DependencyService* dependencies = nullptr,
+      CompositorPlatform* platform = nullptr, IpcService* ipc = nullptr, Wallpaper* wallpaper = nullptr,
+      CalendarService* calendar = nullptr, scripting::ScriptApiContext* scriptApi = nullptr,
+      ClipboardService* clipboard = nullptr, AccountsService* accounts = nullptr, ThumbnailService* thumbnails = nullptr
   );
 
   void create() override;
@@ -83,9 +85,8 @@ public:
   [[nodiscard]] bool isContextActive(std::string_view context) const override;
   [[nodiscard]] bool deferExternalRefresh() const override;
   [[nodiscard]] bool deferPointerRelayout() const override;
-
+  [[nodiscard]] LayerShellLayer layer() const override { return LayerShellLayer::Overlay; }
   [[nodiscard]] float preferredWidth() const override;
-
   [[nodiscard]] float preferredHeight() const override { return scaled(520.0f); }
   [[nodiscard]] PanelPlacement panelPlacement() const noexcept override;
 

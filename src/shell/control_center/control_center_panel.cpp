@@ -14,6 +14,7 @@
 #include "shell/panel/panel_button_style.h"
 #include "shell/panel/panel_manager.h"
 #include "system/dependency_service.h"
+#include "system/easyeffects_service.h"
 #include "system/screen_time_service.h"
 #include "ui/builders.h"
 
@@ -40,14 +41,15 @@ namespace {
 } // namespace
 
 ControlCenterPanel::ControlCenterPanel(
-    NotificationManager* notifications, PipeWireService* audio, MprisService* mpris, ConfigService* config,
-    HttpClient* httpClient, WeatherService* weather, PipeWireSpectrum* spectrum, UPowerService* upower,
-    PowerProfilesService* powerProfiles, INetworkService* network, NetworkSecretAgent* networkSecrets,
-    BluetoothService* bluetooth, BluetoothAgent* bluetoothAgent, BrightnessService* brightness,
-    SystemMonitorService* sysmon, ScreenTimeService* screenTime, GammaService* nightLight,
-    noctalia::theme::ThemeService* theme, IdleInhibitor* idleInhibitor, DependencyService* dependencies,
-    CompositorPlatform* platform, IpcService* ipc, Wallpaper* wallpaper, CalendarService* calendar,
-    scripting::ScriptApiContext* scriptApi, ClipboardService* clipboard, AccountsService* accounts
+    NotificationManager* notifications, PipeWireService* audio, EasyEffectsService* easyEffects, MprisService* mpris,
+    ConfigService* config, HttpClient* httpClient, WeatherService* weather, PipeWireSpectrum* spectrum,
+    UPowerService* upower, PowerProfilesService* powerProfiles, INetworkService* network,
+    NetworkSecretAgent* networkSecrets, BluetoothService* bluetooth, BluetoothAgent* bluetoothAgent,
+    BrightnessService* brightness, SystemMonitorService* sysmon, ScreenTimeService* screenTime,
+    GammaService* nightLight, noctalia::theme::ThemeService* theme, IdleInhibitor* idleInhibitor,
+    DependencyService* dependencies, CompositorPlatform* platform, IpcService* ipc, Wallpaper* wallpaper,
+    CalendarService* calendar, scripting::ScriptApiContext* scriptApi, ClipboardService* clipboard,
+    AccountsService* accounts, ThumbnailService* thumbnails
 ) {
   (void)upower;
   WaylandConnection* wayland = platform != nullptr ? &platform->wayland() : nullptr;
@@ -57,13 +59,13 @@ ControlCenterPanel::ControlCenterPanel(
   m_dependencies = dependencies;
   m_tabs[tabIndex(TabId::Home)] = std::make_unique<HomeTab>(
       mpris, httpClient, weather, audio, powerProfiles, config, network, bluetooth, nightLight, theme, notifications,
-      idleInhibitor, dependencies, platform, ipc, wallpaper, scriptApi, clipboard, accounts
+      idleInhibitor, dependencies, platform, ipc, wallpaper, scriptApi, clipboard, accounts, thumbnails
   );
   m_tabs[tabIndex(TabId::Media)] = std::make_unique<MediaTab>(
       mpris, httpClient, spectrum, config, wayland, PanelManager::instance().renderContext()
   );
   m_tabs[tabIndex(TabId::Audio)] =
-      std::make_unique<AudioTab>(audio, mpris, config, wayland, PanelManager::instance().renderContext());
+      std::make_unique<AudioTab>(audio, easyEffects, mpris, config, wayland, PanelManager::instance().renderContext());
   m_tabs[tabIndex(TabId::Weather)] = std::make_unique<WeatherTab>(weather, config);
   m_tabs[tabIndex(TabId::Calendar)] = std::make_unique<CalendarTab>(config, calendar);
   m_tabs[tabIndex(TabId::Notifications)] = std::make_unique<NotificationsTab>(notifications);

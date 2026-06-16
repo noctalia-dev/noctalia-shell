@@ -139,6 +139,8 @@ public:
 
 protected:
   [[nodiscard]] bool containsLocalPoint(float localX, float localY, bool includeHitOutset) const override;
+  // Invoked whenever tooltip content is set, cleared, or refreshed.
+  virtual void onTooltipChanged() {}
 
 private:
   void notifyTooltipChanged();

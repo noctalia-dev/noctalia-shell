@@ -29,7 +29,7 @@ public:
   void initialize(
       WaylandConnection& wayland, ConfigService* config, PipeWireSpectrum* pipewireSpectrum,
       const WeatherService* weather, RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient,
-      SystemMonitorService* sysmon
+      SystemMonitorService* sysmon, DesktopWidgetScriptDeps scriptDeps = {}
   );
   void show(const LockscreenWidgetsSnapshot& snapshot, LockScreen& lockScreen);
   void hide();
@@ -53,6 +53,7 @@ private:
   void createInstance(const DesktopWidgetState& state, LockSurface& surface, const WaylandOutput& output);
   void attachToSurface(WidgetInstance& instance);
   void detachFromSurface(WidgetInstance& instance);
+  void syncSurfaceFrameTick(LockSurface* surface);
   [[nodiscard]] WidgetInstance* findInstance(const std::string& id);
   [[nodiscard]] LockSurface* findSurfaceForOutput(LockScreen& lockScreen, const std::string& outputKey) const;
 

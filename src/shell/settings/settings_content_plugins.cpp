@@ -55,13 +55,33 @@ namespace settings {
       return std::string(source);
     }
 
+    int pluginSourceOrder(std::string_view source) {
+      if (source == "official") {
+        return 0;
+      }
+      if (source == "community") {
+        return 1;
+      }
+      return 2;
+    }
+
+    bool pluginSourceLess(std::string_view a, std::string_view b) {
+      const int aOrder = pluginSourceOrder(a);
+      const int bOrder = pluginSourceOrder(b);
+      if (aOrder != bOrder) {
+        return aOrder < bOrder;
+      }
+      return a < b;
+    }
+
     std::unique_ptr<Flex> sourceRow(const PluginSourceConfig& source, const SettingsPluginsContext& ctx, float scale) {
       auto row = ui::row({.align = FlexAlign::Center, .gap = Style::spaceSm * scale, .fillWidth = true});
       Flex* r = row.get();
 
       auto info = ui::column({.align = FlexAlign::Start, .gap = 2.0F * scale, .flexGrow = 1.0F});
       info->addChild(makeLabel(
-          pluginSourceDisplayName(source.name), Style::fontSizeBody * scale, ColorRole::OnSurface, FontWeight::Medium
+          pluginSourceDisplayName(source.name), Style::fontSizeBody * scale,
+          source.enabled ? ColorRole::OnSurface : ColorRole::OnSurfaceVariant, FontWeight::Medium
       ));
       const std::string kind = source.kind == PluginSourceKind::Git ? i18n::tr("settings.plugins.sources.kind.git")
                                                                     : i18n::tr("settings.plugins.sources.kind.path");
@@ -70,30 +90,13 @@ namespace settings {
       );
       r->addChild(std::move(info));
 
-      if (source.kind == PluginSourceKind::Git) {
-        auto autoUpdate = ui::row({.align = FlexAlign::Center, .gap = Style::spaceXs * scale});
-        autoUpdate->addChild(makeLabel(
-            i18n::tr("settings.plugins.sources.update-on-startup"), Style::fontSizeCaption * scale,
-            ColorRole::OnSurfaceVariant, FontWeight::Medium
-        ));
-        autoUpdate->addChild(
-            ui::toggle({
-                .checked = source.autoUpdate,
-                .toggleSize = ToggleSize::Small,
-                .scale = scale,
-                .onChange = [cb = ctx.setSourceAutoUpdate, source](bool on) {
-                  if (cb) {
-                    cb(source, on);
-                  }
-                },
-            })
-        );
-        r->addChild(std::move(autoUpdate));
+      if (source.enabled && source.kind == PluginSourceKind::Git) {
         r->addChild(
             ui::button({
-                .text = i18n::tr("settings.plugins.sources.update"),
-                .fontSize = Style::fontSizeCaption * scale,
-                .variant = ButtonVariant::Outline,
+                .glyph = "refresh",
+                .glyphSize = Style::fontSizeBody * scale,
+                .variant = ButtonVariant::Ghost,
+                .tooltip = i18n::tr("settings.plugins.sources.update"),
                 .onClick = [cb = ctx.updateSource, name = source.name]() {
                   if (cb) {
                     cb(name);
@@ -102,22 +105,46 @@ namespace settings {
             })
         );
       }
-      if (!isDefaultPluginSourceName(source.name)) {
-        r->addChild(
-            ui::button({
-                .glyph = "trash",
-                .glyphSize = Style::fontSizeBody * scale,
-                .variant = ButtonVariant::Ghost,
-                .tooltip = i18n::tr("settings.plugins.sources.remove"),
-                .onClick = [cb = ctx.removeSource, name = source.name]() {
-                  if (cb) {
-                    cb(name);
-                  }
-                },
-            })
-        );
-      }
+      r->addChild(
+          ui::button({
+              .glyph = "settings",
+              .glyphSize = Style::fontSizeBody * scale,
+              .variant = ButtonVariant::Ghost,
+              .tooltip = i18n::tr("settings.plugins.sources.edit"),
+              .onClick = [cb = ctx.editSource, source]() {
+                if (cb) {
+                  cb(source);
+                }
+              },
+          })
+      );
+      r->addChild(
+          ui::toggle({
+              .checked = source.enabled,
+              .scale = scale,
+              .onChange = [cb = ctx.setSourceEnabled, source](bool on) {
+                if (cb) {
+                  cb(source, on);
+                }
+              },
+          })
+      );
       return row;
+    }
+
+    std::unique_ptr<Flex> makeSourceBadge(std::string_view label, float scale) {
+      return ui::row(
+          {.align = FlexAlign::Center,
+           .paddingH = Style::spaceXs * scale,
+           .fill = colorSpecFromRole(ColorRole::Primary, 0.15f),
+           .radius = Style::scaledRadiusSm(scale)},
+          ui::label({
+              .text = std::string(label),
+              .fontSize = Style::fontSizeCaption * scale,
+              .color = colorSpecFromRole(ColorRole::Primary),
+              .fontWeight = FontWeight::Bold,
+          })
+      );
     }
 
     std::unique_ptr<Flex>
@@ -142,9 +169,13 @@ namespace settings {
       title->addChild(
           makeLabel(pluginDisplayName(plugin), Style::fontSizeBody * scale, ColorRole::OnSurface, FontWeight::Medium)
       );
-      title->addChild(
-          makeLabel(pluginSourceDisplayName(plugin.source), Style::fontSizeCaption * scale, ColorRole::OnSurfaceVariant)
-      );
+      if (plugin.source == "official") {
+        title->addChild(makeSourceBadge(i18n::tr("settings.badges.official"), scale));
+      } else if (!plugin.source.empty()) {
+        title->addChild(makeLabel(
+            pluginSourceDisplayName(plugin.source), Style::fontSizeCaption * scale, ColorRole::OnSurfaceVariant
+        ));
+      }
       title->addChild(makeLabel("v" + version, Style::fontSizeCaption * scale, ColorRole::OnSurfaceVariant));
       if (!plugin.compatible) {
         title->addChild(makeLabel(
@@ -436,7 +467,11 @@ namespace settings {
           i18n::tr("settings.plugins.sources.empty"), Style::fontSizeCaption * scale, ColorRole::OnSurfaceVariant
       ));
     }
-    for (const auto& source : ctx.sources) {
+    std::vector<PluginSourceConfig> sources = ctx.sources;
+    std::stable_sort(sources.begin(), sources.end(), [](const auto& a, const auto& b) {
+      return pluginSourceLess(a.name, b.name);
+    });
+    for (const auto& source : sources) {
       section->addChild(sourceRow(source, ctx, scale));
     }
 
@@ -459,18 +494,13 @@ namespace settings {
     }
     std::vector<scripting::PluginStatus> plugins = ctx.plugins;
     std::sort(plugins.begin(), plugins.end(), [&](const auto& a, const auto& b) {
-      const bool aEnabled = pluginEnabled(a, ctx);
-      const bool bEnabled = pluginEnabled(b, ctx);
-      if (aEnabled != bEnabled) {
-        return aEnabled;
-      }
       const std::string_view aName = pluginDisplayName(a);
       const std::string_view bName = pluginDisplayName(b);
       if (aName != bName) {
         return aName < bName;
       }
       if (a.source != b.source) {
-        return a.source < b.source;
+        return pluginSourceLess(a.source, b.source);
       }
       return a.id < b.id;
     });

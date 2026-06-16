@@ -19,7 +19,16 @@ namespace desktop_settings {
     std::string_view labelKey;
   };
 
+  // One pickable widget type for the editor: built-in types (label translated)
+  // plus every plugin [[desktop_widget]] entry (value = "author/plugin:entry").
+  struct DesktopWidgetTypeOption {
+    std::string value;
+    std::string label;
+  };
+
   [[nodiscard]] const std::vector<DesktopWidgetTypeSpec>& desktopWidgetTypeSpecs();
+  [[nodiscard]] std::vector<DesktopWidgetTypeOption> desktopWidgetTypeOptions();
+  [[nodiscard]] std::string desktopWidgetTypeLabel(std::string_view type);
   [[nodiscard]] std::vector<settings::WidgetSettingSpec> desktopWidgetSettingSpecs(std::string_view type);
   [[nodiscard]] std::vector<settings::WidgetSettingSpec> commonDesktopWidgetSettingSpecs(std::string_view type = {});
   // Schema projection (per-type + common settings), consumed by `config validate`.

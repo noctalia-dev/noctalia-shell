@@ -1,7 +1,13 @@
 #include "shell/desktop/desktop_widget_settings_registry.h"
 
+#include "i18n/i18n.h"
+#include "scripting/plugin_registry.h"
 #include "shell/settings/font_family_catalog.h"
+#include "shell/settings/widget_settings_registry.h"
 #include "util/string_utils.h"
+
+#include <algorithm>
+#include <cstdint>
 
 namespace desktop_settings {
   namespace {
@@ -34,6 +40,23 @@ namespace desktop_settings {
 
     WidgetSettingSpec boolSpec(std::string_view key, bool defaultValue) {
       return baseSpec(key, WidgetControlKind::Bool, defaultValue);
+    }
+
+    WidgetSettingSpec
+    intSpec(std::string_view key, std::int64_t defaultValue, double minValue, double maxValue, double step = 1.0) {
+      auto spec = baseSpec(key, WidgetControlKind::Int, defaultValue);
+      spec.schema.minValue = minValue;
+      spec.schema.maxValue = maxValue;
+      spec.schema.step = step;
+      return spec;
+    }
+
+    WidgetSettingSpec stepperIntSpec(
+        std::string_view key, std::int64_t defaultValue, double minValue, double maxValue, double step = 1.0
+    ) {
+      auto spec = intSpec(key, defaultValue, minValue, maxValue, step);
+      spec.stepper = true;
+      return spec;
     }
 
     WidgetSettingSpec
@@ -81,9 +104,58 @@ namespace desktop_settings {
       return spec;
     }
 
+    // Resolve "author/plugin:entry" to its [[desktop_widget]] entry, or nullopt.
+    std::optional<scripting::ResolvedPluginEntry> resolvePluginDesktopWidget(std::string_view type) {
+      if (!type.contains('/')) {
+        return std::nullopt;
+      }
+      scripting::PluginRegistry::instance().ensureScanned();
+      auto entry = scripting::PluginRegistry::instance().resolve(type);
+      if (entry.has_value() && entry->entry->kind == scripting::PluginEntryKind::DesktopWidget) {
+        return entry;
+      }
+      return std::nullopt;
+    }
+
   } // namespace
 
   const std::vector<DesktopWidgetTypeSpec>& desktopWidgetTypeSpecs() { return kDesktopWidgetTypeSpecs; }
+
+  std::vector<DesktopWidgetTypeOption> desktopWidgetTypeOptions() {
+    std::vector<DesktopWidgetTypeOption> options;
+    options.reserve(kDesktopWidgetTypeSpecs.size());
+    for (const auto& spec : kDesktopWidgetTypeSpecs) {
+      options.push_back(DesktopWidgetTypeOption{.value = std::string(spec.type), .label = i18n::tr(spec.labelKey)});
+    }
+
+    scripting::PluginRegistry::instance().ensureScanned();
+    for (const auto& entry :
+         scripting::PluginRegistry::instance().entriesOfKind(scripting::PluginEntryKind::DesktopWidget)) {
+      const std::string entryId = entry.fullId();
+      std::string label = entry.manifest->name.empty() ? entryId : entry.manifest->name;
+      options.push_back(DesktopWidgetTypeOption{.value = entryId, .label = std::move(label)});
+    }
+
+    std::sort(options.begin(), options.end(), [](const auto& a, const auto& b) { return a.label < b.label; });
+    return options;
+  }
+
+  std::string desktopWidgetTypeLabel(std::string_view type) {
+    for (const auto& spec : kDesktopWidgetTypeSpecs) {
+      if (spec.type == type) {
+        return i18n::tr(spec.labelKey);
+      }
+    }
+    if (type == "login_box") {
+      return i18n::tr("desktop-widgets.editor.types.login-box");
+    }
+    if (auto entry = resolvePluginDesktopWidget(type); entry.has_value()) {
+      if (!entry->manifest->name.empty()) {
+        return entry->manifest->name;
+      }
+    }
+    return std::string(type);
+  }
 
   std::vector<WidgetSettingSpec> commonDesktopWidgetSettingSpecs(std::string_view type) {
     if (type == "login_box") {
@@ -122,6 +194,10 @@ namespace desktop_settings {
   }
 
   std::vector<WidgetSettingSpec> desktopWidgetSettingSpecs(std::string_view type) {
+    if (auto pluginEntry = resolvePluginDesktopWidget(type)) {
+      return settings::manifestSettingSpecs(pluginEntry->entry->settings);
+    }
+
     const std::vector<WidgetSettingSelectOption> sysmonStats = {
         {"cpu_usage", "desktop-widgets.editor.settings.stat-cpu-usage"},
         {"cpu_temp", "desktop-widgets.editor.settings.stat-cpu-temp"},
@@ -194,7 +270,7 @@ namespace desktop_settings {
       add(std::move(ringOpacity));
       add(doubleSpec("inner_diameter", 0.7, 0.0, 1.0, 0.05));
       add(doubleSpec("bloom_intensity", 0.5, 0.0, 1.0, 0.05));
-      add(boolSpec("fade_when_idle", false));
+      add(boolSpec("fade_when_idle", true));
       add(colorSpec("primary_color", "primary"));
       add(colorSpec("secondary_color", "secondary"));
     } else if (type == "sticker") {
@@ -204,6 +280,10 @@ namespace desktop_settings {
       add(colorSpec("color", "on_surface"));
       add(fontFamilySpec());
       add(boolSpec("shadow", true));
+      add(boolSpec("show_forecast", false));
+      auto forecastDays = stepperIntSpec("forecast_days", 3, 1.0, 6.0, 1.0);
+      forecastDays.visibleWhen = WidgetSettingVisibility{"show_forecast", {"true"}};
+      add(std::move(forecastDays));
     } else if (type == "media_player") {
       add(segmentedSpec(
           "layout", "horizontal",
@@ -223,6 +303,12 @@ namespace desktop_settings {
     } else if (type == "sysmon") {
       add(selectSpec("stat", "cpu_usage", sysmonStats));
       add(selectSpec("stat2", "", sysmonStatsWithNone));
+      {
+        auto interface = stringSpec("interface");
+        interface.visibleWhen =
+            WidgetSettingVisibility{{{"stat", {"net_rx", "net_tx"}}, {"stat2", {"net_rx", "net_tx"}}}};
+        add(std::move(interface));
+      }
       add(colorSpec("color", "primary"));
       add(colorSpec("color2", "secondary"));
       add(fontFamilySpec());

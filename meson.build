@@ -25,6 +25,11 @@ endif
 # pipewire_lsan.cpp is only needed when address sanitizer is active.
 sanitize = get_option('b_sanitize') != 'none'
 
+# Tests build by default for every non-release buildtype; release skips them
+# unless explicitly enabled (-Dtests=enabled).
+tests_opt = get_option('tests')
+build_tests = tests_opt.enabled() or (tests_opt.auto() and get_option('buildtype') != 'release')
+
 # ── Release-only optimizations ────────────────────────────────────────────────
 if get_option('buildtype') == 'release'
   add_project_arguments(
@@ -311,12 +316,12 @@ foreach _p : [
     wayland_protos_dir / 'stable/viewporter/viewporter.xml'],
   ['idle-inhibit-unstable-v1',
     wayland_protos_dir / 'unstable/idle-inhibit/idle-inhibit-unstable-v1.xml'],
+
+  # ── vendored / project-local protocols (loaded from protocols/) ───────────
   ['text-input-unstable-v3',
-    wayland_protos_dir / 'unstable/text-input/text-input-unstable-v3.xml'],
+    'protocols/text-input-unstable-v3.xml'],
   ['virtual-keyboard-unstable-v1',
     'protocols/virtual-keyboard-unstable-v1.xml'],
-
-  # ── project-local custom protocols ────────────────────────────────────────
   ['dwl-ipc-unstable-v2',
     'protocols/dwl-ipc-unstable-v2.xml'],
   ['cursor-shape-v1',
@@ -378,6 +383,7 @@ _noctalia_sources = files(
   'src/app/application.cpp',
   'src/app/main_loop.cpp',
   'src/app/single_instance_lock.cpp',
+  'src/auth/fingerprint_authenticator.cpp',
   'src/auth/pam_authenticator.cpp',
   'src/calendar/caldav_client.cpp',
   'src/calendar/caldav_discovery.cpp',
@@ -438,6 +444,7 @@ _noctalia_sources = files(
   'src/launcher/app_provider.cpp',
   'src/launcher/emoji_provider.cpp',
   'src/launcher/math_provider.cpp',
+  'src/launcher/plugin_launcher_provider.cpp',
   'src/launcher/session_provider.cpp',
   'src/launcher/wallpaper_provider.cpp',
   'src/launcher/window_provider.cpp',
@@ -538,6 +545,7 @@ _noctalia_sources = files(
   'src/shell/desktop/widgets/desktop_media_player_widget.cpp',
   'src/shell/desktop/widgets/desktop_sticker_widget.cpp',
   'src/shell/desktop/widgets/desktop_sysmon_widget.cpp',
+  'src/shell/desktop/widgets/plugin_desktop_widget.cpp',
   'src/shell/desktop/widgets/desktop_weather_widget.cpp',
   'src/shell/clipboard/clipboard_panel.cpp',
   'src/shell/control_center/calendar_tab.cpp',
@@ -576,6 +584,7 @@ _noctalia_sources = files(
   'src/shell/lockscreen/lock_surface.cpp',
   'src/shell/notification/notification_toast.cpp',
   'src/shell/osd/audio_osd.cpp',
+  'src/shell/osd/media_osd.cpp',
   'src/shell/osd/brightness_osd.cpp',
   'src/shell/osd/lock_keys_osd.cpp',
   'src/shell/osd/keyboard_layout_osd.cpp',
@@ -601,6 +610,7 @@ _noctalia_sources = files(
   'src/shell/settings/settings_content_plugins.cpp',
   'src/shell/settings/settings_control_factory.cpp',
   'src/shell/settings/settings_content_idle_behavior.cpp',
+  'src/shell/settings/settings_content_notification_filter.cpp',
   'src/shell/settings/settings_content_session_action.cpp',
   'src/shell/settings/settings_bar_management.cpp',
   'src/shell/settings/settings_registry.cpp',
@@ -648,6 +658,7 @@ _noctalia_sources = files(
   'src/shell/bar/widgets/notification_widget.cpp',
   'src/shell/bar/widgets/plugin_widget.cpp',
   'src/shell/bar/widgets/power_profile_widget.cpp',
+  'src/shell/bar/widgets/privacy_widget.cpp',
   'src/shell/bar/widgets/session_widget.cpp',
   'src/shell/bar/widgets/settings_widget.cpp',
   'src/shell/bar/widgets/spacer_widget.cpp',
@@ -672,6 +683,7 @@ _noctalia_sources = files(
   'src/system/hardware_info.cpp',
   'src/system/icon_resolver.cpp',
   'src/system/internal_app_metadata.cpp',
+  'src/system/easyeffects_service.cpp',
   'src/system/day_night_schedule.cpp',
   'src/system/gamma_service.cpp',
   'src/system/location_service.cpp',
@@ -682,6 +694,7 @@ _noctalia_sources = files(
   'src/shell/bar/widgets/screenshot_widget.cpp',
   'src/system/rfkill_helper.cpp',
   'src/system/screen_time_service.cpp',
+  'src/system/cpu_temp_sensor.cpp',
   'src/system/system_monitor_service.cpp',
   'src/system/weather_service.cpp',
   'src/time/time_format.cpp',
@@ -697,6 +710,7 @@ _noctalia_sources = files(
   'src/ui/controls/context_menu_popup.cpp',
   'src/ui/controls/flex.cpp',
   'src/ui/controls/glyph.cpp',
+  'src/ui/controls/graph.cpp',
   'src/ui/controls/glyph_picker.cpp',
   'src/render/text/glyph_registry.cpp',
   'src/ui/controls/grid_view.cpp',
@@ -727,6 +741,7 @@ _noctalia_sources = files(
   'src/ui/controls/virtual_grid_view.cpp',
   'src/ui/controls/virtual_list_view.cpp',
   'src/ui/builders.cpp',
+  'src/ui/ui_tree_reconciler.cpp',
   'src/ui/app_icon_colorization.cpp',
   'src/ui/palette.cpp',
   'src/ui/popup_chrome.cpp',
@@ -850,7 +865,7 @@ _noctalia_inc = [
 ]
 
 # ── Executable ────────────────────────────────────────────────────────────────
-executable('noctalia',
+noctalia_exe = executable('noctalia',
   sources: _noctalia_sources + _protocol_sources + _protocol_headers + [_git_revision_h],
   dependencies: [
     sdbus_cpp_dep,
@@ -900,6 +915,8 @@ executable('noctalia',
 install_subdir('assets',
   install_dir: get_option('datadir') / 'noctalia',
 )
+
+if build_tests
 
 notification_history_utf8_test = executable('notification_history_utf8_test',
   sources: files(
@@ -952,6 +969,7 @@ process_test = executable('process_test',
   sources: files(
     'tests/process_test.cpp',
     'src/core/process.cpp',
+    'src/core/log.cpp'
   ),
   include_directories: _noctalia_inc,
 )
@@ -989,6 +1007,36 @@ string_utils_test = executable('string_utils_test',
 )
 
 test('string_utils', string_utils_test)
+
+time_format_test = executable('time_format_test',
+  sources: files(
+    'tests/time_format_test.cpp',
+    'src/time/time_format.cpp',
+    'src/i18n/i18n.cpp',
+    'src/i18n/i18n_service.cpp',
+    'src/i18n/language_tag.cpp',
+    'src/core/resource_paths.cpp',
+    'src/core/log.cpp',
+  ),
+  include_directories: _noctalia_inc,
+  cpp_args: [
+    '-DNOCTALIA_SOURCE_ASSETS_DIR="' + meson.project_source_root() / 'assets' + '"',
+    '-DNOCTALIA_INSTALL_PREFIX="' + get_option('prefix') + '"',
+    '-DNOCTALIA_INSTALL_DATADIR="' + get_option('datadir') + '"',
+  ],
+)
+
+test('time_format', time_format_test)
+
+cpu_temp_sensor_test = executable('cpu_temp_sensor_test',
+  sources: files(
+    'tests/cpu_temp_sensor_test.cpp',
+    'src/system/cpu_temp_sensor.cpp',
+  ),
+  include_directories: _noctalia_inc,
+)
+
+test('cpu_temp_sensor', cpu_temp_sensor_test)
 
 i18n_language_tag_test = executable('i18n_language_tag_test',
   sources: files(
@@ -1034,11 +1082,69 @@ plugin_git_export_test = executable('plugin_git_export_test',
     'tests/plugin_git_export_test.cpp',
     'src/scripting/plugin_git.cpp',
     'src/core/process.cpp',
+    'src/core/log.cpp',
   ),
   include_directories: _noctalia_inc,
 )
 
 test('plugin_git_export', plugin_git_export_test)
+
+ui_tree_reconciler_test = executable('ui_tree_reconciler_test',
+  sources: files(
+    'tests/ui_tree_reconciler_test.cpp',
+    'src/ui/ui_tree_reconciler.cpp',
+    'src/ui/controls/box.cpp',
+    'src/ui/controls/button.cpp',
+    'src/ui/controls/flex.cpp',
+    'src/ui/controls/glyph.cpp',
+    'src/ui/controls/graph.cpp',
+    'src/ui/controls/image.cpp',
+    'src/ui/controls/label.cpp',
+    'src/ui/controls/progress_bar.cpp',
+    'src/ui/controls/separator.cpp',
+    'src/ui/controls/spacer.cpp',
+    'src/ui/app_icon_colorization.cpp',
+    'src/ui/palette.cpp',
+    'src/ui/style.cpp',
+    'src/render/gl_shared_context.cpp',
+    'src/render/scene/node.cpp',
+    'src/render/scene/input_area.cpp',
+    'src/render/scene/graph_node.cpp',
+    'src/render/text/glyph_registry.cpp',
+    'src/render/animation/animation.cpp',
+    'src/render/animation/animation_manager.cpp',
+    'src/render/animation/motion_service.cpp',
+    'src/render/core/color.cpp',
+    'src/render/core/async_texture_cache.cpp',
+    'src/render/core/image_decoder.cpp',
+    'src/render/core/image_file_loader.cpp',
+    'src/render/core/stb_image_resize_impl.cpp',
+    'src/core/deferred_call.cpp',
+    'src/core/log.cpp',
+    'src/core/resource_paths.cpp',
+    'src/core/ui_phase.cpp',
+    'src/theme/builtin_palettes.cpp',
+    'src/theme/fixed_palette.cpp',
+    'src/theme/color.cpp',
+    'src/theme/contrast.cpp',
+  ) + _protocol_headers,
+  dependencies: [
+    wayland_client_dep,
+    cairo_dep,
+    egl_dep,
+    librsvg_dep,
+    libwebp_dep,
+    stb_dep,
+  ],
+  include_directories: _noctalia_inc,
+  cpp_args: [
+    '-DNOCTALIA_SOURCE_ASSETS_DIR="' + meson.project_source_root() / 'assets' + '"',
+    '-DNOCTALIA_INSTALL_PREFIX="' + get_option('prefix') + '"',
+    '-DNOCTALIA_INSTALL_DATADIR="' + get_option('datadir') + '"',
+  ],
+)
+
+test('ui_tree_reconciler', ui_tree_reconciler_test)
 
 plugin_manifest_test = executable('plugin_manifest_test',
   sources: files(
@@ -1057,6 +1163,7 @@ config_schema_roundtrip_test = executable('config_schema_roundtrip_test',
     'src/config/schema/config_schema.cpp',
     'src/config/config_export.cpp',
     'src/config/config_types.cpp',
+    'src/notification/notification_filter.cpp',
     'src/render/core/color.cpp',
     'src/ui/palette.cpp',
     'src/theme/builtin_palettes.cpp',
@@ -1095,6 +1202,7 @@ config_path_resolution_test = executable('config_path_resolution_test',
     'tests/config_path_resolution_test.cpp',
     'src/config/schema/config_schema.cpp',
     'src/config/config_types.cpp',
+    'src/notification/notification_filter.cpp',
     'src/render/core/color.cpp',
     'src/ui/palette.cpp',
     'src/theme/builtin_palettes.cpp',
@@ -1108,6 +1216,19 @@ config_path_resolution_test = executable('config_path_resolution_test',
 )
 
 test('config_path_resolution', config_path_resolution_test)
+
+config_validate_env = environment()
+config_validate_env.set('NOCTALIA_CONFIG_HOME', meson.current_source_dir() / 'tests/config_validate/config-home')
+config_validate_env.set('NOCTALIA_STATE_HOME', meson.current_source_dir() / 'tests/config_validate/state-home')
+config_validate_env.set('NOCTALIA_DATA_HOME', meson.current_source_dir() / 'tests/config_validate/data-home')
+
+sh_program = find_program('sh')
+test('config_validate_cli',
+  sh_program,
+  args: ['tests/config_validate_cli_test.sh', noctalia_exe.full_path()],
+  workdir: meson.current_source_dir(),
+  env: config_validate_env,
+)
 
 state_store_test = executable('state_store_test',
   sources: files(
@@ -1197,3 +1318,5 @@ wayland_toplevels_identity_test = executable('wayland_toplevels_identity_test',
 )
 
 test('wayland_toplevels_identity', wayland_toplevels_identity_test)
+
+endif # build_tests

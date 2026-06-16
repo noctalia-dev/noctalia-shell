@@ -1,5 +1,6 @@
 #include "core/process.h"
 
+#include "core/log.h"
 #include "util/string_utils.h"
 
 #include <algorithm>
@@ -25,6 +26,8 @@
 #include <unistd.h>
 
 namespace {
+
+  constexpr Logger kLog("process");
 
   constexpr std::chrono::milliseconds kProcessPollInterval{100};
   constexpr std::chrono::milliseconds kProcessCommandLineCacheTtl{250};
@@ -97,9 +100,7 @@ namespace {
     return argv;
   }
 
-  [[nodiscard]] bool validEnvName(std::string_view name) {
-    return !name.empty() && name.find('=') == std::string_view::npos;
-  }
+  [[nodiscard]] bool validEnvName(std::string_view name) { return !name.empty() && !name.contains('='); }
 
   void applyEnvOverrides(const std::vector<process::EnvOverride>& env) {
     for (const auto& item : env) {
@@ -621,31 +622,10 @@ namespace {
     return res;
   }
 
-  void startSystemdService(
+  bool startSystemdService(
       const std::vector<std::string>& args, const std::string& activationToken, const std::string& workingDir,
       const std::string& appName
   ) {
-    const pid_t intermediate = ::fork();
-    if (intermediate < 0) {
-      return;
-    }
-
-    if (intermediate > 0) {
-      // Parent: wait for intermediate to exit (after it forks the grandchild).
-      while (::waitpid(intermediate, nullptr, 0) < 0 && errno == EINTR) {
-      }
-      return;
-    }
-
-    // Intermediate child: fork again and exit, so parent doesn't wait for systemd-run
-
-    const pid_t worker = ::fork();
-    if (worker != 0) {
-      ::_exit(0);
-    }
-
-    // Grandchild
-
     std::vector<std::string> systemdArgs;
     systemdArgs.push_back("systemd-run");
     systemdArgs.push_back("--user");
@@ -669,9 +649,15 @@ namespace {
       systemdArgs.push_back("--working-directory=" + workingDir);
     }
 
+    process::RunOptions runOptions;
+
     if (!activationToken.empty()) {
-      ::setenv("XDG_ACTIVATION_TOKEN", activationToken.c_str(), 1);
-      ::setenv("DESKTOP_STARTUP_ID", activationToken.c_str(), 1);
+      systemdArgs.push_back("-E");
+      systemdArgs.push_back("XDG_ACTIVATION_TOKEN");
+      systemdArgs.push_back("-E");
+      systemdArgs.push_back("DESKTOP_STARTUP_ID");
+      runOptions.env.push_back({"XDG_ACTIVATION_TOKEN", activationToken});
+      runOptions.env.push_back({"DESKTOP_STARTUP_ID", activationToken});
     }
 
     // App should inherit our environment.
@@ -688,24 +674,38 @@ namespace {
 
     systemdArgs.push_back("--");
     systemdArgs.insert(systemdArgs.end(), args.begin(), args.end());
-    process::RunResult result = runSyncProcess(systemdArgs, {});
-    if (result) {
-      ::_exit(0);
-    }
-
-    // If systemd-run failed, fall back to normal launch. E.g., if systemd-run is not available,
-    // or its version is too old for the switches we used, or the executable is not found.
-    // We'd unnecessarily fail again later in the last case, but seems OK to err on the safe side here.
-
-    // This would be two more unnecessary forks if systemd-run is missing, but seems acceptable for
-    // the fallback path.
-    (void)doubleForkExecDetached(args, nullptr, activationToken, workingDir);
-    ::_exit(0);
+    return process::runAsync(
+        systemdArgs,
+        process::RunCallbacks{
+            .stdOut = [](std::string_view) {},
+            .stdErr = [](std::string_view) {},
+            .onExit =
+                [](process::RunResult result) {
+                  if (result.exitCode != 0) {
+                    // We'd like to show a toast or notification here, but the callback is not on the UI thread, so
+                    // unclear how to
+                    kLog.error(
+                        "startSystemdService: systemd-run failed with exit code {}: {}", result.exitCode, result.err
+                    );
+                  }
+                }
+        },
+        runOptions
+    );
   }
-
 } // namespace
 
 namespace process {
+
+  std::optional<std::string> resolvePrivilegeEscalator() {
+    if (commandExists("run0")) {
+      return "run0";
+    }
+    if (commandExists("pkexec")) {
+      return "pkexec";
+    }
+    return std::nullopt;
+  }
 
   bool commandExists(const char* name) {
     if (name == nullptr || name[0] == '\0') {
@@ -936,22 +936,18 @@ namespace process {
 #endif
   }
 
-  // We don't have a return code, so we don't wait for the launch mechanism to complete (e.g., systemd-run),
-  // which might take more time than a double-fork-exec and block the UI thread for too long. Launcher/AppProvider
-  // doesn't check if the app launch succeeded, anyway.
-  void runAsyncAsSystemdService(
+  bool runAsyncAsSystemdService(
       const std::vector<std::string>& args, const std::string& appName, const std::string& activationToken,
       const std::string& workingDir
   ) {
 #ifdef __linux__
     if (args.empty() || args.front().empty()) {
-      return;
+      return false;
     }
     if (systemdAvailable()) {
-      startSystemdService(args, activationToken, workingDir, appName);
-      return;
+      return startSystemdService(args, activationToken, workingDir, appName);
     }
 #endif
-    (void)runAsync(args, activationToken, workingDir);
+    return runAsync(args, activationToken, workingDir);
   }
 } // namespace process

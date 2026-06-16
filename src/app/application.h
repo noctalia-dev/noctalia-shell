@@ -70,6 +70,7 @@
 #include "shell/osd/brightness_osd.h"
 #include "shell/osd/keyboard_layout_osd.h"
 #include "shell/osd/lock_keys_osd.h"
+#include "shell/osd/media_osd.h"
 #include "shell/osd/osd_overlay.h"
 #include "shell/overview/overview_launcher_capture.h"
 #include "shell/panel/panel_manager.h"
@@ -86,6 +87,7 @@
 #include "system/brightness_service.h"
 #include "system/dependency_service.h"
 #include "system/desktop_entry_poll_source.h"
+#include "system/easyeffects_service.h"
 #include "system/gamma_service.h"
 #include "system/icon_theme_poll_source.h"
 #include "system/location_poll_source.h"
@@ -122,6 +124,8 @@
 #include <optional>
 #include <vector>
 
+class LauncherPanel;
+
 class Application {
 public:
   Application();
@@ -136,14 +140,18 @@ private:
   void initServices();
   void initUi();
   void initIpc();
+  // (Re)register plugin-backed launcher providers from the enabled plugin set.
+  void reloadPluginLauncherProviders();
   void startTrayService();
   void syncNotificationDaemon();
+  void scheduleNotificationShellRefresh();
   void syncPolkitAgent();
   void syncClipboardService();
   void syncScreenTimeService();
   bool runUserCommand(const std::string& command);
   bool runUserCommandBlocking(const std::string& command);
   bool runIdleAction(const IdleActionRequest& action);
+  void resumeShellRenderingIfUnlocked();
   void onIconThemeChanged();
   void onGraphicsReset(RenderGraphicsResetStatus status);
   void requestAllSurfacesRedraw();
@@ -197,6 +205,7 @@ private:
   std::unique_ptr<UPowerService> m_upowerService;
   std::optional<bool> m_notificationDaemonEnabled;
   bool m_notificationDaemonInitFailed = false;
+  bool m_notificationShellRefreshScheduled = false;
   BatteryHookState m_batteryHookState;
   BatteryWarningMonitor m_batteryWarningMonitor;
   std::optional<bool> m_prevWirelessEnabledForEvents;
@@ -206,6 +215,7 @@ private:
   std::unique_ptr<TrayService> m_trayService;
   std::unique_ptr<NotificationService> m_notificationDbus;
   std::unique_ptr<PipeWireService> m_pipewireService;
+  std::unique_ptr<EasyEffectsService> m_easyEffectsService;
   std::unique_ptr<PipeWireSpectrum> m_pipewireSpectrum;
   std::unique_ptr<PipeWirePcmTap> m_pipewirePcmTap;
   std::unique_ptr<SoundPlayer> m_soundPlayer;
@@ -227,11 +237,14 @@ private:
   LockscreenWidgetsController m_lockscreenWidgetsController;
   SessionActionRunner m_sessionActionRunner{m_compositorPlatform, m_lockScreen};
   PanelManager m_panelManager;
+  // Owned by m_panelManager; kept raw so plugin launcher providers can be re-applied.
+  LauncherPanel* m_launcherPanel = nullptr;
   WindowSwitcher m_windowSwitcher;
   OverviewLauncherCapture m_overviewLauncherCapture;
   NotificationToast m_notificationToast;
   AudioOsd m_audioOsd;
   BrightnessOsd m_brightnessOsd;
+  MediaOsd m_mediaOsd;
   LockKeysOsd m_lockKeysOsd;
   KeyboardLayoutOsd m_keyboardLayoutOsd;
   OsdOverlay m_osdOverlay;

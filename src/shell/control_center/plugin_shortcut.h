@@ -13,6 +13,7 @@
 
 class HttpClient;
 class ClipboardService;
+class CompositorPlatform;
 namespace scripting {
   class ScriptApiContext;
 }
@@ -27,7 +28,7 @@ public:
   PluginShortcut(
       std::string entryId, std::filesystem::path sourcePath,
       std::unordered_map<std::string, WidgetSettingValue> settings, scripting::ScriptApiContext& scriptApi,
-      HttpClient* httpClient, ClipboardService* clipboard
+      HttpClient* httpClient, ClipboardService* clipboard, CompositorPlatform* platform = nullptr
   );
   ~PluginShortcut() override;
 
@@ -46,6 +47,8 @@ private:
   void start(std::unordered_map<std::string, WidgetSettingValue> settings);
   void handleResult(const scripting::ScriptResult& result);
   void armTimer();
+  [[nodiscard]] scripting::ScriptSnapshot makeScriptSnapshot() const;
+  [[nodiscard]] std::string focusedOutputName() const;
 
   std::string m_entryId;
   std::filesystem::path m_sourcePath;
@@ -53,6 +56,7 @@ private:
   scripting::ScriptApiContext& m_scriptApi;
   HttpClient* m_httpClient = nullptr;
   ClipboardService* m_clipboard = nullptr;
+  CompositorPlatform* m_platform = nullptr;
   std::shared_ptr<scripting::ScriptRuntime> m_runtime;
   scripting::ScriptRuntime::SubscriberId m_subscription = 0;
   std::string m_label;

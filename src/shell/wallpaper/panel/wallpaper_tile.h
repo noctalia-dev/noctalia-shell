@@ -69,6 +69,8 @@ private:
   void layoutThumbOverlays();
   void doLayout(Renderer& renderer) override;
   void releaseThumbnail();
+  // Thumbnail long-edge in physical pixels for this tile's current display size.
+  [[nodiscard]] int thumbnailTargetPx(const Renderer& renderer) const;
 
   float m_cellWidth;
   float m_cellHeight;
@@ -96,6 +98,7 @@ private:
   bool m_missingFile = false;
   bool m_loadingThumbnail = false;
   std::string m_thumbPath;
+  int m_thumbTargetPx = 0;
   ClickCallback m_onClick;
   std::function<void(const WallpaperEntry&)> m_onStarClick;
   HoverCallback m_onMotion;

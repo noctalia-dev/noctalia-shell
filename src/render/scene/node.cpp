@@ -15,7 +15,7 @@ namespace {
     return Mat3::translation(node->x(), node->y())
         * Mat3::translation(cx, cy)
         * Mat3::rotation(node->rotation())
-        * Mat3::scale(node->scale(), node->scale())
+        * Mat3::scale(node->scaleX(), node->scaleY())
         * Mat3::translation(-cx, -cy);
   }
 
@@ -222,11 +222,14 @@ void Node::setRotation(float radians) {
   markPaintDirty();
 }
 
-void Node::setScale(float scale) {
-  if (m_scale == scale) {
+void Node::setScale(float scale) { setScale(scale, scale); }
+
+void Node::setScale(float scaleX, float scaleY) {
+  if (m_scaleX == scaleX && m_scaleY == scaleY) {
     return;
   }
-  m_scale = scale;
+  m_scaleX = scaleX;
+  m_scaleY = scaleY;
   markPaintDirty();
 }
 

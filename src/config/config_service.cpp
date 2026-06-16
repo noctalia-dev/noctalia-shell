@@ -167,12 +167,14 @@ namespace {
     if (auto boxHeight = finiteDouble(widgetTable["box_height"])) {
       widget.boxHeight = std::max(0.0f, static_cast<float>(*boxHeight));
     }
-    // schema v1 migration: a legacy `scale` is honored only until the editor bakes it into a box.
-    if (auto scale = finiteDouble(widgetTable["scale"])) {
-      widget.legacyScale = std::clamp(static_cast<float>(*scale), 0.2f, 8.0f);
-    }
     if (auto rotation = finiteDouble(widgetTable["rotation"])) {
       widget.rotationRad = static_cast<float>(*rotation);
+    }
+    if (auto flipX = widgetTable["flip_x"].value<bool>()) {
+      widget.flipX = *flipX;
+    }
+    if (auto flipY = widgetTable["flip_y"].value<bool>()) {
+      widget.flipY = *flipY;
     }
     if (auto enabled = widgetTable["enabled"].value<bool>()) {
       widget.enabled = *enabled;
@@ -702,7 +704,7 @@ std::string ConfigService::buildEffectiveConfigFromSources(
     config = makeDefaultConfig();
   } else {
     try {
-      parseConfigTable(*merged, config, false);
+      parseConfigTable(*merged, config, false, false);
     } catch (const std::exception& e) {
       if (error != nullptr) {
         *error = e.what();
@@ -869,6 +871,10 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.contactShadow = *ovr.contactShadow;
     if (ovr.panelOverlap)
       resolved.panelOverlap = *ovr.panelOverlap;
+    if (ovr.capsuleThickness)
+      resolved.capsuleThickness = *ovr.capsuleThickness;
+    if (ovr.fontFamily)
+      resolved.fontFamily = *ovr.fontFamily;
     if (ovr.startWidgets)
       resolved.startWidgets = *ovr.startWidgets;
     if (ovr.centerWidgets)
@@ -1182,7 +1188,9 @@ void ConfigService::loadAll() {
   setConfigParseError(parseError);
 }
 
-void ConfigService::parseConfigTable(const toml::table& tbl, Config& config, bool logSummary) {
+void ConfigService::parseConfigTable(
+    const toml::table& tbl, Config& config, bool logSummary, bool logSchemaDiagnostics
+) {
   // Diagnostics raised by schema-driven sections (e.g. unknown enum values).
   // Flushed to the log below, preserving the legacy warn-and-continue behavior.
   schema::Diagnostics schemaDiag;
@@ -1590,8 +1598,10 @@ void ConfigService::parseConfigTable(const toml::table& tbl, Config& config, boo
     kLog.info("hooks kinds with commands={}", hookKindsUsed);
   }
 
-  for (const auto& entry : schemaDiag.entries) {
-    kLog.warn("{}: {}", entry.path, entry.message);
+  if (logSchemaDiagnostics) {
+    for (const auto& entry : schemaDiag.entries) {
+      kLog.warn("{}: {}", entry.path, entry.message);
+    }
   }
 }
 

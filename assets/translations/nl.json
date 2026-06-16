@@ -1,5 +1,15 @@
 {
   "auth": {
+    "fingerprint": {
+      "disconnected": "Vingerafdruksensor niet aangesloten",
+      "error": "Fout bij vingerafdrukverificatie",
+      "no-match": "Vingerafdruk komt niet overeen",
+      "not-centered": "Centreer je vinger op de sensor en probeer opniew",
+      "present": "Vingerafdruk aan het lezen...",
+      "ready": "Plaats je vinger op de sensor",
+      "retry": "Scan uw vingerafdruk nogmaals",
+      "too-many-attempts": "Vingerafdruk uitgeschakeld (te veel pogingen)"
+    },
     "pam": {
       "authentication-failed": "Authenticatie mislukt",
       "start-failed": "PAM-start mislukt",
@@ -21,6 +31,9 @@
       "region": "Kies regio"
     },
     "widgets": {
+      "active-window": {
+        "no-active-window": "Geen actief venster"
+      },
       "lock-keys": {
         "caps": "Caps",
         "caps-short": "C",
@@ -142,7 +155,8 @@
     "calendar": {
       "all-day": "Hele dag",
       "events": "Evenementen",
-      "no-events": "Geen evenementen."
+      "no-events": "Geen evenementen.",
+      "today": "Vandaag"
     },
     "display": {
       "disabled": "Uitgeschakeld",
@@ -243,7 +257,6 @@
       },
       "notification": "DND",
       "power-profile": "Energie",
-      "screen-recorder": "Opname",
       "screen-time": "Schermtijd",
       "session": "Sessie",
       "system": "Systeem",
@@ -252,6 +265,11 @@
       "wifi": "Wi-Fi"
     },
     "system": {
+      "labels": {
+        "load": "CPU-belasting",
+        "ram": "RAM",
+        "swap": "Swap"
+      },
       "titles": {
         "cpu": "CPU",
         "gpu": "GPU",
@@ -259,6 +277,9 @@
         "network": "Netwerk",
         "resources": "Systeembronnen",
         "system": "Systeem"
+      },
+      "tooltips": {
+        "load": "Gemiddelde belasting over 1 / 5 / 15 minuten"
       },
       "unknown": "onbekend",
       "uptime-prefix": "Up {uptime} · {osAge}"
@@ -303,6 +324,7 @@
   "desktop-widgets": {
     "editor": {
       "actions": {
+        "add": "Toevoegen",
         "done": "Gereed",
         "hide": "Verberg",
         "settings": "Instellingen",
@@ -1075,6 +1097,8 @@
       "sources": {
         "add": "Voeg bron toe",
         "add-title": "Voeg plugin bron toe",
+        "edit": "Bron bewerken",
+        "edit-title": "Plugin bron bewerken",
         "empty": "Geen bronnen geconfigureerd",
         "errors": {
           "duplicate-name": "Een bron met deze naam bestaat al.",
@@ -1092,6 +1116,7 @@
         "name-label": "Naam",
         "name-placeholder": "mijn-plugins",
         "remove": "Verwijder bron",
+        "save": "Opslaan",
         "title": "Bronnen",
         "update": "Update",
         "update-on-startup": "Update bij opstarten"
@@ -1300,6 +1325,10 @@
         "widget-color": {
           "description": "Standaard kleurrol voor icoon en label voor widgets op deze balk; vaste hex-kleuren worden ook ondersteund",
           "label": "Widgetkleur"
+        },
+        "widget-icon-color": {
+          "description": "Hiermee wordt de widgetkleur voor iconen op deze balk overschreven; vaste hex-kleuren worden ook ondersteund",
+          "label": "kleur van het widget-icoon"
         },
         "widget-spacing": {
           "description": "Ruimte tussen balkwidgets",
@@ -1558,6 +1587,10 @@
           "description": "Gebruik een momentopname van het bureaublad als achtergrond voor het vergrendelscherm",
           "label": "Bureaublad vastleggen"
         },
+        "enabled": {
+          "description": "Sessievergrendeling, Logind-integratie en vergrendelingsacties inschakelen",
+          "label": "Vergrendelscherm"
+        },
         "monitors": {
           "description": "Kies welke monitoren het vergrendelscherm tonen; laat leeg om op alle te tonen",
           "label": "Monitoren"
@@ -1591,8 +1624,7 @@
           "label": "Zwarte lijst voor meldingen"
         },
         "blacklist-allow-critical": {
-          "description": "Toon nog steeds kritieke meldingen van afzenders op de zwarte lijst",
-          "label": "Kritieke meldingen doorlaten"
+          "description": "Toon nog steeds kritieke meldingen van afzenders op de zwarte lijst"
         },
         "collapse-on-dismiss": {
           "description": "Verschuif resterende meldingen om gaten te sluiten wanneer er een wordt gesloten",
@@ -1657,12 +1689,16 @@
           "label": "Home-snelkoppelingen"
         },
         "launcher-categories": {
-          "description": "Toon categoriefilters in Launcher; wissel met Tab terwijl Launcher open is",
+          "description": "Toon categoriefilters in Launcher; toon ze met F6 en wissel daarna met F6 en Shift+F6",
           "label": "Categorieën tonen"
         },
         "launcher-compact": {
           "description": "Gebruik kleinere iconen en compactere resultaatrijen",
           "label": "Compacte rijen"
+        },
+        "launcher-session-search": {
+          "description": "Neem sessieacties (vergrendelen, in de wacht zetten, opnieuw opstarten, afsluiten, uitloggen) op in algemene zoekopdrachten in het startmenu, en niet alleen achter het voorvoegsel /session",
+          "label": "Sessiezoekfunctie inschakelen"
         },
         "launcher-show-icons": {
           "description": "Toon app iconen in de resultaten van Launcher",
@@ -2290,6 +2326,10 @@
           "description": "Transparantie van het icoon voor het actieve (gefocuste) venster.",
           "label": "Actieve icoontransparantie"
         },
+        "album-art-only": {
+          "description": "Toon alleen de ronde album art zonder de titel van het nummer",
+          "label": "Alleen Album Art"
+        },
         "anchor": {
           "description": "Zet deze widget vast als middelpunt-uitlijningsanker",
           "label": "Anker"
@@ -2341,7 +2381,12 @@
           "label": "Kleur"
         },
         "color-1": {
+          "description": "Eerste kleurovergang in de visualizer",
           "label": "Kleur Een"
+        },
+        "color-2": {
+          "description": "Tweede kleurovergang in de visualizer",
+          "label": "Kleur Twee"
         },
         "command": {
           "description": "Shell-commando uitgevoerd bij linksklikken op deze knop",
@@ -2353,7 +2398,7 @@
           "label": "Aangepaste afbeelding"
         },
         "custom-image-colorize": {
-          "description": "Kleur de aangepaste afbeelding in met de widgetkleurinstelling",
+          "description": "Kleur de aangepaste afbeelding in met de kleurinstelling van het widget-icoon",
           "label": "Aangepaste afbeelding inkleuren"
         },
         "custom-labels": {
@@ -2471,6 +2516,7 @@
           "label": "Hot Reload"
         },
         "icon-color": {
+          "description": "Hiermee wordt de kleur van de widget alleen voor iconen overschreven; vaste hex-kleuren worden ook ondersteund",
           "label": "Icoonkleur"
         },
         "icon-size": {
@@ -2596,6 +2642,10 @@
         "show-condition": {
           "description": "Toon weersomstandigheden als tekst",
           "label": "Toon omstandigheden"
+        },
+        "show-empty-label": {
+          "description": "Toon tijdelijke tekst wanneer er geen venster is geselecteerd, in plaats van de widget te verbergen",
+          "label": "Lege label weergeven"
         },
         "show-icon": {
           "description": "Toon het icoon van deze widget",
@@ -2837,11 +2887,8 @@
     "panel": {
       "all-monitors": "ALLE",
       "color-title": "Achtergrondkleur",
-      "favorite-palette-label": "Kleuren",
-      "favorite-theme-label": "Thema",
       "filter-placeholder": "Filteren...",
       "flatten": "Afvlakken",
-      "no-directory-configured": "Geen map geconfigureerd",
       "sort-date-asc": "Sorteren op datum (oudste eerst)",
       "sort-date-desc": "Sorteren op datum (nieuwste eerst)",
       "sort-name-asc": "Sorteren op naam (A-Z)",

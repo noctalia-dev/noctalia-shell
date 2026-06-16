@@ -1,0 +1,5 @@
+[shell]
+ui_scale = 1.0
+
+[theme]
+mode = "dark"

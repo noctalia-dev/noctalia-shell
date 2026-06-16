@@ -1,11 +1,11 @@
 #include "shell/desktop/widgets/desktop_sysmon_widget.h"
 
 #include "render/core/renderer.h"
-#include "render/scene/graph_node.h"
 #include "render/scene/node.h"
 #include "system/format_units.h"
 #include "system/system_monitor_service.h"
 #include "ui/builders.h"
+#include "ui/controls/graph.h"
 #include "ui/style.h"
 
 #include <algorithm>
@@ -27,10 +27,10 @@ namespace {
 
 DesktopSysmonWidget::DesktopSysmonWidget(
     SystemMonitorService* monitor, DesktopSysmonStat stat, std::optional<DesktopSysmonStat> stat2, ColorSpec lineColor,
-    ColorSpec lineColor2, bool showLabel, bool shadow
+    ColorSpec lineColor2, std::string networkInterface, bool showLabel, bool shadow
 )
     : m_monitor(monitor), m_stat(stat), m_stat2(stat2), m_lineColor(lineColor), m_lineColor2(lineColor2),
-      m_showLabel(showLabel), m_shadow(shadow) {
+      m_networkInterface(std::move(networkInterface)), m_showLabel(showLabel), m_shadow(shadow) {
   if (m_monitor != nullptr) {
     if (needsCpuTemp(m_stat))
       m_monitor->retainCpuTemp();
@@ -81,10 +81,10 @@ void DesktopSysmonWidget::create() {
   });
   rootNode->addChild(std::move(glyph));
 
-  auto graph = std::make_unique<GraphNode>();
+  auto graph = std::make_unique<Graph>();
   graph->setLineWidth(kGraphLineWidth);
-  graph->setGraphFillOpacity(0.2f);
-  m_graphNode = static_cast<GraphNode*>(rootNode->addChild(std::move(graph)));
+  graph->setFillOpacity(0.2f);
+  m_graph = static_cast<Graph*>(rootNode->addChild(std::move(graph)));
 
   if (m_showLabel) {
     auto label = ui::label({
@@ -102,6 +102,9 @@ void DesktopSysmonWidget::create() {
 
 void DesktopSysmonWidget::onFrameTick(float deltaMs, Renderer& renderer) {
   (void)deltaMs;
+  if (!m_redrawLimiter.shouldStep([this]() { requestRedraw(); })) {
+    return;
+  }
   if (m_monitor != nullptr) {
     if (m_monitor->isRunning()) {
       const auto latestSampleAt = m_monitor->latest().sampledAt;
@@ -116,11 +119,8 @@ void DesktopSysmonWidget::onFrameTick(float deltaMs, Renderer& renderer) {
   }
 
   m_scrollProgress = scrollProgressForSample(m_lastSampleAt);
-  if (m_graphNode != nullptr) {
-    m_graphNode->setScroll1(m_scrollProgress);
-    if (m_stat2.has_value()) {
-      m_graphNode->setScroll2(m_scrollProgress);
-    }
+  if (m_graph != nullptr) {
+    m_graph->setScroll(m_scrollProgress);
   }
   requestRedraw();
 }
@@ -184,11 +184,11 @@ void DesktopSysmonWidget::doLayout(Renderer& renderer) {
   const float glyphSize = Style::baseGlyphSize * scale;
   const float gap = Style::spaceSm * scale;
 
-  m_graphNode->setLineColor1(resolveColorSpec(m_lineColor));
+  m_graph->setColor(m_lineColor);
   if (m_stat2.has_value()) {
-    m_graphNode->setLineColor2(resolveColorSpec(m_lineColor2));
+    m_graph->setColor2(m_lineColor2);
   }
-  m_graphNode->setLineWidth(kGraphLineWidth * scale);
+  m_graph->setLineWidth(kGraphLineWidth * scale);
 
   m_glyph->setGlyphSize(glyphSize);
   m_glyph->setColor(colorForRole(ColorRole::OnSurface));
@@ -213,8 +213,9 @@ void DesktopSysmonWidget::doLayout(Renderer& renderer) {
 
   const float contentW = std::max(totalW, headerW);
 
-  m_graphNode->setPosition(0.0f, 0.0f);
-  m_graphNode->setSize(contentW, chartH);
+  m_graph->setPosition(0.0f, 0.0f);
+  m_graph->setSize(contentW, chartH);
+  m_graph->sync(renderer);
 
   const float headerY = chartH + gap;
   const float headerX = std::round((contentW - headerW) * 0.5f);
@@ -258,7 +259,8 @@ void DesktopSysmonWidget::syncLabel() {
 }
 
 double DesktopSysmonWidget::normalizedFromStats(
-    DesktopSysmonStat stat, const SystemStats& stats, double& tempMin, double& tempMax
+    DesktopSysmonStat stat, const SystemStats& stats, double& tempMin, double& tempMax,
+    std::string_view networkInterface
 ) {
   switch (stat) {
   case DesktopSysmonStat::CpuUsage:
@@ -309,13 +311,29 @@ double DesktopSysmonWidget::normalizedFromStats(
     }
     return 0.0;
 
-  case DesktopSysmonStat::NetRx:
-    tempMax = std::max(tempMax, stats.netRxBytesPerSec);
-    return tempMax > 0.0 ? std::clamp(stats.netRxBytesPerSec / tempMax, 0.0, 1.0) : 0.0;
+  case DesktopSysmonStat::NetRx: {
+    const double value = networkInterface.empty() ? stats.netRxBytesPerSec : [&stats, networkInterface]() {
+      if (const auto it = stats.netThroughputByInterface.find(std::string(networkInterface));
+          it != stats.netThroughputByInterface.end()) {
+        return it->second.rxBytesPerSec;
+      }
+      return 0.0;
+    }();
+    tempMax = std::max(tempMax, value);
+    return tempMax > 0.0 ? std::clamp(value / tempMax, 0.0, 1.0) : 0.0;
+  }
 
-  case DesktopSysmonStat::NetTx:
-    tempMax = std::max(tempMax, stats.netTxBytesPerSec);
-    return tempMax > 0.0 ? std::clamp(stats.netTxBytesPerSec / tempMax, 0.0, 1.0) : 0.0;
+  case DesktopSysmonStat::NetTx: {
+    const double value = networkInterface.empty() ? stats.netTxBytesPerSec : [&stats, networkInterface]() {
+      if (const auto it = stats.netThroughputByInterface.find(std::string(networkInterface));
+          it != stats.netThroughputByInterface.end()) {
+        return it->second.txBytesPerSec;
+      }
+      return 0.0;
+    }();
+    tempMax = std::max(tempMax, value);
+    return tempMax > 0.0 ? std::clamp(value / tempMax, 0.0, 1.0) : 0.0;
+  }
   }
 
   return 0.0;
@@ -371,22 +389,22 @@ std::string DesktopSysmonWidget::formatValueFor(DesktopSysmonStat stat) const {
     return "--";
 
   case DesktopSysmonStat::NetRx:
-    return FormatUnits::formatDecimalBytesPerSecond(stats.netRxBytesPerSec);
+    return FormatUnits::formatDecimalBytesPerSecond(m_monitor->netRxBytesPerSec(m_networkInterface));
 
   case DesktopSysmonStat::NetTx:
-    return FormatUnits::formatDecimalBytesPerSecond(stats.netTxBytesPerSec);
+    return FormatUnits::formatDecimalBytesPerSecond(m_monitor->netTxBytesPerSec(m_networkInterface));
   }
 
   return "--";
 }
 
 void DesktopSysmonWidget::clearGraph() {
-  if (m_graphNode == nullptr || !m_graphInitialized) {
+  if (m_graph == nullptr || !m_graphInitialized) {
     return;
   }
 
-  m_graphNode->setCount1(0.0f);
-  m_graphNode->setCount2(0.0f);
+  m_graph->setValues({});
+  m_graph->setValues2({});
   m_graphInitialized = false;
   m_lastSampleAt = {};
   m_scrollProgress = 1.0f;
@@ -394,7 +412,7 @@ void DesktopSysmonWidget::clearGraph() {
 }
 
 void DesktopSysmonWidget::updateGraph(Renderer& renderer) {
-  if (m_graphNode == nullptr || m_monitor == nullptr || !m_monitor->isRunning()) {
+  if (m_graph == nullptr || m_monitor == nullptr || !m_monitor->isRunning()) {
     return;
   }
 
@@ -410,43 +428,29 @@ void DesktopSysmonWidget::updateGraph(Renderer& renderer) {
   }
 
   const auto n = hist.size();
-  const int texSize = static_cast<int>(n + 1U);
-  const auto last = n;
-  const auto prev = n - 1U;
-  const auto prev2 = n - 2U;
-
-  std::vector<float> data1(n + 1U);
+  std::vector<float> data1(n);
   for (std::size_t i = 0; i < n; ++i) {
-    data1[i] = static_cast<float>(std::clamp(normalizedFromStats(m_stat, hist[i], m_tempMin1, m_tempMax1), 0.0, 1.0));
+    data1[i] = static_cast<float>(
+        std::clamp(normalizedFromStats(m_stat, hist[i], m_tempMin1, m_tempMax1, m_networkInterface), 0.0, 1.0)
+    );
   }
-  const float last1 = data1[prev];
-  const float prev1 = data1[prev2];
-  data1[last] = std::clamp(last1 + (last1 - prev1) * 0.5f, 0.0f, 1.0f);
+  m_graph->setValues(std::move(data1));
 
   if (m_stat2.has_value()) {
-    std::vector<float> data2(n + 1U);
+    std::vector<float> data2(n);
     for (std::size_t i = 0; i < n; ++i) {
-      data2[i] =
-          static_cast<float>(std::clamp(normalizedFromStats(*m_stat2, hist[i], m_tempMin2, m_tempMax2), 0.0, 1.0));
+      data2[i] = static_cast<float>(
+          std::clamp(normalizedFromStats(*m_stat2, hist[i], m_tempMin2, m_tempMax2, m_networkInterface), 0.0, 1.0)
+      );
     }
-    const float last2 = data2[prev];
-    const float previous2 = data2[prev2];
-    data2[last] = std::clamp(last2 + (last2 - previous2) * 0.5f, 0.0f, 1.0f);
-
-    m_graphNode->setData(renderer.textureManager(), data1.data(), texSize, data2.data(), texSize);
-    m_graphNode->setCount2(static_cast<float>(n));
-  } else {
-    m_graphNode->setData(renderer.textureManager(), data1.data(), texSize, nullptr, 0);
+    m_graph->setValues2(std::move(data2));
   }
 
-  m_graphNode->setCount1(static_cast<float>(n));
+  m_graph->sync(renderer);
   m_graphInitialized = true;
   m_lastSampleAt = latestSampleAt;
   m_scrollProgress = scrollProgressForSample(m_lastSampleAt);
-  m_graphNode->setScroll1(m_scrollProgress);
-  if (m_stat2.has_value()) {
-    m_graphNode->setScroll2(m_scrollProgress);
-  }
+  m_graph->setScroll(m_scrollProgress);
   requestRedraw();
 }
 

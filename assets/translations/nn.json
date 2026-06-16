@@ -246,7 +246,6 @@
       },
       "notification": "Ikkje uroa",
       "power-profile": "Straum",
-      "screen-recorder": "Opptakar",
       "screen-time": "Skjermtid",
       "session": "Øykt",
       "system": "System",
@@ -262,6 +261,9 @@
         "network": "Nettverk",
         "resources": "Ressursar",
         "system": "System"
+      },
+      "tooltips": {
+        "load": "Lastesnitt over 1 / 5 / 15 minutt"
       },
       "unknown": "ukjent",
       "uptime-prefix": "Opp {uptime} · {osAge}"
@@ -525,13 +527,13 @@
       "battery-low-body": "{device}: {percent} % att",
       "battery-low-title": "Lågt batteri",
       "calendar": "Kalender",
-      "calendar-google-connect-browser-failed": "Ingen nettlesaropnar kunne opna for å køyra Google-sanning. Sjå over standardlesaren eller oppsettet for xdg-open.",
+      "calendar-google-connect-browser-failed": "Ingen nettlesaropnar kunne opna for å køyra Google-sanning. Sjå etter standardlesaren eller oppsettet for xdg-open.",
       "calendar-google-connect-expired": "Google-sanning gjekk ut før innskrivinga var ferdig. Du må byrja koplinga å nyo.",
       "calendar-google-connect-failed-title": "Kunne ikkje kopla til Google Calendar",
       "calendar-google-connect-missing-account": "Ingen tilmåta Google Calendar-konto svara til \"{account}\".",
       "calendar-google-connect-rate-limited": "Google-sanning har mellombels lastgrense. Bia litt, og prøv att.",
       "calendar-google-connect-result-failed": "Vann ikkje verta ferdig med Google-sanning. Du må byrja koplinga å nyo.",
-      "calendar-google-connect-start-failed": "Kunne ikkje byrja Google-sanninga. Sjå over nettverktilkoplinga og prøv å nyo.",
+      "calendar-google-connect-start-failed": "Kunne ikkje byrja Google-sanninga. Sjå etter nettverktilkoplinga og prøv å nyo.",
       "calendar-google-connect-start-http": "Kunne ikkje byrja Google-sanninga. OAuth-handsamaren svara med HTTP {status}.",
       "calendar-google-connect-timeout": "Google-sanning gjekk ut. Byrja koplinga å nyo når du vil skriva deg inn.",
       "dbus-disabled": "DBus-varsel avslegne",
@@ -542,7 +544,7 @@
       "keybind-app": "Noctalia",
       "keybind-invalid-modifier": "Snarvegen godtek éin knapp utan hjelpeknappar.",
       "keybind-invalid-printable": "Skrivande knappar (bokstavar, tal, teikn) krev ein hjelpeknapp som Ctrl eller Alt.",
-      "keybind-invalid-super": "Du kan ikkje bruka Superknappen/Windowsknappen i shell-snarvegar.",
+      "keybind-invalid-super": "Du kan ikkje bruka Superknappen/Windowsknappen i skalsnarvegar.",
       "keybind-invalid-title": "Snarveg ikkje tillaten.",
       "lockscreen-widgets-editor": "Låseskjermnøytelbrigdar",
       "lockscreen-widgets-editor-blocked-locked": "Lås opp øykta før du brigdar på låseskjermnøytlar.",
@@ -634,7 +636,7 @@
       "delete-error": "Kunne ikkje sletta kalenderkonto",
       "edit-title": "Endra på kalenderkonto",
       "id-label": "Konto-ID",
-      "invalid": "Sjå over dei merkte felta for kalenderkontoen",
+      "invalid": "Sjå etter dei merkte felta for kalenderkontoen",
       "name-label": "Visingsnamn",
       "name-placeholder": "Personleg kalender",
       "password-keep-placeholder": "Haldt tomt for å halda fram med same passord",
@@ -859,7 +861,565 @@
         "control-center": "Styrerom",
         "directories": "Mapper",
         "effects": "Verknader",
-        "filtering": "Søkjevilkår"
+        "filtering": "Søkjevilkår",
+        "focus-styling": "Åtgaumstil",
+        "formats": "Format",
+        "general": "Ålmenn",
+        "grouping": "Gruppering",
+        "home": "Heim",
+        "idle": "Inaktiv",
+        "interface": "Grensesnitt",
+        "keybinds": "Snarvegar",
+        "kinds": "Slag",
+        "launcher": "Veljar",
+        "layout": "Oppsett",
+        "lifecycle": "Livslaup",
+        "location": "Stad",
+        "lock-screen": "Låseskjerm",
+        "media": "Media",
+        "monitor": "Systemvakt",
+        "monitor-polling": "Spørjingsmellomrom",
+        "monitor-thresholds": "Merketreskel",
+        "monitors": "Skjermar",
+        "motion": "Rørsle",
+        "network": "Nettverk",
+        "night-light": "Natteljos",
+        "notifications": "Varsel",
+        "osd": "Skjervising",
+        "overview": "Oversyn",
+        "pinned-apps": "Feste appar",
+        "power": "Straum",
+        "privacy-security": "Personvern og tryggleik",
+        "profile": "Profil",
+        "screen-corners": "Skjermhyrno",
+        "screen-time": "Skjermtid",
+        "screenshot": "Skjermbilete",
+        "security": "Tryggleik",
+        "session-panel": "Øykt",
+        "shape": "Form",
+        "system": "System",
+        "theme": "Ham",
+        "toasts": "Skjermvarsel",
+        "transition": "Overgang",
+        "user": "Brukar",
+        "wallpaper": "Bakgrunnsbilete",
+        "weather": "Vêr",
+        "widget-list": "Nøytelliste",
+        "widgets": "Nøytlar"
+      },
+      "sections": {
+        "appearance": "Utsjånad",
+        "backdrop": "Bakgrunn",
+        "bar": "Stong",
+        "desktop": "Skrivebord",
+        "dock": "Festepunkt",
+        "hooks": "Krokar",
+        "location": "Stad",
+        "niri": "Niri",
+        "notifications": "Varsel",
+        "osd": "Skjermvising",
+        "panels": "Fjøler",
+        "plugins": "Plugins",
+        "popups": "Sprettoppar",
+        "power": "Straum",
+        "security": "Tryggleik",
+        "services": "Tenester",
+        "shell": "Skal",
+        "system": "System",
+        "templates": "Malar",
+        "wallpaper": "Bakgrunnsbilete"
+      }
+    },
+    "options": {
+      "clipboard": {
+        "auto-paste": {
+          "ctrl-shift-v": "Ctrl+Shift+V",
+          "ctrl-v": "Ctrl+V",
+          "shift-insert": "Shift+Insert"
+        }
+      },
+      "control-center": {
+        "sidebar": {
+          "compact": "Tett",
+          "full": "Full",
+          "none": "Ingen"
+        }
+      },
+      "dock-launcher-position": {
+        "end": "Ende",
+        "none": "Ingen",
+        "start": "Byrjing"
+      },
+      "edge": {
+        "bottom": "Botn",
+        "left": "Venstre",
+        "right": "Høgre",
+        "top": "Topp"
+      },
+      "font-weight": {
+        "bold": "Feit",
+        "book": "Bok",
+        "default": "Vanleg (stong)",
+        "heavy": "Tung",
+        "light": "Lett",
+        "medium": "Medels",
+        "regular": "Vanleg",
+        "semi-bold": "Halvfeit",
+        "semi-light": "Halvlett",
+        "thin": "Tunn",
+        "ultra-bold": "Svært feit",
+        "ultra-heavy": "Svært tung",
+        "ultra-light": "Svært lett"
+      },
+      "layer": {
+        "overlay": "Overlag",
+        "top": "Topp"
+      },
+      "notification-urgency": {
+        "critical": "Kritisk",
+        "low": "Låg",
+        "normal": "Vanleg"
+      },
+      "orientation": {
+        "horizontal": "Vassrett",
+        "vertical": "Loddrett"
+      },
+      "screen-position": {
+        "bottom-center": "Botn i midten",
+        "bottom-left": "Botn venstre",
+        "bottom-right": "Botn høgre",
+        "center-left": "I midten venstre",
+        "center-right": "I midten høgre",
+        "top-center": "Topp i midten",
+        "top-left": "Topp venstre",
+        "top-right": "Topp høgre"
+      },
+      "shell": {
+        "panel-placement": {
+          "attached": "Bunden",
+          "centered": "I midten",
+          "floating": "Svivande"
+        },
+        "panel-transparency": {
+          "glass": "Glas",
+          "soft": "Mjuk",
+          "solid": "Hard"
+        },
+        "password-style": {
+          "filled-circles": "Fylte ringar",
+          "random-icons": "Vilkårlege merke"
+        },
+        "shadow-direction": {
+          "center": "I midten",
+          "down": "Ned",
+          "down-left": "Ned venstre",
+          "down-right": "Ned høgre",
+          "left": "Venstre",
+          "right": "Høgre",
+          "up": "Opp",
+          "up-left": "Opp venstre",
+          "up-right": "Opp høgre"
+        }
+      },
+      "theme": {
+        "mode": {
+          "dark": "Mørk",
+          "light": "Ljos"
+        },
+        "source": {
+          "built-in": "Innebygd",
+          "community": "Samfunn",
+          "custom": "Sjølvvald",
+          "wallpaper": "Bakgrunnsbilete"
+        }
+      },
+      "theme-role": {
+        "custom": "Sjølvvald ...",
+        "default": "Vanleg"
+      },
+      "wallpaper": {
+        "fill": {
+          "center": "I midten",
+          "crop": "Skjer av",
+          "fit": "Høve",
+          "repeat": "Tile",
+          "stretch": "Strekk"
+        },
+        "order": {
+          "alphabetical": "Alfabetisk",
+          "random": "Vilkårleg"
+        },
+        "transition": {
+          "disc": "Skive",
+          "fade": "Folna",
+          "honeycomb": "Biekube",
+          "stripes": "Render",
+          "wipe": "Sveip",
+          "zoom": "Zoom"
+        }
+      },
+      "weather": {
+        "unit": {
+          "imperial": "Britisk",
+          "metric": "Metrisk"
+        }
+      }
+    },
+    "plugins": {
+      "plugins": {
+        "configure": "Måta til",
+        "deprecated": "utgått",
+        "empty": "Fann ingen plugins. Legg til brunn, eller sjå etter nettverket.",
+        "loading": "Lastar inn plugins ...",
+        "refreshing": "Lastar inn plugins å nyo ...",
+        "requires-newer-noctalia": "krev nyare Noctalia",
+        "title": "Plugins"
+      },
+      "settings": {
+        "empty": "Ingen innstillingar tilgjengelege"
+      },
+      "sources": {
+        "add": "Legg til brunn",
+        "add-title": "Legg til pluginbrunn",
+        "empty": "Ingen brunnar tilmåta.",
+        "errors": {
+          "duplicate-name": "Ein brunn med denne ID finst alt.",
+          "invalid-name": "Brunn-ID må bruka bokstavar, tal, '.', '_' eller '-', og byrja med bokstav eller tal.",
+          "location-required": "Brunnstad er påkravd."
+        },
+        "kind": {
+          "git": "Git",
+          "path": "Spor"
+        },
+        "kind-label": "Slag",
+        "location-label": "Stad",
+        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
+        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "name-label": "Brunn-ID",
+        "name-placeholder": "plugins-mine",
+        "remove": "Sletta brunn",
+        "title": "Brunnar",
+        "update": "Oppdater",
+        "update-on-startup": "Oppdater når skalet byrjar"
+      }
+    },
+    "schema": {
+      "appearance": {
+        "animation-speed": {
+          "description": "Multiplikator for animasjonsfart",
+          "label": "Animasjonsfart"
+        },
+        "animations": {
+          "description": "Slå på eller av animasjonar i grensesnittet",
+          "label": "Animasjonar"
+        },
+        "app-icon-color": {
+          "description": "Palettlet brukt for å leta appmerke",
+          "label": "Appmerkelet"
+        },
+        "app-icon-colorize": {
+          "description": "Leta applikasjonsmerke gjenom heile skalet for å samsvara paletten",
+          "label": "Leta appmerke"
+        },
+        "builtin-palette": {
+          "description": "Vel ein palett frå den innebygde katalogen",
+          "label": "Innebygd palett"
+        },
+        "community-palette": {
+          "description": "Vel ein palett frå samfunnskatalogen",
+          "label": "Samfunnspalett",
+          "search-placeholder": "Leita i palettar ..."
+        },
+        "corner-roundness": {
+          "description": "Høva inn hyrneradius gjennom alle ilåta og styringar i skalgrensesnittet",
+          "label": "Rundingsgrad på hyrno"
+        },
+        "custom-palette": {
+          "description": "Vel ein palett frå ~/.config/noctalia/palettes/",
+          "label": "Sjølvvald palett",
+          "search-placeholder": "Leita i sjølvvalde palettar ..."
+        },
+        "export-wallpaper-palette": {
+          "button": "Lagra som sjølvvald palett",
+          "description": "Lagra paletten som vart laga av bakgrunnsbiletet som ei sjølvvald palettfil ein kan bruka att",
+          "label": "Før ut bakgrunnspalett"
+        },
+        "font-family": {
+          "description": "Skrifttype for skalgrensesnittet",
+          "label": "Skrifttype"
+        },
+        "global-shadow-alpha": {
+          "description": "Skuggeuklårleik på alle flater"
+        },
+        "global-shadow-direction": {
+          "description": "Retninga skuggen kjem frå flater"
+        },
+        "language": {
+          "description": "Overstyr automatisk lokale",
+          "label": "Mål"
+        },
+        "palette-source": {
+          "description": "Kvar Noctalia skal taka letpaletten frå",
+          "label": "Palettbrunn"
+        },
+        "theme-mode": {
+          "description": "Vel mørk, ljos eller automatisk alt etter tida",
+          "label": "Hammodus"
+        },
+        "ui-scale": {
+          "description": "Gjera heile grensesnittet større eller mindre",
+          "label": "Grensesnittskala"
+        },
+        "wallpaper-generation-scheme": {
+          "description": "Vel korleis letene i bakgrunnsbiletet utgjer ein palett",
+          "label": "Palettskipingsmåte"
+        }
+      },
+      "backdrop": {
+        "blur-intensity": {
+          "description": "Viskingstyrke på bakgrunnen",
+          "label": "Viskingstyrke"
+        },
+        "enabled": {
+          "description": "Slå på bakgrunnen"
+        },
+        "tint-intensity": {
+          "description": "Kulørstyrke på bakgrunnen",
+          "label": "Kulørstyrke"
+        }
+      },
+      "bar": {
+        "auto-hide": {
+          "description": "Gøymer stonga automatisk når ho ikkje er i bruk"
+        },
+        "background-opacity": {
+          "description": "Bakgrunnsuklårleik til stonga"
+        },
+        "border": {
+          "description": "Leten for stongomritet; hex-leter er stødde òg.",
+          "label": "Omrit"
+        },
+        "border-width": {
+          "description": "Indre omritsbreidde til stonga",
+          "label": "Omritsbreidde"
+        },
+        "capsule-border": {
+          "description": "Standardlet for pilleomrit; hex-leter er stødde òg.",
+          "label": "Pilleomrit"
+        },
+        "capsule-fill": {
+          "description": "Standardlet for bakgrunnen; hex-leter er stødde òg.",
+          "label": "Pillefyll"
+        },
+        "capsule-foreground": {
+          "description": "Standardlet for merke og etikett i piller; hex-leter er stødde òg.",
+          "label": "Pilleframgrunn"
+        },
+        "capsule-opacity": {
+          "description": "Uklårleik for nøytelpillebakgrunnar",
+          "label": "Pilleuklårleik"
+        },
+        "capsule-padding": {
+          "description": "Utfylling i nøytelpiller",
+          "label": "Pilleutfylling"
+        },
+        "capsule-radius": {
+          "description": "Standard hyrneradius for nøytelpiller, arbeidsrompiller og arbeidsgrupper på oppgåvelina; haldt tomt for automatisk pilleform, eller set 0 for rette hyrno",
+          "label": "Pilleradius"
+        },
+        "center-widgets": {
+          "description": "Nøytlar midt i stonga",
+          "label": "Nøytlar i midten"
+        },
+        "contact-shadow": {
+          "description": "Mørk letgradient mellom ei bunden fjøl og stonga for å ymta på djupn i saumen"
+        },
+        "content-padding": {
+          "description": "Utfylling i innhaldsområdet på stonga",
+          "label": "Innhaldsutfylling"
+        },
+        "content-scale": {
+          "description": "Storleikstilhøve for stonginnhald",
+          "label": "Innhaldsskala"
+        },
+        "corner-bottom-left": {
+          "description": "Hyrneradius botn venstre på stonga"
+        },
+        "corner-bottom-right": {
+          "description": "Hyrneradius botn høgre på stonga"
+        },
+        "corner-radius": {
+          "description": "Hyrneradius på stonga"
+        },
+        "corner-top-left": {
+          "description": "Hyrneradius topp venstre på stonga"
+        },
+        "corner-top-right": {
+          "description": "Hyrneradius topp høgre på stonga"
+        },
+        "edge-margin": {
+          "description": "Avstand frå nærmaste skjermrand; positive tal flyttar stonga bort frå henne"
+        },
+        "enabled": {
+          "description": "Vis eller gøym denne stonga"
+        },
+        "end-widgets": {
+          "description": "Nøytlar på enden (høgre / botn) av stonga",
+          "label": "Endenøytlar"
+        },
+        "ends-margin": {
+          "description": "Innsett frå kvar ende av stonga med midtlina."
+        },
+        "font-weight": {
+          "description": "Standardvekt for nøyteletikettar på denne stonga.",
+          "label": "Skriftvekt"
+        },
+        "layer": {
+          "description": "Bruk Overlag for å visa stonga over appar i fullskjerm. Bundne fjøler fylgjer stonga.",
+          "label": "Wayland-lag"
+        },
+        "panel-overlap": {
+          "description": "Kor mykje ei bunden fjøl går inn over stongranda for å gøyma saumen, i piksel (måta til om du ser ei lina eller eit gap)",
+          "label": "Paneloverlapp"
+        },
+        "position": {
+          "description": "Kva for skjerm stonga sit på"
+        },
+        "reserve-space": {
+          "description": "Skyv ruter bort frå stongranda"
+        },
+        "shadow": {
+          "description": "Kasta den ålmenne flateskuggen frå stonga"
+        },
+        "start-widgets": {
+          "description": "Nøytlar på byrjinga (venstre / topp) av stonga",
+          "label": "Byrjingsnøytlar"
+        },
+        "thickness": {
+          "description": "Stongtjukn i piksel",
+          "label": "Tjukn"
+        },
+        "widget-capsules": {
+          "description": "Gjev nøytlar pillebakgrunnar",
+          "label": "Nøytelpiller"
+        },
+        "widget-color": {
+          "description": "Standardlet for merke og etikett til nøytlar på denne stonga; hex-leter er stødde òg.",
+          "label": "Nøytellet"
+        },
+        "widget-icon-color": {
+          "description": "Overstyrer nøytelleten for merke på denne stonga; hex-leter er stødde òg",
+          "label": "Nøytelmerkelet"
+        },
+        "widget-spacing": {
+          "description": "Rom mellom stongnøytlar",
+          "label": "Nøytelmellomrom"
+        }
+      },
+      "desktop": {
+        "screen-corners-enabled": {
+          "description": "Runda av skjermhyrno med eit svart overlag",
+          "label": "Skjermhyrno"
+        },
+        "screen-corners-size": {
+          "description": "Radius åt dei avrunda skjermhyrno i piksel",
+          "label": "Hyrnestorleik"
+        },
+        "widgets": {
+          "description": "Vis nøytlar på skrivebordet",
+          "label": "Skrivebordsnøytlar"
+        },
+        "widgets-editor": {
+          "button": "Slå av / på brigdaren",
+          "description": "Legg til, flytta og høva til skrivebordsnøytlar",
+          "label": "Nøytelbrigdar"
+        }
+      },
+      "dock": {
+        "active-icon-opacity": {
+          "description": "Uklårleik for festepunktsmerket med åtgaum",
+          "label": "Aktiv merkeuklårleik"
+        },
+        "active-icon-scale": {
+          "description": "Storleik for festepunktsmerket med åtgaum",
+          "label": "Aktiv merkeskala"
+        },
+        "active-monitor-only": {
+          "description": "Vis berre applikasjonar som køyrer på den aktive skjermen",
+          "label": "Berre den aktive skjermen"
+        },
+        "auto-hide": {
+          "description": "Gøym festepunktet automatisk når det ikkje er i bruk"
+        },
+        "background-opacity": {
+          "description": "Bakgrunnsuklårleik til festepunktet"
+        },
+        "corner-bottom-left": {
+          "description": "Hyrneradius botn venstre på festepunktet"
+        },
+        "corner-bottom-right": {
+          "description": "Hyrneradius botn høgre på festepunktet"
+        },
+        "corner-radius": {
+          "description": "Hyrneradius på festepunktet"
+        },
+        "corner-top-left": {
+          "description": "Hyrneradius topp venstre på festepunktet"
+        },
+        "corner-top-right": {
+          "description": "Hyrneradius topp høgre på festepunktet"
+        },
+        "cross-axis-padding": {
+          "description": "Indre utfylling med krossaksen på festepunktet (mellom merke om skjermranda)"
+        },
+        "edge-margin": {
+          "description": "Avstand frå nærmaste skjermrand; positive tal flyttar festepunktet bort frå henne"
+        },
+        "enabled": {
+          "description": "Vis eller gøym festepunktet"
+        },
+        "ends-margin": {
+          "description": "Innsett frå kvar ende av festepunktet med midtlina."
+        },
+        "icon-size": {
+          "description": "Storleik på festepunktsmerke i piksel",
+          "label": "Merkestorleik"
+        },
+        "inactive-icon-opacity": {
+          "description": "Uklårleik for festepunktsmerke utan åtgaum"
+        },
+        "inactive-icon-scale": {
+          "description": "Storleik for festepunktsmerke utan åtgaum",
+          "label": "Inaktiv merkeskala"
+        },
+        "magnification-scale": {
+          "description": "Høgste aukemultiplikator for merke midt i peikaren (1.0 slår av auke)"
+        }
+      }
+    },
+    "widgets": {
+      "settings": {
+        "capsule-border": {
+          "description": "Leten for pilleomritet; hex-leter er stødde òg."
+        },
+        "capsule-fill": {
+          "description": "Leten for pillebakgrunnen; hex-leter er stødde òg."
+        },
+        "capsule-foreground": {
+          "description": "Leten for innhald i pilla; hex-leter er stødde òg."
+        },
+        "color": {
+          "description": "Leten for merke og etikett til denne nøytelen; hex-leter er stødde òg."
+        },
+        "empty-color": {
+          "description": "Leten for tome arbeidsrom; hex-leter er stødde òg."
+        },
+        "focused-color": {
+          "description": "Leten for arbeidsromet med åtgaum; hex-leter er stødde òg."
+        },
+        "occupied-color": {
+          "description": "Leten for arbeidsrom med ruter i; hex-leter er stødde òg."
+        }
       }
     }
   }

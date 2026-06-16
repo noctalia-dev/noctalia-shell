@@ -54,20 +54,7 @@ namespace {
     const float shift = scale > 1.0f ? iconSize * (1.0f - scale) * 0.5f : 0.0f;
     float x = baseX;
     float y = baseY;
-    switch (edge) {
-    case DockEdge::Bottom:
-      y += shift;
-      break;
-    case DockEdge::Top:
-      y -= shift;
-      break;
-    case DockEdge::Left:
-      x -= shift;
-      break;
-    case DockEdge::Right:
-      x += shift;
-      break;
-    }
+    shell::dock::shiftAlongEdge(edge, x, y, shift);
     iconNode->setPosition(x, y);
   }
 
@@ -81,20 +68,7 @@ namespace {
     const float shift = iconScale > 1.0f ? iconSize * (1.0f - iconScale) * 0.5f : 0.0f;
     float iconX = iconBaseX;
     float iconY = iconBaseY;
-    switch (edge) {
-    case DockEdge::Bottom:
-      iconY += shift;
-      break;
-    case DockEdge::Top:
-      iconY -= shift;
-      break;
-    case DockEdge::Left:
-      iconX -= shift;
-      break;
-    case DockEdge::Right:
-      iconX += shift;
-      break;
-    }
+    shell::dock::shiftAlongEdge(edge, iconX, iconY, shift);
     const float iconRight = iconX + iconSize * (1.0f + iconScale) * 0.5f;
     const float iconTop = iconY + iconSize * (1.0f - iconScale) * 0.5f;
     const float badgeCenterAdjust = badgeSize * (1.0f - iconScale) * 0.5f;
@@ -226,20 +200,7 @@ namespace {
     float iconX = iconBase;
     float iconY = iconBase;
     const float shift = iconSize * (1.0f - scale) * 0.5f;
-    switch (edge) {
-    case DockEdge::Bottom:
-      iconY += shift;
-      break;
-    case DockEdge::Top:
-      iconY -= shift;
-      break;
-    case DockEdge::Left:
-      iconX -= shift;
-      break;
-    case DockEdge::Right:
-      iconX += shift;
-      break;
-    }
+    shell::dock::shiftAlongEdge(edge, iconX, iconY, shift);
     const float left = iconX + centerAdjust;
     const float top = iconY + centerAdjust;
     const float visualSize = iconSize * scale;

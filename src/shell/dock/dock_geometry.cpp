@@ -37,6 +37,23 @@ namespace shell::dock {
 
   bool isVerticalEdge(DockEdge edge) { return edge == DockEdge::Left || edge == DockEdge::Right; }
 
+  void shiftAlongEdge(DockEdge edge, float& x, float& y, float amount) {
+    switch (edge) {
+    case DockEdge::Bottom:
+      y += amount;
+      break;
+    case DockEdge::Top:
+      y -= amount;
+      break;
+    case DockEdge::Left:
+      x -= amount;
+      break;
+    case DockEdge::Right:
+      x += amount;
+      break;
+    }
+  }
+
   std::int32_t dockContentSize(const DockConfig& cfg, std::size_t itemCount) {
     const auto n = static_cast<std::int32_t>(itemCount);
     const std::int32_t cellSize = cfg.iconSize + kCellPad * 2;

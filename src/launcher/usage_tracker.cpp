@@ -37,6 +37,13 @@ void UsageTracker::record(std::string_view providerId, std::string_view resultId
   save();
 }
 
+void UsageTracker::clear() {
+  m_counts.clear();
+  m_recentlyUsed.clear();
+  m_recentlyUsedIndex.clear();
+  save();
+}
+
 int UsageTracker::getCount(std::string_view providerId, std::string_view resultId) const {
   const auto provIt = m_counts.find(std::string(providerId));
   if (provIt == m_counts.end()) {

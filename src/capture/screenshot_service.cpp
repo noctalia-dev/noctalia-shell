@@ -14,6 +14,7 @@
 #include "render/core/image_encoder.h"
 #include "render/render_context.h"
 #include "shell/panel/panel_manager.h"
+#include "time/time_format.h"
 #include "util/file_utils.h"
 #include "util/string_utils.h"
 #include "wayland/clipboard_service.h"
@@ -27,7 +28,6 @@
 #include <csignal>
 #include <cstdlib>
 #include <cstring>
-#include <ctime>
 #include <fcntl.h>
 #include <filesystem>
 #include <fstream>
@@ -46,24 +46,11 @@ namespace {
 
   [[nodiscard]] std::string formatFilenameStem(std::string_view pattern, const std::string& labelBase, int suffix) {
     const auto now = std::chrono::system_clock::now();
-    const std::time_t t = std::chrono::system_clock::to_time_t(now);
-    std::tm local{};
-    localtime_r(&t, &local);
-
+    const auto unixSeconds = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
     const std::string resolvedPattern = pattern.empty() ? defaultFilenamePattern() : std::string(pattern);
-    std::string stem(64, '\0');
-    std::size_t written = 0;
-    while (written == 0) {
-      written = std::strftime(stem.data(), stem.size(), resolvedPattern.c_str(), &local);
-      if (written == 0) {
-        if (stem.size() >= 4096) {
-          stem = "screenshot";
-          break;
-        }
-        stem.resize(stem.size() * 2);
-      } else {
-        stem.resize(written);
-      }
+    std::string stem = formatLocalUnixTime(unixSeconds, resolvedPattern);
+    if (stem.empty()) {
+      stem = "screenshot";
     }
 
     if (suffix > 0) {

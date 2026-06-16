@@ -33,6 +33,7 @@ public:
   struct CatalogEntry {
     std::string_view type;
     std::string_view labelKey;
+    bool literalLabel = false; // when true, labelKey holds a literal display name, not an i18n key
   };
 
   [[nodiscard]] static std::span<const CatalogEntry> catalog();

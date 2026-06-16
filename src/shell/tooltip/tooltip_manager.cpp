@@ -177,6 +177,21 @@ void TooltipManager::initialize(WaylandConnection& wayland, RenderContext* rende
   m_renderContext = renderContext;
 }
 
+void TooltipManager::shutdown() {
+  m_showTimer.stop();
+  m_refreshTimer.stop();
+  m_pendingArea = nullptr;
+  m_reshowQueued = false;
+  m_retargetQueued = false;
+  m_destroyScheduled = false;
+  m_showAfterDestroy = false;
+  if (m_surface != nullptr) {
+    m_surface->setDismissedCallback(nullptr);
+    m_surface->setSceneRoot(nullptr);
+  }
+  destroyPopup();
+}
+
 void TooltipManager::onHoverChange(InputArea* area, zwlr_layer_surface_v1* parentLayerSurface, wl_output* output) {
   if (area != nullptr && area->hasTooltip() && parentLayerSurface != nullptr && output != nullptr) {
     m_pendingContent = area->tooltipContent();
@@ -222,14 +237,78 @@ void TooltipManager::handleHoverChange(InputArea* area) {
       refreshFromArea(area);
       break;
     }
-    destroyPopup();
-    showPopup();
+    if (canRetargetPopup()) {
+      scheduleRetargetPopup();
+    } else {
+      scheduleReshow();
+    }
     break;
   case State::FadingOut:
-    destroyPopup();
-    showPopup();
+    if (canRetargetPopup()) {
+      scheduleRetargetPopup();
+    } else {
+      scheduleReshow();
+    }
     break;
   }
+}
+
+bool TooltipManager::canRetargetPopup() const {
+  return m_surface != nullptr
+      && m_activeLayerParent == m_pendingLayerParent
+      && m_activeXdgParent == m_pendingXdgParent
+      && m_activeOutput == m_pendingOutput;
+}
+
+void TooltipManager::scheduleRetargetPopup() {
+  if (m_retargetQueued) {
+    return;
+  }
+  m_retargetQueued = true;
+  DeferredCall::callLater([this] {
+    m_retargetQueued = false;
+    if (m_pendingArea == nullptr) {
+      return;
+    }
+    if (m_surface == nullptr) {
+      showPopup();
+      return;
+    }
+    if (m_fadeAnimId != 0) {
+      m_animations.cancel(m_fadeAnimId);
+      m_fadeAnimId = 0;
+    }
+    if (m_state == State::FadingOut) {
+      m_state = State::Showing;
+    }
+    refreshPopupContent();
+    scheduleProviderRefresh();
+  });
+}
+
+void TooltipManager::scheduleReshow() {
+  if (m_reshowQueued) {
+    return;
+  }
+  m_reshowQueued = true;
+  // Hover changes are delivered during pointer-event dispatch, so rebuilding now would
+  // re-enter the Wayland event loop while a pointer event is still on the stack.
+  // Defer to the next main-loop tick. m_pendingArea is cleared when the hover target
+  // is lost or destroyed, so a non-null value here is a live area.
+  DeferredCall::callLater([this] {
+    m_reshowQueued = false;
+    if (m_pendingArea == nullptr) {
+      return;
+    }
+    if (m_surface == nullptr && m_state == State::Idle) {
+      showPopup();
+      return;
+    }
+    // Layer-shell allows only one popup per surface; let the compositor finish
+    // tearing down the old popup before zwlr_layer_surface_v1_get_popup runs again.
+    m_showAfterDestroy = true;
+    scheduleDestroyPopup();
+  });
 }
 
 void TooltipManager::syncAnchor(InputArea* area) {
@@ -253,6 +332,12 @@ void TooltipManager::showPopup() {
     return;
   }
 
+  if (m_surface != nullptr) {
+    m_showAfterDestroy = true;
+    scheduleDestroyPopup();
+    return;
+  }
+
   m_pendingContent = m_pendingArea->tooltipContent();
   const auto [contentW, contentH] = measureContent(m_pendingContent);
   if (contentW == 0 || contentH == 0) {
@@ -267,13 +352,7 @@ void TooltipManager::showPopup() {
 
   m_surface = std::make_unique<PopupSurface>(*m_wayland);
   m_surface->setRenderContext(m_renderContext);
-  m_surface->setDismissedCallback([this] {
-    m_animations.cancelAll();
-    m_fadeAnimId = 0;
-    m_sceneRoot.reset();
-    m_surface.reset();
-    m_state = State::Idle;
-  });
+  m_surface->setDismissedCallback([this] { scheduleDestroyPopup(); });
 
   const bool initialized = m_pendingXdgParent != nullptr
       ? m_surface->initializeAsChild(m_pendingXdgParent, m_pendingOutput, config)
@@ -307,12 +386,21 @@ void TooltipManager::showPopup() {
   });
 
   m_state = State::Showing;
+  m_activeLayerParent = m_pendingLayerParent;
+  m_activeXdgParent = m_pendingXdgParent;
+  m_activeOutput = m_pendingOutput;
   scheduleProviderRefresh();
   m_surface->requestUpdate();
 }
 
 void TooltipManager::dismissPopup() {
   m_refreshTimer.stop();
+  m_reshowQueued = false;
+  m_retargetQueued = false;
+  m_showAfterDestroy = false;
+  // The hover target is gone (pointer left, area lost its tooltip, or the area was
+  // destroyed). Clear it so a deferred reshow does not dereference a stale area.
+  m_pendingArea = nullptr;
   switch (m_state) {
   case State::Pending:
     m_showTimer.stop();
@@ -320,7 +408,7 @@ void TooltipManager::dismissPopup() {
     break;
   case State::Showing:
     if (m_sceneRoot == nullptr || m_surface == nullptr) {
-      destroyPopup();
+      scheduleDestroyPopup();
       return;
     }
     m_state = State::FadingOut;
@@ -337,7 +425,7 @@ void TooltipManager::dismissPopup() {
         },
         [this] {
           m_fadeAnimId = 0;
-          DeferredCall::callLater([this] { destroyPopup(); });
+          scheduleDestroyPopup();
         },
         this
     );
@@ -351,13 +439,44 @@ void TooltipManager::dismissPopup() {
   }
 }
 
+void TooltipManager::scheduleDestroyPopup() {
+  if (m_destroyScheduled) {
+    return;
+  }
+  if (m_state == State::Idle && m_surface == nullptr) {
+    return;
+  }
+  m_destroyScheduled = true;
+  DeferredCall::callLater([this] {
+    m_destroyScheduled = false;
+    destroyPopup();
+    if (!m_showAfterDestroy || m_pendingArea == nullptr) {
+      m_showAfterDestroy = false;
+      return;
+    }
+    m_showAfterDestroy = false;
+    DeferredCall::callLater([this] {
+      if (m_pendingArea != nullptr) {
+        showPopup();
+      }
+    });
+  });
+}
+
 void TooltipManager::destroyPopup() {
   m_refreshTimer.stop();
   m_animations.cancelAll();
   m_fadeAnimId = 0;
   m_paletteConn = {};
   m_sceneRoot.reset();
+  if (m_surface != nullptr) {
+    m_surface->setDismissedCallback(nullptr);
+    m_surface->setSceneRoot(nullptr);
+  }
   m_surface.reset();
+  m_activeLayerParent = nullptr;
+  m_activeXdgParent = nullptr;
+  m_activeOutput = nullptr;
   m_state = State::Idle;
 }
 

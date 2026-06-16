@@ -3,6 +3,7 @@
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "scripting/plugin_registry.h"
+#include "shell/settings/font_family_catalog.h"
 #include "shell/settings/font_weight_catalog.h"
 #include "shell/settings/font_weight_i18n.h"
 #include "ui/style.h"
@@ -71,6 +72,7 @@ namespace settings {
         {.type = "nightlight", .labelKey = "settings.widgets.types.nightlight", .glyph = "nightlight-off"},
         {.type = "notifications", .labelKey = "settings.widgets.types.notifications", .glyph = "bell"},
         {.type = "power_profile", .labelKey = "settings.widgets.types.power-profile", .glyph = "balanced"},
+        {.type = "privacy", .labelKey = "settings.widgets.types.privacy", .glyph = "shield-lock"},
         {.type = "screenshot", .labelKey = "settings.widgets.types.screenshot", .glyph = "screenshot"},
         {.type = "session", .labelKey = "settings.widgets.types.session", .glyph = "shutdown"},
         {.type = "settings", .labelKey = "settings.widgets.types.settings", .glyph = "settings"},
@@ -135,7 +137,13 @@ namespace settings {
       if (type == "wallpaper") {
         return nonEmptyGlyph(config->getString("glyph", "wallpaper-selector"), "wallpaper-selector");
       }
+      if (type == "keyboard_layout") {
+        return nonEmptyGlyph(config->getString("glyph", "keyboard"), "keyboard");
+      }
       if (type == "sysmon") {
+        if (const std::string custom = config->getString("glyph", ""); !custom.empty()) {
+          return custom;
+        }
         const std::string stat = config->getString("stat", "cpu_usage");
         if (stat == "cpu_temp") {
           return "cpu-temperature";
@@ -529,6 +537,14 @@ namespace settings {
         withGroup(selectSpec("font_weight", "", std::move(fontWeightOptions), true), WidgetSettingGroup::Presentation);
     fontWeight.integerValue = true;
 
+    // Font picker rendered as a filterable search picker but validated as a free string: a font configured
+    // elsewhere but absent here must still load. Empty value = inherit the bar/shell font.
+    auto fontFamily = baseSpec("font_family", WidgetControlKind::Select, std::string{}, true);
+    fontFamily.schema.type = schema::WidgetSettingType::String;
+    fontFamily.options = buildFontFamilySelectOptions();
+    fontFamily.literalLabels = true;
+    fontFamily = withGroup(std::move(fontFamily), WidgetSettingGroup::Presentation);
+
     auto capsuleToggle = withGroup(boolSpec("capsule", false), WidgetSettingGroup::Presentation);
     auto capsuleFill = withGroup(colorSpec("capsule_fill", "", true), WidgetSettingGroup::Presentation);
     capsuleFill.visibleWhen = capsuleOn;
@@ -551,12 +567,10 @@ namespace settings {
     capsuleOpacity.visibleWhen = capsuleOn;
 
     return {
-        std::move(anchor),         std::move(scale),
-        std::move(widgetColor),    std::move(widgetIconColor),
-        std::move(fontWeight),     std::move(capsuleToggle),
-        std::move(capsuleRadius),  std::move(capsuleFill),
-        std::move(capsuleBorder),  std::move(capsuleForeground),
-        std::move(capsulePadding), std::move(capsuleOpacity),
+        std::move(anchor),         std::move(scale),         std::move(widgetColor),       std::move(widgetIconColor),
+        std::move(fontFamily),     std::move(fontWeight),    std::move(capsuleToggle),     std::move(capsuleRadius),
+        std::move(capsuleFill),    std::move(capsuleBorder), std::move(capsuleForeground), std::move(capsulePadding),
+        std::move(capsuleOpacity),
     };
   }
 
@@ -669,6 +683,11 @@ namespace settings {
       add(stringSpec("cycle_command"));
       add(boolSpec("hide_when_single_layout", false));
       add(boolSpec("show_icon", true));
+      {
+        auto glyph = glyphSpec("glyph", "keyboard");
+        glyph.visibleWhen = WidgetSettingVisibility{"show_icon", {"true"}};
+        add(std::move(glyph));
+      }
       add(boolSpec("show_label", true));
       {
         auto display = segmentedSpec("display", "short", shortFull);
@@ -704,15 +723,40 @@ namespace settings {
       add(boolSpec("hide_when_off", false));
       add(segmentedSpec("display", "short", shortFull));
     } else if (type == "media") {
-      add(intSpec("min_length", 80, 0.0, 800.0, 1.0));
-      add(intSpec("max_length", 220, 40.0, 800.0, 1.0));
+      const WidgetSettingVisibility notAlbumArtOnly{"album_art_only", {"false"}};
+      {
+        auto albumArtOnly = boolSpec("album_art_only", false);
+        albumArtOnly.horizontalBarOnly = true;
+        add(std::move(albumArtOnly));
+      }
+      {
+        auto minLength = intSpec("min_length", 80, 0.0, 800.0, 1.0);
+        minLength.visibleWhen = notAlbumArtOnly;
+        add(std::move(minLength));
+      }
+      {
+        auto maxLength = intSpec("max_length", 220, 40.0, 800.0, 1.0);
+        maxLength.visibleWhen = notAlbumArtOnly;
+        add(std::move(maxLength));
+      }
       add(doubleSpec("art_size", 16.0, 8.0, 96.0, 1.0));
-      add(selectSpec("title_scroll", "none", mediaTitleScroll));
+      {
+        auto titleScroll = selectSpec("title_scroll", "none", mediaTitleScroll);
+        titleScroll.visibleWhen = notAlbumArtOnly;
+        add(std::move(titleScroll));
+      }
       add(boolSpec("hide_when_no_media", false));
     } else if (type == "network") {
       add(boolSpec("show_label", true));
     } else if (type == "notifications") {
       add(boolSpec("hide_when_no_unread", false));
+    } else if (type == "privacy") {
+      add(boolSpec("hide_inactive", false));
+      add(intSpec("icon_spacing", 4, 0.0, 48.0, 1.0));
+      add(colorSpec("active_color", "primary"));
+      add(colorSpec("inactive_color", "outline"));
+      add(stringSpec("mic_filter_regex"));
+      add(stringSpec("cam_filter_regex"));
     } else if (type == "session") {
       add(glyphSpec("glyph", "shutdown"));
     } else if (type == "settings") {
@@ -722,9 +766,19 @@ namespace settings {
     } else if (type == "sysmon") {
       add(selectSpec("stat", "cpu_usage", sysmonStats));
       {
+        auto glyph = glyphSpec("glyph", "");
+        glyph.descriptionKey = "settings.widgets.settings.glyph.sysmon-description";
+        add(std::move(glyph));
+      }
+      {
         auto path = stringSpec("path", "/");
         path.visibleWhen = WidgetSettingVisibility{"stat", {"disk_pct"}};
         add(std::move(path));
+      }
+      {
+        auto interface = stringSpec("interface");
+        interface.visibleWhen = WidgetSettingVisibility{"stat", {"net_rx", "net_tx"}};
+        add(std::move(interface));
       }
       add(segmentedSpec("display", "gauge", sysmonDisplay));
       add(colorSpec("highlight_color", "error"));

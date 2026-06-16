@@ -9,6 +9,7 @@
 #include "ui/style.h"
 
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <memory>
 #include <utility>
@@ -183,9 +184,7 @@ void WallpaperTile::setThumbnailService(ThumbnailService* service) {
   m_thumbnails = service;
   if (m_hasEntry && !m_entry.isDir && m_thumbnails != nullptr) {
     m_thumbPath = m_entry.absPath.string();
-    if (!m_thumbPath.empty()) {
-      (void)m_thumbnails->acquire(m_thumbPath);
-    }
+    // Acquisition is deferred to refreshThumbnail once the display size is known.
   }
 }
 
@@ -367,9 +366,6 @@ void WallpaperTile::setEntry(const WallpaperEntry& entry, Renderer& renderer) {
     return;
   }
 
-  if (!m_thumbPath.empty()) {
-    (void)m_thumbnails->acquire(m_thumbPath);
-  }
   refreshThumbnail(renderer);
   applyVisualState();
   layoutThumbOverlays();
@@ -407,7 +403,22 @@ void WallpaperTile::refreshThumbnail(Renderer& renderer) {
     return;
   }
 
-  const TextureHandle handle = m_thumbnails->peek(m_thumbPath);
+  // Decode the thumbnail at the tile's physical display size so it stays crisp
+  // under ui_scale / fractional scaling instead of upscaling the 192px default.
+  const int targetPx = thumbnailTargetPx(renderer);
+  if (targetPx > 0 && targetPx != m_thumbTargetPx) {
+    if (m_thumbTargetPx > 0) {
+      m_thumbnails->release(m_thumbPath, m_thumbTargetPx);
+    }
+    (void)m_thumbnails->acquire(m_thumbPath, targetPx);
+    m_thumbTargetPx = targetPx;
+  }
+  if (m_thumbTargetPx <= 0) {
+    m_thumb->clear(renderer);
+    return;
+  }
+
+  const TextureHandle handle = m_thumbnails->peek(m_thumbPath, m_thumbTargetPx);
   if (handle.id != 0) {
     m_loadingThumbnail = false;
     m_thumb->setExternalTexture(renderer, handle);
@@ -426,10 +437,20 @@ void WallpaperTile::refreshThumbnail(Renderer& renderer) {
 }
 
 void WallpaperTile::releaseThumbnail() {
-  if (!m_thumbPath.empty() && m_thumbnails != nullptr) {
-    m_thumbnails->release(m_thumbPath);
+  if (!m_thumbPath.empty() && m_thumbnails != nullptr && m_thumbTargetPx > 0) {
+    m_thumbnails->release(m_thumbPath, m_thumbTargetPx);
   }
   m_thumbPath.clear();
+  m_thumbTargetPx = 0;
+}
+
+int WallpaperTile::thumbnailTargetPx(const Renderer& renderer) const {
+  const float scale = std::max(1.0f, renderer.renderScale());
+  const float basis = std::max(m_cellWidth, m_cellHeight);
+  if (basis <= 0.0f) {
+    return 0;
+  }
+  return static_cast<int>(std::lround(basis * scale));
 }
 
 void WallpaperTile::setSelected(bool selected) {

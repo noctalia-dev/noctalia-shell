@@ -57,7 +57,8 @@ namespace scripting {
       [[nodiscard]] std::string_view ipcEntryId() const override { return entryId; }
       [[nodiscard]] std::string_view ipcOutputName() const override { return {}; }
       [[nodiscard]] std::string_view ipcBarName() const override { return {}; }
-      [[nodiscard]] DispatchResult dispatchIpc(std::string_view event, std::string_view payload) override;
+      [[nodiscard]] DispatchResult
+      dispatchIpc(std::string_view event, std::string_view payload, const ScriptSnapshot& snapshot) override;
     };
 
     void armTimer(Service& service);

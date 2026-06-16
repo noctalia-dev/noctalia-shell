@@ -299,6 +299,33 @@ namespace settings {
     });
   }
 
+  std::unique_ptr<Node> SettingsControlFactory::makeSearchPicker(
+      const SearchPickerSetting& setting, std::string title, std::vector<std::string> path
+  ) {
+    auto& ctx = m_ctx;
+    const float scale = m_scale;
+    return ui::button({
+        .text = optionLabel(setting.options, setting.selectedValue),
+        .glyph = "search",
+        .fontSize = Style::fontSizeBody * scale,
+        .glyphSize = Style::fontSizeBody * scale,
+        .contentAlign = ButtonContentAlign::Start,
+        .variant = ButtonVariant::Outline,
+        .minWidth = 190.0f * scale,
+        .minHeight = Style::controlHeight * scale,
+        .paddingV = Style::spaceSm * scale,
+        .paddingH = Style::spaceMd * scale,
+        .radius = Style::scaledRadiusMd(scale),
+        .onClick = [openPopup = ctx.openSearchPickerPopup, title = std::move(title), options = setting.options,
+                    selectedValue = setting.selectedValue, placeholder = setting.placeholder,
+                    emptyText = setting.emptyText, path = std::move(path)]() {
+          if (openPopup) {
+            openPopup(title, options, selectedValue, placeholder, emptyText, path);
+          }
+        },
+    });
+  }
+
   std::unique_ptr<Flex> SettingsControlFactory::makeSlider(
       double value, double minValue, double maxValue, double step, std::vector<std::string> path, bool integerValue,
       std::function<std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>(double)> linkedCommit,
@@ -509,7 +536,7 @@ namespace settings {
     const float inputWidth = (width > 0.0f ? width : 190.0f) * scale;
     auto input = ui::input({
         .value = value,
-        .placeholder = placeholder.empty() ? i18n::tr("settings.controls.list.add-entry-placeholder") : placeholder,
+        .placeholder = placeholder,
         .fontSize = Style::fontSizeBody * scale,
         .controlHeight = Style::controlHeight * scale,
         .horizontalPadding = Style::spaceSm * scale,

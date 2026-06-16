@@ -42,6 +42,10 @@ namespace settings {
 
     [[nodiscard]] std::unique_ptr<Node> makeSelect(const SelectSetting& setting, std::vector<std::string> path);
 
+    // Filterable search-picker button (opens the search popup). `title` is the popup heading.
+    [[nodiscard]] std::unique_ptr<Node>
+    makeSearchPicker(const SearchPickerSetting& setting, std::string title, std::vector<std::string> path);
+
     [[nodiscard]] std::unique_ptr<Flex> makeSlider(
         double value, double minValue, double maxValue, double step, std::vector<std::string> path,
         bool integerValue = false,

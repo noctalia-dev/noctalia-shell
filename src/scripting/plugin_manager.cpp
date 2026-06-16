@@ -242,17 +242,26 @@ namespace scripting {
   } // namespace
 
   void applyPluginSourcesToRegistry(PluginRegistry& registry, const PluginsConfig& plugins) {
-    // Scan the local dev dir + every configured source; a plugin is active only if
+    // Scan every configured source + the local dev dir; a plugin is active only if
     // its id is in [plugins].enabled (opt-in, uniform across all sources).
+    //
+    // Root order is lowest-to-highest precedence: built-in defaults, then user-added
+    // sources (later config entries override earlier), then the local data dir last.
+    // The registry keeps the last copy of a duplicate id, so a cloned official /
+    // community repo added as a later source overrides the built-in one without
+    // touching plugin ids, and a drop-in under the data dir overrides everything.
     std::vector<std::filesystem::path> roots;
     std::unordered_set<std::string> enabled;
-    if (auto localRoot = plugin_paths::localSourceRoot(); !localRoot.empty()) {
-      roots.push_back(std::move(localRoot));
-    }
     for (const auto& source : plugins.sources) {
+      if (!source.enabled) {
+        continue;
+      }
       if (auto root = sourceRootFor(source); !root.empty()) {
         roots.push_back(std::move(root));
       }
+    }
+    if (auto localRoot = plugin_paths::localSourceRoot(); !localRoot.empty()) {
+      roots.push_back(std::move(localRoot));
     }
     for (const auto& id : plugins.enabled) {
       if (isValidPluginId(id)) {
@@ -269,11 +278,14 @@ namespace scripting {
   }
 
   std::optional<PluginSourceConfig> PluginManager::findSourceOffering(std::string_view pluginId) const {
-    for (const auto& source : m_config.config().plugins.sources) {
-      const auto catalog = discoverCatalog(source);
+    // Highest precedence wins: a later source overrides an earlier one for the same id,
+    // so materialize the copy that the registry will actually load (reverse config order).
+    const auto& sources = m_config.config().plugins.sources;
+    for (auto it = sources.rbegin(); it != sources.rend(); ++it) {
+      const auto catalog = discoverCatalog(*it);
       for (const auto& entry : catalog.entries) {
         if (entry.id == pluginId) {
-          return source;
+          return *it;
         }
       }
     }
@@ -308,74 +320,105 @@ namespace scripting {
     bool materialized = false;
     std::error_code ec;
     for (const auto& source : plugins.sources) {
-      if (source.kind != PluginSourceKind::Git) {
+      if (source.kind != PluginSourceKind::Git || !source.enabled) {
         continue;
       }
       const std::filesystem::path repoRoot = plugin_paths::gitRepoRoot(source);
       if (repoRoot.empty()) {
         continue;
       }
-      auto sourceLock = plugin_source_locks::acquire(source.name);
-      if (!std::filesystem::exists(repoRoot / ".git", ec)) {
-        // Source repo is gone (e.g. the state dir was wiped). Re-clone it (metadata
-        // only); the per-plugin export below writes what's enabled.
-        std::filesystem::create_directories(repoRoot.parent_path(), ec);
-        kLog.info("re-cloning missing plugin source '{}'", source.name);
-        const auto cloned = plugin_git::cloneBlobless(source.location, repoRoot);
-        if (!cloned) {
-          if (cloned.timedOut) {
-            kLog.warn("plugin source '{}': clone timed out", source.name);
-          } else {
-            kLog.warn("plugin source '{}': clone failed with exit code {}", source.name, cloned.exitCode);
-          }
-          continue; // offline / unreachable — leave it; list/enable will retry
-        }
-      }
-      const auto catalog = readGitCatalog(repoRoot);
-      for (const auto& id : plugins.enabled) {
-        const auto sub = pluginSubdirFromId(id);
-        if (!sub.has_value()) {
-          kLog.warn("skipping enabled plugin with invalid id '{}'", id);
-          continue;
-        }
-        const auto* catalogEntry = findCatalogEntry(catalog, id);
-        const bool hasMaterialized = std::filesystem::exists(materializedPluginDir(source, id) / "plugin.toml", ec);
-        if (catalogEntry != nullptr && !catalogEntry->compatible) {
-          if (!hasMaterialized) {
-            kLog.warn(
-                "plugin source '{}': cannot export enabled plugin '{}'; it requires noctalia >= {} (running {})",
-                source.name, id, catalogEntry->minNoctalia, noctalia::build_info::version()
-            );
-          }
-          continue;
-        }
-        if (hasMaterialized
-            && (catalogEntry == nullptr || materializedPluginMatchesCatalog(source, id, *catalogEntry))) {
-          continue; // already materialized at this source revision
-        }
-        if (!plugin_git::hasPath(repoRoot, *sub + "/plugin.toml")) {
-          continue; // this source doesn't ship it
-        }
-        kLog.info("exporting enabled plugin '{}' from source '{}'", id, source.name);
-        const auto materializedPlugin = materializeGitPlugin(source, repoRoot, "HEAD", id, true);
-        if (materializedPlugin) {
+      if (std::filesystem::exists(repoRoot / ".git", ec)) {
+        // Repo already present: materialize from local git data only — no network.
+        auto sourceLock = plugin_source_locks::acquire(source.name);
+        if (materializeEnabledFromRepo(source, repoRoot, plugins.enabled)) {
           materialized = true;
-        } else if (materializedPlugin.incompatible) {
+        }
+        continue;
+      }
+      // Source repo is gone (state dir wiped) or its first clone never completed
+      // (DNS/proxy hang). Re-clone + materialize off the main thread so startup never
+      // blocks on the network; the bar rebuilds via m_onChanged when the export lands.
+      std::filesystem::create_directories(repoRoot.parent_path(), ec);
+      spawnCloneAndMaterialize(source, repoRoot, plugins.enabled);
+    }
+    return materialized;
+  }
+
+  bool PluginManager::materializeEnabledFromRepo(
+      const PluginSourceConfig& source, const std::filesystem::path& repoRoot, const std::vector<std::string>& enabled
+  ) const {
+    bool materialized = false;
+    std::error_code ec;
+    const auto catalog = readGitCatalog(repoRoot);
+    for (const auto& id : enabled) {
+      const auto sub = pluginSubdirFromId(id);
+      if (!sub.has_value()) {
+        kLog.warn("skipping enabled plugin with invalid id '{}'", id);
+        continue;
+      }
+      const auto* catalogEntry = findCatalogEntry(catalog, id);
+      const bool hasMaterialized = std::filesystem::exists(materializedPluginDir(source, id) / "plugin.toml", ec);
+      if (catalogEntry != nullptr && !catalogEntry->compatible) {
+        if (!hasMaterialized) {
           kLog.warn(
               "plugin source '{}': cannot export enabled plugin '{}'; it requires noctalia >= {} (running {})",
-              source.name, id, materializedPlugin.requiredNoctalia, noctalia::build_info::version()
-          );
-        } else if (materializedPlugin.timedOut) {
-          kLog.warn("plugin source '{}': exporting '{}' timed out", source.name, id);
-        } else {
-          kLog.warn(
-              "plugin source '{}': exporting '{}' failed with exit code {}", source.name, id,
-              materializedPlugin.exitCode
+              source.name, id, catalogEntry->minNoctalia, noctalia::build_info::version()
           );
         }
+        continue;
+      }
+      if (hasMaterialized && (catalogEntry == nullptr || materializedPluginMatchesCatalog(source, id, *catalogEntry))) {
+        continue; // already materialized at this source revision
+      }
+      if (!plugin_git::hasPath(repoRoot, *sub + "/plugin.toml")) {
+        continue; // this source doesn't ship it
+      }
+      kLog.info("exporting enabled plugin '{}' from source '{}'", id, source.name);
+      const auto materializedPlugin = materializeGitPlugin(source, repoRoot, "HEAD", id, true);
+      if (materializedPlugin) {
+        materialized = true;
+      } else if (materializedPlugin.incompatible) {
+        kLog.warn(
+            "plugin source '{}': cannot export enabled plugin '{}'; it requires noctalia >= {} (running {})",
+            source.name, id, materializedPlugin.requiredNoctalia, noctalia::build_info::version()
+        );
+      } else if (materializedPlugin.timedOut) {
+        kLog.warn("plugin source '{}': exporting '{}' timed out", source.name, id);
+      } else {
+        kLog.warn(
+            "plugin source '{}': exporting '{}' failed with exit code {}", source.name, id, materializedPlugin.exitCode
+        );
       }
     }
     return materialized;
+  }
+
+  void PluginManager::spawnCloneAndMaterialize(
+      PluginSourceConfig source, std::filesystem::path repoRoot, std::vector<std::string> enabled
+  ) const {
+    // `this` is an Application member and outlives the worker; the registry rescan and
+    // bar rebuild marshal back to the main thread via DeferredCall.
+    std::thread([this, source = std::move(source), repoRoot = std::move(repoRoot),
+                 enabled = std::move(enabled)]() mutable {
+      auto sourceLock = plugin_source_locks::acquire(source.name);
+      kLog.info("re-cloning missing plugin source '{}'", source.name);
+      const auto cloned = plugin_git::cloneBlobless(source.location, repoRoot);
+      if (!cloned) {
+        if (cloned.timedOut) {
+          kLog.warn("plugin source '{}': clone timed out", source.name);
+        } else {
+          kLog.warn("plugin source '{}': clone failed with exit code {}", source.name, cloned.exitCode);
+        }
+        return; // offline / unreachable — list/enable will retry
+      }
+      const bool materialized = materializeEnabledFromRepo(source, repoRoot, enabled);
+      DeferredCall::callLater([this, materialized]() {
+        PluginRegistry::instance().scan(); // pick up the freshly exported plugins
+        if (materialized && m_onChanged) {
+          m_onChanged(); // rebuild bar + reconcile services
+        }
+      });
+    }).detach();
   }
 
   void PluginManager::refresh() {
@@ -464,8 +507,16 @@ namespace scripting {
     const std::unordered_set<std::string> enabledSet(plugins.enabled.begin(), plugins.enabled.end());
 
     std::vector<PluginStatus> out;
+    // A plugin id is canonical: if the same id ships from more than one source, only
+    // the highest-precedence copy runs (local data dir > later user source > earlier
+    // > built-in default), so the catalog shows one row per id from that same source.
+    // Visit highest precedence first and keep the first seen; the GUI re-sorts anyway.
+    std::unordered_set<std::string> seen;
     const auto collect = [&](const std::string& sourceName, const CatalogResult& catalog) {
       for (const auto& entry : catalog.entries) {
+        if (!seen.insert(entry.id).second) {
+          continue;
+        }
         out.push_back(
             PluginStatus{
                 .id = entry.id,
@@ -491,8 +542,12 @@ namespace scripting {
       };
       collect("local", discoverCatalog(localSource));
     }
-    for (const auto& source : plugins.sources) {
-      collect(source.name, discoverCatalog(source));
+    // Reverse config order: a later user source outranks earlier ones and the defaults.
+    for (auto it = plugins.sources.rbegin(); it != plugins.sources.rend(); ++it) {
+      if (!it->enabled) {
+        continue;
+      }
+      collect(it->name, discoverCatalog(*it));
     }
     return out;
   }

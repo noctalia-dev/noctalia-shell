@@ -51,6 +51,26 @@ struct AudioState {
   bool operator==(const AudioState&) const = default;
 };
 
+enum class PrivacyCaptureKind : std::uint8_t {
+  Microphone,
+  Camera,
+  Screen,
+};
+
+struct PrivacyCapture {
+  PrivacyCaptureKind kind = PrivacyCaptureKind::Microphone;
+  std::uint32_t nodeId = 0;
+  std::string appName;
+
+  bool operator==(const PrivacyCapture&) const = default;
+};
+
+struct PrivacyState {
+  std::vector<PrivacyCapture> captures;
+
+  bool operator==(const PrivacyState&) const = default;
+};
+
 class PipeWireService {
 public:
   using ChangeCallback = std::function<void()>;
@@ -73,6 +93,7 @@ public:
 
   // State
   [[nodiscard]] const AudioState& state() const noexcept { return m_state; }
+  [[nodiscard]] const PrivacyState& privacyState() const noexcept { return m_privacyState; }
   [[nodiscard]] const AudioNode* defaultSink() const noexcept;
   [[nodiscard]] const AudioNode* defaultSource() const noexcept;
 
@@ -119,11 +140,13 @@ public:
     std::string applicationId;
     std::string applicationBinary;
     std::string streamTitle;
+    std::string mediaName;
     std::string iconName;
     std::string mediaClass;
     std::string linkGroup;
     std::string targetObject;
     bool nodePassive = false;
+    bool streamCaptureSink = false;
     bool streamClassificationReady = false;
     float volume = 1.0f;
     // Software / node-route mute from PipeWire props (SPA_PARAM_Props, node routes).
@@ -157,6 +180,11 @@ public:
     struct pw_device* proxy = nullptr;
     spa_hook* listener = nullptr;
     std::vector<DeviceRouteData> routes;
+  };
+  struct LinkData {
+    std::uint32_t id = 0;
+    std::uint32_t outputNodeId = 0;
+    std::uint32_t inputNodeId = 0;
   };
   void onRegistryGlobal(std::uint32_t id, const char* type, std::uint32_t version, const struct spa_dict* props);
   void onRegistryGlobalRemove(std::uint32_t id);
@@ -205,10 +233,12 @@ private:
   std::unordered_map<std::uint32_t, std::unique_ptr<NodeData>> m_nodes;
   std::unordered_map<std::uint32_t, ClientData> m_clients;
   std::unordered_map<std::uint32_t, DeviceData> m_devices;
+  std::unordered_map<std::uint32_t, LinkData> m_links;
   std::vector<std::function<void()>> m_metadataCleanups;
   std::string m_defaultSinkName;
   std::string m_defaultSourceName;
   AudioState m_state;
+  PrivacyState m_privacyState;
   ChangeCallback m_changeCallback;
   VolumePreviewCallback m_volumePreviewCallback;
   std::uint64_t m_changeSerial = 0;

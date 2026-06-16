@@ -3,10 +3,13 @@
 #include "config/config_types.h"
 
 #include <string>
+#include <string_view>
 
 struct WaylandOutput;
 
 namespace wallpaper {
+
+  inline constexpr std::string_view kDefaultWallpaperDirectory = "~/Pictures/Wallpapers";
 
   [[nodiscard]] const WallpaperMonitorOverride*
   findWallpaperMonitorOverride(const WallpaperConfig& config, const WaylandOutput& output);

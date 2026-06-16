@@ -12,6 +12,7 @@
 #include "shell/control_center/tab.h"
 #include "shell/panel/panel_manager.h"
 #include "system/desktop_entry.h"
+#include "system/easyeffects_service.h"
 #include "system/icon_resolver.h"
 #include "ui/builders.h"
 #include "ui/controls/context_menu.h"
@@ -1274,10 +1275,11 @@ namespace {
 } // namespace
 
 AudioTab::AudioTab(
-    PipeWireService* audio, MprisService* mpris, ConfigService* config, WaylandConnection* wayland,
-    RenderContext* renderContext
+    PipeWireService* audio, EasyEffectsService* easyEffects, MprisService* mpris, ConfigService* config,
+    WaylandConnection* wayland, RenderContext* renderContext
 )
-    : m_audio(audio), m_mpris(mpris), m_config(config), m_wayland(wayland), m_renderContext(renderContext) {}
+    : m_audio(audio), m_easyEffects(easyEffects), m_mpris(mpris), m_config(config), m_wayland(wayland),
+      m_renderContext(renderContext) {}
 
 AudioTab::~AudioTab() = default;
 
@@ -1408,6 +1410,36 @@ std::unique_ptr<Flex> AudioTab::create() {
     });
   };
 
+  auto makeEffectsProfileRow = [this, scale](Flex** rowOut, Select** selectOut) {
+    return ui::row(
+        {
+            .out = rowOut,
+            .align = FlexAlign::Center,
+            .gap = Style::spaceSm * scale,
+            .visible = false,
+            .participatesInLayout = false,
+        },
+        ui::label({
+            .text = i18n::tr("control-center.audio.effects-profile"),
+            .fontSize = Style::fontSizeCaption * scale,
+            .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+        }),
+        ui::select({
+            .out = selectOut,
+            .placeholder = i18n::tr("control-center.audio.choose-effects-profile"),
+            .fontSize = Style::fontSizeCaption * scale,
+            .controlHeight = Style::controlHeightSm * scale,
+            .horizontalPadding = Style::spaceSm * scale,
+            .glyphSize = Style::fontSizeBody * scale,
+            .notifyOnReselect = true,
+            .enabled = false,
+            .surfaceOpacity = panelCardOpacity(),
+            .height = Style::controlHeightSm * scale,
+            .flexGrow = 1.0f,
+        })
+    );
+  };
+
   auto volumeRow = ui::row({
       .out = &m_volumeColumn,
       .align = FlexAlign::Stretch,
@@ -1499,6 +1531,7 @@ std::unique_ptr<Flex> AudioTab::create() {
       })
   );
   outputVolumeCard->addChild(std::move(outputRow));
+  outputVolumeCard->addChild(makeEffectsProfileRow(&m_outputEffectsProfileRow, &m_outputEffectsProfileSelect));
   volumeRow->addChild(std::move(outputVolumeCard));
 
   auto inputVolumeCard = ui::column({
@@ -1584,6 +1617,7 @@ std::unique_ptr<Flex> AudioTab::create() {
       })
   );
   inputVolumeCard->addChild(std::move(inputRow));
+  inputVolumeCard->addChild(makeEffectsProfileRow(&m_inputEffectsProfileRow, &m_inputEffectsProfileSelect));
   volumeRow->addChild(std::move(inputVolumeCard));
 
   tab->addChild(std::move(volumeRow));
@@ -1632,6 +1666,11 @@ std::unique_ptr<Flex> AudioTab::create() {
     });
   }
 
+  if (m_easyEffects != nullptr) {
+    m_easyEffects->refreshProfiles();
+    m_easyEffects->refreshActiveEffectsProfiles();
+  }
+
   return tab;
 }
 
@@ -1664,6 +1703,7 @@ void AudioTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
 void AudioTab::doUpdate(Renderer& renderer) {
   rebuildProgramVolumes(renderer);
   syncValueLabelWidths(renderer);
+  syncEffectsProfileControls(renderer);
 
   if (m_audio != nullptr) {
     const AudioState& state = m_audio->state();
@@ -1791,6 +1831,11 @@ void AudioTab::onClose() {
   m_volumeColumn = nullptr;
   m_outputVolumeCard = nullptr;
   m_inputVolumeCard = nullptr;
+  m_outputEffectsProfileRow = nullptr;
+  m_inputEffectsProfileRow = nullptr;
+  m_outputEffectsProfileSelect = nullptr;
+  m_inputEffectsProfileSelect = nullptr;
+  m_lastEffectsProfileListKey.clear();
   m_outputDeviceLabel = nullptr;
   m_inputDeviceLabel = nullptr;
   m_outputSlider = nullptr;
@@ -1833,6 +1878,82 @@ void AudioTab::onClose() {
   m_lastSourceCommitAt = {};
   m_ignoreSinkStateUntil = {};
   m_ignoreSourceStateUntil = {};
+}
+
+void AudioTab::syncEffectsProfileControls(Renderer& /*renderer*/) {
+  const auto outputProfiles = m_easyEffects != nullptr ? m_easyEffects->effectsProfiles(AudioEffectsProfileKind::Output)
+                                                       : std::vector<std::string>{};
+  const auto inputProfiles = m_easyEffects != nullptr ? m_easyEffects->effectsProfiles(AudioEffectsProfileKind::Input)
+                                                      : std::vector<std::string>{};
+  const std::string activeOutput =
+      m_easyEffects != nullptr ? m_easyEffects->activeEffectsProfile(AudioEffectsProfileKind::Output) : std::string{};
+  const std::string activeInput =
+      m_easyEffects != nullptr ? m_easyEffects->activeEffectsProfile(AudioEffectsProfileKind::Input) : std::string{};
+
+  std::string key = activeOutput;
+  key.push_back('\n');
+  for (const auto& profile : outputProfiles) {
+    key += profile;
+    key.push_back('\n');
+  }
+  key += "---input---\n";
+  key += activeInput;
+  key.push_back('\n');
+  for (const auto& profile : inputProfiles) {
+    key += profile;
+    key.push_back('\n');
+  }
+
+  if (key == m_lastEffectsProfileListKey) {
+    return;
+  }
+
+  m_lastEffectsProfileListKey = std::move(key);
+
+  auto syncDirection = [this](
+                           const std::vector<std::string>& profiles, const std::string& active, Flex* row,
+                           Select* select, AudioEffectsProfileKind kind
+                       ) {
+    if (row == nullptr || select == nullptr) {
+      return;
+    }
+    const bool hasProfiles = !profiles.empty();
+    row->setVisible(hasProfiles);
+    row->setParticipatesInLayout(hasProfiles);
+    select->setEnabled(hasProfiles);
+    select->setOnSelectionChanged(nullptr);
+    select->setOptions(profiles);
+    if (!hasProfiles) {
+      select->clearSelection();
+      select->setOnSelectionChanged(nullptr);
+      return;
+    }
+
+    const auto selected = std::ranges::find(profiles, active);
+    if (selected != profiles.end()) {
+      select->setSelectedIndex(static_cast<std::size_t>(std::distance(profiles.begin(), selected)));
+    } else {
+      select->clearSelection();
+    }
+
+    select->setOnSelectionChanged([this, kind](std::size_t /*index*/, std::string_view profile) {
+      if (m_easyEffects == nullptr || profile.empty()) {
+        return;
+      }
+      if (!m_easyEffects->loadEffectsProfile(kind, profile)) {
+        m_lastEffectsProfileListKey.clear();
+      }
+      PanelManager::instance().refresh();
+    });
+  };
+
+  syncDirection(
+      outputProfiles, activeOutput, m_outputEffectsProfileRow, m_outputEffectsProfileSelect,
+      AudioEffectsProfileKind::Output
+  );
+  syncDirection(
+      inputProfiles, activeInput, m_inputEffectsProfileRow, m_inputEffectsProfileSelect, AudioEffectsProfileKind::Input
+  );
 }
 
 void AudioTab::rebuildProgramVolumes(Renderer& renderer) {

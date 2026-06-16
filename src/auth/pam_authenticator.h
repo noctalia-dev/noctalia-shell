@@ -10,6 +10,7 @@ public:
     std::string message;
   };
 
-  [[nodiscard]] Result authenticateCurrentUser(std::string_view password) const;
+  [[nodiscard]] Result authenticateCurrentUser(std::string_view password, std::string_view service = "login") const;
+  [[nodiscard]] static bool pamServiceExists(std::string_view name);
   [[nodiscard]] static std::string currentUsername();
 };

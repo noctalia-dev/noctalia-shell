@@ -309,6 +309,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
   const float groupBorderInset = Style::borderWidth * m_contentScale;
   const float groupOutlineInset = m_workspaceGroupCapsule ? groupBorderInset : 0.0f;
   const FontWeight fontWeight = labelFontWeight();
+  const std::string fontFamily = labelFontFamily();
 
   const float maxTileWidth = m_tasks.empty()
       ? m_taskbarMaxWidth * m_contentScale
@@ -447,6 +448,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       auto label = ui::label({
           .text = task.title,
           .fontSize = Style::fontSizeCaption * m_contentScale,
+          .fontFamily = fontFamily,
           .maxWidth = windowTitleWidth,
           .fontWeight = fontWeight,
       });
@@ -570,6 +572,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       auto badgeText = ui::label({
           .text = ws.label,
           .fontSize = badgeFontSize,
+          .fontFamily = fontFamily,
           .color = workspaceTextColor(ws.workspace),
           .fontWeight = fontWeight,
       });
@@ -615,6 +618,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       auto badgeText = ui::label({
           .text = ws.label,
           .fontSize = badgeFontSize,
+          .fontFamily = fontFamily,
           .color = workspaceTextColor(ws.workspace),
           .fontWeight = fontWeight,
       });

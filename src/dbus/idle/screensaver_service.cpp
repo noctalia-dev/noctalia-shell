@@ -184,7 +184,7 @@ void ScreenSaverService::registerLogindIdleMonitor(SystemBus* systemBus) {
 
 void ScreenSaverService::applyLogindBlockInhibited(const std::string& inhibits) {
   const std::string tagged = ":" + inhibits + ":";
-  const bool idleBlocked = tagged.find(":idle:") != std::string::npos;
+  const bool idleBlocked = tagged.contains(":idle:");
   if (idleBlocked && !m_logindIdleInhibited) {
     m_logindIdleInhibited = true;
     onInhibitDelta(1);
@@ -197,7 +197,7 @@ void ScreenSaverService::applyLogindBlockInhibited(const std::string& inhibits) 
 }
 
 std::uint32_t ScreenSaverService::onInhibit(std::string app, std::string reason, const char* sender) {
-  kLog.info("screensaver inhibit from {} ({}): {}", app, sender != nullptr ? sender : "?", reason);
+  kLog.debug("screensaver inhibit from {} ({}): {}", app, sender != nullptr ? sender : "?", reason);
   onInhibitDelta(1);
 
   const auto cookie = m_nextCookieId++;
@@ -220,7 +220,7 @@ void ScreenSaverService::onUninhibit(std::uint32_t cookie, const char* sender) {
     return;
   }
 
-  kLog.info("screensaver uninhibit from {} ({}): {}", it->app, sender != nullptr ? sender : "?", it->reason);
+  kLog.debug("screensaver uninhibit from {} ({}): {}", it->app, sender != nullptr ? sender : "?", it->reason);
   m_cookies.erase(it);
   onInhibitDelta(-1);
 }

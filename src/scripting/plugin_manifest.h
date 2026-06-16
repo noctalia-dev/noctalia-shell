@@ -70,11 +70,28 @@ namespace scripting {
     Service,
   };
 
+  // A launcher result category, declared statically on a [[launcher_provider]]
+  // entry so the launcher can render the category filter without running code.
+  struct ManifestLauncherCategory {
+    std::string label;
+    std::string glyph;
+  };
+
   struct PluginEntry {
     PluginEntryKind kind = PluginEntryKind::Widget;
     std::string id;    // unique within the plugin
     std::string entry; // relative .luau filename
     std::vector<ManifestField> settings;
+
+    // Launcher-provider routing metadata (parsed only for LauncherProvider entries);
+    // static so the launcher routes/filters without invoking the plugin.
+    std::string launcherPrefix;
+    std::string launcherGlyph;
+    bool launcherGlobalSearch = false;
+    std::vector<ManifestLauncherCategory> launcherCategories;
+    // Wait this many ms after the last keystroke before running onQuery, so a
+    // network-backed provider isn't hit on every character. 0 = no debounce.
+    int launcherDebounceMs = 0;
   };
 
   struct PluginManifest {

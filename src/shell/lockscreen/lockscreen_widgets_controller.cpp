@@ -114,7 +114,7 @@ void LockscreenWidgetsController::initialize(
     WaylandConnection& wayland, ConfigService* config, LockScreen& lockScreen, Bar& bar, Dock& dock,
     DesktopWidgetsController* desktopWidgets, PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather,
     RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient, SystemMonitorService* sysmon,
-    SharedTextureCache* textureCache
+    SharedTextureCache* textureCache, DesktopWidgetScriptDeps scriptDeps
 ) {
   m_wayland = &wayland;
   m_config = config;
@@ -124,10 +124,10 @@ void LockscreenWidgetsController::initialize(
   m_desktopWidgets = desktopWidgets;
   m_renderContext = renderContext;
   m_host = std::make_unique<LockscreenWidgetsHost>();
-  m_host->initialize(wayland, config, pipewireSpectrum, weather, renderContext, mpris, httpClient, sysmon);
+  m_host->initialize(wayland, config, pipewireSpectrum, weather, renderContext, mpris, httpClient, sysmon, scriptDeps);
   m_editor = std::make_unique<BackgroundWidgetsEditor>(BackgroundWidgetsEditorProfile::lockscreen());
   m_editor->initialize(
-      wayland, config, pipewireSpectrum, weather, renderContext, mpris, httpClient, sysmon, textureCache
+      wayland, config, pipewireSpectrum, weather, renderContext, mpris, httpClient, sysmon, textureCache, scriptDeps
   );
   m_editor->setExitRequestedCallback([this]() { exitEdit(); });
   loadSnapshotFromConfig();

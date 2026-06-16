@@ -222,6 +222,20 @@ std::unique_ptr<Flex> CalendarTab::create() {
           .color = colorSpecFromRole(ColorRole::OnSurface),
           .maxLines = 1,
           .fontWeight = FontWeight::Bold,
+          .configure = [this](Label& label) {
+            label.setOnClick([this](const InputArea::PointerData&) {
+              const CalendarBuildState state = currentCalendarState(m_monthOffset);
+              const bool focusedOnToday = m_monthOffset == 0
+                  && m_selectedYear == state.currentYear
+                  && m_selectedMonth == state.currentMonth
+                  && m_selectedDay == state.today;
+              if (focusedOnToday) {
+                return;
+              }
+              focusToday();
+              PanelManager::instance().refresh();
+            });
+          },
       })
   );
   header->addChild(std::move(monthWrap));
@@ -336,12 +350,16 @@ void CalendarTab::setActive(bool active) {
   if (!active) {
     return;
   }
-  resetToCurrentMonth();
+  focusToday();
 }
 
-void CalendarTab::resetToCurrentMonth() {
+void CalendarTab::focusToday() {
+  const CalendarBuildState state = currentCalendarState(0);
   m_monthOffset = 0;
   m_scrollAccum = 0.0f;
+  m_selectedYear = state.currentYear;
+  m_selectedMonth = state.currentMonth;
+  m_selectedDay = state.today;
   m_lastDisplayYear = std::numeric_limits<int>::min();
   m_lastDisplayMonth = -1;
   m_eventsDirty = true;
@@ -366,7 +384,7 @@ void CalendarTab::onClose() {
   m_selectedYear = std::numeric_limits<int>::min();
   m_selectedMonth = -1;
   m_selectedDay = -1;
-  resetToCurrentMonth();
+  focusToday();
   m_eventsDirty = false;
   m_lastInnerWidth = -1.0f;
   m_lastInnerHeight = -1.0f;
@@ -431,6 +449,17 @@ void CalendarTab::rebuild() {
 
   m_monthLabel->setText(monthName(month) + " " + std::to_string(year));
   m_monthLabel->setMaxWidth(monthWidth);
+  const bool focusedOnToday = m_monthOffset == 0
+      && m_selectedYear == state.currentYear
+      && m_selectedMonth == state.currentMonth
+      && m_selectedDay == state.today;
+  if (m_monthLabel != nullptr) {
+    if (focusedOnToday) {
+      m_monthLabel->clearTooltip();
+    } else {
+      m_monthLabel->setTooltip(i18n::tr("control-center.calendar.today"));
+    }
+  }
   if (m_todayLabel != nullptr) {
     m_todayLabel->setText(formatShellDate(m_config));
     m_todayLabel->setMaxWidth(innerWidth);

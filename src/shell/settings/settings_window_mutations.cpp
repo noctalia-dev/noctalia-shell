@@ -46,11 +46,12 @@ void SettingsWindow::setSettingOverride(std::vector<std::string> path, ConfigOve
         markSettingsWriteError(i18n::tr("settings.errors.write"));
         return;
       }
-      if (shell::applyAvatarPath(m_accounts, m_config, *avatarPath)) {
+      const auto result = shell::applyAvatarPath(m_accounts, m_config, *avatarPath);
+      if (result.success()) {
         markSettingsWriteSuccess();
         return;
       }
-      markSettingsWriteError(i18n::tr("settings.errors.write"));
+      markSettingsWriteError(i18n::tr(shell::avatarApplyErrorTranslationKey(result.error)));
       return;
     }
     if (m_config->setOverride(path, std::move(value))) {

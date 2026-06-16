@@ -108,7 +108,11 @@ bool AccountsService::setIconFile(std::string_view filename) {
 
   try {
     m_userProxy->callMethod("SetIconFile").onInterface(kUserInterface).withArguments(std::string(filename));
+    const std::string previousIconFile = m_iconFile;
     readIconFile();
+    if (m_iconFile == previousIconFile && m_changeCallback) {
+      m_changeCallback();
+    }
     return true;
   } catch (const sdbus::Error& e) {
     kLog.warn("SetIconFile failed: {}", e.what());

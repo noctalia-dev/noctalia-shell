@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -37,6 +38,23 @@ namespace FileUtils {
     return std::ranges::find(paths, path) != paths.end();
   }
 
+  [[nodiscard]] inline std::optional<std::string> readSmallTextFile(const std::filesystem::path& path) {
+    std::ifstream file{path};
+    if (!file.is_open()) {
+      return std::nullopt;
+    }
+
+    std::string text;
+    std::getline(file, text);
+    if (text.empty()) {
+      return std::nullopt;
+    }
+
+    while (!text.empty() && (text.back() == '\n' || text.back() == '\r' || text.back() == ' ' || text.back() == '\t')) {
+      text.pop_back();
+    }
+    return text;
+  }
 
   [[nodiscard]] inline std::string configDir() {
     const char* noctalia = std::getenv("NOCTALIA_CONFIG_HOME");
@@ -138,6 +156,31 @@ namespace FileUtils {
       return {};
     }
     return data;
+  }
+
+  // Expands ~ and resolves relative paths against baseDir when provided; otherwise uses the
+  // process working directory for relative paths.
+  [[nodiscard]] inline std::filesystem::path
+  resolvePath(std::string_view path, std::optional<std::string_view> baseDir = std::nullopt) {
+    if (path.empty() || path.starts_with("color:")) {
+      return std::filesystem::path(path);
+    }
+
+    std::filesystem::path resolved = expandUserPath(std::string(path));
+    if (!resolved.is_absolute()) {
+      if (baseDir.has_value() && !baseDir->empty()) {
+        resolved = std::filesystem::path(*baseDir) / resolved;
+      } else {
+        std::error_code ec;
+        resolved = std::filesystem::absolute(resolved, ec);
+        if (ec) {
+          return std::filesystem::path(path);
+        }
+      }
+    }
+
+    std::error_code ec;
+    return resolved.lexically_normal();
   }
 
   [[nodiscard]] inline std::string normalizeWallpaperPath(std::string_view path) {

@@ -113,6 +113,8 @@ private:
   };
 
   void onNotificationEvent(const Notification& n, NotificationEvent event);
+  void schedulePendingAdds();
+  void flushPendingAdds();
   void addPopup(const Notification& n);
   void dismissPopup(std::size_t index);
   void requestClose(uint32_t notificationId, CloseReason reason);
@@ -188,6 +190,8 @@ private:
   HttpClient* m_httpClient = nullptr;
 
   std::vector<PopupEntry> m_entries;
+  std::vector<Notification> m_pendingAdds;
+  bool m_pendingAddsScheduled = false;
   std::vector<std::unique_ptr<Instance>> m_instances;
   int m_callbackToken = -1;
   IconResolver m_iconResolver;

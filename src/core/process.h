@@ -52,6 +52,9 @@ namespace process {
 
   [[nodiscard]] bool commandExists(const char* name);
 
+  // Prefer run0 over pkexec: pkexec often stays on PATH without the setuid wrapper (e.g. NixOS).
+  [[nodiscard]] std::optional<std::string> resolvePrivilegeEscalator();
+
   // Shell string — runs fully detached (double-fork + setsid) so the child is not a direct
   // subprocess of noctalia (hooks, idle commands, launcher parity).
   [[nodiscard]] bool runAsync(const std::string& command);
@@ -90,9 +93,8 @@ namespace process {
 
   [[nodiscard]] bool launchFirstAvailable(std::initializer_list<std::initializer_list<const char*>> commandVariants);
 
-  bool systemdAvailable();
-  // Run an app as a systemd service
-  void runAsyncAsSystemdService(
+  [[nodiscard]] bool systemdAvailable();
+  [[nodiscard]] bool runAsyncAsSystemdService(
       const std::vector<std::string>& args, const std::string& appName, const std::string& activationToken = {},
       const std::string& workingDir = {}
   );

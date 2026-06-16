@@ -295,6 +295,10 @@ void PanelManager::setAttachedPanelAvailabilityCallback(std::function<bool(wl_ou
   m_attachedPanelAvailabilityCallback = std::move(callback);
 }
 
+void PanelManager::setAttachedPanelBarSettledCallback(std::function<bool(wl_output*, std::string_view)> callback) {
+  m_attachedPanelBarSettledCallback = std::move(callback);
+}
+
 void PanelManager::registerPanel(const std::string& id, std::unique_ptr<Panel> content) {
   m_panels[id] = std::move(content);
 }
@@ -331,7 +335,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
   const bool isBottom = barConfig.position == "bottom";
   const bool isLeft = barConfig.position == "left";
   const bool isRight = barConfig.position == "right";
-  const std::int32_t panelGap = static_cast<std::int32_t>(Style::spaceXs);
+  const std::int32_t panelGap = m_config->config().shell.panel.floatingOffset;
   const std::int32_t screenPadding = static_cast<std::int32_t>(Style::spaceSm);
 
   std::int32_t outputWidth = static_cast<std::int32_t>(panelWidth);
@@ -1410,6 +1414,11 @@ void PanelManager::startAttachedOpenAnimation() {
   if (!m_attachedOpenAnimationPending || !m_attachedToBar || m_attachedRevealClipNode == nullptr || m_closing) {
     return;
   }
+  if (m_attachedPanelBarSettledCallback != nullptr
+      && m_output != nullptr
+      && !m_attachedPanelBarSettledCallback(m_output, m_sourceBarName)) {
+    return;
+  }
 
   m_attachedOpenAnimationPending = false;
   m_animations.animate(
@@ -1946,20 +1955,22 @@ void PanelManager::prepareFrame(bool needsUpdate, bool needsLayout) {
 void PanelManager::registerIpc(IpcService& ipc) {
   auto parseOpenArgs = [](std::string_view rawArgs, std::string_view command, std::string& panelId,
                           std::string& context) -> std::optional<std::string> {
-    const std::string args = StringUtils::trim(rawArgs);
+    const std::string_view args = StringUtils::trimLeftView(rawArgs);
     if (args.empty()) {
       return "error: " + std::string(command) + " requires a panel id\n";
     }
 
     const auto sep = args.find_first_of(" \t\n\r\f\v");
-    if (sep == std::string::npos) {
-      panelId = args;
+    if (sep == std::string_view::npos) {
+      panelId = std::string(args);
       context.clear();
       return std::nullopt;
     }
 
-    panelId = args.substr(0, sep);
-    context = StringUtils::trimLeftView(std::string_view(args).substr(sep + 1));
+    panelId = std::string(args.substr(0, sep));
+    // Preserve the context verbatim (only strip the separator's leading
+    // whitespace) — trailing whitespace can be significant, e.g. a command.
+    context = std::string(StringUtils::trimLeftView(args.substr(sep + 1)));
     return std::nullopt;
   };
 

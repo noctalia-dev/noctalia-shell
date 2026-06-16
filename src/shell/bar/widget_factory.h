@@ -17,6 +17,7 @@ class MprisService;
 class BluetoothService;
 class BrightnessService;
 class ClipboardService;
+class EasyEffectsService;
 class RenderContext;
 class ScreenshotService;
 class INetworkService;
@@ -40,9 +41,9 @@ class WidgetFactory {
 public:
   WidgetFactory(
       CompositorPlatform& platform, ConfigService& config, NotificationManager* notifications, TrayService* tray,
-      PipeWireService* audio, UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
-      INetworkService* network, IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
-      HttpClient* httpClient, WeatherService* weather, GammaService* nightLight,
+      PipeWireService* audio, EasyEffectsService* easyEffects, UPowerService* upower, SystemMonitorService* sysmon,
+      PowerProfilesService* powerProfiles, INetworkService* network, IdleInhibitor* idleInhibitor, MprisService* mpris,
+      PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weather, GammaService* nightLight,
       noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth, BrightnessService* brightness,
       LockKeysService* lockKeys, ClipboardService* clipboard, FileWatcher* fileWatcher = nullptr,
       ScreenshotService* screenshots = nullptr, RenderContext* renderContext = nullptr,
@@ -62,6 +63,7 @@ private:
   NotificationManager* m_notifications;
   TrayService* m_tray;
   PipeWireService* m_audio;
+  EasyEffectsService* m_easyEffects;
   UPowerService* m_upower;
   SystemMonitorService* m_sysmon;
   PowerProfilesService* m_powerProfiles;

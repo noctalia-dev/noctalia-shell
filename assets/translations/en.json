@@ -1,5 +1,17 @@
 {
   "auth": {
+    "fingerprint": {
+      "disconnected": "Fingerprint reader disconnected",
+      "error": "Fingerprint authentication error",
+      "no-match": "Fingerprint did not match",
+      "not-centered": "Center your finger and try again",
+      "present": "Reading fingerprint...",
+      "ready": "Place your finger on the reader",
+      "remove-and-retry": "Remove your finger and try again",
+      "retry": "Please scan your fingerprint again",
+      "swipe-too-short": "Swipe was too short, try again",
+      "too-many-attempts": "Fingerprint disabled (too many attempts)"
+    },
     "pam": {
       "authentication-failed": "Authentication failed",
       "start-failed": "PAM start failed",
@@ -38,6 +50,11 @@
       },
       "network": {
         "wired": "Wired"
+      },
+      "privacy": {
+        "camera": "Camera",
+        "microphone": "Microphone",
+        "screen-sharing": "Screen Sharing"
       },
       "scripted": {
         "reload-failed": "Script reload failed",
@@ -101,6 +118,8 @@
   "control-center": {
     "audio": {
       "application-volumes": "Application Volumes",
+      "choose-effects-profile": "Choose a profile",
+      "effects-profile": "Effects:",
       "input-volume": "Input Volume",
       "no-application-audio": "No application audio",
       "no-application-audio-body": "No application playback streams are currently available.",
@@ -145,7 +164,8 @@
     "calendar": {
       "all-day": "All day",
       "events": "Events",
-      "no-events": "No events."
+      "no-events": "No events.",
+      "today": "Today"
     },
     "display": {
       "disabled": "Disabled",
@@ -153,6 +173,7 @@
       "unknown-resolution": "Unknown resolution"
     },
     "home": {
+      "avatar-error-title": "Avatar not updated",
       "media": {
         "idle": "Idle",
         "no-active-player": "No active player",
@@ -246,7 +267,6 @@
       },
       "notification": "DND",
       "power-profile": "Power",
-      "screen-recorder": "Recorder",
       "screen-time": "Screen Time",
       "session": "Session",
       "system": "System",
@@ -315,7 +335,10 @@
     "editor": {
       "actions": {
         "add": "Add",
+        "clone": "Duplicate (Ctrl+C, Ctrl+V to copy/paste)",
         "done": "Done",
+        "flip-horizontal": "Flip Horizontal",
+        "flip-vertical": "Flip Vertical",
         "hide": "Hide",
         "settings": "Settings",
         "show": "Show",
@@ -352,6 +375,7 @@
         "fade-when-idle": "Fade When Idle",
         "font-family": "Font",
         "font-family-default": "System default",
+        "forecast-days": "Forecast Days",
         "format": "Format",
         "hide-when-no-media": "Hide When No Media",
         "horizontal": "Horizontal",
@@ -359,6 +383,7 @@
         "inner-diameter": "Inner Diameter",
         "input-opacity": "Input Opacity",
         "input-radius": "Input Radius",
+        "interface": "Interface",
         "layout": "Layout",
         "mirrored": "Mirrored",
         "opacity": "Opacity",
@@ -369,6 +394,7 @@
         "secondary-color": "Secondary Color",
         "sensitivity": "Sensitivity",
         "shadow": "Shadow",
+        "show-forecast": "Show Forecast",
         "show-label": "Show Label",
         "show-login-button": "Login Button",
         "show-when-idle": "Show When Idle",
@@ -406,6 +432,7 @@
         "clock": "Clock",
         "fancy-audio-visualizer": "Fancy Audio Visualizer",
         "label": "Label",
+        "login-box": "Login Box",
         "media-player": "Media Player",
         "sticker": "Sticker",
         "system-monitor": "System Monitor",
@@ -552,10 +579,14 @@
       "keybind-invalid-printable": "Printable keys (letters, numbers, symbols) require a modifier such as Ctrl or Alt.",
       "keybind-invalid-super": "The Super/Windows key cannot be used in shell keybinds.",
       "keybind-invalid-title": "Keybind not allowed",
+      "launcher-usage-reset": "Launcher",
+      "launcher-usage-reset-success": "Usage data cleared.",
       "lockscreen-widgets-editor": "Lockscreen widget editor",
       "lockscreen-widgets-editor-blocked-locked": "Unlock the session before editing lockscreen widgets.",
       "lockscreen-widgets-editor-enabled": "Lockscreen widget editor is on. Arrange widgets on the preview overlay, then lock the session to verify the layout.",
       "mpris-disabled": "MPRIS disabled",
+      "screen-time-reset": "Screen Time",
+      "screen-time-reset-success": "Usage history cleared.",
       "session-bus-unavailable": "Session bus unavailable",
       "wallpaper-palette-export": "Custom Palette",
       "wallpaper-palette-export-success": "Saved \"{name}\" and switched palette source to custom."
@@ -573,6 +604,10 @@
     "dnd": {
       "off": "DND Off",
       "on": "DND On"
+    },
+    "effects": {
+      "input": "Input Effects",
+      "output": "Output Effects"
     },
     "lock-keys": {
       "caps-off": "Caps Lock Off",
@@ -634,6 +669,7 @@
       "advanced": "Advanced",
       "inherited": "Inherited",
       "monitor": "Monitor",
+      "official": "Official",
       "override": "Override"
     },
     "calendar-accounts": {
@@ -790,6 +826,10 @@
       }
     },
     "errors": {
+      "avatar-accounts": "Could not update the system account avatar.",
+      "avatar-invalid-path": "The selected avatar path is not a readable image file.",
+      "avatar-load": "Could not load the selected image. Use PNG, JPEG, WebP, GIF, BMP, or SVG.",
+      "avatar-write": "Could not prepare the avatar image for saving.",
       "bar": {
         "create": "Could not create bar.",
         "delete": "Could not delete bar.",
@@ -934,6 +974,28 @@
         "system": "System",
         "templates": "Templates",
         "wallpaper": "Wallpaper"
+      }
+    },
+    "notifications": {
+      "filter": {
+        "add": "Add filter",
+        "add-title": "Add Notification Filter",
+        "allowed-urgencies-label": "Allowed urgencies",
+        "flag": {
+          "history": "history",
+          "sound": "sound",
+          "toast": "toast"
+        },
+        "flags-label": "When matched",
+        "match-label": "App",
+        "match-placeholder": "App name, desktop entry, or category…",
+        "play-sound": "Play sound",
+        "save-history": "Save to history",
+        "show-toast": "Show toast",
+        "summary": "{match} · {flags}",
+        "summary-blocked": "{match} · blocked",
+        "summary-disabled": "{match} · disabled",
+        "unnamed": "Unnamed filter"
       }
     },
     "options": {
@@ -1087,6 +1149,8 @@
       "sources": {
         "add": "Add source",
         "add-title": "Add plugin source",
+        "edit": "Edit source",
+        "edit-title": "Edit plugin source",
         "empty": "No sources configured.",
         "errors": {
           "duplicate-name": "A source with this ID already exists.",
@@ -1104,6 +1168,7 @@
         "name-label": "Source ID",
         "name-placeholder": "my-plugins",
         "remove": "Remove source",
+        "save": "Save",
         "title": "Sources",
         "update": "Update",
         "update-on-startup": "Update on startup"
@@ -1233,6 +1298,10 @@
           "description": "Default corner radius for widget capsules, workspace pills, and taskbar workspace groups; leave blank for automatic pill shape, or set 0 for square corners",
           "label": "Capsule Radius"
         },
+        "capsule-thickness": {
+          "description": "Capsule size across the bar as a fraction of the bar thickness (1.0 fills the bar)",
+          "label": "Capsule Thickness"
+        },
         "center-widgets": {
           "description": "Widgets in the center of the bar",
           "label": "Center Widgets"
@@ -1249,19 +1318,19 @@
           "label": "Content Scale"
         },
         "corner-bottom-left": {
-          "description": "Bottom left corner radius for the bar"
+          "description": "Bottom left corner radius for the bar; negative values carve a concave corner when this corner faces away from the screen edge"
         },
         "corner-bottom-right": {
-          "description": "Bottom right corner radius for the bar"
+          "description": "Bottom right corner radius for the bar; negative values carve a concave corner when this corner faces away from the screen edge"
         },
         "corner-radius": {
           "description": "Corner radius of the bar"
         },
         "corner-top-left": {
-          "description": "Top left corner radius for the bar"
+          "description": "Top left corner radius for the bar; negative values carve a concave corner when this corner faces away from the screen edge"
         },
         "corner-top-right": {
-          "description": "Top right corner radius for the bar"
+          "description": "Top right corner radius for the bar; negative values carve a concave corner when this corner faces away from the screen edge"
         },
         "edge-margin": {
           "description": "Distance from the nearest screen edge; positive values float the bar away from it"
@@ -1275,6 +1344,10 @@
         },
         "ends-margin": {
           "description": "Inset from each end of the bar along its main axis"
+        },
+        "font-family": {
+          "description": "Typeface for this bar's widgets; leave empty to inherit the global font. Per-widget Font Family overrides this.",
+          "label": "Font Family"
         },
         "font-weight": {
           "description": "Default weight for widget labels on this bar.",
@@ -1566,6 +1639,10 @@
         }
       },
       "lockscreen": {
+        "allow-empty-password": {
+          "description": "Let Enter submit an empty password. Enable for security-key or other passwordless PAM stacks; keep off to avoid accidental wake-key lockouts.",
+          "label": "Empty Password Submit"
+        },
         "blur-intensity": {
           "description": "How much the lock screen background is blurred",
           "label": "Blur Intensity"
@@ -1577,6 +1654,10 @@
         "enabled": {
           "description": "Enable session lock, logind integration, and lock actions",
           "label": "Lock Screen"
+        },
+        "fingerprint": {
+          "description": "Unlock with a fingerprint reader via fprintd, alongside password entry",
+          "label": "Fingerprint Unlock"
         },
         "monitors": {
           "description": "Choose which monitors show the lock screen; leave empty to show on all monitors",
@@ -1611,8 +1692,7 @@
           "label": "Notification Blacklist"
         },
         "blacklist-allow-critical": {
-          "description": "Still show critical notifications from blacklisted senders",
-          "label": "Allow Critical Through Blacklist"
+          "description": "Still show critical notifications from blacklisted senders"
         },
         "collapse-on-dismiss": {
           "description": "Slide remaining toasts to close gaps when one is dismissed",
@@ -1621,6 +1701,10 @@
         "daemon": {
           "description": "Enable the built-in notification daemon",
           "label": "Notification Daemon"
+        },
+        "filters": {
+          "description": "Per-sender rules for toasts, history, and sounds; first matching enabled filter wins",
+          "label": "Notification Filters"
         },
         "layer": {
           "description": "Use Overlay to show notification toasts above fullscreen apps.",
@@ -1672,17 +1756,26 @@
           "description": "When opening a specific tab (volume, media etc.)",
           "label": "Sidebar When Opening a Tab"
         },
+        "floating-offset": {
+          "description": "Gap in pixels between a floating or detached panel and the bar edge",
+          "label": "Floating Offset"
+        },
         "home-shortcuts": {
           "description": "Choose up to six shortcut buttons for the home tab",
           "label": "Home Shortcuts"
         },
         "launcher-categories": {
-          "description": "Display category filters in the launcher; toggle with Tab while the launcher is open",
+          "description": "Display category filters in the launcher; reveal with F6, then cycle with F6 and Shift+F6",
           "label": "Show Categories"
         },
         "launcher-compact": {
           "description": "Use smaller icons and tighter result rows",
           "label": "Compact Rows"
+        },
+        "launcher-reset-usage": {
+          "button": "Reset",
+          "description": "Clear launch counts and recently used history used for launcher sorting",
+          "label": "Reset Usage Data"
         },
         "launcher-session-search": {
           "description": "Include session actions (lock, suspend, reboot, shutdown, logout) in general launcher searches, not only behind the /session prefix",
@@ -1691,6 +1784,10 @@
         "launcher-show-icons": {
           "description": "Show application icons in launcher results",
           "label": "Show App Icons"
+        },
+        "launcher-sort-by-usage": {
+          "description": "Boost frequently used apps toward the top and show a Recently Used category filter",
+          "label": "Sort by Usage"
         },
         "open-near-click-clipboard": {
           "description": "Position the clipboard panel near the bar click instead of centering it along the bar",
@@ -1797,6 +1894,10 @@
         "longitude": {
           "description": "Manual longitude for the sunrise/sunset schedule, used when auto-locate and address are off",
           "label": "Longitude"
+        },
+        "minimum-brightness": {
+          "description": "Prevent the screen from going completely dark",
+          "label": "Minimum Brightness"
         },
         "mpris-blacklist": {
           "description": "Players to ignore for media controls and Now Playing",
@@ -1952,7 +2053,7 @@
       },
       "shell": {
         "avatar-path": {
-          "description": "Path to a custom avatar image",
+          "description": "Path to a custom avatar image. Large images are cropped and resized automatically.",
           "label": "Avatar Path",
           "placeholder": "/path/to/avatar.png"
         },
@@ -2025,6 +2126,10 @@
           "description": "Show OSD popups for Caps Lock, Num Lock, and Scroll Lock changes",
           "label": "Lock Keys"
         },
+        "osd-kinds-media": {
+          "description": "Show an OSD popup when a new track starts playing",
+          "label": "Now Playing"
+        },
         "osd-kinds-power-profile": {
           "description": "Show an OSD popup when the power profile changes",
           "label": "Power Profile"
@@ -2080,6 +2185,11 @@
         "screen-time-enabled": {
           "description": "Track per-app usage and show it in Control Center",
           "label": "Screen Time"
+        },
+        "screen-time-reset": {
+          "button": "Reset",
+          "description": "Clear stored per-app foreground usage history",
+          "label": "Reset Screen Time Data"
         },
         "screenshot-copy-to-clipboard": {
           "description": "Place the captured PNG on the clipboard selection",
@@ -2310,9 +2420,17 @@
         "workspace-label-inside": "Inside pill"
       },
       "settings": {
+        "active-color": {
+          "description": "Color used for active privacy indicators; fixed hex colors are also supported",
+          "label": "Active Color"
+        },
         "active-opacity": {
           "description": "Opacity of the icon for the active (focused) window.",
           "label": "Active Icon Opacity"
+        },
+        "album-art-only": {
+          "description": "Show only the circular album artwork without the track title",
+          "label": "Album Art Only"
         },
         "anchor": {
           "description": "Pin this widget as the center alignment anchor",
@@ -2325,6 +2443,10 @@
         "bands": {
           "description": "Number of visualizer bands",
           "label": "Bands"
+        },
+        "cam-filter-regex": {
+          "description": "Regular expression for camera process names to ignore",
+          "label": "Camera Filter Regex"
         },
         "capsule": {
           "description": "Draw a capsule behind this widget",
@@ -2426,6 +2548,10 @@
           "description": "Color role used for the focused workspace; fixed hex colors are also supported",
           "label": "Focused Color"
         },
+        "font-family": {
+          "description": "Typeface for this widget; leave empty to inherit the bar font",
+          "label": "Font Family"
+        },
         "font-weight": {
           "description": "Default inherits the bar font weight",
           "label": "Font Weight"
@@ -2436,7 +2562,8 @@
         },
         "glyph": {
           "description": "Icon glyph name",
-          "label": "Glyph"
+          "label": "Glyph",
+          "sysmon-description": "Custom icon glyph. Leave empty to use the icon for the selected stat."
         },
         "group-by-workspace": {
           "description": "Group taskbar icons into workspace capsules when compositor data is available",
@@ -2457,6 +2584,10 @@
         "hide-empty-workspaces": {
           "description": "When grouping by workspace, omit capsules that have no running windows in the taskbar list.",
           "label": "Hide Empty Workspaces"
+        },
+        "hide-inactive": {
+          "description": "Hide inactive privacy icons and hide the widget when nothing is active",
+          "label": "Hide Inactive"
         },
         "hide-when-empty": {
           "description": "Hide workspace pills when there are no open windows",
@@ -2507,9 +2638,21 @@
           "description": "Icon size in pixels",
           "label": "Icon Size"
         },
+        "icon-spacing": {
+          "description": "Spacing between privacy indicator icons in pixels",
+          "label": "Icon Spacing"
+        },
+        "inactive-color": {
+          "description": "Color used for inactive privacy indicators; fixed hex colors are also supported",
+          "label": "Inactive Color"
+        },
         "inactive-opacity": {
           "description": "Opacity of icons for inactive (unfocused) windows.",
           "label": "Inactive Icon Opacity"
+        },
+        "interface": {
+          "description": "Network interface to monitor; leave empty to use the total across all interfaces",
+          "label": "Interface"
         },
         "label": {
           "description": "Optional static text shown on this button",
@@ -2540,6 +2683,10 @@
         "max-length": {
           "description": "Maximum widget length in pixels",
           "label": "Max Length"
+        },
+        "mic-filter-regex": {
+          "description": "Regular expression for microphone app names to ignore",
+          "label": "Microphone Filter Regex"
         },
         "middle-command": {
           "description": "Shell command run when middle-clicking this button. When set, middle-click opens this command instead of widget settings.",
@@ -2727,6 +2874,7 @@
         "nightlight": "Night Light",
         "notifications": "Notifications",
         "power-profile": "Power Profile",
+        "privacy": "Privacy Indicator",
         "screenshot": "Screenshot",
         "scripted": "Scripted",
         "session": "Session",
@@ -2871,11 +3019,8 @@
     "panel": {
       "all-monitors": "ALL",
       "color-title": "Wallpaper color",
-      "favorite-palette-label": "Colors",
-      "favorite-theme-label": "Theme",
       "filter-placeholder": "Filter...",
       "flatten": "Flatten",
-      "no-directory-configured": "No directory configured",
       "sort-date-asc": "Sort by date (oldest first)",
       "sort-date-desc": "Sort by date (newest first)",
       "sort-name-asc": "Sort by name (A-Z)",

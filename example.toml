@@ -139,9 +139,13 @@ scale              = 1.0            # notification size multiplier applied on to
 background_opacity = 0.97
 offset_x           = 20             # absolute horizontal margin from the screen edge
 offset_y           = 8              # absolute vertical margin from the screen edge
-# blacklist            = ["discord", "org.telegram.desktop"]
-# blacklist_allow_critical = true
-# allowed_urgencies      = ["normal", "critical"]  # omit or list all three to allow every level
+# [notification.filter.rhythmbox]
+# enabled         = true
+# match           = "rhythmbox"
+# show_toast      = true
+# save_history    = false
+# play_sound      = true
+# allowed_urgencies = ["normal", "critical"]  # omit or list all three to allow every level
 # IPC examples:
 # noctalia msg notification-clear-active
 # noctalia msg notification-clear-history
@@ -213,6 +217,7 @@ notification_sound = ""             # empty = bundled sounds/notification.wav
 [brightness]
 enable_ddcutil = false
 # ignore_mmids = []                 # skip these monitors from ddcutil; run: ddcutil --verbose detect
+# minimum_brightness = 0.0          # never let brightness drop below this floor (0.0 to 1.0)
 
 # Per-monitor backend override:
 # [brightness.monitor.eDP-1]

@@ -3,15 +3,20 @@
 #include "shell/desktop/desktop_widget.h"
 #include "ui/palette.h"
 
+#include <array>
+#include <cstddef>
 #include <string>
 
 class Glyph;
 class Label;
+class Renderer;
 class WeatherService;
 
 class DesktopWeatherWidget : public DesktopWidget {
 public:
-  DesktopWeatherWidget(const WeatherService* weather, ColorSpec color, bool shadow);
+  DesktopWeatherWidget(
+      const WeatherService* weather, ColorSpec color, bool shadow, bool showForecast = false, int forecastDays = 3
+  );
 
   void create() override;
   bool applySetting(
@@ -20,19 +25,34 @@ public:
   ) override;
 
 private:
+  struct ForecastRow {
+    Glyph* glyph = nullptr;
+    Label* day = nullptr;
+    Label* temps = nullptr;
+    std::string lastDay;
+    std::string lastGlyph;
+    std::string lastTemps;
+  };
+
   void doLayout(Renderer& renderer) override;
   void doUpdate(Renderer& renderer) override;
   void onFontFamilyChanged(const std::string& family, Renderer& renderer) override;
   bool sync();
+  bool syncForecast(Renderer& renderer);
   void applyShadow();
+
+  static constexpr std::size_t kMaxForecastRows = 6;
 
   const WeatherService* m_weather = nullptr;
   ColorSpec m_color;
   bool m_shadow;
+  bool m_showForecast;
+  int m_forecastDays;
 
   Glyph* m_glyph = nullptr;
   Label* m_temperature = nullptr;
   Label* m_condition = nullptr;
+  std::array<ForecastRow, kMaxForecastRows> m_forecastRows{};
 
   std::string m_lastGlyph;
   std::string m_lastTemperature;

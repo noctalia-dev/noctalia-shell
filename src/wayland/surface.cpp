@@ -7,6 +7,7 @@
 #include "render/animation/animation_manager.h"
 #include "render/render_context.h"
 #include "render/scene/node.h"
+#include "util/sys_utils.h"
 #include "viewporter-client-protocol.h"
 #include "wayland/wayland_connection.h"
 
@@ -14,7 +15,6 @@
 #include <cmath>
 #include <cstdlib>
 #include <format>
-#include <limits>
 #include <string_view>
 #include <typeinfo>
 #include <unordered_map>
@@ -75,13 +75,7 @@ namespace {
   }
 
   bool idleProfileEnabled() {
-    static const bool enabled = [] {
-      const char* value = std::getenv("NOCTALIA_IDLE_PROFILE");
-      return value != nullptr
-          && value[0] != '\0'
-          && std::string_view(value) != "0"
-          && std::string_view(value) != "false";
-    }();
+    static const bool enabled = SysUtils::isEnvFlagOn("NOCTALIA_IDLE_PROFILE");
     return enabled;
   }
 
@@ -229,6 +223,19 @@ Surface::~Surface() {
 }
 
 bool Surface::isRunning() const noexcept { return m_running; }
+
+void Surface::pauseFrameLoop() {
+  cancelQueuedFrameWork();
+  cancelQueuedRender();
+  setRunning(false);
+}
+
+void Surface::resumeFrameLoop() {
+  setRunning(true);
+  if (m_configured) {
+    requestLayout();
+  }
+}
 
 float Surface::effectiveBufferScale() const noexcept {
   if (m_fractionalScale != nullptr && m_viewport != nullptr) {
@@ -650,58 +657,49 @@ std::vector<InputRect> Surface::tessellateShape(
     return d2 > 0.0f ? std::sqrt(d2) : 0.0f;
   };
 
-  // Per-row [left, right] of the shape, mirroring the rect shader's evaluation
-  // and clipped to the visual rect.
-  const auto rowBounds = [&](float yf) -> std::pair<float, float> {
-    // Rows in the top/bottom inset strips (yf outside the body's vertical span)
-    // are only inside the shape where a concave corner bulge crosses the row.
-    // The straight body edges don't reach into these strips, and the shader's
-    // per-fragment top/bottom checks (corner block 2) clip them away. Mirror
-    // that clipping here so the blur region matches the visible shape — without
-    // this, vertical bars (insetT/insetB > 0) leak blur above and below the body.
+  // Per-row coverage of the shape as a set of [left, right] segments (clipped to
+  // the visual rect), mirroring the rect shader. Rows in the top/bottom inset
+  // strips (yf outside the body's vertical span) are covered only where a concave
+  // corner bulge crosses the row; two concave corners on the same edge (e.g. a bar
+  // with both inner corners concave) produce two disjoint segments with an empty
+  // middle — so this returns a list, not a single span.
+  const auto rowSegments = [&](float yf) -> std::vector<std::pair<float, float>> {
+    std::vector<std::pair<float, float>> segs;
+    const auto pushSeg = [&](float l, float r) {
+      l = std::clamp(l, 0.0f, W);
+      r = std::clamp(r, l, W);
+      if (r > l) {
+        segs.push_back({l, r});
+      }
+    };
+
     if (yf < bodyMinY) {
       const float dy = bodyMinY - yf;
-      float bulgeLeft = std::numeric_limits<float>::infinity();
-      float bulgeRight = -std::numeric_limits<float>::infinity();
       if (corners.tl == CornerShape::Concave && rTl > 0.0f && dy <= rTl) {
         const float chord = std::sqrt(std::max(0.0f, dy * (2.0f * rTl - dy)));
-        bulgeLeft = std::min(bulgeLeft, bodyMinX);
-        bulgeRight = std::max(bulgeRight, bodyMinX + rTl - chord);
+        pushSeg(bodyMinX, bodyMinX + rTl - chord);
       }
       if (corners.tr == CornerShape::Concave && rTr > 0.0f && dy <= rTr) {
         const float chord = std::sqrt(std::max(0.0f, dy * (2.0f * rTr - dy)));
-        bulgeLeft = std::min(bulgeLeft, bodyMaxX - rTr + chord);
-        bulgeRight = std::max(bulgeRight, bodyMaxX);
+        pushSeg(bodyMaxX - rTr + chord, bodyMaxX);
       }
-      if (bulgeLeft > bulgeRight) {
-        return {0.0f, 0.0f};
-      }
-      const float left = std::clamp(bulgeLeft, 0.0f, W);
-      const float right = std::clamp(bulgeRight, left, W);
-      return {left, right};
+      return segs;
     }
     if (yf > bodyMaxY) {
       const float dy = yf - bodyMaxY;
-      float bulgeLeft = std::numeric_limits<float>::infinity();
-      float bulgeRight = -std::numeric_limits<float>::infinity();
       if (corners.bl == CornerShape::Concave && rBl > 0.0f && dy <= rBl) {
         const float chord = std::sqrt(std::max(0.0f, dy * (2.0f * rBl - dy)));
-        bulgeLeft = std::min(bulgeLeft, bodyMinX);
-        bulgeRight = std::max(bulgeRight, bodyMinX + rBl - chord);
+        pushSeg(bodyMinX, bodyMinX + rBl - chord);
       }
       if (corners.br == CornerShape::Concave && rBr > 0.0f && dy <= rBr) {
         const float chord = std::sqrt(std::max(0.0f, dy * (2.0f * rBr - dy)));
-        bulgeLeft = std::min(bulgeLeft, bodyMaxX - rBr + chord);
-        bulgeRight = std::max(bulgeRight, bodyMaxX);
+        pushSeg(bodyMaxX - rBr + chord, bodyMaxX);
       }
-      if (bulgeLeft > bulgeRight) {
-        return {0.0f, 0.0f};
-      }
-      const float left = std::clamp(bulgeLeft, 0.0f, W);
-      const float right = std::clamp(bulgeRight, left, W);
-      return {left, right};
+      return segs;
     }
 
+    // Body rows: the body fills the middle, so a single span (possibly widened by
+    // concave corners reaching outward, or narrowed by convex rounding) is correct.
     float left = bodyMinX;
     float right = bodyMaxX;
     if (rTl > 0.0f && yf < bodyMinY + rTl) {
@@ -740,34 +738,48 @@ std::vector<InputRect> Surface::tessellateShape(
         right = std::min(right, bodyMaxX - rBr + e);
       }
     }
-    left = std::clamp(left, 0.0f, W);
-    right = std::clamp(right, left, W);
-    return {left, right};
+    pushSeg(left, right);
+    return segs;
   };
 
   out.reserve(static_cast<std::size_t>(visualH / stripPx + 2));
 
   for (int row = 0; row < visualH; row += stripPx) {
     const int rowH = std::min(stripPx, visualH - row);
-    // Take the intersection of the bounds at the strip's top and bottom edges
-    // so the polygon stays inside the actual shape regardless of corner kind.
-    const auto [leftTop, rightTop] = rowBounds(static_cast<float>(row));
-    const auto [leftBot, rightBot] = rowBounds(static_cast<float>(row + rowH));
-    const float left = std::max(leftTop, leftBot);
-    const float right = std::min(rightTop, rightBot);
-    const int rx = visualX + static_cast<int>(std::ceil(left));
-    const int rRight = visualX + static_cast<int>(std::floor(right));
-    const int rw = rRight - rx;
-    if (rw > 0) {
-      const int ry = visualY + row;
-      if (!out.empty()) {
-        auto& previous = out.back();
-        if (previous.x == rx && previous.width == rw && previous.y + previous.height == ry) {
-          previous.height += rowH;
+    // Conservative inside coverage = intersection of the segment sets at the
+    // strip's top and bottom edges, so the polygon stays inside the actual shape
+    // regardless of corner kind. Each set has at most two segments.
+    const auto segsTop = rowSegments(static_cast<float>(row));
+    const auto segsBot = rowSegments(static_cast<float>(row + rowH));
+    for (const auto& a : segsTop) {
+      for (const auto& b : segsBot) {
+        const float left = std::max(a.first, b.first);
+        const float right = std::min(a.second, b.second);
+        const int rx = visualX + static_cast<int>(std::ceil(left));
+        const int rRight = visualX + static_cast<int>(std::floor(right));
+        const int rw = rRight - rx;
+        if (rw <= 0) {
           continue;
         }
+        const int ry = visualY + row;
+        // Vertically merge with a matching strip from the previous row. With two
+        // spike columns the match may not be the very last rect, so scan back over
+        // the few rects that end at this row.
+        bool merged = false;
+        for (auto it = out.rbegin(); it != out.rend(); ++it) {
+          if (it->y + it->height < ry) {
+            break;
+          }
+          if (it->x == rx && it->width == rw && it->y + it->height == ry) {
+            it->height += rowH;
+            merged = true;
+            break;
+          }
+        }
+        if (!merged) {
+          out.push_back({rx, ry, rw, rowH});
+        }
       }
-      out.push_back({rx, ry, rw, rowH});
     }
   }
 

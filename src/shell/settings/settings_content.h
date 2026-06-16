@@ -64,6 +64,8 @@ namespace settings {
     std::function<void(std::size_t)> openSessionActionEntryEditor;
     std::function<void(std::size_t)> openIdleBehaviorEntryEditor;
     std::function<void()> openIdleBehaviorCreateEditor;
+    std::function<void(std::size_t)> openNotificationFilterEntryEditor;
+    std::function<void()> openNotificationFilterCreateEditor;
     std::function<void(std::vector<std::string> laneListPath, std::string widgetName)> openWidgetInspectorEditor;
     std::function<void(std::vector<std::string> laneListPath, std::string groupId)> openCapsuleGroupEditor;
 
@@ -74,6 +76,7 @@ namespace settings {
     // When set (session action entry popup), called after commits instead of requestRebuild.
     std::function<void()> afterSessionActionsCommit;
     std::function<void()> afterIdleBehaviorApply;
+    std::function<void()> afterNotificationFilterApply;
     std::function<void()> closeHostedEditor;
   };
 
@@ -85,6 +88,9 @@ namespace settings {
   );
   void buildIdleBehaviorEntryDetailContent(
       Flex& parent, SettingsContentContext& ctx, IdleBehaviorConfig& row, const std::function<void()>& persist
+  );
+  void buildNotificationFilterEntryDetailContent(
+      Flex& parent, SettingsContentContext& ctx, NotificationFilterConfig& row, const std::function<void()>& persist
   );
 
 } // namespace settings

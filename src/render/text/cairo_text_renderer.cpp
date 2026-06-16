@@ -457,6 +457,7 @@ CairoTextRenderer::TextMetrics CairoTextRenderer::metricsFromLayout(PangoLayout*
   const float pscale = 1.0f / static_cast<float>(PANGO_SCALE);
 
   const float width = static_cast<float>(logical.width) * pscale * invScale;
+
   // Pango logical rect y is 0 at top of layout box; baseline is offset from top.
   const float ascent = static_cast<float>(baselinePango - logical.y) * pscale * invScale;
   const float descent = static_cast<float>(logical.height - (baselinePango - logical.y)) * pscale * invScale;
@@ -611,6 +612,7 @@ void CairoTextRenderer::measureCursorStops(
     pango_layout_get_cursor_pos(layout, index, &strong, &weak);
     outStops.push_back(static_cast<float>(strong.x) * pscale * invScale);
   }
+
   g_object_unref(layout);
 }
 

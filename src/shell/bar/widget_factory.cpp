@@ -38,6 +38,7 @@
 #include "shell/bar/widgets/notification_widget.h"
 #include "shell/bar/widgets/plugin_widget.h"
 #include "shell/bar/widgets/power_profile_widget.h"
+#include "shell/bar/widgets/privacy_widget.h"
 #include "shell/bar/widgets/screenshot_widget.h"
 #include "shell/bar/widgets/session_widget.h"
 #include "shell/bar/widgets/settings_widget.h"
@@ -51,6 +52,7 @@
 #include "shell/bar/widgets/wallpaper_widget.h"
 #include "shell/bar/widgets/weather_widget.h"
 #include "shell/bar/widgets/workspaces_widget.h"
+#include "system/easyeffects_service.h"
 #include "system/lock_keys_service.h"
 #include "system/system_monitor_service.h"
 #include "system/weather_service.h"
@@ -65,6 +67,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <utility>
 
 namespace {
   constexpr Logger kLog("shell");
@@ -103,19 +106,20 @@ namespace {
 
 WidgetFactory::WidgetFactory(
     CompositorPlatform& platform, ConfigService& config, NotificationManager* notifications, TrayService* tray,
-    PipeWireService* audio, UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
-    INetworkService* network, IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
-    HttpClient* httpClient, WeatherService* weather, GammaService* nightLight,
+    PipeWireService* audio, EasyEffectsService* easyEffects, UPowerService* upower, SystemMonitorService* sysmon,
+    PowerProfilesService* powerProfiles, INetworkService* network, IdleInhibitor* idleInhibitor, MprisService* mpris,
+    PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weather, GammaService* nightLight,
     noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth, BrightnessService* brightness,
     LockKeysService* lockKeys, ClipboardService* clipboard, FileWatcher* fileWatcher, ScreenshotService* screenshots,
     RenderContext* renderContext, scripting::ScriptApiContext* scriptApi
 )
     : m_platform(platform), m_configService(config), m_config(config.config()), m_notifications(notifications),
-      m_tray(tray), m_audio(audio), m_upower(upower), m_sysmon(sysmon), m_powerProfiles(powerProfiles),
-      m_network(network), m_idleInhibitor(idleInhibitor), m_mpris(mpris), m_audioSpectrum(audioSpectrum),
-      m_httpClient(httpClient), m_weather(weather), m_nightLight(nightLight), m_themeService(themeService),
-      m_bluetooth(bluetooth), m_brightness(brightness), m_lockKeys(lockKeys), m_clipboard(clipboard),
-      m_fileWatcher(fileWatcher), m_screenshots(screenshots), m_renderContext(renderContext), m_scriptApi(scriptApi) {
+      m_tray(tray), m_audio(audio), m_easyEffects(easyEffects), m_upower(upower), m_sysmon(sysmon),
+      m_powerProfiles(powerProfiles), m_network(network), m_idleInhibitor(idleInhibitor), m_mpris(mpris),
+      m_audioSpectrum(audioSpectrum), m_httpClient(httpClient), m_weather(weather), m_nightLight(nightLight),
+      m_themeService(themeService), m_bluetooth(bluetooth), m_brightness(brightness), m_lockKeys(lockKeys),
+      m_clipboard(clipboard), m_fileWatcher(fileWatcher), m_screenshots(screenshots), m_renderContext(renderContext),
+      m_scriptApi(scriptApi) {
   scripting::PluginRegistry::instance().ensureScanned();
 }
 
@@ -277,9 +281,13 @@ std::unique_ptr<Widget> WidgetFactory::create(
     const bool hideWhenSingleLayout = wc != nullptr ? wc->getBool("hide_when_single_layout", false) : false;
     auto customLabels =
         wc != nullptr ? wc->getStringMap("custom_labels") : std::unordered_map<std::string, std::string>{};
+    std::string glyph = wc != nullptr ? wc->getString("glyph", "keyboard") : std::string{"keyboard"};
+    if (glyph.empty()) {
+      glyph = "keyboard";
+    }
     auto widget = std::make_unique<KeyboardLayoutWidget>(
         m_platform, cycleCommand, KeyboardLayoutWidget::parseDisplayMode(display), showIcon, showLabel,
-        hideWhenSingleLayout, std::move(customLabels)
+        hideWhenSingleLayout, std::move(customLabels), std::move(glyph)
     );
     widget->setContentScale(contentScale);
     return widget;
@@ -323,9 +331,10 @@ std::unique_ptr<Widget> WidgetFactory::create(
     const float artSize = static_cast<float>(wc != nullptr ? wc->getDouble("art_size", 16.0) : 16.0);
     const std::string titleScroll = wc != nullptr ? wc->getString("title_scroll", "none") : std::string("none");
     const bool hideWhenNoMedia = wc != nullptr ? wc->getBool("hide_when_no_media", false) : false;
+    const bool albumArtOnly = wc != nullptr ? wc->getBool("album_art_only", false) : false;
     auto widget = std::make_unique<MediaWidget>(
         m_mpris, m_httpClient, output, maxWidth, minWidth, artSize, parseMediaTitleScrollMode(titleScroll),
-        hideWhenNoMedia
+        hideWhenNoMedia, albumArtOnly
     );
     widget->setContentScale(contentScale);
     return widget;
@@ -353,6 +362,25 @@ std::unique_ptr<Widget> WidgetFactory::create(
 
   if (type == "power_profile") {
     auto widget = std::make_unique<PowerProfileWidget>(m_powerProfiles);
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "privacy") {
+    PrivacyWidgetConfig config;
+
+    if (wc != nullptr) {
+      config.hideInactive = wc->getBool("hide_inactive", config.hideInactive);
+      config.iconSpacing =
+          static_cast<int>(std::clamp<std::int64_t>(wc->getInt("icon_spacing", config.iconSpacing), 0, 48));
+      config.activeColor = wc->getColorSpec("active_color", config.activeColor, "widget." + name + ".active_color");
+      config.inactiveColor =
+          wc->getColorSpec("inactive_color", config.inactiveColor, "widget." + name + ".inactive_color");
+      config.micFilterRegex = wc->getString("mic_filter_regex", "");
+      config.camFilterRegex = wc->getString("cam_filter_regex", "");
+    }
+
+    auto widget = std::make_unique<PrivacyWidget>(m_audio, std::move(config));
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -455,6 +483,7 @@ std::unique_ptr<Widget> WidgetFactory::create(
       stat = SysmonStat::NetTx;
     }
     const std::string display = wc != nullptr ? wc->getString("display", "gauge") : std::string("gauge");
+    const std::string networkInterface = wc != nullptr ? wc->getString("interface", "") : std::string();
     SysmonDisplayMode displayMode = SysmonDisplayMode::Gauge;
     if (display == "text")
       displayMode = SysmonDisplayMode::Text;
@@ -467,8 +496,10 @@ std::unique_ptr<Widget> WidgetFactory::create(
               "highlight_color", colorSpecFromRole(ColorRole::Error), "widget." + name + ".highlight_color"
           )
         : colorSpecFromRole(ColorRole::Error);
+    std::string glyph = wc != nullptr ? wc->getString("glyph", "") : std::string{};
     auto widget = std::make_unique<SysmonWidget>(
-        m_sysmon, output, stat, std::move(path), displayMode, highlightColor, m_configService, showLabel, labelMinWidth
+        m_sysmon, output, stat, std::move(path), displayMode, highlightColor, m_configService, networkInterface,
+        showLabel, labelMinWidth, std::move(glyph)
     );
     widget->setContentScale(contentScale);
     return widget;
@@ -553,7 +584,8 @@ std::unique_ptr<Widget> WidgetFactory::create(
         static_cast<int>(std::clamp<std::int64_t>(wc != nullptr ? wc->getInt("scroll_step", 5) : 5, 1, 25));
     const std::string target = wc != nullptr ? wc->getString("device", "output") : std::string("output");
     const auto volumeTarget = target == "input" ? VolumeWidgetTarget::Input : VolumeWidgetTarget::Output;
-    auto widget = std::make_unique<VolumeWidget>(m_audio, &m_config, output, showLabel, volumeTarget, scrollStep);
+    auto widget =
+        std::make_unique<VolumeWidget>(m_audio, m_easyEffects, &m_config, output, showLabel, volumeTarget, scrollStep);
     widget->setContentScale(contentScale);
     return widget;
   }

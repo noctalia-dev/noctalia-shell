@@ -111,6 +111,10 @@ namespace calendar {
       return std::string(url.substr(0, pathStart));
     }
 
+    std::string requestBaseUrl(std::string_view requestedUrl, std::string_view effectiveUrl) {
+      return !effectiveUrl.empty() ? std::string(effectiveUrl) : std::string(requestedUrl);
+    }
+
     std::string resolveHref(std::string_view baseUrl, std::string_view href) {
       if (href.starts_with("https://") || href.starts_with("http://")) {
         return std::string(href);
@@ -307,7 +311,7 @@ namespace calendar {
               return;
             }
             const std::string href = firstResponsePropertyHref(resp.body, "current-user-principal");
-            const std::string principalUrl = resolveHref(ctx->serverUrl, href);
+            const std::string principalUrl = resolveHref(requestBaseUrl(ctx->serverUrl, resp.effectiveUrl), href);
             if (principalUrl.empty()) {
               kLog.warn("principal discovery did not return current-user-principal");
               finish(ctx, false);
@@ -328,7 +332,7 @@ namespace calendar {
               return;
             }
             const std::string href = firstResponsePropertyHref(resp.body, "calendar-home-set");
-            const std::string homeUrl = resolveHref(principalUrl, href);
+            const std::string homeUrl = resolveHref(requestBaseUrl(principalUrl, resp.effectiveUrl), href);
             if (homeUrl.empty()) {
               kLog.warn("calendar-home-set discovery returned no href");
               finish(ctx, false);

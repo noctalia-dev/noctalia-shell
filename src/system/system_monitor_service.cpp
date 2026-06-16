@@ -1,12 +1,14 @@
 #include "system/system_monitor_service.h"
 
 #include "core/log.h"
+#include "system/cpu_temp_sensor.h"
 #include "system/format_units.h"
 #include "util/file_utils.h"
 #include "util/string_utils.h"
 
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <cstring>
 #include <dlfcn.h>
 #include <filesystem>
@@ -42,24 +44,6 @@ namespace {
       result.push_back(ring[static_cast<std::size_t>(idx)]);
     }
     return result;
-  }
-
-  std::optional<std::string> readSmallTextFile(const std::filesystem::path& path) {
-    std::ifstream file{path};
-    if (!file.is_open()) {
-      return std::nullopt;
-    }
-
-    std::string text;
-    std::getline(file, text);
-    if (text.empty()) {
-      return std::nullopt;
-    }
-
-    while (!text.empty() && (text.back() == '\n' || text.back() == '\r' || text.back() == ' ' || text.back() == '\t')) {
-      text.pop_back();
-    }
-    return text;
   }
 
   std::optional<double> readTempInputCelsius(const std::filesystem::path& path) {
@@ -154,6 +138,28 @@ namespace {
     return fastest;
   }
 
+  [[nodiscard]] double netRxFromStats(const SystemStats& stats, std::string_view interfaceName) {
+    if (interfaceName.empty()) {
+      return stats.netRxBytesPerSec;
+    }
+    if (const auto it = stats.netThroughputByInterface.find(std::string(interfaceName));
+        it != stats.netThroughputByInterface.end()) {
+      return it->second.rxBytesPerSec;
+    }
+    return 0.0;
+  }
+
+  [[nodiscard]] double netTxFromStats(const SystemStats& stats, std::string_view interfaceName) {
+    if (interfaceName.empty()) {
+      return stats.netTxBytesPerSec;
+    }
+    if (const auto it = stats.netThroughputByInterface.find(std::string(interfaceName));
+        it != stats.netThroughputByInterface.end()) {
+      return it->second.txBytesPerSec;
+    }
+    return 0.0;
+  }
+
   [[nodiscard]] SystemConfig::MonitorConfig sanitizeMonitorConfig(SystemConfig::MonitorConfig config) {
     config.cpuPollSeconds = clampPollSeconds(config.cpuPollSeconds);
     config.gpuPollSeconds = clampPollSeconds(config.gpuPollSeconds);
@@ -191,20 +197,9 @@ namespace {
     return std::format("hwmon:{} label=\"{}\" {}", name, label, inputPath.string());
   }
 
-  std::string formatThermalZoneTempSource(const std::string& zoneType, const std::filesystem::path& inputPath) {
-    const std::string type = zoneType.empty() ? "unknown" : zoneType;
-    return std::format("thermal_zone:{} {}", type, inputPath.string());
-  }
-
   bool isBetterHwmonSensor(int score, double tempC, int bestScore, const std::optional<double>& bestTemp) {
     return score > bestScore || (score == bestScore && (!bestTemp.has_value() || tempC > *bestTemp));
   }
-
-  bool isPrimaryCpuSensorLabel(const std::string& label) {
-    return label.starts_with("Package id") || label.starts_with("Tdie") || label.starts_with("SoC Temperature");
-  }
-
-  bool isCoreCpuSensorLabel(const std::string& label) { return label.starts_with("Core") || label.starts_with("Tccd"); }
 
   int scoreGpuHwmonSensor(const std::string& hwmonName, const std::string& label) {
     const std::string name = StringUtils::toLower(hwmonName);
@@ -238,7 +233,7 @@ namespace {
     if (!fs::exists(deviceLink)) {
       return true;
     }
-    const auto status = readSmallTextFile(deviceLink / "power" / "runtime_status");
+    const auto status = FileUtils::readSmallTextFile(deviceLink / "power" / "runtime_status");
     if (!status.has_value()) {
       return true;
     }
@@ -289,7 +284,7 @@ namespace {
         continue;
       }
 
-      if (readSmallTextFile(devicePath / "vendor").value_or("") != "0x1002") {
+      if (FileUtils::readSmallTextFile(devicePath / "vendor").value_or("") != "0x1002") {
         continue;
       }
 
@@ -396,149 +391,14 @@ namespace {
     return total;
   }
 
-  std::optional<TempSensorReading> readCpuTempSensor() {
-    namespace fs = std::filesystem;
-
-    std::vector<fs::path> searchPaths;
-    std::unordered_map<std::string, TempSensorReading> foundSensors;
-    std::string cpuSensor;
-    bool gotCpu = false;
-    bool gotCoretemp = false;
-
+  noctalia::system::cpu_temp::ProbeResult readCpuTempSensor(const SystemConfig::MonitorConfig& config) {
     try {
-      const fs::path hwmonRoot{"/sys/class/hwmon"};
-      if (fs::exists(hwmonRoot) && fs::is_directory(hwmonRoot)) {
-        for (const auto& dir : fs::directory_iterator{hwmonRoot}) {
-          std::error_code ec;
-          const fs::path addPath = fs::canonical(dir.path(), ec);
-          if (ec
-              || FileUtils::containsPath(searchPaths, addPath)
-              || FileUtils::containsPath(searchPaths, addPath / "device")) {
-            continue;
-          }
-
-          if (addPath.string().contains("coretemp")) {
-            gotCoretemp = true;
-          }
-
-          for (const auto& file : fs::directory_iterator{addPath}) {
-            if (file.path().filename() == "device") {
-              for (const auto& devFile : fs::directory_iterator{file.path()}) {
-                const std::string devFileName = devFile.path().filename().string();
-                if (devFileName.starts_with("temp") && devFileName.ends_with("_input")) {
-                  searchPaths.push_back(file.path());
-                  break;
-                }
-              }
-            }
-
-            const std::string fileName = file.path().filename().string();
-            if (fileName.starts_with("temp") && fileName.ends_with("_input")) {
-              searchPaths.push_back(addPath);
-              break;
-            }
-          }
-        }
-      }
-
-      if (!gotCoretemp) {
-        const fs::path coretempRoot{"/sys/devices/platform/coretemp.0/hwmon"};
-        if (fs::exists(coretempRoot) && fs::is_directory(coretempRoot)) {
-          for (const auto& dir : fs::directory_iterator{coretempRoot}) {
-            std::error_code ec;
-            const fs::path addPath = fs::canonical(dir.path(), ec);
-            if (ec) {
-              continue;
-            }
-
-            for (const auto& file : fs::directory_iterator{addPath}) {
-              const std::string fileName = file.path().filename().string();
-              if (fileName.starts_with("temp")
-                  && fileName.ends_with("_input")
-                  && !FileUtils::containsPath(searchPaths, addPath)) {
-                searchPaths.push_back(addPath);
-                gotCoretemp = true;
-                break;
-              }
-            }
-          }
-        }
-      }
-
-      for (const auto& path : searchPaths) {
-        const std::string hwmonName = readSmallTextFile(path / "name").value_or(path.filename().string());
-        for (const auto& file : fs::directory_iterator{path}) {
-          const fs::path inputPath = file.path();
-          const std::string fileName = inputPath.filename().string();
-          const std::string filePath = inputPath.string();
-          if (!fileName.starts_with("temp") || !fileName.ends_with("_input") || filePath.contains("nvme")) {
-            continue;
-          }
-
-          const std::string id = fileName.substr(4, fileName.size() - 10);
-          const std::string base = fileName.substr(0, fileName.size() - 6);
-          const std::string label = readSmallTextFile(path / (base + "_label")).value_or("temp" + id);
-          const auto tempC = readTempInputCelsius(inputPath);
-          if (!tempC.has_value()) {
-            continue;
-          }
-
-          const std::string sensorName = hwmonName + "/" + label;
-          foundSensors[sensorName] = TempSensorReading{
-              .tempC = *tempC, .score = 0, .source = formatHwmonTempSource(hwmonName, label, inputPath)
-          };
-
-          if (!gotCpu && isPrimaryCpuSensorLabel(label)) {
-            gotCpu = true;
-            cpuSensor = sensorName;
-          } else if (isCoreCpuSensorLabel(label)) {
-            gotCoretemp = true;
-          }
-        }
-      }
-
-      if (!gotCpu) {
-        const fs::path thermalRoot{"/sys/class/thermal"};
-        for (int i = 0; fs::exists(thermalRoot / ("thermal_zone" + std::to_string(i))); ++i) {
-          const fs::path basePath = thermalRoot / ("thermal_zone" + std::to_string(i));
-          const fs::path tempPath = basePath / "temp";
-          if (!fs::exists(tempPath)) {
-            continue;
-          }
-
-          const std::string label = readSmallTextFile(basePath / "type").value_or("temp" + std::to_string(i));
-          const auto tempC = readTempInputCelsius(tempPath);
-          if (!tempC.has_value()) {
-            continue;
-          }
-
-          const std::string sensorName = "thermal" + std::to_string(i) + "/" + label;
-          foundSensors[sensorName] =
-              TempSensorReading{.tempC = *tempC, .score = 0, .source = formatThermalZoneTempSource(label, tempPath)};
-        }
-      }
+      return noctalia::system::cpu_temp::read("/sys/class/hwmon", "/sys/class/thermal", config.cpuTempSensorPath);
     } catch (...) {
+      return noctalia::system::cpu_temp::ProbeResult{
+          .reading = std::nullopt, .error = "CPU temperature sensor scan failed"
+      };
     }
-
-    if (!cpuSensor.empty()) {
-      const auto it = foundSensors.find(cpuSensor);
-      if (it != foundSensors.end()) {
-        return it->second;
-      }
-    }
-
-    for (const auto& [name, sensor] : foundSensors) {
-      const std::string lowerName = StringUtils::toLower(name);
-      if (lowerName.contains("cpu") || lowerName.contains("k10temp")) {
-        return sensor;
-      }
-    }
-
-    if (!foundSensors.empty()) {
-      return foundSensors.begin()->second;
-    }
-
-    return std::nullopt;
   }
 
   GpuHwmonProbe readGpuHwmonTempSensor() {
@@ -556,7 +416,7 @@ namespace {
         continue;
       }
 
-      const std::string hwmonName = readSmallTextFile(hwmonEntry.path() / "name").value_or("");
+      const std::string hwmonName = FileUtils::readSmallTextFile(hwmonEntry.path() / "name").value_or("");
       const int nameScore = scoreGpuHwmonSensor(hwmonName, "");
       if (nameScore < 0) {
         continue;
@@ -580,7 +440,7 @@ namespace {
         }
 
         const std::string base = fileName.substr(0, fileName.size() - 6);
-        const std::string label = readSmallTextFile(hwmonEntry.path() / (base + "_label")).value_or("");
+        const std::string label = FileUtils::readSmallTextFile(hwmonEntry.path() / (base + "_label")).value_or("");
         const auto tempC = readTempInputCelsius(fileEntry.path());
         if (!tempC.has_value()) {
           continue;
@@ -1086,6 +946,16 @@ std::vector<SystemStats> SystemMonitorService::history(int windowSize) const {
   return historyWindowFromRing(m_history, m_historyHead, windowSize);
 }
 
+double SystemMonitorService::netRxBytesPerSec(std::string_view interfaceName) const {
+  std::lock_guard lock{m_statsMutex};
+  return netRxFromStats(m_latest, interfaceName);
+}
+
+double SystemMonitorService::netTxBytesPerSec(std::string_view interfaceName) const {
+  std::lock_guard lock{m_statsMutex};
+  return netTxFromStats(m_latest, interfaceName);
+}
+
 void SystemMonitorService::retainCpuTemp() { m_cpuTempRefs.fetch_add(1, std::memory_order_relaxed); }
 
 void SystemMonitorService::releaseCpuTemp() { m_cpuTempRefs.fetch_sub(1, std::memory_order_relaxed); }
@@ -1165,6 +1035,7 @@ void SystemMonitorService::stop() {
 }
 
 void SystemMonitorService::logDetectedSources() {
+  const SystemConfig::MonitorConfig pollCfg = pollConfig();
   const NvidiaDisplayDeviceState nvidiaDisplayState = detectNvidiaPciDisplayDeviceState();
   const auto cpu = readCpuTotals();
   const auto mem = readMemoryKb();
@@ -1178,8 +1049,11 @@ void SystemMonitorService::logDetectedSources() {
       load.has_value() ? "/proc/loadavg" : "unavailable"
   );
 
-  if (const auto cpuTemp = readCpuTempSensor(); cpuTemp.has_value()) {
-    kLog.info("detected CPU temperature source: {} ({:.0f}C)", cpuTemp->source, cpuTemp->tempC);
+  const auto cpuTemp = readCpuTempSensor(pollCfg);
+  if (cpuTemp.reading.has_value()) {
+    kLog.info("detected CPU temperature source: {} ({:.0f}C)", cpuTemp.reading->source, cpuTemp.reading->tempC);
+  } else if (!cpuTemp.error.empty()) {
+    kLog.warn("detected CPU temperature source: unavailable; {}", cpuTemp.error);
   } else {
     kLog.info("detected CPU temperature source: unavailable");
   }
@@ -1264,7 +1138,7 @@ void SystemMonitorService::samplingLoop() {
       }
 
       if (m_cpuTempRefs.load(std::memory_order_relaxed) > 0) {
-        std::optional<double> cpuTemp = readCpuTempCelsius();
+        std::optional<double> cpuTemp = readCpuTempCelsius(pollCfg);
         std::lock_guard lock{m_statsMutex};
         if (cpuTemp.has_value()) {
           m_latest.cpuTempC = cpuTemp;
@@ -1296,21 +1170,30 @@ void SystemMonitorService::samplingLoop() {
         const double scale = intervalSeconds > 0.0 ? 1.0 / intervalSeconds : 1.0;
         double totalRx = 0.0;
         double totalTx = 0.0;
+        std::unordered_map<std::string, SystemStats::NetThroughput> byInterface;
         for (const auto& [iface, cur] : *currentNetBytes) {
           const auto it = m_prevNetBytes.find(iface);
+          double ifaceRx = 0.0;
+          double ifaceTx = 0.0;
           if (it != m_prevNetBytes.end()) {
             if (cur.rx >= it->second.rx) {
-              totalRx += static_cast<double>(cur.rx - it->second.rx) * scale;
+              ifaceRx = static_cast<double>(cur.rx - it->second.rx) * scale;
             }
             if (cur.tx >= it->second.tx) {
-              totalTx += static_cast<double>(cur.tx - it->second.tx) * scale;
+              ifaceTx = static_cast<double>(cur.tx - it->second.tx) * scale;
             }
           }
+          if (iface != "lo") {
+            totalRx += ifaceRx;
+            totalTx += ifaceTx;
+          }
+          byInterface.emplace(iface, SystemStats::NetThroughput{.rxBytesPerSec = ifaceRx, .txBytesPerSec = ifaceTx});
         }
         m_prevNetBytes = *currentNetBytes;
         std::lock_guard lock{m_statsMutex};
         m_latest.netRxBytesPerSec = totalRx;
         m_latest.netTxBytesPerSec = totalTx;
+        m_latest.netThroughputByInterface = std::move(byInterface);
       }
       nextNetwork = now + networkInterval;
       statsTouched = true;
@@ -1494,9 +1377,9 @@ std::optional<SystemMonitorService::MemData> SystemMonitorService::readMemoryKb(
   return data;
 }
 
-std::optional<double> SystemMonitorService::readCpuTempCelsius() {
-  const auto reading = readCpuTempSensor();
-  return reading.has_value() ? std::optional<double>{reading->tempC} : std::nullopt;
+std::optional<double> SystemMonitorService::readCpuTempCelsius(const SystemConfig::MonitorConfig& config) {
+  const auto reading = readCpuTempSensor(config);
+  return reading.reading.has_value() ? std::optional<double>{reading.reading->tempC} : std::nullopt;
 }
 
 SystemMonitorService::NvidiaDisplayDeviceState SystemMonitorService::detectNvidiaPciDisplayDeviceState() {
@@ -1513,17 +1396,18 @@ SystemMonitorService::NvidiaDisplayDeviceState SystemMonitorService::detectNvidi
       continue;
     }
 
-    const std::string vendor = StringUtils::toLower(readSmallTextFile(entry.path() / "vendor").value_or(""));
+    const std::string vendor = StringUtils::toLower(FileUtils::readSmallTextFile(entry.path() / "vendor").value_or(""));
     if (vendor != "0x10de") {
       continue;
     }
 
-    const std::string deviceClass = StringUtils::toLower(readSmallTextFile(entry.path() / "class").value_or(""));
+    const std::string deviceClass =
+        StringUtils::toLower(FileUtils::readSmallTextFile(entry.path() / "class").value_or(""));
     if (!deviceClass.starts_with("0x03")) {
       continue;
     }
 
-    const auto runtimeStatus = readSmallTextFile(entry.path() / "power" / "runtime_status");
+    const auto runtimeStatus = FileUtils::readSmallTextFile(entry.path() / "power" / "runtime_status");
     if (runtimeStatus.has_value() && isInactiveRuntimeStatus(*runtimeStatus)) {
       foundInactiveNvidiaDisplay = true;
       continue;
@@ -1754,9 +1638,6 @@ SystemMonitorService::readNetBytes() {
     std::string iface = line.substr(0, colonPos);
     while (!iface.empty() && iface.front() == ' ') {
       iface.erase(iface.begin());
-    }
-    if (iface == "lo") {
-      continue;
     }
 
     std::istringstream iss{line.substr(colonPos + 1)};

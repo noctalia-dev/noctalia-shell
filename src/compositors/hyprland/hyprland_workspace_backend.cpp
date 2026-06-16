@@ -202,18 +202,19 @@ std::optional<std::string> HyprlandWorkspaceBackend::focusedWindowId() const {
 }
 
 void HyprlandWorkspaceBackend::focusWindow(const std::string& windowId) {
-  if (windowId.empty() || !m_runtime.available()) {
+  if (windowId.empty()) {
     return;
   }
-  std::string target = windowId;
-  if (target.rfind("address:", 0) != 0) {
-    if (target.rfind("0x", 0) == 0) {
-      target = "address:" + target;
-    } else {
-      target = "address:0x" + target;
-    }
+  const auto normalized = compositors::hyprland::normalizeWindowId(windowId);
+  if (normalized.empty()) {
+    return;
   }
-  (void)m_runtime.request(std::format("dispatch focuswindow {}", target));
+  const std::string target = "address:0x" + normalized;
+  if (m_runtime.configIsLua()) {
+    (void)m_runtime.request(std::format("dispatch hl.dsp.focus({{window = \"{}\"}})", target));
+  } else {
+    (void)m_runtime.request(std::format("dispatch focuswindow {}", target));
+  }
 }
 
 void HyprlandWorkspaceBackend::notifyCleanup() {

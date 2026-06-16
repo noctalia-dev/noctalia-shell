@@ -2,16 +2,23 @@
 
 #include "i18n/i18n.h"
 
+#include <algorithm>
 #include <cerrno>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <fcntl.h>
+#include <filesystem>
 #include <pwd.h>
 #include <security/pam_appl.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
 
 namespace {
+
+  constexpr std::size_t kMaxPamMessageBytes = 4096;
 
   void secureClear(std::string& value) {
     volatile char* ptr = value.empty() ? nullptr : value.data();
@@ -94,43 +101,178 @@ namespace {
     return PAM_SUCCESS;
   }
 
-} // namespace
-
-PamAuthenticator::Result PamAuthenticator::authenticateCurrentUser(std::string_view password) const {
-  std::string user = currentUsername();
-  if (user.empty()) {
-    return Result{.success = false, .message = i18n::tr("auth.pam.user-unavailable")};
+  [[nodiscard]] bool writeAll(int fd, const void* data, std::size_t len) {
+    auto* bytes = static_cast<const std::uint8_t*>(data);
+    std::size_t remaining = len;
+    while (remaining > 0) {
+      const ssize_t n = ::write(fd, bytes, remaining);
+      if (n > 0) {
+        bytes += static_cast<std::size_t>(n);
+        remaining -= static_cast<std::size_t>(n);
+      } else if (n < 0 && errno == EINTR) {
+        continue;
+      } else {
+        return false;
+      }
+    }
+    return true;
   }
 
-  std::string passwordCopy(password);
-  PamConversationData convData{.password = passwordCopy.c_str()};
-  pam_conv conv = {
-      .conv = &pamConversation,
-      .appdata_ptr = &convData,
-  };
+  [[nodiscard]] bool readAll(int fd, void* data, std::size_t len) {
+    auto* bytes = static_cast<std::uint8_t*>(data);
+    std::size_t remaining = len;
+    while (remaining > 0) {
+      const ssize_t n = ::read(fd, bytes, remaining);
+      if (n > 0) {
+        bytes += static_cast<std::size_t>(n);
+        remaining -= static_cast<std::size_t>(n);
+      } else if (n < 0 && errno == EINTR) {
+        continue;
+      } else {
+        return false;
+      }
+    }
+    return true;
+  }
 
-  PamHandle pamh;
-  const int startRc = pam_start("login", user.c_str(), &conv, &pamh.h);
-  if (startRc != PAM_SUCCESS || pamh.h == nullptr) {
+  [[nodiscard]] bool writeResult(int fd, const PamAuthenticator::Result& result) {
+    const std::uint8_t success = result.success ? 1 : 0;
+    if (!writeAll(fd, &success, sizeof(success))) {
+      return false;
+    }
+    const std::uint32_t len = static_cast<std::uint32_t>(std::min(result.message.size(), kMaxPamMessageBytes));
+    if (!writeAll(fd, &len, sizeof(len))) {
+      return false;
+    }
+    if (len > 0 && !writeAll(fd, result.message.data(), len)) {
+      return false;
+    }
+    return true;
+  }
+
+  [[nodiscard]] bool readResult(int fd, PamAuthenticator::Result& result) {
+    std::uint8_t success = 0;
+    if (!readAll(fd, &success, sizeof(success))) {
+      return false;
+    }
+    std::uint32_t len = 0;
+    if (!readAll(fd, &len, sizeof(len))) {
+      return false;
+    }
+    if (len > kMaxPamMessageBytes) {
+      return false;
+    }
+    result.success = success != 0;
+    result.message.clear();
+    if (len > 0) {
+      result.message.resize(len);
+      if (!readAll(fd, result.message.data(), len)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  [[nodiscard]] PamAuthenticator::Result authenticateDirect(std::string_view password, std::string_view service) {
+    std::string user = PamAuthenticator::currentUsername();
+    if (user.empty()) {
+      return PamAuthenticator::Result{.success = false, .message = i18n::tr("auth.pam.user-unavailable")};
+    }
+    if (service.empty()) {
+      service = "login";
+    }
+
+    std::string passwordCopy(password);
+    PamConversationData convData{.password = passwordCopy.c_str()};
+    pam_conv conv = {
+        .conv = &pamConversation,
+        .appdata_ptr = &convData,
+    };
+
+    PamHandle pamh;
+    const int startRc = pam_start(service.data(), user.c_str(), &conv, &pamh.h);
+    if (startRc != PAM_SUCCESS || pamh.h == nullptr) {
+      secureClear(passwordCopy);
+      return PamAuthenticator::Result{.success = false, .message = i18n::tr("auth.pam.start-failed")};
+    }
+
+    int rc = pam_authenticate(pamh.h, 0);
+    if (rc == PAM_SUCCESS) {
+      rc = pam_acct_mgmt(pamh.h, 0);
+    }
+    const char* err = pam_strerror(pamh.h, rc);
+    const std::string errStr = err != nullptr ? err : i18n::tr("auth.pam.authentication-failed");
+    pamh.lastRc = rc;
+
     secureClear(passwordCopy);
+
+    if (rc == PAM_SUCCESS) {
+      return PamAuthenticator::Result{.success = true, .message = {}};
+    }
+
+    return PamAuthenticator::Result{.success = false, .message = errStr};
+  }
+
+} // namespace
+
+bool PamAuthenticator::pamServiceExists(std::string_view name) {
+  if (name.empty()) {
+    return false;
+  }
+  std::error_code ec;
+  return std::filesystem::exists(std::filesystem::path("/etc/pam.d") / name, ec) && !ec;
+}
+
+PamAuthenticator::Result
+PamAuthenticator::authenticateCurrentUser(std::string_view password, std::string_view service) const {
+  if (password.empty()) {
+    return Result{.success = false, .message = i18n::tr("auth.pam.authentication-failed")};
+  }
+
+  int pipeFds[2] = {-1, -1};
+  if (::pipe2(pipeFds, O_CLOEXEC) != 0) {
     return Result{.success = false, .message = i18n::tr("auth.pam.start-failed")};
   }
 
-  int rc = pam_authenticate(pamh.h, 0);
-  if (rc == PAM_SUCCESS) {
-    rc = pam_acct_mgmt(pamh.h, 0);
+  std::string passwordCopy(password);
+  std::string serviceCopy(service.empty() ? "login" : std::string(service));
+
+  const pid_t pid = ::fork();
+  if (pid < 0) {
+    secureClear(passwordCopy);
+    ::close(pipeFds[0]);
+    ::close(pipeFds[1]);
+    return Result{.success = false, .message = i18n::tr("auth.pam.start-failed")};
   }
-  const char* err = pam_strerror(pamh.h, rc);
-  const std::string errStr = err != nullptr ? err : i18n::tr("auth.pam.authentication-failed");
-  pamh.lastRc = rc;
+
+  if (pid == 0) {
+    ::close(pipeFds[0]);
+    const Result result = authenticateDirect(passwordCopy, serviceCopy);
+    secureClear(passwordCopy);
+    if (!writeResult(pipeFds[1], result)) {
+      ::close(pipeFds[1]);
+      ::_exit(128);
+    }
+    ::close(pipeFds[1]);
+    ::_exit(result.success ? 0 : 1);
+  }
 
   secureClear(passwordCopy);
+  ::close(pipeFds[1]);
 
-  if (rc == PAM_SUCCESS) {
-    return Result{.success = true, .message = {}};
+  Result result;
+  const bool readOk = readResult(pipeFds[0], result);
+  ::close(pipeFds[0]);
+
+  int status = 0;
+  while (::waitpid(pid, &status, 0) < 0 && errno == EINTR) {
   }
 
-  return Result{.success = false, .message = errStr};
+  if (!readOk || !WIFEXITED(status) || WEXITSTATUS(status) >= 128) {
+    return Result{.success = false, .message = i18n::tr("auth.pam.start-failed")};
+  }
+
+  return result;
 }
 
 std::string PamAuthenticator::currentUsername() {

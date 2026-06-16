@@ -62,6 +62,8 @@ public:
   void measure(Renderer& renderer);
 
 private:
+  // Labels opt out of hit-testing by default; a tooltip needs hits to reach the label.
+  void onTooltipChanged() override { syncHoverInteraction(); }
   void doLayout(Renderer& renderer) override;
   LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints) override;
   void doArrange(Renderer& renderer, const LayoutRect& rect) override;

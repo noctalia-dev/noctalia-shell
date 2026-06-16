@@ -39,12 +39,13 @@ namespace scripting {
     }
   }
 
-  PluginServiceHost::Service::DispatchResult
-  PluginServiceHost::Service::dispatchIpc(std::string_view event, std::string_view payload) {
+  PluginServiceHost::Service::DispatchResult PluginServiceHost::Service::dispatchIpc(
+      std::string_view event, std::string_view payload, const ScriptSnapshot& snapshot
+  ) {
     if (runtime == nullptr) {
       return DispatchResult::MissingHost;
     }
-    if (!runtime->enqueueCallStrings("onIpc", std::string(event), std::string(payload), {})) {
+    if (!runtime->enqueueCallStrings("onIpc", std::string(event), std::string(payload), snapshot)) {
       return DispatchResult::Failed;
     }
     return DispatchResult::Handled;

@@ -243,7 +243,6 @@
       },
       "notification": "DND",
       "power-profile": "Zasilanie",
-      "screen-recorder": "Rejestrator",
       "screen-time": "Czas na ekranie",
       "session": "Sesja",
       "system": "System",
@@ -1582,8 +1581,7 @@
           "label": "Czarna lista Toast-ów"
         },
         "blacklist-allow-critical": {
-          "description": "Nadal wyświetlaj krytyczne Toast-y od nadawców na czarnej liście",
-          "label": "Dopuść krytyczne przez czarną listę"
+          "description": "Nadal wyświetlaj krytyczne Toast-y od nadawców na czarnej liście"
         },
         "collapse-on-dismiss": {
           "description": "Przesuń pozostałe Toast-y by zamknąć przerwy gdy jeden zostaje odrzucony",
@@ -1648,7 +1646,7 @@
           "label": "Skróty główne"
         },
         "launcher-categories": {
-          "description": "Wyświetl filtry kategorii w launcherze; przełącz klawiszem Tab podczas otwartego launchera",
+          "description": "Wyświetl filtry kategorii w launcherze; pokaż je klawiszem F6, potem przełączaj F6 i Shift+F6",
           "label": "Pokaż kategorie"
         },
         "launcher-compact": {
@@ -2822,11 +2820,8 @@
     "panel": {
       "all-monitors": "Wszystkie",
       "color-title": "Kolor tapety",
-      "favorite-palette-label": "Kolory",
-      "favorite-theme-label": "Motyw",
       "filter-placeholder": "Filtruj…",
       "flatten": "Spłaszcz",
-      "no-directory-configured": "Brak skonfigurowanego katalogu",
       "sort-date-asc": "Sortuj po dacie (najstarsze pierwsze)",
       "sort-date-desc": "Sortuj po dacie (najnowsze pierwsze)",
       "sort-name-asc": "Sortuj po nazwie (A–Z)",

@@ -14,6 +14,7 @@
 #include "scripting/plugin_state_store.h"
 #include "scripting/script_api_context.h"
 #include "system/terminal_launch.h"
+#include "time/time_format.h"
 #include "util/file_utils.h"
 
 #include <algorithm>
@@ -27,8 +28,10 @@
 #include <json.hpp>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 namespace {
@@ -378,6 +381,26 @@ namespace {
     const char* path = luaL_checklstring(L, 1, &len);
     const std::string expanded = FileUtils::expandUserPath(std::string(path, len)).string();
     lua_pushlstring(L, expanded.data(), expanded.size());
+    return 1;
+  }
+
+  int luau_formatTime(lua_State* L) {
+    size_t patternLen = 0;
+    const char* pattern = luaL_checklstring(L, 1, &patternLen);
+
+    std::int64_t unixSeconds = 0;
+    if (lua_isnoneornil(L, 2)) {
+      unixSeconds = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    } else {
+      const double raw = luaL_checknumber(L, 2);
+      if (!std::isfinite(raw)) {
+        luaL_argerror(L, 2, "expected finite unix timestamp");
+      }
+      unixSeconds = static_cast<std::int64_t>(raw);
+    }
+
+    const std::string result = formatLocalUnixTime(unixSeconds, std::string_view(pattern, patternLen));
+    lua_pushlstring(L, result.data(), result.size());
     return 1;
   }
 
@@ -787,6 +810,39 @@ namespace {
       {nullptr, nullptr},
   };
 
+  int luau_json_decode(lua_State* L) {
+    size_t len = 0;
+    const char* str = luaL_checklstring(L, 1, &len);
+    try {
+      jsonToLua(L, nlohmann::json::parse(str, str + len));
+      return 1;
+    } catch (const nlohmann::json::exception& e) {
+      lua_pushnil(L);
+      lua_pushstring(L, e.what());
+      return 2;
+    }
+  }
+
+  int luau_json_encode(lua_State* L) {
+    const nlohmann::json value = lua_gettop(L) >= 1 ? luaToJson(L, 1) : nlohmann::json(nullptr);
+    const bool pretty = lua_toboolean(L, 2) != 0;
+    try {
+      const std::string out = value.dump(pretty ? 2 : -1);
+      lua_pushlstring(L, out.data(), out.size());
+      return 1;
+    } catch (const nlohmann::json::exception& e) {
+      lua_pushnil(L);
+      lua_pushstring(L, e.what());
+      return 2;
+    }
+  }
+
+  const luaL_Reg kNoctaliaJsonLib[] = {
+      {"decode", luau_json_decode},
+      {"encode", luau_json_encode},
+      {nullptr, nullptr},
+  };
+
   const luaL_Reg kNoctaliaBaseLib[] = {
       {"log", luau_log},
       {"runAsync", luau_runAsync},
@@ -803,6 +859,7 @@ namespace {
       {"copyToClipboard", luau_copyToClipboard},
       {"getenv", luau_getenv},
       {"expandPath", luau_expandPath},
+      {"formatTime", luau_formatTime},
       {"setUpdateInterval", luau_setUpdateInterval},
       {"readFile", luau_readFile},
       {"writeFile", luau_writeFile},
@@ -823,6 +880,10 @@ namespace {
     lua_createtable(L, 0, 0);
     luaL_register(L, nullptr, kNoctaliaStateLib);
     lua_setfield(L, -2, "state");
+    // noctalia.json = { decode, encode }
+    lua_createtable(L, 0, 0);
+    luaL_register(L, nullptr, kNoctaliaJsonLib);
+    lua_setfield(L, -2, "json");
     lua_pop(L, 1);
   }
 } // namespace
@@ -1284,7 +1345,7 @@ std::string LuauHost::translate(std::string_view key, const std::unordered_map<s
     return std::string(key);
   }
   const std::string& tmpl = it->second;
-  if (subst.empty() || tmpl.find('{') == std::string::npos) {
+  if (subst.empty() || !tmpl.contains('{')) {
     return tmpl;
   }
   std::string out;

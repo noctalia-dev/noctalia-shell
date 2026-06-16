@@ -1,5 +1,17 @@
 {
   "auth": {
+    "fingerprint": {
+      "disconnected": "Чытальнік адбіткаў пальцаў адключаны",
+      "error": "Не ўдалося аўтарызавацца па адбітку пальца",
+      "no-match": "Адбітак пальца не супадае",
+      "not-centered": "Пастаўце ваш палец па цэнтру чытальніка і паспрабуйце яшчэ раз",
+      "present": "Чытанне адбітку пальца...",
+      "ready": "Прыкладзіце палец да чытальніку",
+      "remove-and-retry": "Падыміце палец і паспрабуйце яшчэ раз",
+      "retry": "Праскануйце ваш адбітак пальцу яшчэ раз",
+      "swipe-too-short": "Чырканне было надта кароткім, паспрабуйце яшчэ раз",
+      "too-many-attempts": "Адбітак пальцу быў адключаны (надта шмат спроб)"
+    },
     "pam": {
       "authentication-failed": "Аўтарызацыя не ўдалася",
       "start-failed": "Не ўдалося запусціць PAM",
@@ -21,6 +33,9 @@
       "region": "Выбраць рэгіён"
     },
     "widgets": {
+      "active-window": {
+        "no-active-window": "Няма актыўных акон"
+      },
       "lock-keys": {
         "caps": "Caps",
         "caps-short": "C",
@@ -142,7 +157,8 @@
     "calendar": {
       "all-day": "Увесь дзень",
       "events": "Падзеі",
-      "no-events": "Падзей няма."
+      "no-events": "Падзей няма.",
+      "today": "Сёння"
     },
     "display": {
       "disabled": "Адключана",
@@ -150,6 +166,7 @@
       "unknown-resolution": "Невядомая раздзяляльнасць"
     },
     "home": {
+      "avatar-error-title": "Аватар не абнавіўся",
       "media": {
         "idle": "Не прайграваецца",
         "no-active-player": "Няма актыўнага прайгравальніка",
@@ -241,8 +258,8 @@
         "scheduled-day": "Па раскладу",
         "scheduled-night": "Уключаны"
       },
+      "notification": "Не турбаваць",
       "power-profile": "Сілкаванне",
-      "screen-recorder": "Запіс экрану",
       "screen-time": "Экранны час",
       "session": "Сеанс",
       "system": "Сістэма",
@@ -251,6 +268,11 @@
       "wifi": "Wi-Fi"
     },
     "system": {
+      "labels": {
+        "load": "Нагрузка на ЦП",
+        "ram": "Аператыўная памяць",
+        "swap": "Swap"
+      },
       "titles": {
         "cpu": "Цэнтральны працэсар",
         "gpu": "Графічны працэсар",
@@ -258,6 +280,9 @@
         "network": "Сетка",
         "resources": "Рэсурсы",
         "system": "Сістэма"
+      },
+      "tooltips": {
+        "load": "Сярэдняя нагрузка за 1 / 5 / 15 хвілін"
       },
       "unknown": "невядома",
       "uptime-prefix": "Працуе {uptime} · {osAge}"
@@ -303,7 +328,10 @@
     "editor": {
       "actions": {
         "add": "Дадаць",
+        "clone": "Дубліраваць",
         "done": "Гатова",
+        "flip-horizontal": "Адлюстраваць па гарызанталі",
+        "flip-vertical": "Адлюстраваць па вертыкалі",
         "hide": "Схаваць",
         "settings": "Налады",
         "show": "Паказаць",
@@ -324,7 +352,7 @@
         "background-section": "Фон",
         "bands": "Паласа",
         "bar-width": "Шырыня панэлі",
-        "bloom-intensity": "Блум",
+        "bloom-intensity": "Свячэнне",
         "centered": "Па цэнтру",
         "change-image": "Змяніць...",
         "circle": "Круг",
@@ -332,12 +360,15 @@
         "clock-style-analog": "Аналагавы",
         "clock-style-digital": "Лічбавы",
         "color": "Колер",
+        "color-1": "Першы колер",
+        "color-2": "Другі колер",
         "color2": "Колер 2",
         "custom-color": "Уласны...",
         "description": "Апісанне",
         "fade-when-idle": "Затухаць пры неактыўнасці",
         "font-family": "Шрыфт",
         "font-family-default": "Як у сістэме",
+        "forecast-days": "Дні прагнозу",
         "format": "Фармат",
         "hide-when-no-media": "Хаваць, калі няма медыя",
         "horizontal": "Гарызантальна",
@@ -355,6 +386,7 @@
         "secondary-color": "Другасны колер",
         "sensitivity": "Адчувальнасць",
         "shadow": "Цень",
+        "show-forecast": "Паказаць прагноз",
         "show-label": "Паказваць подпіс",
         "show-login-button": "Кнопка ўваходу",
         "show-when-idle": "Паказваць пры неактыўнасці",
@@ -381,6 +413,301 @@
         "visualization-mode-wave-rings": "Хваля + Колы",
         "wave-thickness": "Таўшчыня хвалі",
         "widget-section": "Віджэт"
+      },
+      "state": {
+        "grid-off": "Сетка выключана",
+        "grid-on": "Сетка ўключана"
+      },
+      "title": "Віджэты працоўнага стала",
+      "types": {
+        "audio-visualizer": "Візуалізатар аўдыя",
+        "clock": "Гадзіннік",
+        "fancy-audio-visualizer": "Вычварны візуалізатар аўдыя",
+        "label": "Загаловак",
+        "login-box": "Поле уваходу",
+        "media-player": "Медыяпрайгравальнік",
+        "sticker": "Стыкер",
+        "system-monitor": "Манітор рэсурсаў",
+        "weather": "Надвор'е"
+      }
+    },
+    "media": {
+      "nothing-playing": "Нічога не грае"
+    },
+    "weather": {
+      "error": "Памылка",
+      "loading": "Загрузка",
+      "no-location": "Няма месцазнаходжання",
+      "off": "Надвор'е выключана"
+    }
+  },
+  "dock": {
+    "actions": {
+      "close": "Закрыць",
+      "close-all": "Закрыць усё"
+    },
+    "launcher": "Меню запуску"
+  },
+  "internal-apps": {
+    "settings": {
+      "display-name": "Налады"
+    }
+  },
+  "launcher": {
+    "categories": {
+      "all": "Усе",
+      "applications": {
+        "development": "Распрацоўка",
+        "education": "Адукацыя",
+        "games": "Гульні",
+        "graphics": "Графіка",
+        "internet": "Інтэрнэт",
+        "multimedia": "Мультымедыя",
+        "office": "Офіс",
+        "system": "Сістэма",
+        "utilities": "Утыліты"
+      },
+      "emoji": {
+        "activity": "Актыўнасць",
+        "animals": "Жывёлы",
+        "flags": "Сцягі",
+        "food": "Ежа",
+        "nature": "Прырода",
+        "objects": "Аб'екты",
+        "people": "Людзі",
+        "symbols": "Сімвалы",
+        "travel": "Падарожжа"
+      },
+      "recently-used": "Нядаўна выкарыстаныя"
+    },
+    "context-menu": {
+      "open": "Адкрыць",
+      "pin-to-dock": "Замацаваць у доке",
+      "unpin-from-dock": "Адмацаваць ад дока"
+    },
+    "empty": {
+      "no-results": "Вынікаў не знойдзена",
+      "type-to-search": "Пачніце ўвод для пошуку..."
+    },
+    "providers": {
+      "applications": {
+        "title": "Праграмы"
+      },
+      "calculator": {
+        "title": "Калькулятар"
+      },
+      "emoji": {
+        "title": "Эмодзі"
+      },
+      "session": {
+        "action-subtitle": "Выканаць дзеянне сеанса",
+        "command-subtitle": "Выканаць сканфігураваную каманду",
+        "title": "Сеанс"
+      },
+      "wallpaper": {
+        "title": "Шпалеры"
+      },
+      "window": {
+        "title": "Вокны"
+      }
+    },
+    "search-placeholder": "Пошук праграм..."
+  },
+  "location": {
+    "errors": {
+      "address-lookup-failed": "Не ўдалося адшукаць адрас",
+      "ip-geolocation-failed": "Не ўдалося вызначыць месцазнаходжанне па IP",
+      "parse-geocode": "Не ўдалося прааналізаваць адказ з геакодам",
+      "parse-ip-geolocation": "Не ўдалося прааналізаваць адказ з месцазнаходжаннем"
+    },
+    "locations": {
+      "current": "Бягучае месцазнаходжанне"
+    },
+    "source": {
+      "address": "Адрас",
+      "auto": "Аўтаматычна"
+    }
+  },
+  "lockscreen": {
+    "authenticating": "Аўтарызацыя...",
+    "authentication-failed": "Аўтарызацыя не ўдалася",
+    "password-cleared": "Пароль ачышчаны",
+    "password-placeholder": "Пароль",
+    "ready": "Увядзіце ваш пароль і націсніце Enter.",
+    "unlocked": "Рзблакіроўка выканана",
+    "waiting": "Чаканне пацвярджэння блакіроўкі..."
+  },
+  "notifications": {
+    "actions": {
+      "fallback": "Дзеянне",
+      "open": "Адкрыць"
+    },
+    "inline-reply": {
+      "button": "Адказаць",
+      "placeholder": "Увядзіце адказ..."
+    },
+    "internal": {
+      "battery": "Батарэя",
+      "battery-device": "Прылада з батарэяй",
+      "battery-low-body": "{device}: засталося {percent}%",
+      "battery-low-title": "Нізкі зарад батарэі",
+      "calendar": "Каляндар",
+      "calendar-google-connect-browser-failed": "Не ўдаецца адкрыць браўзер для аўтарызацыі праз Google. Праверце ваш прадвызначаны браўзер або налады xdg-open.",
+      "calendar-google-connect-expired": "Аўтарызацыя Google пратэрмінавалася да сканчэння ўваходу. Паўтарыце працэс падлучэння.",
+      "calendar-google-connect-failed-title": "Не ўдалося падлучыць Google Calendar",
+      "calendar-google-connect-missing-account": "Няма сканфігураванага ўліковага запісу календару Google, які адпавядае «{account}».",
+      "calendar-google-connect-rate-limited": "Аўтарызацыя Google часова абмежавана па хуткасці. Пачакайце крыху і паспрабуйце зноў.",
+      "calendar-google-connect-result-failed": "Не ўдалося завяршыць аўтарызацыю Google. Пачніце працэс падлучэння зноў.",
+      "calendar-google-connect-start-failed": "Не ўдалося запусціць аўтарызацыю Google. Праверце ваша злучэнне з сеткай і паспрабуйце яшчэ раз.",
+      "calendar-google-connect-start-http": "Не ўдалося запусціць аўтарызацыю Google. Брокер OAuth вярнуў код HTTP {status}.",
+      "calendar-google-connect-timeout": "Скончыўся час чакання аўтарызацыі Google. Пачніце падлучэнне яшчэ раз, калі будзеце гатовыя ўвайсці.",
+      "dbus-disabled": "Апавяшчэнні DBus выключаныя",
+      "desktop-widgets-editor": "Рэдактар віджэтаў",
+      "desktop-widgets-editor-enabled": "Рэдактар віджэтаў працоўнага стала ўключаны. Пераключыцеся на пустую працоўную прастору, каб убачыць накладку рэдактара.",
+      "greeter-sync": "Noctalia Greeter",
+      "greeter-sync-success": "Выгляд сінхранізаваны. Змены прыменяцца на наступным экране блакіроўкі.",
+      "keybind-app": "Noctalia",
+      "keybind-invalid-modifier": "Гэта спалучэнне можа быць адной клавішай без мадыфікатараў.",
+      "keybind-invalid-printable": "Клавішам-сімвалам (літарам, лічбам, пунктуацыі і інш.) патрабуецца мадыфікатары, такія як Ctrl або Alt.",
+      "keybind-invalid-super": "Клавіша Super/Windows не можа быць выкарыстана ў спалучэннях клавішаў абалонкі.",
+      "keybind-invalid-title": "Недапушчальнае спалучэнне клавішаў",
+      "launcher-usage-reset": "Меню запуску",
+      "launcher-usage-reset-success": "Дадзеныя аб выкарыстанні ачышчаны.",
+      "lockscreen-widgets-editor": "Рэдактар віджэтаў экрана блакіроўкі",
+      "lockscreen-widgets-editor-blocked-locked": "Разблакіруйце сеанс перад тым, як рэдагаваць віджэты.",
+      "lockscreen-widgets-editor-enabled": "Рэдактар віджэтаў працоўнага стала ўключаны. Наладзьце віджэты на накладке папярэдняга прагляду, затым заблакіруйце сеанс, каб пацвердзіць макет.",
+      "mpris-disabled": "MPRIS выключаны",
+      "screen-time-reset-success": "Гісторыя выкарыстання ачышчана.",
+      "session-bus-unavailable": "Шына сеанса недаступна",
+      "wallpaper-palette-export": "Уласная палітра",
+      "wallpaper-palette-export-success": "«{name}» захавана, крыніца палітры пераключана на уласную."
+    }
+  },
+  "osd": {
+    "bluetooth": {
+      "off": "Bluetooth выключаны",
+      "on": "Bluetooth уключаны"
+    },
+    "caffeine": {
+      "off": "Caffeine выключаны",
+      "on": "Caffeine уключаны"
+    },
+    "dnd": {
+      "off": "Не турбаваць выключана",
+      "on": "Не турбаваць уключана"
+    },
+    "lock-keys": {
+      "caps-off": "Caps Lock выключаны",
+      "caps-on": "Caps Lock уключаны",
+      "num-off": "Num Lock выключаны",
+      "num-on": "Num Lock уключаны",
+      "scroll-off": "Scroll Lock выключаны",
+      "scroll-on": "Scroll Lock уключаны"
+    },
+    "wifi": {
+      "off": "Wi-Fi выключаны",
+      "on": "Wi-Fi уключаны"
+    }
+  },
+  "power": {
+    "battery": {
+      "states": {
+        "battery": "Батарэя",
+        "charging": "Ідзе зарадка",
+        "discharging": "Сілкаванне ад батарэі",
+        "empty": "Батарэя разраджана",
+        "pending-discharge": "Чаканне разрадкі",
+        "plugged-in": "Падключана"
+      },
+      "tooltip": {
+        "health": "Рэсурс",
+        "rate": "Хуткасць",
+        "status": "Стан",
+        "time-left": "Часу працы засталося",
+        "time-to-full": "Часу да поўнай зарадкі"
+      }
+    },
+    "profiles": {
+      "balanced": "Збалансаваны",
+      "performance": "Прадукцыйнасць",
+      "power-saver": "Энергазберажэнне"
+    }
+  },
+  "session": {
+    "actions": {
+      "custom": "Уласнае",
+      "lock": "Заблакіраваць",
+      "lock-and-suspend": "Заблакіраваць і прыпыніць",
+      "logout": "Выйсці",
+      "reboot": "Перазапусціць",
+      "shutdown": "Завяршыць працу",
+      "suspend": "Прыпыніць"
+    },
+    "errors": {
+      "lock-body": "Пратакол блакіроўкі сеанса недаступны",
+      "lock-title": "Немагчыма заблакіраваць"
+    }
+  },
+  "settings": {
+    "actions": {
+      "reset": "Скінуць"
+    },
+    "badges": {
+      "advanced": "Пашыранае",
+      "inherited": "Узята з іншых налад",
+      "monitor": "Манітор",
+      "official": "Афіцыйны",
+      "override": "Перавызначэнне"
+    },
+    "calendar-accounts": {
+      "add-title": "Дадаць уліковы запіс календара",
+      "color-label": "Колер",
+      "delete-error": "Не ўдалося выдаліць уліковы запіс календара.",
+      "edit-title": "Рэдагаваць уліковы запіс календара",
+      "id-label": "ID уліковага запісу",
+      "invalid": "Праверце вылучаныя палі уліковага запісу календара.",
+      "name-label": "Адлюстраванае імя",
+      "name-placeholder": "Асабісты каляндар",
+      "password-keep-placeholder": "Пакіньце пустым, каб захаваць бягучы пароль",
+      "password-label": "Пароль праграмы",
+      "password-placeholder": "Пароль для пэўнай праграмы",
+      "password-save-error": "Не ўдалося захаваць пароль уліковага запісу календара.",
+      "provider": {
+        "custom": "CalDAV",
+        "google": "Google",
+        "icloud": "iCloud"
+      },
+      "provider-label": "Пастаўшчык",
+      "save": "Захаваць",
+      "save-connect": "Захаваць і падлучыць",
+      "save-error": "Не ўдалося захаваць уліковы запіс календара.",
+      "server-url-label": "URL-адрас сервера",
+      "username-label": "Імя карыстальніка",
+      "username-placeholder": "imia@prykład.by"
+    },
+    "controls": {
+      "keybind": {
+        "add": "Націсніце, каб дадаць спалучэнне клавішаў",
+        "recording-placeholder": "Націсніце на спалучэнне клавішаў...",
+        "unset-placeholder": "Націсніце, каб прывязаць..."
+      },
+      "list": {
+        "add-entry-placeholder": "Дадаць запіс..."
+      },
+      "path-browse": {
+        "file-title": "Выбраць файл",
+        "folder-title": "Выбраць папку"
+      },
+      "select": {
+        "unknown-value": "Невядома: {value}"
+      }
+    },
+    "schema": {
+      "shell": {
+        "osd-kinds-dnd": {
+          "description": "Паказваць усплывальнае акно OSD пры пераключэнні рэжыму «Не турбаваць»",
+          "label": "Не турбаваць"
+        }
       }
     }
   }

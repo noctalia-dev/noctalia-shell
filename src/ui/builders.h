@@ -2,6 +2,7 @@
 
 #include "render/core/color.h"
 #include "render/core/renderer.h"
+#include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
@@ -29,6 +30,7 @@
 #include "ui/controls/virtual_list_view.h"
 #include "ui/palette.h"
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -53,6 +55,41 @@ namespace ui {
     std::optional<bool> participatesInLayout = std::nullopt;
     std::optional<bool> clipChildren = std::nullopt;
     std::function<void(Node&)> configure = nullptr;
+  };
+
+  struct InputAreaProps {
+    InputArea** out = nullptr;
+    std::optional<std::uint32_t> acceptedButtons = std::nullopt;
+    std::optional<std::uint32_t> cursorShape = std::nullopt;
+    std::optional<bool> propagateEvents = std::nullopt;
+    std::optional<bool> enabled = std::nullopt;
+    std::optional<InputArea::HitShape> hitShape = std::nullopt;
+    std::optional<bool> focusable = std::nullopt;
+    std::optional<std::string> tooltip = std::nullopt;
+    std::optional<std::vector<TooltipRow>> tooltipRows = std::nullopt;
+    std::function<TooltipContent()> tooltipProvider = nullptr;
+    std::optional<std::chrono::milliseconds> tooltipRefreshInterval = std::nullopt;
+    std::optional<TooltipPlacement> tooltipPlacement = std::nullopt;
+    std::optional<TooltipAnchorInsets> tooltipAnchorInsets = std::nullopt;
+    std::optional<float> width = std::nullopt;
+    std::optional<float> height = std::nullopt;
+    std::optional<float> flexGrow = std::nullopt;
+    std::optional<float> opacity = std::nullopt;
+    std::optional<bool> visible = std::nullopt;
+    std::optional<bool> participatesInLayout = std::nullopt;
+    std::optional<bool> clipChildren = std::nullopt;
+    std::function<void(const InputArea::PointerData&)> onEnter = nullptr;
+    std::function<void()> onLeave = nullptr;
+    std::function<void(const InputArea::PointerData&)> onMotion = nullptr;
+    std::function<void(const InputArea::PointerData&)> onPress = nullptr;
+    std::function<void(const InputArea::PointerData&)> onClick = nullptr;
+    std::function<void(const InputArea::PointerData&)> onAxis = nullptr;
+    std::function<bool(const InputArea::PointerData&)> onAxisHandler = nullptr;
+    std::function<void(const InputArea::KeyData&)> onKeyDown = nullptr;
+    std::function<void(const InputArea::KeyData&)> onKeyUp = nullptr;
+    std::function<void()> onFocusGain = nullptr;
+    std::function<void()> onFocusLoss = nullptr;
+    std::function<void(InputArea&)> configure = nullptr;
   };
 
   struct FlexProps {
@@ -543,6 +580,7 @@ namespace ui {
 
   [[nodiscard]] std::unique_ptr<Flex> flex(FlexDirection direction, FlexProps props);
   [[nodiscard]] std::unique_ptr<Input> input(InputProps props);
+  [[nodiscard]] std::unique_ptr<InputArea> inputArea(InputAreaProps props = {});
   [[nodiscard]] std::unique_ptr<Button> button(ButtonProps props);
   [[nodiscard]] std::unique_ptr<Label> label(LabelProps props);
   [[nodiscard]] std::unique_ptr<Node> node(NodeProps props = {});
@@ -581,6 +619,13 @@ namespace ui {
 
   template <typename... Children> [[nodiscard]] std::unique_ptr<Node> node(NodeProps props, Children&&... children) {
     auto container = node(std::move(props));
+    (container->addChild(std::forward<Children>(children)), ...);
+    return container;
+  }
+
+  template <typename... Children>
+  [[nodiscard]] std::unique_ptr<InputArea> inputArea(InputAreaProps props, Children&&... children) {
+    auto container = inputArea(std::move(props));
     (container->addChild(std::forward<Children>(children)), ...);
     return container;
   }

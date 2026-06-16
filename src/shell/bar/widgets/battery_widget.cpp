@@ -112,6 +112,7 @@ void BatteryWidget::createGraphicMode() {
     container->addChild(
         ui::label({
             .out = &m_overlayLabel,
+            .fontFamily = labelFontFamily(),
             .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
             .fontWeight = labelFontWeight(),
         })
@@ -143,6 +144,7 @@ void BatteryWidget::createGlyphMode() {
       ui::label({
           .out = &m_label,
           .fontSize = Style::fontSizeBody * m_contentScale,
+          .fontFamily = labelFontFamily(),
           .fontWeight = labelFontWeight(),
           .visible = m_showLabel,
       })

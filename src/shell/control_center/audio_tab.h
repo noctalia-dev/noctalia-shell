@@ -12,6 +12,7 @@
 class ConfigService;
 class Button;
 class ContextMenuPopup;
+class EasyEffectsService;
 class Flex;
 class Label;
 class MprisService;
@@ -19,14 +20,15 @@ class PipeWireService;
 class RenderContext;
 class Renderer;
 class ScrollView;
+class Select;
 class Slider;
 class WaylandConnection;
 
 class AudioTab : public Tab {
 public:
   AudioTab(
-      PipeWireService* audio, MprisService* mpris, ConfigService* config, WaylandConnection* wayland,
-      RenderContext* renderContext
+      PipeWireService* audio, EasyEffectsService* easyEffects, MprisService* mpris, ConfigService* config,
+      WaylandConnection* wayland, RenderContext* renderContext
   );
   ~AudioTab() override;
 
@@ -50,8 +52,10 @@ private:
   void flushPendingVolumes(bool force = false);
 
   void openDeviceMenu(bool isOutput);
+  void syncEffectsProfileControls(Renderer& renderer);
 
   PipeWireService* m_audio = nullptr;
+  EasyEffectsService* m_easyEffects = nullptr;
   MprisService* m_mpris = nullptr;
   ConfigService* m_config = nullptr;
   WaylandConnection* m_wayland = nullptr;
@@ -74,14 +78,19 @@ private:
   std::vector<Flex*> m_programRows;
   std::string m_lastProgramListKey;
   float m_lastProgramSliderMax = -1.0f;
+  std::string m_lastEffectsProfileListKey;
   float m_syncedPercentLabelMinWidth = -1.0f;
   float m_lastSyncedPercentLabelSliderMax = -1.0f;
   Label* m_outputDeviceLabel = nullptr;
   Label* m_inputDeviceLabel = nullptr;
+  Flex* m_outputEffectsProfileRow = nullptr;
+  Flex* m_inputEffectsProfileRow = nullptr;
   Flex* m_outputDeviceMenuAnchor = nullptr;
   Flex* m_inputDeviceMenuAnchor = nullptr;
   Button* m_outputDeviceMenuButton = nullptr;
   Button* m_inputDeviceMenuButton = nullptr;
+  Select* m_outputEffectsProfileSelect = nullptr;
+  Select* m_inputEffectsProfileSelect = nullptr;
   std::unique_ptr<ContextMenuPopup> m_deviceMenuPopup;
   bool m_deviceMenuIsOutput = true;
   Slider* m_outputSlider = nullptr;

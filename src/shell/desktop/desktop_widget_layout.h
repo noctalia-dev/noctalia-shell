@@ -9,13 +9,11 @@
 
 namespace desktop_widgets {
 
-  // Base content scale for a widget: the UI scale, times any legacy (schema v1) scale while the
-  // tile is still unsized. Once the tile has an explicit box, the content-fit derived from it in
-  // DesktopWidget::layout() takes over and the legacy scale no longer applies.
-  inline float widgetContentScale(float baseUiScale, const DesktopWidgetState& state) {
-    const bool boxed = state.boxWidth > 0.0f && state.boxHeight > 0.0f;
-    const float legacy = boxed ? 1.0f : std::max(0.01f, state.legacyScale);
-    return std::max(0.01f, baseUiScale) * legacy;
+  inline float widgetContentScale(float baseUiScale) { return std::max(0.01f, baseUiScale); }
+
+  inline void widgetNodeScale(const DesktopWidgetState& state, float& outScaleX, float& outScaleY) {
+    outScaleX = state.flipX ? -1.0f : 1.0f;
+    outScaleY = state.flipY ? -1.0f : 1.0f;
   }
 
   inline std::string outputKey(const WaylandOutput& output) {

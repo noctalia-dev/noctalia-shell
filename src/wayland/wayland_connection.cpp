@@ -15,6 +15,7 @@
 #include "hyprland-toplevel-mapping-v1-client-protocol.h"
 #include "idle-inhibit-unstable-v1-client-protocol.h"
 #include "text-input-unstable-v3-client-protocol.h"
+#include "util/string_utils.h"
 #include "viewporter-client-protocol.h"
 #include "virtual-keyboard-unstable-v1-client-protocol.h"
 #include "wayland/clipboard_service.h"
@@ -607,6 +608,18 @@ void WaylandConnection::activateSurface(wl_surface* surface) {
   if (!token.empty()) {
     xdg_activation_v1_activate(m_xdgActivation, token.c_str(), surface);
   }
+}
+
+void WaylandConnection::activateToplevelForAppId(std::string_view appId) {
+  if (!hasForeignToplevelManager() || appId.empty()) {
+    return;
+  }
+  const std::string idLower = StringUtils::toLower(std::string(appId));
+  const auto windows = windowsForApp(idLower, idLower);
+  if (windows.empty()) {
+    return;
+  }
+  activateToplevel(windows.back().handle);
 }
 
 wl_display* WaylandConnection::display() const noexcept { return m_display; }

@@ -4,12 +4,16 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
+#include <string>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/un.h>
 #include <unistd.h>
 
 namespace {
+
+  constexpr char kCallerCwdSeparator = '\x1e';
 
   std::string resolveSocketPath() {
     const char* runtime = std::getenv("XDG_RUNTIME_DIR");
@@ -55,8 +59,16 @@ int IpcClient::send(const std::string& command) {
     return 1;
   }
 
-  // Send the command with a trailing newline
-  const std::string line = command + "\n";
+  // Prefix the caller cwd so the daemon resolves relative paths correctly.
+  std::string line;
+  std::error_code ec;
+  const std::filesystem::path cwd = std::filesystem::current_path(ec);
+  if (!ec && cwd.is_absolute()) {
+    line = cwd.string();
+    line += kCallerCwdSeparator;
+  }
+  line += command;
+  line += '\n';
   const auto written = ::write(fd, line.data(), line.size());
   if (written < 0) {
     std::fprintf(stderr, "error: write() failed: %s\n", std::strerror(errno));

@@ -64,7 +64,8 @@ public:
   [[nodiscard]] std::string_view ipcEntryId() const override { return m_entryId; }
   [[nodiscard]] std::string_view ipcOutputName() const override { return m_outputName; }
   [[nodiscard]] std::string_view ipcBarName() const override { return m_barName; }
-  [[nodiscard]] DispatchResult dispatchIpc(std::string_view event, std::string_view payload) override;
+  [[nodiscard]] DispatchResult
+  dispatchIpc(std::string_view event, std::string_view payload, const scripting::ScriptSnapshot& snapshot) override;
 
 private:
   enum class ScriptColorMode {

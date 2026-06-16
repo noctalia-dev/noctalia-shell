@@ -122,7 +122,7 @@ namespace noctalia::theme {
     const std::unordered_map<std::string, int> kSupportedFilters = {
         {"grayscale", 0},      {"invert", 0},   {"set_alpha", 1},  {"set_lightness", 1},  {"set_hue", 1},
         {"set_saturation", 1}, {"set_red", 1},  {"set_green", 1},  {"set_blue", 1},       {"lighten", 1},
-        {"darken", 1},         {"saturate", 1}, {"desaturate", 1}, {"auto_lightness", 1},
+        {"darken", 1},         {"saturate", 1}, {"desaturate", 1}, {"auto_lightness", 1}, {"rotate_hue", 1},
     };
 
     const std::unordered_set<std::string> kColorArgFilters = {"blend", "harmonize"};
@@ -566,6 +566,8 @@ namespace noctalia::theme {
         color.color = Color::fromHsl(h, s, std::clamp(numArg / 100.0, 0.0, 1.0));
       } else if (name == "set_hue") {
         color.color = Color::fromHsl(std::fmod(numArg + 360.0, 360.0), s, l);
+      } else if (name == "rotate_hue") {
+        color.color = Color::fromHsl(std::fmod(h + numArg + 360.0, 360.0), s, l);
       } else if (name == "set_saturation") {
         color.color = Color::fromHsl(h, std::clamp(numArg / 100.0, 0.0, 1.0), l);
       } else if (name == "lighten") {

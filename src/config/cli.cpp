@@ -24,9 +24,10 @@ namespace noctalia::config {
         "Usage: noctalia config <command> [options]\n"
         "\n"
         "Commands:\n"
-        "  validate [dir]\n"
+        "  validate [path]\n"
         "      Check config validity: TOML syntax, unknown/misspelled settings, and bad\n"
-        "      values. Defaults to the active config dir + state settings.toml. Exit 1 on error.\n"
+        "      values. Defaults to the active config dir + state settings.toml. A directory\n"
+        "      validates its *.toml files; a file validates only that file. Exit 1 on error.\n"
         "\n"
         "  export [merged|full]\n"
         "      Print the active config as TOML. Defaults to merged user config.\n"
@@ -38,11 +39,14 @@ namespace noctalia::config {
         "      Reconstruct a single config-home/noctalia/config.toml from the report's merged config.\n";
 
     constexpr const char* kValidateHelpText =
-        "Usage: noctalia config validate [dir]\n"
+        "Usage: noctalia config validate [path]\n"
         "\n"
-        "Validates the merged configuration the way the shell loads it:\n"
-        "  - every *.toml in [dir] (default: the active config dir), then\n"
-        "  - the state-dir settings.toml overrides (only when [dir] is omitted).\n"
+        "With no path, validates the merged configuration the way the shell loads it:\n"
+        "  - every *.toml in the active config dir, then\n"
+        "  - the state-dir settings.toml overrides.\n"
+        "\n"
+        "With a directory path, validates only that directory's *.toml files.\n"
+        "With a file path, validates only that file.\n"
         "\n"
         "Reports TOML syntax errors, unknown sections/settings, and bad values\n"
         "(wrong type, out-of-range, invalid enum/color). Exits 1 if any error is found.\n";
@@ -307,14 +311,14 @@ namespace noctalia::config {
     }
 
     int runValidate(int argc, char* argv[]) {
-      std::string dirArg;
+      std::string pathArg;
       for (int i = 3; i < argc; ++i) {
         if (std::strcmp(argv[i], "--help") == 0) {
           std::puts(kValidateHelpText);
           return 0;
         }
-        if (dirArg.empty()) {
-          dirArg = argv[i];
+        if (pathArg.empty()) {
+          pathArg = argv[i];
           continue;
         }
         std::fprintf(stderr, "error: unexpected argument: %s\n", argv[i]);
@@ -322,20 +326,35 @@ namespace noctalia::config {
         return 1;
       }
 
-      // With an explicit dir, validate just that dir; otherwise the live config
-      // dir plus the state-dir settings.toml overrides (matching how the shell loads).
-      std::string configDir = dirArg.empty() ? FileUtils::configDir() : dirArg;
-      std::string settingsPath;
-      if (dirArg.empty()) {
-        if (const std::string stateDir = FileUtils::stateDir(); !stateDir.empty()) {
-          settingsPath = stateDir + "/settings.toml";
-        }
-      }
-
       // Validation reports through diagnostics below; silence incidental INFO logs
       // (e.g. the plugin registry scan) so only validation results reach the user.
       setLogLevel(LogLevel::Warn);
-      const auto diagnostics = validateConfigSources(configDir, settingsPath);
+      schema::Diagnostics diagnostics;
+
+      if (pathArg.empty()) {
+        const std::string configDir = FileUtils::configDir();
+        std::string settingsPath;
+        if (const std::string stateDir = FileUtils::stateDir(); !stateDir.empty()) {
+          settingsPath = stateDir + "/settings.toml";
+        }
+        diagnostics = validateConfigSources(configDir, settingsPath);
+      } else {
+        std::error_code ec;
+        const std::filesystem::path inputPath(pathArg);
+        const auto status = std::filesystem::status(inputPath, ec);
+        if (ec) {
+          std::fprintf(stderr, "error: failed to inspect %s: %s\n", pathArg.c_str(), ec.message().c_str());
+          return 1;
+        }
+        if (std::filesystem::is_directory(status)) {
+          diagnostics = validateConfigSources(pathArg, {});
+        } else if (std::filesystem::is_regular_file(status)) {
+          diagnostics = validateConfigFile(pathArg);
+        } else {
+          std::fprintf(stderr, "error: path is not a regular file or directory: %s\n", pathArg.c_str());
+          return 1;
+        }
+      }
 
       const bool colorErr = useColor(stderr);
       const bool colorOut = useColor(stdout);

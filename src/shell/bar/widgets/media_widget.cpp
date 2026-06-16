@@ -25,10 +25,10 @@ namespace {
 
 MediaWidget::MediaWidget(
     MprisService* mpris, HttpClient* httpClient, wl_output* /*output*/, float maxWidth, float minWidth, float artSize,
-    MediaTitleScrollMode titleScrollMode, bool hideWhenNoMedia
+    MediaTitleScrollMode titleScrollMode, bool hideWhenNoMedia, bool albumArtOnly
 )
     : m_mpris(mpris), m_httpClient(httpClient), m_maxWidth(maxWidth), m_minWidth(minWidth), m_artSize(artSize),
-      m_titleScrollMode(titleScrollMode), m_hideWhenNoMedia(hideWhenNoMedia) {}
+      m_titleScrollMode(titleScrollMode), m_hideWhenNoMedia(hideWhenNoMedia), m_albumArtOnly(albumArtOnly) {}
 
 void MediaWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -66,6 +66,7 @@ void MediaWidget::create() {
       ui::label({
           .out = &m_label,
           .fontSize = Style::fontSizeBody * m_contentScale,
+          .fontFamily = labelFontFamily(),
           .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
           .maxWidth = m_maxWidth * m_contentScale,
           .maxLines = 1,
@@ -95,6 +96,7 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   syncState(renderer);
 
   const bool isVertical = containerHeight > containerWidth;
+  const bool artOnly = isVertical || m_albumArtOnly;
   const float maxLength = std::max(0.0f, m_maxWidth * m_contentScale);
   const float minLength = std::clamp(m_minWidth * m_contentScale, 0.0f, maxLength);
 
@@ -114,7 +116,8 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   // from the same reference metrics.
   float artSize = 0.0f;
   if (showArtSlot) {
-    artSize = std::min(m_artSize * m_contentScale, m_label->height());
+    const float requestedArtSize = m_artSize * m_contentScale;
+    artSize = artOnly ? requestedArtSize : std::min(requestedArtSize, m_label->height());
     m_art->setVisible(true);
     m_art->setSize(artSize, artSize);
     m_art->setRadius(artSize * 0.5f);
@@ -125,7 +128,7 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   }
 
   const bool showEmptyGlyph = !showArtSlot;
-  m_label->setVisible(!isVertical && !m_label->text().empty());
+  m_label->setVisible(!artOnly && !m_label->text().empty());
   m_emptyGlyph->setVisible(showEmptyGlyph);
   const bool showLabel = m_label->visible();
   applyTitleScrollMode(showLabel);
@@ -143,7 +146,7 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   if (showEmptyGlyph) {
     contentHeight = std::max(contentHeight, m_emptyGlyph->height());
   }
-  if (isVertical) {
+  if (artOnly) {
     if (!showArtSlot) {
       m_art->setPosition(0.0f, 0.0f);
       m_emptyGlyph->setPosition(0.0f, 0.0f);

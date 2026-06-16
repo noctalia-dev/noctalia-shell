@@ -103,7 +103,7 @@ namespace {
     return Mat3::translation(node->x(), node->y())
         * Mat3::translation(cx, cy)
         * Mat3::rotation(node->rotation())
-        * Mat3::scale(node->scale(), node->scale())
+        * Mat3::scale(node->scaleX(), node->scaleY())
         * Mat3::translation(-cx, -cy);
   }
 

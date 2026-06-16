@@ -2,6 +2,7 @@
 
 #include "config/config_types.h"
 #include "i18n/i18n.h"
+#include "notification/notification_filter.h"
 #include "render/core/color.h"
 #include "shell/settings/bar_widget_editor.h"
 #include "shell/settings/color_spec_picker.h"
@@ -104,6 +105,11 @@ namespace settings {
             -> std::unique_ptr<Node> { return factory.makeToggle(checked, true, std::move(path), clearWhenValue); },
         .makeSelect = [&factory](const SelectSetting& setting, std::vector<std::string> path) -> std::unique_ptr<Node> {
           return factory.makeSelect(setting, std::move(path));
+        },
+        .makeSearchPicker = [&factory](
+                                const SearchPickerSetting& setting, std::string title, std::vector<std::string> path
+                            ) -> std::unique_ptr<Node> {
+          return factory.makeSearchPicker(setting, std::move(title), std::move(path));
         },
         .makeSlider = [&factory](
                           double value, double minValue, double maxValue, double step, std::vector<std::string> path,
@@ -228,8 +234,7 @@ namespace settings {
       auto input = ui::input({
           .out = &inputPtr,
           .value = setting.value,
-          .placeholder = setting.placeholder.empty() ? i18n::tr("settings.controls.list.add-entry-placeholder")
-                                                     : setting.placeholder,
+          .placeholder = setting.placeholder,
           .fontSize = Style::fontSizeBody * scale,
           .controlHeight = Style::controlHeight * scale,
           .horizontalPadding = Style::spaceSm * scale,
@@ -353,26 +358,7 @@ namespace settings {
 
     const auto makeSearchPickerButton = [&](const SettingEntry& entry,
                                             const SearchPickerSetting& setting) -> std::unique_ptr<Node> {
-      return ui::button({
-          .text = optionLabel(setting.options, setting.selectedValue),
-          .glyph = "search",
-          .fontSize = Style::fontSizeBody * scale,
-          .glyphSize = Style::fontSizeBody * scale,
-          .contentAlign = ButtonContentAlign::Start,
-          .variant = ButtonVariant::Outline,
-          .minWidth = 190.0f * scale,
-          .minHeight = Style::controlHeight * scale,
-          .paddingV = Style::spaceSm * scale,
-          .paddingH = Style::spaceMd * scale,
-          .radius = Style::scaledRadiusMd(scale),
-          .onClick = [openPopup = ctx.openSearchPickerPopup, title = entry.title, options = setting.options,
-                      selectedValue = setting.selectedValue, placeholder = setting.placeholder,
-                      emptyText = setting.emptyText, path = entry.path]() {
-            if (openPopup) {
-              openPopup(title, options, selectedValue, placeholder, emptyText, path);
-            }
-          },
-      });
+      return factory.makeSearchPicker(setting, entry.title, entry.path);
     };
 
     const auto makeCollectionBlock = [&](const SettingEntry& entry, bool overridden, bool reserveTitleHeight = false,
@@ -1074,6 +1060,86 @@ namespace settings {
       section.addChild(std::move(block));
     };
 
+    const auto makeNotificationFiltersInlineBlock = [&](Flex& section, const SettingEntry& entry,
+                                                        const NotificationFiltersSetting& filters) {
+      const bool overridden = (ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(entry.path));
+
+      auto block = makeCollectionBlock(entry, overridden);
+
+      auto state = std::make_shared<std::vector<NotificationFilterConfig>>(filters.items);
+      normalizeNotificationFilterNames(*state);
+      const auto commit = [setOverride = ctx.setOverride, path = entry.path, state, req = ctx.requestContentRebuild]() {
+        normalizeNotificationFilterNames(*state);
+        setOverride(path, *state);
+        req();
+      };
+
+      for (std::size_t idx = 0; idx < state->size(); ++idx) {
+        auto row = ui::row({
+            .align = FlexAlign::Center,
+            .justify = FlexJustify::SpaceBetween,
+            .gap = Style::spaceSm * scale,
+            .minHeight = Style::controlHeightSm * scale,
+        });
+
+        auto summary = ui::label({
+            .text = notificationFilterRowSummary((*state)[idx]),
+            .fontSize = Style::fontSizeBody * scale,
+            .color = colorSpecFromRole(ColorRole::OnSurface),
+            .flexGrow = 1.0f,
+        });
+        row->addChild(std::move(summary));
+
+        auto entrySettings = ui::button({
+            .glyph = "settings",
+            .glyphSize = Style::fontSizeCaption * scale,
+            .variant = ButtonVariant::Ghost,
+            .minWidth = Style::controlHeightSm * scale,
+            .minHeight = Style::controlHeightSm * scale,
+            .padding = Style::spaceXs * scale,
+            .radius = Style::scaledRadiusSm(scale),
+            .onClick = [openEntry = ctx.openNotificationFilterEntryEditor, rowIndex = idx]() {
+              if (openEntry) {
+                openEntry(rowIndex);
+              }
+            },
+        });
+        row->addChild(std::move(entrySettings));
+
+        auto enabledToggle = ui::toggle({
+            .checked = (*state)[idx].enabled,
+            .scale = scale,
+            .onChange = [state, rowIndex = idx, commit](bool v) {
+              (*state)[rowIndex].enabled = v;
+              commit();
+            },
+        });
+        row->addChild(std::move(enabledToggle));
+
+        block->addChild(std::move(row));
+      }
+
+      auto addBtn = ui::button({
+          .text = i18n::tr("settings.notifications.filter.add"),
+          .glyph = "add",
+          .fontSize = Style::fontSizeBody * scale,
+          .glyphSize = Style::fontSizeBody * scale,
+          .variant = ButtonVariant::Default,
+          .minHeight = Style::controlHeight * scale,
+          .paddingV = Style::spaceSm * scale,
+          .paddingH = Style::spaceMd * scale,
+          .radius = Style::scaledRadiusMd(scale),
+          .onClick = [openCreate = ctx.openNotificationFilterCreateEditor]() {
+            if (openCreate) {
+              openCreate();
+            }
+          },
+      });
+      block->addChild(std::move(addBtn));
+
+      section.addChild(std::move(block));
+    };
+
     const auto makeControl = [&](const SettingEntry& entry) -> std::unique_ptr<Node> {
       return std::visit(
           [&](const auto& control) -> std::unique_ptr<Node> {
@@ -1118,6 +1184,8 @@ namespace settings {
             } else if constexpr (std::is_same_v<T, SessionPanelActionsSetting>) {
               return nullptr;
             } else if constexpr (std::is_same_v<T, IdleBehaviorsSetting>) {
+              return nullptr;
+            } else if constexpr (std::is_same_v<T, NotificationFiltersSetting>) {
               return nullptr;
             } else if constexpr (std::is_same_v<T, ButtonSetting>) {
               if (control.glyph.empty()) {
@@ -1297,6 +1365,8 @@ namespace settings {
           makeSessionActionsInlineBlock(*activeSection, entry, *sessionActs);
         } else if (const auto* idle = std::get_if<IdleBehaviorsSetting>(&entry.control)) {
           makeIdleBehaviorsInlineBlock(*activeSection, entry, *idle);
+        } else if (const auto* filters = std::get_if<NotificationFiltersSetting>(&entry.control)) {
+          makeNotificationFiltersInlineBlock(*activeSection, entry, *filters);
         } else if (const auto* picker = std::get_if<SearchPickerSetting>(&entry.control)) {
           makeRow(*activeSection, entry, makeSearchPickerButton(entry, *picker));
         } else if (const auto* multi = std::get_if<MultiSelectSetting>(&entry.control)) {

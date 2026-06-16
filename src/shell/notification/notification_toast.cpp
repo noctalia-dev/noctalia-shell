@@ -626,9 +626,16 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
     if (m_notifications != nullptr && m_notifications->doNotDisturb()) {
       break;
     }
-    addPopup(n);
+    m_pendingAdds.push_back(n);
+    schedulePendingAdds();
     break;
   case NotificationEvent::Updated: {
+    for (auto& pending : m_pendingAdds) {
+      if (pending.id == n.id) {
+        pending = n;
+        return;
+      }
+    }
     for (std::size_t i = 0; i < m_entries.size(); ++i) {
       if (m_entries[i].notificationId == n.id && !m_entries[i].exiting) {
         const bool contentChanged =
@@ -817,8 +824,29 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
     break;
   }
   case NotificationEvent::Closed:
+    std::erase_if(m_pendingAdds, [id = n.id](const Notification& pending) { return pending.id == id; });
     removePopup(n.id);
     break;
+  }
+}
+
+void NotificationToast::schedulePendingAdds() {
+  if (m_pendingAddsScheduled) {
+    return;
+  }
+  m_pendingAddsScheduled = true;
+  DeferredCall::callLater([this]() { flushPendingAdds(); });
+}
+
+void NotificationToast::flushPendingAdds() {
+  m_pendingAddsScheduled = false;
+  if (m_pendingAdds.empty()) {
+    return;
+  }
+  auto pending = std::move(m_pendingAdds);
+  m_pendingAdds.clear();
+  for (const auto& n : pending) {
+    addPopup(n);
   }
 }
 

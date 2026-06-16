@@ -317,6 +317,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
           ui::label({
               .text = slot.label,
               .fontSize = labelFontSize,
+              .fontFamily = labelFontFamily(),
               .color = workspaceTextColor(ws),
               .fontWeight = workspaceFontWeight(configuredFontWeight, m_minimal, ws.active),
               .baselineMode = LabelBaselineMode::StableLogical,
@@ -407,6 +408,7 @@ void WorkspacesWidget::ensureItemLabel(Renderer& renderer, std::size_t index) {
       ui::label({
           .text = item.label,
           .fontSize = labelFontSize,
+          .fontFamily = labelFontFamily(),
           .color = workspaceTextColor(workspace),
           .fontWeight = workspaceFontWeight(labelFontWeight(), m_minimal, workspace.active),
           .baselineMode = LabelBaselineMode::StableLogical,

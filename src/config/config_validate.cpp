@@ -334,9 +334,9 @@ namespace noctalia::config {
       if (widgets == nullptr) {
         return;
       }
-      static const std::unordered_set<std::string> kWidgetKeys = {"id",      "type",      "output",     "cx",
-                                                                  "cy",      "box_width", "box_height", "rotation",
-                                                                  "enabled", "settings",  "scale"};
+      static const std::unordered_set<std::string> kWidgetKeys = {"id",     "type",      "output",     "cx",
+                                                                  "cy",     "box_width", "box_height", "rotation",
+                                                                  "flip_x", "flip_y",    "enabled",    "settings"};
       for (const auto& [id, node] : *widgets) {
         const auto* tbl = node.as_table();
         if (tbl == nullptr) {
@@ -399,9 +399,9 @@ namespace noctalia::config {
       if (widgets == nullptr) {
         return;
       }
-      static const std::unordered_set<std::string> kWidgetKeys = {"id",      "type",      "output",     "cx",
-                                                                  "cy",      "box_width", "box_height", "rotation",
-                                                                  "enabled", "settings",  "scale"};
+      static const std::unordered_set<std::string> kWidgetKeys = {"id",     "type",      "output",     "cx",
+                                                                  "cy",     "box_width", "box_height", "rotation",
+                                                                  "flip_x", "flip_y",    "enabled",    "settings"};
       for (const auto& [id, node] : *widgets) {
         const auto* tbl = node.as_table();
         if (tbl == nullptr) {
@@ -483,99 +483,115 @@ namespace noctalia::config {
       }
     }
 
+    void validateMergedConfig(const toml::table& merged, schema::Diagnostics& diag) {
+      checkSection(merged, "shell", schema::shellSchema(), diag);
+      checkSection(
+          merged, "wallpaper", schema::wallpaperSchema(), diag,
+          {"wallpaper.default", "wallpaper.last", "wallpaper.monitors", "wallpaper.favorite"}
+      );
+      checkSection(merged, "theme", schema::themeSchema(), diag);
+      checkSection(merged, "backdrop", schema::backdropSchema(), diag);
+      checkSection(merged, "lockscreen", schema::lockscreenSchema(), diag);
+      checkSection(merged, "notification", schema::notificationSchema(), diag);
+      checkSection(merged, "notifications", schema::notificationSchema(), diag); // compatibility alias
+      checkSection(merged, "osd", schema::osdSchema(), diag);
+      checkSection(merged, "system", schema::systemSchema(), diag);
+      checkSection(merged, "weather", schema::weatherSchema(), diag);
+      checkSection(merged, "calendar", schema::calendarSchema(), diag);
+      validateCalendarSyntax(merged, diag);
+      checkSection(merged, "audio", schema::audioSchema(), diag);
+      checkSection(merged, "brightness", schema::brightnessSchema(), diag);
+      checkSection(merged, "battery", schema::batterySchema(), diag);
+      checkSection(merged, "nightlight", schema::nightlightSchema(), diag);
+      checkSection(merged, "location", schema::locationSchema(), diag);
+      checkSection(merged, "idle", schema::idleSchema(), diag);
+      checkSection(merged, "keybinds", schema::keybindsSchema(), diag);
+      checkSection(merged, "dock", schema::dockSchema(), diag);
+      checkSection(merged, "control_center", schema::controlCenterSchema(), diag);
+      checkSection(merged, "plugins", schema::pluginsSchema(), diag);
+      checkSection(merged, "hooks", schema::hooksSchema(), diag);
+
+      // Resolve [plugins] into the registry so plugin widget types validate the same
+      // way the running app sees them. Disk-only — no materialization/network here.
+      {
+        PluginsConfig pc;
+        schema::Diagnostics sink; // schema issues are already reported by checkSection above
+        if (const auto* pluginsTbl = merged["plugins"].as_table()) {
+          const bool sourcesConfigured = (*pluginsTbl)["source"].as_array() != nullptr;
+          schema::readInto(*pluginsTbl, pc, schema::pluginsSchema(), "plugins", sink);
+          if (!sourcesConfigured && pc.sources.empty()) {
+            pc.sources = defaultPluginSources();
+          }
+        } else {
+          pc.sources = defaultPluginSources();
+        }
+        scripting::applyPluginSourcesToRegistry(scripting::PluginRegistry::instance(), pc);
+      }
+
+      validateBars(merged, diag);
+      validateBarWidgets(merged, diag);
+      validatePluginSettings(merged, diag);
+      validateDesktopWidgets(merged, diag);
+      validateLockscreenWidgets(merged, diag);
+
+      // Unknown top-level sections.
+      static const std::unordered_set<std::string> kKnownSections = {
+          "shell",
+          "wallpaper",
+          "theme",
+          "backdrop",
+          "lockscreen",
+          "notification",
+          "notifications",
+          "osd",
+          "system",
+          "weather",
+          "calendar",
+          "audio",
+          "brightness",
+          "battery",
+          "nightlight",
+          "location",
+          "idle",
+          "keybinds",
+          "bar",
+          "dock",
+          "desktop_widgets",
+          "lockscreen_widgets",
+          "widget",
+          "control_center",
+          "plugins",
+          "plugin_settings",
+          "hooks",
+      };
+      for (const auto& [key, node] : merged) {
+        (void)node;
+        if (!kKnownSections.contains(std::string(key.str()))) {
+          diag.warn(std::string(key.str()), "unknown section");
+        }
+      }
+    }
+
   } // namespace
 
   schema::Diagnostics validateConfigSources(std::string_view configDir, std::string_view settingsTomlPath) {
     schema::Diagnostics diag;
     const toml::table merged = mergeSources(configDir, settingsTomlPath, diag);
+    validateMergedConfig(merged, diag);
+    return diag;
+  }
 
-    checkSection(merged, "shell", schema::shellSchema(), diag);
-    checkSection(
-        merged, "wallpaper", schema::wallpaperSchema(), diag,
-        {"wallpaper.default", "wallpaper.last", "wallpaper.monitors", "wallpaper.favorite"}
-    );
-    checkSection(merged, "theme", schema::themeSchema(), diag);
-    checkSection(merged, "backdrop", schema::backdropSchema(), diag);
-    checkSection(merged, "lockscreen", schema::lockscreenSchema(), diag);
-    checkSection(merged, "notification", schema::notificationSchema(), diag);
-    checkSection(merged, "notifications", schema::notificationSchema(), diag); // compatibility alias
-    checkSection(merged, "osd", schema::osdSchema(), diag);
-    checkSection(merged, "system", schema::systemSchema(), diag);
-    checkSection(merged, "weather", schema::weatherSchema(), diag);
-    checkSection(merged, "calendar", schema::calendarSchema(), diag);
-    validateCalendarSyntax(merged, diag);
-    checkSection(merged, "audio", schema::audioSchema(), diag);
-    checkSection(merged, "brightness", schema::brightnessSchema(), diag);
-    checkSection(merged, "battery", schema::batterySchema(), diag);
-    checkSection(merged, "nightlight", schema::nightlightSchema(), diag);
-    checkSection(merged, "location", schema::locationSchema(), diag);
-    checkSection(merged, "idle", schema::idleSchema(), diag);
-    checkSection(merged, "keybinds", schema::keybindsSchema(), diag);
-    checkSection(merged, "dock", schema::dockSchema(), diag);
-    checkSection(merged, "control_center", schema::controlCenterSchema(), diag);
-    checkSection(merged, "plugins", schema::pluginsSchema(), diag);
-    checkSection(merged, "hooks", schema::hooksSchema(), diag);
-
-    // Resolve [plugins] into the registry so plugin widget types validate the same
-    // way the running app sees them. Disk-only — no materialization/network here.
-    {
-      PluginsConfig pc;
-      schema::Diagnostics sink; // schema issues are already reported by checkSection above
-      if (const auto* pluginsTbl = merged["plugins"].as_table()) {
-        const bool sourcesConfigured = (*pluginsTbl)["source"].as_array() != nullptr;
-        schema::readInto(*pluginsTbl, pc, schema::pluginsSchema(), "plugins", sink);
-        if (!sourcesConfigured && pc.sources.empty()) {
-          pc.sources = defaultPluginSources();
-        }
-      } else {
-        pc.sources = defaultPluginSources();
-      }
-      scripting::applyPluginSourcesToRegistry(scripting::PluginRegistry::instance(), pc);
+  schema::Diagnostics validateConfigFile(std::string_view path) {
+    schema::Diagnostics diag;
+    toml::table parsed;
+    try {
+      parsed = toml::parse_file(std::string(path));
+    } catch (const toml::parse_error& e) {
+      diag.error("syntax", formatParseError(std::filesystem::path(std::string(path)), e));
+      return diag;
     }
 
-    validateBars(merged, diag);
-    validateBarWidgets(merged, diag);
-    validatePluginSettings(merged, diag);
-    validateDesktopWidgets(merged, diag);
-    validateLockscreenWidgets(merged, diag);
-
-    // Unknown top-level sections.
-    static const std::unordered_set<std::string> kKnownSections = {
-        "shell",
-        "wallpaper",
-        "theme",
-        "backdrop",
-        "lockscreen",
-        "notification",
-        "notifications",
-        "osd",
-        "system",
-        "weather",
-        "calendar",
-        "audio",
-        "brightness",
-        "battery",
-        "nightlight",
-        "location",
-        "idle",
-        "keybinds",
-        "bar",
-        "dock",
-        "desktop_widgets",
-        "lockscreen_widgets",
-        "widget",
-        "control_center",
-        "plugins",
-        "plugin_settings",
-        "hooks",
-    };
-    for (const auto& [key, node] : merged) {
-      (void)node;
-      if (!kKnownSections.contains(std::string(key.str()))) {
-        diag.warn(std::string(key.str()), "unknown section");
-      }
-    }
-
+    validateMergedConfig(parsed, diag);
     return diag;
   }
 

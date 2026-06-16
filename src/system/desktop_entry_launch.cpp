@@ -133,8 +133,7 @@ namespace desktop_entry_launch {
 
     const std::string appName = !entry.id.empty() ? entry.id : appNameOrDefault(entry.name);
     if (options.runAsSystemdService) {
-      process::runAsyncAsSystemdService(prepared->args, appName, options.activationToken, entry.workingDir);
-      return true;
+      return process::runAsyncAsSystemdService(prepared->args, appName, options.activationToken, entry.workingDir);
     }
     return process::runAsync(prepared->args, options.activationToken, entry.workingDir);
   }
@@ -152,10 +151,9 @@ namespace desktop_entry_launch {
     }
 
     if (options.runAsSystemdService) {
-      process::runAsyncAsSystemdService(
+      return process::runAsyncAsSystemdService(
           prepared->args, appNameOrDefault(appName), options.activationToken, std::string(workingDir)
       );
-      return true;
     }
     return process::runAsync(prepared->args, options.activationToken, std::string(workingDir));
   }

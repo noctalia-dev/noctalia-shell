@@ -8,6 +8,7 @@
 #include "scripting/plugin_state_store.h"
 #include "scripting/script_api_context.h"
 #include "scripting/script_worker_pool.h"
+#include "scripting/ui_prelude.h"
 #include "wayland/clipboard_service.h"
 
 #include <algorithm>
@@ -75,6 +76,18 @@ namespace scripting {
       }
       if (src.enabled.has_value()) {
         dest.enabled = src.enabled;
+      }
+      if (src.launcherResults.has_value()) {
+        dest.launcherResults = src.launcherResults;
+      }
+      if (src.uiTree.has_value()) {
+        dest.uiTree = src.uiTree;
+      }
+      if (src.wantsSecondTicks.has_value()) {
+        dest.wantsSecondTicks = src.wantsSecondTicks;
+      }
+      if (src.needsFrameTick.has_value()) {
+        dest.needsFrameTick = src.needsFrameTick;
       }
     }
 
@@ -534,6 +547,9 @@ namespace scripting {
       result.callbackName = "load";
 
       bindingContext.beginCall(event.snapshot);
+      if (!host->exec("=ui-prelude", kUiPrelude)) {
+        kLog.warn("plugin {}: failed to install ui prelude", runtimeName);
+      }
       bool ok = host->loadString(event.chunkName, event.source) && host->run();
       mergeResult(result, collectResult(event, "load", ok));
 

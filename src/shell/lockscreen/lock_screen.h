@@ -22,10 +22,12 @@ struct wl_surface;
 struct wl_output;
 class ConfigService;
 
+class FingerprintAuthenticator;
 class LockSurface;
 class ProjectMRenderer;
 class RenderContext;
 class SharedTextureCache;
+class SystemBus;
 class WaylandConnection;
 
 class LockScreen {
@@ -35,7 +37,7 @@ public:
 
   bool initialize(
       WaylandConnection& wayland, RenderContext* renderContext, ConfigService* configService,
-      SharedTextureCache* textureCache
+      SharedTextureCache* textureCache, SystemBus* systemBus
   );
   // Optional live-paper plumbing. Non-owning; pass null to disable.
   void setVisualizer(ProjectMRenderer* renderer);
@@ -96,6 +98,12 @@ private:
   void updatePromptOnSurfaces();
   void handlePasswordEdited(const std::string& value);
   void tryAuthenticate();
+  void handleAuthResult(std::uint64_t generation, PamAuthenticator::Result result);
+  void invalidatePendingAuthentication();
+  void startFingerprint();
+  void stopFingerprint();
+  void handleFingerprintStatus(const std::string& message, bool isError);
+  [[nodiscard]] std::string passwordPamService() const;
   static void clearSensitiveString(std::string& value);
 
   // Drive live-paper redraws on the lock surfaces. Texture content is updated
@@ -112,15 +120,19 @@ private:
   ProjectMRenderer* m_visualizer = nullptr;
   Timer m_visualizerTimer;
   int m_visualizerTickFps = 0;
+  SystemBus* m_systemBus = nullptr;
   ext_session_lock_v1* m_lock = nullptr;
   std::vector<Instance> m_instances;
   std::unordered_map<wl_output*, ScreencopyImage> m_desktopCaptures;
   PamAuthenticator m_authenticator;
+  std::unique_ptr<FingerprintAuthenticator> m_fingerprint;
   std::string m_user;
   std::string m_password;
   std::string m_status;
   wl_surface* m_pointerSurface = nullptr;
   bool m_statusIsError = false;
+  bool m_authenticating = false;
+  std::uint64_t m_authGeneration = 0;
   bool m_lockPending = false;
   bool m_locked = false;
   bool m_desktopCapturesPrimed = false;

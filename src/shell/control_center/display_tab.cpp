@@ -60,7 +60,8 @@ namespace {
 
 } // namespace
 
-DisplayTab::DisplayTab(BrightnessService* brightness, ConfigService* /*config*/) : m_brightness(brightness) {}
+DisplayTab::DisplayTab(BrightnessService* brightness, ConfigService* config)
+    : m_brightness(brightness), m_configService(config) {}
 
 std::unique_ptr<Flex> DisplayTab::create() {
   const float scale = contentScale();
@@ -183,8 +184,9 @@ void DisplayTab::doUpdate(Renderer& renderer) {
         && now < m_ignoreStateUntil
         && std::abs(display->brightness - m_lastSentBrightness) > 0.02f;
 
+    const float minBrightness = m_configService->config().brightness.minimumBrightness;
     const float displayedBrightness = std::clamp(
-        isPending ? m_pendingBrightness : (holdState ? m_lastSentBrightness : display->brightness), 0.0f, 1.0f
+        isPending ? m_pendingBrightness : (holdState ? m_lastSentBrightness : display->brightness), minBrightness, 1.0f
     );
 
     if (!isDragging
@@ -284,13 +286,14 @@ void DisplayTab::rebuildCards(Renderer& /*renderer*/) {
     );
 
     const std::string displayId = display.id;
+    const float minBrightness = m_configService->config().brightness.minimumBrightness;
     Slider* sliderPtr = nullptr;
     auto slider = ui::slider({
         .out = &sliderPtr,
-        .minValue = 0.0f,
+        .minValue = minBrightness,
         .maxValue = 1.0f,
         .step = 0.01f,
-        .value = display.brightness,
+        .value = std::max(display.brightness, minBrightness),
         .enabled = display.controllable,
         .trackHeight = Style::sliderTrackHeight * scale,
         .thumbSize = Style::sliderThumbSize * scale,

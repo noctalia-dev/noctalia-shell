@@ -1,10 +1,12 @@
 #include "shell/bar/widgets/volume_widget.h"
 
 #include "config/config_types.h"
+#include "i18n/i18n.h"
 #include "pipewire/pipewire_service.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
+#include "system/easyeffects_service.h"
 #include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -32,10 +34,10 @@ namespace {
 } // namespace
 
 VolumeWidget::VolumeWidget(
-    PipeWireService* audio, const Config* config, wl_output* /*output*/, bool showLabel, VolumeWidgetTarget target,
-    int scrollStepPercent
+    PipeWireService* audio, EasyEffectsService* easyEffects, const Config* config, wl_output* /*output*/,
+    bool showLabel, VolumeWidgetTarget target, int scrollStepPercent
 )
-    : m_audio(audio), m_config(config), m_showLabel(showLabel),
+    : m_audio(audio), m_easyEffects(easyEffects), m_config(config), m_showLabel(showLabel),
       m_scrollStep(static_cast<float>(scrollStepPercent) / 100.0f), m_target(target) {}
 
 void VolumeWidget::create() {
@@ -90,6 +92,7 @@ void VolumeWidget::create() {
       ui::label({
           .out = &m_label,
           .fontSize = Style::fontSizeBody * m_contentScale,
+          .fontFamily = labelFontFamily(),
           .fontWeight = labelFontWeight(),
           .visible = m_showLabel,
       })
@@ -139,14 +142,22 @@ void VolumeWidget::syncState(Renderer& renderer) {
   const auto* node = m_target == VolumeWidgetTarget::Input ? m_audio->defaultSource() : m_audio->defaultSink();
   float volume = node != nullptr ? node->volume : 0.0f;
   bool muted = node != nullptr ? node->muted : false;
+  const auto kind =
+      m_target == VolumeWidgetTarget::Input ? AudioEffectsProfileKind::Input : AudioEffectsProfileKind::Output;
+  const std::string effectsProfile =
+      m_easyEffects != nullptr ? m_easyEffects->activeEffectsProfile(kind) : std::string{};
 
-  if (volume == m_lastVolume && muted == m_lastMuted && m_isVertical == m_lastVertical) {
+  if (volume == m_lastVolume
+      && muted == m_lastMuted
+      && m_isVertical == m_lastVertical
+      && effectsProfile == m_lastEffectsProfile) {
     return;
   }
 
   m_lastVolume = volume;
   m_lastMuted = muted;
   m_lastVertical = m_isVertical;
+  m_lastEffectsProfile = effectsProfile;
 
   m_glyph->setGlyph(volumeGlyphName(volume, muted, m_target));
   m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
@@ -176,6 +187,9 @@ void VolumeWidget::syncState(Renderer& renderer) {
       rows.push_back({m_target == VolumeWidgetTarget::Input ? "Mic" : "Volume", std::to_string(pct) + "%"});
       if (!node->description.empty()) {
         rows.push_back({"Device", node->description});
+      }
+      if (!effectsProfile.empty()) {
+        rows.push_back({i18n::tr("control-center.audio.effects-profile"), effectsProfile});
       }
       area->setTooltip(std::move(rows));
     } else {

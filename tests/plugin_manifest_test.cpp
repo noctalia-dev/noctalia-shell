@@ -85,6 +85,42 @@ int main() {
     ok = expect(explicitManifest->deprecated, "deprecated should parse explicit value") && ok;
   }
 
+  const auto launcherManifestPath = root / "launcher/plugin.toml";
+  ok = writeText(
+           launcherManifestPath,
+           "id = \"me/launcher\"\n"
+           "name = \"Launcher\"\n"
+           "min_noctalia = \"5.0.0\"\n"
+           "[[launcher_provider]]\n"
+           "id = \"translate\"\n"
+           "entry = \"translate.luau\"\n"
+           "prefix = \":tr\"\n"
+           "glyph = \"language\"\n"
+           "include_in_global_search = true\n"
+           "debounce_ms = 300\n"
+           "[[launcher_provider.category]]\n"
+           "label = \"Languages\"\n"
+           "glyph = \"world\"\n"
+       )
+      && ok;
+  error.clear();
+  const auto launcherManifest = scripting::parsePluginManifest(launcherManifestPath, &error);
+  ok = expect(launcherManifest.has_value(), error.empty() ? "failed to parse launcher manifest" : error.c_str()) && ok;
+  if (launcherManifest.has_value() && expect(launcherManifest->entries.size() == 1, "one launcher entry expected")) {
+    const auto& entry = launcherManifest->entries.front();
+    ok = expect(entry.kind == scripting::PluginEntryKind::LauncherProvider, "entry kind should be LauncherProvider")
+        && ok;
+    ok = expectEq(entry.launcherPrefix, ":tr", "launcher prefix should parse") && ok;
+    ok = expectEq(entry.launcherGlyph, "language", "launcher glyph should parse") && ok;
+    ok = expect(entry.launcherGlobalSearch, "include_in_global_search should parse true") && ok;
+    ok = expect(entry.launcherDebounceMs == 300, "debounce_ms should parse") && ok;
+    ok = expect(entry.launcherCategories.size() == 1, "one launcher category expected") && ok;
+    if (!entry.launcherCategories.empty()) {
+      ok = expectEq(entry.launcherCategories.front().label, "Languages", "category label should parse") && ok;
+      ok = expectEq(entry.launcherCategories.front().glyph, "world", "category glyph should parse") && ok;
+    }
+  }
+
   const auto missingNameManifestPath = root / "missing-name/plugin.toml";
   ok = writeText(missingNameManifestPath, "id = \"me/missing-name\"\nmin_noctalia = \"5.0.0\"\n") && ok;
   error.clear();

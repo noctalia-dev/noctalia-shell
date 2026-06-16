@@ -95,11 +95,20 @@ namespace scripting {
     [[nodiscard]] std::optional<PluginSourceConfig> findSource(std::string_view name) const;
     // Plugin ids offered by the implicit local dev source.
     [[nodiscard]] std::unordered_set<std::string> localPluginIds() const;
-    // Re-derive any enabled git-source plugin missing from disk — re-clones a wiped
-    // source repo and exports enabled plugins it ships. Heals deleted source storage
-    // or a restored config. Returns whether anything was exported. No network when
-    // nothing is missing.
+    // Re-derive any enabled git-source plugin missing from disk. Present repos are
+    // materialized synchronously (local git, no network); a wiped repo is re-cloned and
+    // materialized on a worker thread so startup never blocks on the network. Returns
+    // whether anything was exported synchronously. No network when nothing is missing.
     bool ensureEnabledMaterialized(const PluginsConfig& plugins) const;
+    // Export the enabled plugins a present repo ships, from local git data only.
+    bool materializeEnabledFromRepo(
+        const PluginSourceConfig& source, const std::filesystem::path& repoRoot, const std::vector<std::string>& enabled
+    ) const;
+    // Clone a missing source repo and materialize its enabled plugins off the main
+    // thread, rebuilding the bar via m_onChanged once the export lands.
+    void spawnCloneAndMaterialize(
+        PluginSourceConfig source, std::filesystem::path repoRoot, std::vector<std::string> enabled
+    ) const;
 
     ConfigService& m_config;
     std::function<void()> m_onChanged;

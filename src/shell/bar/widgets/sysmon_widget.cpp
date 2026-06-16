@@ -2,12 +2,12 @@
 
 #include "config/config_service.h"
 #include "render/core/renderer.h"
-#include "render/scene/graph_node.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "system/format_units.h"
 #include "system/system_monitor_service.h"
 #include "ui/builders.h"
+#include "ui/controls/graph.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -105,12 +105,13 @@ namespace {
 
 SysmonWidget::SysmonWidget(
     SystemMonitorService* monitor, wl_output* /*output*/, SysmonStat stat, std::string diskPath,
-    SysmonDisplayMode displayMode, ColorSpec highlightColor, ConfigService& configService, bool showLabel,
-    float labelMinWidth
+    SysmonDisplayMode displayMode, ColorSpec highlightColor, ConfigService& configService, std::string networkInterface,
+    bool showLabel, float labelMinWidth, std::string glyph
 )
     : m_monitor(monitor), m_stat(stat), m_displayMode(displayMode), m_highlightColor(highlightColor),
       m_configService(configService), m_showLabel(showLabel), m_labelMinWidth(labelMinWidth),
-      m_diskPath(std::move(diskPath)) {
+      m_diskPath(std::move(diskPath)), m_networkInterface(std::move(networkInterface)),
+      m_glyphOverride(std::move(glyph)) {
   if (m_monitor != nullptr) {
     if (needsCpuTemp(m_stat)) {
       m_monitor->retainCpuTemp();
@@ -159,7 +160,7 @@ void SysmonWidget::create() {
   container->addChild(
       ui::glyph({
           .out = &m_glyph,
-          .glyph = glyphName(m_stat),
+          .glyph = m_glyphOverride.empty() ? glyphName(m_stat) : m_glyphOverride,
           .glyphSize = Style::baseGlyphSize * m_contentScale,
           .color = widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
@@ -168,10 +169,10 @@ void SysmonWidget::create() {
   if (m_displayMode == SysmonDisplayMode::Graph) {
     m_chartBg = static_cast<Box*>(container->addChild(ui::box()));
 
-    auto graph = std::make_unique<GraphNode>();
+    auto graph = std::make_unique<Graph>();
     graph->setLineWidth(kGraphLineWidth * m_contentScale);
-    graph->setGraphFillOpacity(0.15f);
-    m_graphNode = static_cast<GraphNode*>(m_chartBg->addChild(std::move(graph)));
+    graph->setFillOpacity(0.15f);
+    m_graph = static_cast<Graph*>(m_chartBg->addChild(std::move(graph)));
   }
 
   if (m_displayMode == SysmonDisplayMode::Gauge) {
@@ -190,6 +191,7 @@ void SysmonWidget::create() {
         ui::label({
             .out = &m_label,
             .fontSize = Style::fontSizeBody * m_contentScale,
+            .fontFamily = labelFontFamily(),
             .minWidth = m_labelMinWidth > 0.0f ? std::optional<float>{m_labelMinWidth * m_contentScale}
                                                : std::optional<float>{},
             .fontWeight = labelFontWeight(),
@@ -214,8 +216,8 @@ void SysmonWidget::syncVisualPalette() {
     bgStyle.softness = 0.5f;
     m_chartBg->setStyle(bgStyle);
   }
-  if (m_graphNode != nullptr) {
-    m_graphNode->setLineColor1(currentValueColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))));
+  if (m_graph != nullptr) {
+    m_graph->setColor(currentValueColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))));
   }
   if (m_gauge != nullptr) {
     const ColorSpec base = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface));
@@ -233,8 +235,8 @@ void SysmonWidget::syncValueColor() {
   if (m_label != nullptr) {
     m_label->setColor(valueColor);
   }
-  if (m_graphNode != nullptr) {
-    m_graphNode->setLineColor1(valueColor);
+  if (m_graph != nullptr) {
+    m_graph->setColor(valueColor);
   }
   if (m_gauge != nullptr) {
     m_gauge->setFill(valueColor);
@@ -310,9 +312,9 @@ double SysmonWidget::currentGradientValue() {
     }
     return 0.0;
   case SysmonStat::NetRx:
-    return std::max(stats.netRxBytesPerSec / kBytesPerMb, 0.0);
+    return std::max(m_monitor->netRxBytesPerSec(m_networkInterface) / kBytesPerMb, 0.0);
   case SysmonStat::NetTx:
-    return std::max(stats.netTxBytesPerSec / kBytesPerMb, 0.0);
+    return std::max(m_monitor->netTxBytesPerSec(m_networkInterface) / kBytesPerMb, 0.0);
   case SysmonStat::DiskPct:
     return 0.0;
   }
@@ -430,9 +432,9 @@ void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float cont
       m_chartBg->setPosition(std::round((contentW - chartW) * 0.5f), chartY);
       m_chartBg->setSize(chartW, glyphH);
 
-      if (m_graphNode != nullptr) {
-        m_graphNode->setPosition(0.0f, 0.0f);
-        m_graphNode->setSize(chartW, glyphH);
+      if (m_graph != nullptr) {
+        m_graph->setPosition(0.0f, 0.0f);
+        m_graph->setSize(chartW, glyphH);
       }
 
       float totalH = chartY + glyphH;
@@ -449,9 +451,9 @@ void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float cont
       m_chartBg->setPosition(m_glyph->width() + gap, std::round((contentH - glyphH) * 0.5f));
       m_chartBg->setSize(chartW, glyphH);
 
-      if (m_graphNode != nullptr) {
-        m_graphNode->setPosition(0.0f, 0.0f);
-        m_graphNode->setSize(chartW, glyphH);
+      if (m_graph != nullptr) {
+        m_graph->setPosition(0.0f, 0.0f);
+        m_graph->setSize(chartW, glyphH);
       }
 
       float totalW = m_chartBg->x() + chartW;
@@ -512,13 +514,19 @@ void SysmonWidget::doUpdate(Renderer& renderer) {
 
 void SysmonWidget::onFrameTick(float deltaMs) {
   (void)deltaMs;
-  if (m_graphNode == nullptr || m_scrollProgress >= 1.0f) {
+  if (m_graph == nullptr || m_scrollProgress >= 1.0f) {
+    m_redrawLimiter.reset();
+    return;
+  }
+  if (!m_redrawLimiter.shouldStep([this]() { requestRedraw(); })) {
     return;
   }
   m_scrollProgress = scrollProgressForSample(m_lastSampleAt);
-  m_graphNode->setScroll1(m_scrollProgress);
+  m_graph->setScroll(m_scrollProgress);
   if (m_scrollProgress < 1.0f) {
     requestRedraw();
+  } else {
+    m_redrawLimiter.reset();
   }
 }
 
@@ -540,11 +548,11 @@ void SysmonWidget::scheduleNextUpdate(std::chrono::steady_clock::time_point late
 }
 
 void SysmonWidget::clearGraph() {
-  if (m_graphNode == nullptr || !m_graphInitialized) {
+  if (m_graph == nullptr || !m_graphInitialized) {
     return;
   }
 
-  m_graphNode->setCount1(0.0f);
+  m_graph->setValues({});
   m_graphInitialized = false;
   m_lastSampleAt = {};
   m_scrollProgress = 1.0f;
@@ -552,7 +560,7 @@ void SysmonWidget::clearGraph() {
 }
 
 void SysmonWidget::updateGraph(Renderer& renderer) {
-  if (m_graphNode == nullptr || m_monitor == nullptr || !m_monitor->isRunning()) {
+  if (m_graph == nullptr || m_monitor == nullptr || !m_monitor->isRunning()) {
     return;
   }
 
@@ -578,26 +586,18 @@ void SysmonWidget::updateGraph(Renderer& renderer) {
     }
     data.resize(hist.size());
     for (std::size_t i = 0; i < hist.size(); ++i) {
-      data[i] = static_cast<float>(std::clamp(normalizedFromStats(m_stat, hist[i], m_tempMin, m_tempMax), 0.0, 1.0));
+      data[i] = static_cast<float>(
+          std::clamp(normalizedFromStats(m_stat, hist[i], m_tempMin, m_tempMax, m_networkInterface), 0.0, 1.0)
+      );
     }
   }
 
-  const int n = static_cast<int>(data.size());
-  const int texSize = n + 1;
-  data.push_back(
-      std::clamp(
-          data[static_cast<std::size_t>(n - 1)]
-              + (data[static_cast<std::size_t>(n - 1)] - data[static_cast<std::size_t>(n - 2)]) * 0.5f,
-          0.0f, 1.0f
-      )
-  );
-
-  m_graphNode->setData(renderer.textureManager(), data.data(), texSize, nullptr, 0);
-  m_graphNode->setCount1(static_cast<float>(n));
+  m_graph->setValues(std::move(data));
+  m_graph->sync(renderer);
   m_graphInitialized = true;
   m_lastSampleAt = latestSampleAt;
   m_scrollProgress = scrollProgressForSample(m_lastSampleAt);
-  m_graphNode->setScroll1(m_scrollProgress);
+  m_graph->setScroll(m_scrollProgress);
   requestRedraw();
 }
 
@@ -616,7 +616,9 @@ float SysmonWidget::scrollProgressForSample(std::chrono::steady_clock::time_poin
   return std::chrono::duration<float>(clamped).count() / std::chrono::duration<float>(sampleInterval).count();
 }
 
-double SysmonWidget::normalizedFromStats(SysmonStat stat, const SystemStats& stats, double& tempMin, double& tempMax) {
+double SysmonWidget::normalizedFromStats(
+    SysmonStat stat, const SystemStats& stats, double& tempMin, double& tempMax, std::string_view networkInterface
+) {
   switch (stat) {
   case SysmonStat::CpuUsage:
     return stats.cpuUsagePercent / 100.0;
@@ -675,13 +677,27 @@ double SysmonWidget::normalizedFromStats(SysmonStat stat, const SystemStats& sta
     return 0.0;
 
   case SysmonStat::NetRx: {
-    tempMax = std::max(tempMax, stats.netRxBytesPerSec);
-    return tempMax > 0.0 ? std::clamp(stats.netRxBytesPerSec / tempMax, 0.0, 1.0) : 0.0;
+    const double value = networkInterface.empty() ? stats.netRxBytesPerSec : [&stats, networkInterface]() {
+      if (const auto it = stats.netThroughputByInterface.find(std::string(networkInterface));
+          it != stats.netThroughputByInterface.end()) {
+        return it->second.rxBytesPerSec;
+      }
+      return 0.0;
+    }();
+    tempMax = std::max(tempMax, value);
+    return tempMax > 0.0 ? std::clamp(value / tempMax, 0.0, 1.0) : 0.0;
   }
 
   case SysmonStat::NetTx: {
-    tempMax = std::max(tempMax, stats.netTxBytesPerSec);
-    return tempMax > 0.0 ? std::clamp(stats.netTxBytesPerSec / tempMax, 0.0, 1.0) : 0.0;
+    const double value = networkInterface.empty() ? stats.netTxBytesPerSec : [&stats, networkInterface]() {
+      if (const auto it = stats.netThroughputByInterface.find(std::string(networkInterface));
+          it != stats.netThroughputByInterface.end()) {
+        return it->second.txBytesPerSec;
+      }
+      return 0.0;
+    }();
+    tempMax = std::max(tempMax, value);
+    return tempMax > 0.0 ? std::clamp(value / tempMax, 0.0, 1.0) : 0.0;
   }
 
   case SysmonStat::DiskPct:
@@ -699,7 +715,9 @@ double SysmonWidget::currentNormalized() {
     return std::clamp(static_cast<double>(m_monitor->diskUsagePercent(m_diskPath)) / 100.0, 0.0, 1.0);
   }
 
-  return std::clamp(normalizedFromStats(m_stat, m_monitor->latest(), m_tempMin, m_tempMax), 0.0, 1.0);
+  return std::clamp(
+      normalizedFromStats(m_stat, m_monitor->latest(), m_tempMin, m_tempMax, m_networkInterface), 0.0, 1.0
+  );
 }
 
 std::string SysmonWidget::formatValue() const {
@@ -759,10 +777,10 @@ std::string SysmonWidget::formatValue() const {
     return "--";
 
   case SysmonStat::NetRx:
-    return FormatUnits::formatDecimalBytesPerSecond(stats.netRxBytesPerSec);
+    return FormatUnits::formatDecimalBytesPerSecond(m_monitor->netRxBytesPerSec(m_networkInterface));
 
   case SysmonStat::NetTx:
-    return FormatUnits::formatDecimalBytesPerSecond(stats.netTxBytesPerSec);
+    return FormatUnits::formatDecimalBytesPerSecond(m_monitor->netTxBytesPerSec(m_networkInterface));
 
   case SysmonStat::DiskPct:
     break; // handled above

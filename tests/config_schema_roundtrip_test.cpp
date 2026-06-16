@@ -169,8 +169,10 @@ location = "https://example.invalid/bad"
     bar.shadow = false;
     bar.contactShadow = true;
     bar.panelOverlap = 2;
+    bar.capsuleThickness = 0.5f;
     bar.scale = 2.0f;
     bar.fontWeight = 600;
+    bar.fontFamily = "Inter";
     bar.startWidgets = {"launcher"};
     bar.centerWidgets = {"clock", "weather"};
     bar.endWidgets = {"battery"};
@@ -219,7 +221,9 @@ location = "https://example.invalid/bad"
     ovr.shadow = true;
     ovr.contactShadow = false;
     ovr.panelOverlap = -1;
+    ovr.capsuleThickness = 0.25f;
     ovr.scale = 1.5f;
+    ovr.fontFamily = "Fira Sans";
     ovr.startWidgets = std::vector<std::string>{"tray"};
     ovr.centerWidgets = std::vector<std::string>{"media"};
     ovr.endWidgets = std::vector<std::string>{"volume"};
@@ -268,6 +272,7 @@ location = "https://example.invalid/bad"
         .blurredDesktop = true, .blurIntensity = 0.6f, .tintIntensity = 0.25f, .monitors = {"DP-1"}
     };
     c.system.monitor.enabled = false;
+    c.system.monitor.cpuTempSensorPath = "/sys/class/hwmon/hwmon3/temp1_input";
     c.system.monitor.cpuPollSeconds = 5.0f;
     c.system.monitor.gpuPollSeconds = 4.0f;
     c.system.monitor.memoryPollSeconds = 6.0f;
@@ -281,8 +286,26 @@ location = "https://example.invalid/bad"
     c.location.latitude = 52.52;
     c.location.longitude = 13.405;
     c.notification = NotificationConfig{
-        false, false, false,    "bottom_left", "overlay",   1.3f, 0.5f,
-        12,    6,     {"DP-2"}, false,         {"discord"}, true, {"normal", "critical"},
+        false,
+        false,
+        false,
+        "bottom_left",
+        "overlay",
+        1.3f,
+        0.5f,
+        12,
+        6,
+        {"DP-2"},
+        false,
+        {NotificationFilterConfig{
+            .name = "discord",
+            .enabled = true,
+            .match = "discord",
+            .showToast = false,
+            .saveHistory = false,
+            .playSound = false,
+            .allowedUrgencies = {"normal", "critical"},
+        }},
     };
     c.dock.enabled = true;
     c.dock.position = DockEdge::Left;
@@ -353,6 +376,7 @@ location = "https://example.invalid/bad"
     c.shell.panel.launcherPlacement = PanelPlacement::Floating;
     c.shell.panel.launcherCompact = true;
     c.shell.panel.launcherSessionSearch = true;
+    c.shell.panel.launcherSortByUsage = false;
     c.shell.screenCorners.enabled = true;
     c.shell.screenCorners.size = 24;
     c.shell.mpris.blacklist = {"firefox"};
@@ -373,6 +397,9 @@ location = "https://example.invalid/bad"
             std::nullopt
         },
     };
+    c.shell.session.power.suspend = "zzz";
+    c.shell.session.power.reboot = "sudo -n reboot";
+    c.shell.session.power.shutdown = "sudo -n poweroff";
     c.theme.source = PaletteSource::Wallpaper;
     c.theme.builtinPalette = "Tokyo";
     c.theme.mode = ThemeMode::Light;
@@ -465,11 +492,13 @@ capsule_foreground = "#FEDCBA"
 capsule_opacity = 0.89999997615814209
 capsule_padding = 16.0
 capsule_radius = 12.0
+capsule_thickness = 0.5
 center = [ "clock", "weather" ]
 color = "#0A0B0C"
 contact_shadow = true
 enabled = false
 end = [ "battery" ]
+font_family = "Inter"
 font_weight = 600
 icon_color = "#0C0B0A"
 layer = "overlay"
@@ -502,11 +531,13 @@ widget_spacing = 8
     capsule_opacity = 0.5
     capsule_padding = 24.0
     capsule_radius = 30.0
+    capsule_thickness = 0.25
     center = [ "media" ]
     color = "#E1E2E3"
     contact_shadow = false
     enabled = true
     end = [ "volume" ]
+    font_family = "Fira Sans"
     font_weight = 600
     icon_color = "#E3E2E1"
     layer = "top"

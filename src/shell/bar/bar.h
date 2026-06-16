@@ -24,6 +24,7 @@ class MprisService;
 class BluetoothService;
 class BrightnessService;
 class ClipboardService;
+class EasyEffectsService;
 class ScreenshotService;
 class INetworkService;
 class NotificationManager;
@@ -52,13 +53,13 @@ public:
 
   bool initialize(
       CompositorPlatform& platform, ConfigService* config, TimeService* timeService, NotificationManager* notifications,
-      TrayService* tray, PipeWireService* audio, UPowerService* upower, SystemMonitorService* sysmon,
-      PowerProfilesService* powerProfiles, INetworkService* network, IdleInhibitor* idleInhibitor, MprisService* mpris,
-      PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weatherService,
-      RenderContext* renderContext, GammaService* nightLight, noctalia::theme::ThemeService* themeService,
-      BluetoothService* bluetooth, BrightnessService* brightness, LockKeysService* lockKeys,
-      ClipboardService* clipboard, FileWatcher* fileWatcher = nullptr, ScreenshotService* screenshots = nullptr,
-      scripting::ScriptApiContext* scriptApi = nullptr
+      TrayService* tray, PipeWireService* audio, EasyEffectsService* easyEffects, UPowerService* upower,
+      SystemMonitorService* sysmon, PowerProfilesService* powerProfiles, INetworkService* network,
+      IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum, HttpClient* httpClient,
+      WeatherService* weatherService, RenderContext* renderContext, GammaService* nightLight,
+      noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth, BrightnessService* brightness,
+      LockKeysService* lockKeys, ClipboardService* clipboard, FileWatcher* fileWatcher = nullptr,
+      ScreenshotService* screenshots = nullptr, scripting::ScriptApiContext* scriptApi = nullptr
   );
   void reload();
   void closeAllInstances();
@@ -68,6 +69,9 @@ public:
   /// Hides bars while a full-screen overlay editor (e.g. lockscreen widget layout) is active.
   void suppressDisplay();
   void unsuppressDisplay();
+  /// Stops bar surface frame loops while the session lock is active.
+  void pauseUnderSessionLock();
+  void resumeAfterSessionLock();
   [[nodiscard]] bool isVisible() const noexcept;
   void onOutputChange();
   void onSecondTick();
@@ -95,6 +99,9 @@ public:
   void
   setAttachedPanelGeometry(wl_output* output, std::string_view barName, std::optional<AttachedPanelGeometry> geometry);
   [[nodiscard]] bool canAttachPanelToBar(wl_output* output, std::string_view barName) const noexcept;
+  // True when an attached panel may start its reveal animation: non-autohide bars, or autohide
+  // bars that have finished sliding into their resting position.
+  [[nodiscard]] bool isAttachedPanelBarSettled(wl_output* output, std::string_view barName) const noexcept;
   void revealAutoHideForAttachedPanel(wl_output* output, std::string_view barName);
   void beginAttachedPopup(wl_surface* surface);
   void endAttachedPopup(wl_surface* surface);
@@ -146,6 +153,7 @@ private:
   NotificationManager* m_notifications = nullptr;
   TrayService* m_tray = nullptr;
   PipeWireService* m_audio = nullptr;
+  EasyEffectsService* m_easyEffects = nullptr;
   UPowerService* m_upower = nullptr;
   SystemMonitorService* m_sysmon = nullptr;
   PowerProfilesService* m_powerProfiles = nullptr;
@@ -184,4 +192,5 @@ private:
   std::function<void(std::string, std::string)> m_openWidgetSettingsCallback;
   bool m_overlayDisplaySuppressed = false;
   bool m_wasVisibleBeforeOverlaySuppress = false;
+  bool m_sessionLockPaused = false;
 };

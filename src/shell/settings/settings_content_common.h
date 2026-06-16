@@ -41,5 +41,6 @@ namespace settings {
   );
   void normalizeIdleBehaviorNames(std::vector<IdleBehaviorConfig>& rows);
   [[nodiscard]] std::string idleBehaviorRowSummary(const IdleBehaviorConfig& row);
+  [[nodiscard]] std::string notificationFilterRowSummary(const NotificationFilterConfig& filter);
 
 } // namespace settings

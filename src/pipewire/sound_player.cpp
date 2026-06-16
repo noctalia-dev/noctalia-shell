@@ -95,6 +95,12 @@ void SoundPlayer::play(const std::string& name) {
 
   removeFinished();
 
+  for (const auto& active : m_active) {
+    if (!active->finished && active->buffer == buffer) {
+      return;
+    }
+  }
+
   auto active = std::make_unique<ActiveStream>();
   active->owner = this;
   active->buffer = buffer;

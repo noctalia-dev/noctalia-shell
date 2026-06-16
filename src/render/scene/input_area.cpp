@@ -135,6 +135,7 @@ TooltipContent InputArea::tooltipContent() const {
 }
 
 void InputArea::notifyTooltipChanged() {
+  onTooltipChanged();
   if (m_hovered && m_tooltipChangedCallback) {
     m_tooltipChangedCallback(this);
   }

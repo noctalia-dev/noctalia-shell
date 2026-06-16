@@ -1,5 +1,8 @@
 {
   "auth": {
+    "fingerprint": {
+      "no-match": "Fingerabdruck stimmt nicht überein"
+    },
     "pam": {
       "authentication-failed": "Authentifizierung fehlgeschlagen",
       "start-failed": "PAM-Start fehlgeschlagen",
@@ -145,7 +148,8 @@
     "calendar": {
       "all-day": "Ganztägig",
       "events": "Ereignisse",
-      "no-events": "Keine Ereignisse."
+      "no-events": "Keine Ereignisse.",
+      "today": "Heute"
     },
     "display": {
       "disabled": "Deaktiviert",
@@ -153,6 +157,7 @@
       "unknown-resolution": "Unbekannte Auflösung"
     },
     "home": {
+      "avatar-error-title": "Profilbild nicht aktualisiert",
       "media": {
         "idle": "Inaktiv",
         "no-active-player": "Kein aktiver Player",
@@ -246,7 +251,6 @@
       },
       "notification": "DND",
       "power-profile": "Energie",
-      "screen-recorder": "Rekorder",
       "screen-time": "Bildschirmzeit",
       "session": "Sitzung",
       "system": "System",
@@ -255,6 +259,11 @@
       "wifi": "Wi-Fi"
     },
     "system": {
+      "labels": {
+        "load": "CPU-Auslastung",
+        "ram": "RAM",
+        "swap": "Swap"
+      },
       "titles": {
         "cpu": "CPU",
         "gpu": "GPU",
@@ -262,6 +271,9 @@
         "network": "Netzwerk",
         "resources": "Ressourcen",
         "system": "System"
+      },
+      "tooltips": {
+        "load": "Durchschnittliche Auslastung über 1 / 5 / 15 Minuten"
       },
       "unknown": "unbekannt",
       "uptime-prefix": "Seit {uptime} · {osAge}"
@@ -307,6 +319,7 @@
     "editor": {
       "actions": {
         "add": "Hinzufügen",
+        "clone": "Duplizieren (Ctrl+C, Ctrl+V für kopieren / einfügen)",
         "done": "Fertig",
         "hide": "Ausblenden",
         "settings": "Einstellungen",
@@ -361,6 +374,7 @@
         "secondary-color": "Sekundärfarbe",
         "sensitivity": "Empfindlichkeit",
         "shadow": "Schatten",
+        "show-forecast": "Vorhersage anzeigen",
         "show-label": "Beschriftung anzeigen",
         "show-login-button": "Anmelde-Button",
         "show-when-idle": "Bei Inaktivität anzeigen",
@@ -544,10 +558,13 @@
       "keybind-invalid-printable": "Druckbare Tasten (Buchstaben, Zahlen, Symbole) benötigen einen Modifikator wie Ctrl oder Alt.",
       "keybind-invalid-super": "Die Super-/Windows-Taste kann nicht für Shell-Keybinds verwendet werden.",
       "keybind-invalid-title": "Tastenkombination nicht erlaubt",
+      "launcher-usage-reset-success": "Nutzungsdaten gelöscht",
       "lockscreen-widgets-editor": "Sperrbildschirm-Widget-Editor",
       "lockscreen-widgets-editor-blocked-locked": "Entsperre die Sitzung, bevor du Sperrbildschirm-Widgets bearbeitest.",
       "lockscreen-widgets-editor-enabled": "Der Sperrbildschirm-Widget-Editor ist aktiv. Ordne Widgets auf dem Vorschau-Overlay an und sperre dann die Sitzung, um das Layout zu überprüfen.",
       "mpris-disabled": "MPRIS deaktiviert",
+      "screen-time-reset": "Bildschirmzeit",
+      "screen-time-reset-success": "Nutzungsverlauf gelöscht",
       "session-bus-unavailable": "Session-Bus nicht verfügbar",
       "wallpaper-palette-export": "Benutzerdefinierte Palette",
       "wallpaper-palette-export-success": "„{name}“ gespeichert und Palettenquelle auf benutzerdefiniert gewechselt."
@@ -626,7 +643,8 @@
       "advanced": "Erweitert",
       "inherited": "Geerbt",
       "monitor": "Monitor",
-      "override": "Überschreiben"
+      "official": "Offiziell",
+      "override": "Überschreibung"
     },
     "calendar-accounts": {
       "add-title": "Kalenderkonto hinzufügen",
@@ -694,7 +712,7 @@
       "monitor-override": {
         "create": "Erstellen",
         "delete": "Löschen",
-        "delete-confirm-desc": "Diese GUI-erstellte Monitor-Überschreibung wird aus settings.toml entfernt.",
+        "delete-confirm-desc": "Die von der GUI erstellte Monitor-Überschreibung wird aus settings.toml entfernt.",
         "delete-confirm-title": "„{name}“ löschen?",
         "label": "Monitor: {name}",
         "management": "Monitor-Überschreibung",
@@ -719,7 +737,7 @@
           "clear": "Leeren",
           "edit": "Stil bearbeiten",
           "fill": "Hintergrund",
-          "fill-description": "Capsule Hintergrundfarbrolle; feste Hexadezimalfarben werden ebenfalls unterstützt",
+          "fill-description": "Kapsel Hintergrundfarbrolle; feste Hexadezimalfarben werden ebenfalls unterstützt",
           "foreground": "Vordergrund",
           "foreground-description": "Symbol- und Beschriftungs-Farbrolle für Widgets in dieser Gruppe",
           "hint": "Teil einer Kapselgruppe",
@@ -928,6 +946,19 @@
         "wallpaper": "Hintergrundbild"
       }
     },
+    "notifications": {
+      "filter": {
+        "add": "Filter hinzufügen",
+        "flag": {
+          "history": "Verlauf",
+          "sound": "Ton"
+        },
+        "match-label": "App",
+        "play-sound": "Ton abspielen",
+        "save-history": "In Verlauf speichern",
+        "unnamed": "Unbenannter Filter"
+      }
+    },
     "options": {
       "clipboard": {
         "auto-paste": {
@@ -1059,7 +1090,7 @@
       "weather": {
         "unit": {
           "imperial": "Imperial",
-          "metric": "Metrik"
+          "metric": "Metrisch"
         }
       }
     },
@@ -1079,6 +1110,8 @@
       "sources": {
         "add": "Quelle hinzufügen",
         "add-title": "Plugin-Quelle hinzufügen",
+        "edit": "Quelle bearbeiten",
+        "edit-title": "Plugin-Quelle bearbeiten",
         "empty": "Keine Quellen konfiguriert.",
         "errors": {
           "duplicate-name": "Eine Quelle mit dieser ID existiert bereits.",
@@ -1096,6 +1129,7 @@
         "name-label": "Quell-ID",
         "name-placeholder": "my-plugins",
         "remove": "Quelle entfernen",
+        "save": "Speichern",
         "title": "Quellen",
         "update": "Aktualisieren",
         "update-on-startup": "Beim Start aktualisieren"
@@ -1219,7 +1253,7 @@
         },
         "capsule-padding": {
           "description": "Innenabstand in Widget-Kapseln",
-          "label": "Kapsel-Abstand"
+          "label": "Kapsel-Innenabstand"
         },
         "capsule-radius": {
           "description": "Standard-Eckradius für Widget-Kapseln, Workspace-Pillen und Taskbar-Workspace-Gruppen; leer lassen für automatische Pillenform oder 0 für eckige Ecken einstellen",
@@ -1603,8 +1637,7 @@
           "label": "Benachrichtigungssperrliste"
         },
         "blacklist-allow-critical": {
-          "description": "Kritische Benachrichtigungen von Absendern auf der Blacklist trotzdem anzeigen",
-          "label": "Kritisches trotz Blacklist zulassen"
+          "description": "Kritische Benachrichtigungen von Absendern auf der Blacklist trotzdem anzeigen"
         },
         "collapse-on-dismiss": {
           "description": "Verbleibende Toasts nachrücken lassen, um Lücken zu schließen, wenn einer verworfen wird",
@@ -1669,12 +1702,16 @@
           "label": "Startseiten-Kurzbefehle"
         },
         "launcher-categories": {
-          "description": "Kategoriefilter im Launcher anzeigen; mit Tab umschalten, während der Launcher geöffnet ist",
+          "description": "Kategoriefilter im Launcher anzeigen; mit F6 einblenden, danach mit F6 und Shift+F6 wechseln",
           "label": "Kategorien anzeigen"
         },
         "launcher-compact": {
           "description": "Kleinere Symbole und engere Ergebniszeilen verwenden",
           "label": "Kompakte Zeilen"
+        },
+        "launcher-reset-usage": {
+          "button": "Zurücksetzen",
+          "label": "Nutzungsdaten zurücksetzen"
         },
         "launcher-session-search": {
           "description": "Sitzungsaktionen (Sperren, Anhalten, Neustart, Herunterfahren, Abmelden) in allgemeine Launcher-Suchen einbeziehen, nicht nur hinter dem /session-Präfix",
@@ -1683,6 +1720,9 @@
         "launcher-show-icons": {
           "description": "App-Symbole in den Launcher-Ergebnissen anzeigen",
           "label": "App-Symbole anzeigen"
+        },
+        "launcher-sort-by-usage": {
+          "label": "Nach Nutzung sortieren"
         },
         "open-near-click-clipboard": {
           "description": "Positioniere das Zwischenablage-Panel in der Nähe des Bar-Klicks, anstatt es entlang der Bar zu zentrieren",
@@ -2073,6 +2113,9 @@
           "description": "Nutzung pro App verfolgen und im Control Center anzeigen",
           "label": "Bildschirmzeit"
         },
+        "screen-time-reset": {
+          "button": "Zurücksetzen"
+        },
         "screenshot-copy-to-clipboard": {
           "description": "Lege das erfasste PNG in die Zwischenablage.",
           "label": "In die Zwischenablage kopieren"
@@ -2306,6 +2349,10 @@
           "description": "Deckkraft des Symbols für das aktive (fokussierte) Fenster.",
           "label": "Aktive Symbol-Deckkraft"
         },
+        "album-art-only": {
+          "description": "Nur das runde Albumcover ohne den Titelnamen anzeigen",
+          "label": "Nur Albumcover"
+        },
         "anchor": {
           "description": "Dieses Widget als Anker für die mittlere Ausrichtung anheften",
           "label": "Anker"
@@ -2340,7 +2387,7 @@
         },
         "capsule-padding": {
           "description": "Innenabstand in der Kapsel",
-          "label": "Kapsel-Polsterung"
+          "label": "Kapsel-Innenabstand"
         },
         "capsule-radius": {
           "description": "Eckradius für diese Widget-Kapsel; leer lassen für automatische Pillenform; oder 0 für eckige Ecken setzen",
@@ -2754,7 +2801,7 @@
   "setup-wizard": {
     "browse": "Durchsuchen",
     "builtin-palette": "Integrierte Palette",
-    "footer-note": "Du kannst diese später in den Einstellungen ändern.",
+    "footer-note": "Diese können später in den Einstellungen geändet werden.",
     "get-started": "Los geht's",
     "mode": "Modus",
     "no-wallpaper-selected": "Kein Hintergrundbild ausgewählt",
@@ -2863,11 +2910,8 @@
     "panel": {
       "all-monitors": "Alle",
       "color-title": "Hintergrundbildfarbe",
-      "favorite-palette-label": "Farben",
-      "favorite-theme-label": "Design",
       "filter-placeholder": "Filtern...",
-      "flatten": "Abflachen",
-      "no-directory-configured": "Kein Verzeichnis konfiguriert",
+      "flatten": "Angleichen",
       "sort-date-asc": "Nach Datum sortieren (älteste zuerst)",
       "sort-date-desc": "Nach Datum sortieren (neueste zuerst)",
       "sort-name-asc": "Nach Name sortieren (A-Z)",

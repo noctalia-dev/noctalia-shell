@@ -65,6 +65,8 @@ namespace {
       return kinds.lockKeys;
     case OsdKind::KeyboardLayout:
       return kinds.keyboardLayout;
+    case OsdKind::Media:
+      return kinds.media;
     }
     return true;
   }
@@ -650,7 +652,13 @@ void OsdOverlay::updateInstanceContent(Instance& inst) {
   inst.value->setFontSize(valueFontSize(s));
   inst.value->setColor(colorSpecFromRole(m_content.overLimit ? ColorRole::Error : ColorRole::OnSurface));
   inst.value->setTextAlign((vertical || !m_content.showProgress) ? TextAlign::Center : TextAlign::End);
-  inst.value->setMaxWidth(vertical ? cw - cardPadding(s) * 2.0f : 0.0f);
+  // Media titles are arbitrary length; cap them to the card so they ellipsize instead of overflowing.
+  const float horizontalValueMax = cw - cardPadding(s) * 2.0f - glyphSize(s) - innerGap(s);
+  inst.value->setMaxWidth(
+      vertical                               ? cw - cardPadding(s) * 2.0f
+          : m_content.kind == OsdKind::Media ? std::max(0.0f, horizontalValueMax)
+                                             : 0.0f
+  );
   inst.value->setMinWidth((!vertical && m_content.showProgress) ? inst.progressValueMinWidth : 0.0f);
   inst.value->setText((vertical && !m_content.showProgress) ? verticalValueText(m_content.value) : m_content.value);
   inst.progress->setRadius(osdProgressRadius(s));

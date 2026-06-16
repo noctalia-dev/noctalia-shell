@@ -16,6 +16,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 class Box;
@@ -45,7 +46,7 @@ public:
   void initialize(
       WaylandConnection& wayland, ConfigService* config, PipeWireSpectrum* pipewireSpectrum,
       const WeatherService* weather, RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient,
-      SystemMonitorService* sysmon, SharedTextureCache* textureCache = nullptr
+      SystemMonitorService* sysmon, SharedTextureCache* textureCache = nullptr, DesktopWidgetScriptDeps scriptDeps = {}
   );
   void setExitRequestedCallback(std::function<void()> callback);
 
@@ -91,6 +92,13 @@ private:
     float intrinsicHeight = 0.0f;
   };
 
+  struct SecondarySelectionVisual {
+    std::string widgetId;
+    Node* transform = nullptr;
+    Box* borderShadow = nullptr;
+    Box* border = nullptr;
+  };
+
   struct OverlaySurface {
     std::string outputName;
     wl_output* output = nullptr;
@@ -100,6 +108,7 @@ private:
     std::unique_ptr<Node> sceneRoot;
     bool sceneRebuildRequested = true;
     std::unordered_map<std::string, EditorWidgetView> views;
+    std::vector<SecondarySelectionVisual> secondarySelections;
     Node* selectionFrameTransform = nullptr;
     Node* selectionBorderTransform = nullptr;
     Box* selectionBorder = nullptr;
@@ -142,6 +151,7 @@ private:
     float initialInspectorX = 0.0f;
     float initialInspectorY = 0.0f;
     bool rebuildOnFinish = false;
+    std::unordered_map<std::string, DesktopWidgetState> groupInitialStates;
   };
 
   void syncSurfaces();
@@ -158,6 +168,11 @@ private:
   void toggleSelectedWidgetEnabled();
   void sendSelectedWidgetToBack();
   void bringSelectedWidgetToFront();
+  void flipSelectedWidgetHorizontal();
+  void flipSelectedWidgetVertical();
+  void cloneSelectedWidgets();
+  void copySelectedWidgets();
+  void pasteWidgets();
   void startToolbarDrag(const std::string& outputName);
   void startInspectorDrag(const std::string& outputName);
   void clampToolbarPosition(OverlaySurface& surface, float toolbarWidth, float toolbarHeight);
@@ -181,8 +196,17 @@ private:
   [[nodiscard]] const DesktopWidgetState* findWidgetState(const std::string& id) const;
   [[nodiscard]] std::string effectiveOutputName(const DesktopWidgetState& state) const;
   [[nodiscard]] bool shouldSnap() const;
-  [[nodiscard]] float widgetContentScale(const DesktopWidgetState& state) const;
+  [[nodiscard]] float widgetContentScale() const;
   [[nodiscard]] std::string nextWidgetId() const;
+  [[nodiscard]] float duplicateOffset() const;
+  [[nodiscard]] std::vector<DesktopWidgetState> selectedWidgetTemplates() const;
+  std::vector<std::string> insertWidgetCopies(
+      const std::vector<DesktopWidgetState>& templates, float offsetX, float offsetY, bool selectInserted
+  );
+  [[nodiscard]] bool isWidgetSelected(const std::string& id) const;
+  void clearSelection();
+  void setSingleSelection(const std::string& id);
+  void handleWidgetPress(const std::string& id);
 
   BackgroundWidgetsEditorProfile m_profile;
   WaylandConnection* m_wayland = nullptr;
@@ -195,11 +219,17 @@ private:
   WidgetsEditorSnapshot m_snapshot;
   std::vector<std::unique_ptr<OverlaySurface>> m_surfaces;
   std::string m_selectedWidgetId;
+  std::unordered_set<std::string> m_selectedWidgetIds;
+  std::vector<DesktopWidgetState> m_widgetClipboard;
+  std::size_t m_pasteCount = 0;
   DragState m_drag;
   bool m_open = false;
   bool m_shiftHeld = false;
   bool m_leftShiftHeld = false;
   bool m_rightShiftHeld = false;
+  bool m_ctrlHeld = false;
+  bool m_leftCtrlHeld = false;
+  bool m_rightCtrlHeld = false;
   bool m_altHeld = false;
   bool m_leftAltHeld = false;
   bool m_rightAltHeld = false;

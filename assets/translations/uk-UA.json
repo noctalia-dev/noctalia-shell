@@ -242,7 +242,6 @@
       },
       "notification": "DND",
       "power-profile": "Живлення",
-      "screen-recorder": "Запис",
       "screen-time": "Час екрану",
       "session": "Сесія",
       "system": "Система",
@@ -1539,8 +1538,7 @@
           "label": "Чорний список сповіщень"
         },
         "blacklist-allow-critical": {
-          "description": "Все ще показувати критичні сповіщення від заблокованих відправників",
-          "label": "Дозволити критичні через чорний список"
+          "description": "Все ще показувати критичні сповіщення від заблокованих відправників"
         },
         "collapse-on-dismiss": {
           "description": "Зсувати решту Toast-повідомлень, щоб закрити прогалини, коли одне з них зникає",
@@ -1605,7 +1603,7 @@
           "label": "Головні ярлики"
         },
         "launcher-categories": {
-          "description": "Показати фільтри категорій у Launcher; перемикати за допомогою Tab, коли Launcher відкрито",
+          "description": "Показати фільтри категорій у Launcher; покажіть їх F6, потім перемикайте F6 і Shift+F6",
           "label": "Показати категорії"
         },
         "launcher-compact": {
@@ -2779,11 +2777,8 @@
     "panel": {
       "all-monitors": "УСІ",
       "color-title": "Колір шпалер",
-      "favorite-palette-label": "Кольори",
-      "favorite-theme-label": "Тема",
       "filter-placeholder": "Фільтр...",
       "flatten": "Згладити",
-      "no-directory-configured": "Не налаштовано жодної директорії",
       "sort-date-asc": "Сортувати за датою (спочатку найстаріші)",
       "sort-date-desc": "Сортувати за датою (спочатку новіші)",
       "sort-name-asc": "Сортувати за назвою (А-Я)",

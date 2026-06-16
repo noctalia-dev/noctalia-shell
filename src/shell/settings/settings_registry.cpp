@@ -5,8 +5,6 @@
 #include "core/log.h"
 #include "core/process.h"
 #include "i18n/i18n.h"
-#include "render/core/color.h"
-#include "render/core/renderer.h"
 #include "shell/control_center/shortcut_registry.h"
 #include "shell/settings/color_spec_picker.h"
 #include "shell/settings/font_weight_catalog.h"
@@ -190,7 +188,12 @@ namespace settings {
       std::vector<SelectOption> opts;
       opts.reserve(ShortcutRegistry::catalog().size());
       for (const auto& shortcut : ShortcutRegistry::catalog()) {
-        opts.push_back(SelectOption{std::string(shortcut.type), i18n::tr(shortcut.labelKey)});
+        opts.push_back(
+            SelectOption{
+                std::string(shortcut.type),
+                shortcut.literalLabel ? std::string(shortcut.labelKey) : i18n::tr(shortcut.labelKey)
+            }
+        );
       }
       return opts;
     }
@@ -528,7 +531,7 @@ namespace settings {
         tr("settings.schema.wallpaper.directory.description"), {"wallpaper", "directory"},
         TextSetting{
             .value = cfg.wallpaper.directory,
-            .placeholder = "~/Pictures/Wallpapers",
+            .placeholder = std::string(wallpaper::kDefaultWallpaperDirectory),
             .browseMode = TextSettingBrowseMode::SelectFolder,
             .browseFileExtensions = {}
         },
@@ -597,7 +600,7 @@ namespace settings {
             monitorPath("directory"),
             TextSetting{
                 .value = ovr != nullptr && ovr->directory.has_value() ? *ovr->directory : "",
-                .placeholder = "~/Pictures/Wallpapers",
+                .placeholder = std::string(wallpaper::kDefaultWallpaperDirectory),
                 .browseMode = TextSettingBrowseMode::SelectFolder,
                 .browseFileExtensions = {}
             },
@@ -928,6 +931,18 @@ namespace settings {
         ToggleSetting{cfg.shell.panel.shadow}, "shadow depth"
     ));
     entries.push_back(makeEntry(
+        SettingsSection::Panels, "effects", tr("settings.schema.panels.floating-offset.label"),
+        tr("settings.schema.panels.floating-offset.description"), {"shell", "panel", "floating_offset"},
+        StepperSetting{
+            .value = static_cast<int>(cfg.shell.panel.floatingOffset),
+            .minValue = 0,
+            .maxValue = 100,
+            .step = 1,
+            .valueSuffix = "px",
+        },
+        "floating detached panel gap offset distance bar"
+    ));
+    entries.push_back(makeEntry(
         SettingsSection::Panels, "control-center", tr("settings.schema.panels.placement-control-center.label"),
         tr("settings.schema.panels.placement-control-center.description"),
         {"shell", "panel", "control_center_placement"},
@@ -994,6 +1009,11 @@ namespace settings {
         SettingsSection::Panels, "launcher", tr("settings.schema.panels.launcher-compact.label"),
         tr("settings.schema.panels.launcher-compact.description"), {"shell", "panel", "launcher_compact"},
         ToggleSetting{cfg.shell.panel.launcherCompact}, "launcher compact rows dense"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Panels, "launcher", tr("settings.schema.panels.launcher-sort-by-usage.label"),
+        tr("settings.schema.panels.launcher-sort-by-usage.description"), {"shell", "panel", "launcher_sort_by_usage"},
+        ToggleSetting{cfg.shell.panel.launcherSortByUsage}, "launcher sort usage recently used frequency"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Panels, "launcher", tr("settings.schema.panels.launcher-session-search.label"),
@@ -1114,6 +1134,24 @@ namespace settings {
           tr("settings.schema.lockscreen.enabled.description"), {"lockscreen", "enabled"},
           ToggleSetting{cfg.lockscreen.enabled}, "lock screen session"
       );
+      entries.push_back(std::move(e));
+    }
+    {
+      auto e = makeEntry(
+          SettingsSection::Security, "lock-screen", tr("settings.schema.lockscreen.fingerprint.label"),
+          tr("settings.schema.lockscreen.fingerprint.description"), {"lockscreen", "fingerprint"},
+          ToggleSetting{cfg.lockscreen.fingerprint}, "lock screen fingerprint fprintd biometric"
+      );
+      e.visibleWhen = lockscreenOn;
+      entries.push_back(std::move(e));
+    }
+    {
+      auto e = makeEntry(
+          SettingsSection::Security, "lock-screen", tr("settings.schema.lockscreen.allow-empty-password.label"),
+          tr("settings.schema.lockscreen.allow-empty-password.description"), {"lockscreen", "allow_empty_password"},
+          ToggleSetting{cfg.lockscreen.allowEmptyPassword}, "lock screen empty password security key pam"
+      );
+      e.visibleWhen = lockscreenOn;
       entries.push_back(std::move(e));
     }
     if (env.screencopySupported) {
@@ -1451,6 +1489,11 @@ namespace settings {
         SettingsSection::Osd, "kinds", tr("settings.schema.shell.osd-kinds-keyboard-layout.label"),
         tr("settings.schema.shell.osd-kinds-keyboard-layout.description"), {"osd", "kinds", "keyboard_layout"},
         ToggleSetting{cfg.osd.kinds.keyboardLayout}, "hud overlay xkb input language layout switch"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Osd, "kinds", tr("settings.schema.shell.osd-kinds-media.label"),
+        tr("settings.schema.shell.osd-kinds-media.description"), {"osd", "kinds", "media"},
+        ToggleSetting{cfg.osd.kinds.media}, "hud overlay mpris audio music"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Osd, "osd", tr("settings.schema.shell.osd-monitors.label"),
@@ -1940,6 +1983,11 @@ namespace settings {
         ToggleSetting{.checked = cfg.brightness.enableDdcutil, .enabled = env.ddcutilAvailable}, "monitor ddcutil"
     ));
     entries.push_back(makeEntry(
+        SettingsSection::Services, "brightness", tr("settings.schema.services.minimum-brightness.label"),
+        tr("settings.schema.services.minimum-brightness.description"), {"brightness", "minimum_brightness"},
+        sliderFor(cfg.brightness.minimumBrightness, noctalia::config::schema::kUnitRange, false), "floor clamp"
+    ));
+    entries.push_back(makeEntry(
         SettingsSection::Services, "media", tr("settings.schema.services.mpris-blacklist.label"),
         tr("settings.schema.services.mpris-blacklist.description"), {"shell", "mpris", "blacklist"},
         ListSetting{.items = cfg.shell.mpris.blacklist}, "mpris media player dbus session blacklist"
@@ -2121,36 +2169,11 @@ namespace settings {
         ListSetting{.items = cfg.notification.monitors, .suggestedOptions = env.availableOutputs},
         "monitor output display screen"
     ));
-    {
-      MultiSelectSetting allowedUrgencies;
-      allowedUrgencies.options = {
-          {"low", tr("settings.options.notification-urgency.low")},
-          {"normal", tr("settings.options.notification-urgency.normal")},
-          {"critical", tr("settings.options.notification-urgency.critical")},
-      };
-      if (cfg.notification.allowedUrgencies.empty()) {
-        allowedUrgencies.selectedValues = {"low", "normal", "critical"};
-      } else {
-        allowedUrgencies.selectedValues = cfg.notification.allowedUrgencies;
-      }
-      allowedUrgencies.requireAtLeastOne = true;
-      entries.push_back(makeEntry(
-          SettingsSection::Notifications, "filtering", tr("settings.schema.notifications.allowed-urgencies.label"),
-          tr("settings.schema.notifications.allowed-urgencies.description"), {"notification", "allowed_urgencies"},
-          std::move(allowedUrgencies), "urgency low normal critical filter"
-      ));
-    }
     entries.push_back(makeEntry(
-        SettingsSection::Notifications, "filtering", tr("settings.schema.notifications.blacklist.label"),
-        tr("settings.schema.notifications.blacklist.description"), {"notification", "blacklist"},
-        ListSetting{.items = cfg.notification.blacklist},
-        "blacklist block suppress filter app name desktop entry category substring"
-    ));
-    entries.push_back(makeEntry(
-        SettingsSection::Notifications, "filtering", tr("settings.schema.notifications.blacklist-allow-critical.label"),
-        tr("settings.schema.notifications.blacklist-allow-critical.description"),
-        {"notification", "blacklist_allow_critical"}, ToggleSetting{cfg.notification.blacklistAllowCritical},
-        "critical urgency bypass"
+        SettingsSection::Notifications, "filtering", tr("settings.schema.notifications.filters.label"),
+        tr("settings.schema.notifications.filters.description"), {"notification", "filter"},
+        NotificationFiltersSetting{.items = cfg.notification.filters},
+        "filter blacklist suppress toast history sound app name desktop entry category urgency"
     ));
 
     // Bar — register every configured bar so global search can surface settings from all of them.
@@ -2219,22 +2242,22 @@ namespace settings {
       entries.push_back(makeEntry(
           section, "shape", tr("settings.schema.shared.corner-top-left.label"),
           tr("settings.schema.bar.corner-top-left.description"), path("radius_top_left"),
-          SliderSetting{bar.radiusTopLeft, 0.0f, 80.0f, 1.0f, true}, "rounded corner", true
+          SliderSetting{bar.radiusTopLeft, -80.0f, 80.0f, 1.0f, true}, "rounded corner", true
       ));
       entries.push_back(makeEntry(
           section, "shape", tr("settings.schema.shared.corner-top-right.label"),
           tr("settings.schema.bar.corner-top-right.description"), path("radius_top_right"),
-          SliderSetting{bar.radiusTopRight, 0.0f, 80.0f, 1.0f, true}, "rounded corner", true
+          SliderSetting{bar.radiusTopRight, -80.0f, 80.0f, 1.0f, true}, "rounded corner", true
       ));
       entries.push_back(makeEntry(
           section, "shape", tr("settings.schema.shared.corner-bottom-left.label"),
           tr("settings.schema.bar.corner-bottom-left.description"), path("radius_bottom_left"),
-          SliderSetting{bar.radiusBottomLeft, 0.0f, 80.0f, 1.0f, true}, "rounded corner", true
+          SliderSetting{bar.radiusBottomLeft, -80.0f, 80.0f, 1.0f, true}, "rounded corner", true
       ));
       entries.push_back(makeEntry(
           section, "shape", tr("settings.schema.shared.corner-bottom-right.label"),
           tr("settings.schema.bar.corner-bottom-right.description"), path("radius_bottom_right"),
-          SliderSetting{bar.radiusBottomRight, 0.0f, 80.0f, 1.0f, true}, "rounded corner", true
+          SliderSetting{bar.radiusBottomRight, -80.0f, 80.0f, 1.0f, true}, "rounded corner", true
       ));
       entries.push_back(makeEntry(
           section, "shape", tr("settings.schema.bar.border.label"), tr("settings.schema.bar.border.description"),
@@ -2264,10 +2287,31 @@ namespace settings {
           tr("settings.schema.bar.panel-overlap.description"), path("panel_overlap"),
           barPanelOverlapStepper(bar.panelOverlap), "seam gap overlap attached panel fractional scale", true
       ));
+      const std::string barResolvedFontFamily =
+          bar.fontFamily && !bar.fontFamily->empty() ? *bar.fontFamily : cfg.shell.fontFamily;
+      {
+        SettingControl fontFamilyControl = TextSetting{
+            .value = bar.fontFamily.value_or(""), .placeholder = cfg.shell.fontFamily, .browseFileExtensions = {}
+        };
+        if (!env.fontFamilies.empty()) {
+          fontFamilyControl = SearchPickerSetting{
+              .options = env.fontFamilies,
+              .selectedValue = bar.fontFamily.value_or(""),
+              .placeholder = cfg.shell.fontFamily,
+              .emptyText = tr("ui.controls.search-picker.empty"),
+              .preferredHeight = 280.0f,
+          };
+        }
+        entries.push_back(makeEntry(
+            section, "widgets", tr("settings.schema.bar.font-family.label"),
+            tr("settings.schema.bar.font-family.description"), path("font_family"), std::move(fontFamilyControl),
+            "typeface font"
+        ));
+      }
       {
         std::vector<SelectOption> fontWeightOptions;
         const auto widgetOptions =
-            buildLabelFontWeightSelectOptions(cfg.shell.fontFamily, FontWeightSelectKind::BarDefault, bar.fontWeight);
+            buildLabelFontWeightSelectOptions(barResolvedFontFamily, FontWeightSelectKind::BarDefault, bar.fontWeight);
         fontWeightOptions.reserve(widgetOptions.size());
         for (const auto& option : widgetOptions) {
           fontWeightOptions.push_back(SelectOption{option.value, tr(option.labelKey)});
@@ -2299,6 +2343,11 @@ namespace settings {
           section, "capsules", tr("settings.schema.bar.widget-capsules.label"),
           tr("settings.schema.bar.widget-capsules.description"), path("capsule"),
           ToggleSetting{bar.widgetCapsuleDefault}, "pill"
+      ));
+      entries.push_back(makeEntry(
+          section, "capsules", tr("settings.schema.bar.capsule-thickness.label"),
+          tr("settings.schema.bar.capsule-thickness.description"), path("capsule_thickness"),
+          SliderSetting{bar.capsuleThickness, 0.1f, 1.0f, 0.01f, false}, "pill thickness size", true
       ));
       const SettingVisibility capsuleOn{path("capsule"), {"true"}};
       {
@@ -2452,25 +2501,25 @@ namespace settings {
         entries.push_back(makeEntry(
             section, "shape", tr("settings.schema.shared.corner-top-left.label"),
             tr("settings.schema.bar.corner-top-left.description"), monitorPath("radius_top_left"),
-            SliderSetting{ovr.radiusTopLeft.value_or(bar.radiusTopLeft), 0.0f, 80.0f, 1.0f, true}, "rounded corner",
+            SliderSetting{ovr.radiusTopLeft.value_or(bar.radiusTopLeft), -80.0f, 80.0f, 1.0f, true}, "rounded corner",
             true
         ));
         entries.push_back(makeEntry(
             section, "shape", tr("settings.schema.shared.corner-top-right.label"),
             tr("settings.schema.bar.corner-top-right.description"), monitorPath("radius_top_right"),
-            SliderSetting{ovr.radiusTopRight.value_or(bar.radiusTopRight), 0.0f, 80.0f, 1.0f, true}, "rounded corner",
+            SliderSetting{ovr.radiusTopRight.value_or(bar.radiusTopRight), -80.0f, 80.0f, 1.0f, true}, "rounded corner",
             true
         ));
         entries.push_back(makeEntry(
             section, "shape", tr("settings.schema.shared.corner-bottom-left.label"),
             tr("settings.schema.bar.corner-bottom-left.description"), monitorPath("radius_bottom_left"),
-            SliderSetting{ovr.radiusBottomLeft.value_or(bar.radiusBottomLeft), 0.0f, 80.0f, 1.0f, true},
+            SliderSetting{ovr.radiusBottomLeft.value_or(bar.radiusBottomLeft), -80.0f, 80.0f, 1.0f, true},
             "rounded corner", true
         ));
         entries.push_back(makeEntry(
             section, "shape", tr("settings.schema.shared.corner-bottom-right.label"),
             tr("settings.schema.bar.corner-bottom-right.description"), monitorPath("radius_bottom_right"),
-            SliderSetting{ovr.radiusBottomRight.value_or(bar.radiusBottomRight), 0.0f, 80.0f, 1.0f, true},
+            SliderSetting{ovr.radiusBottomRight.value_or(bar.radiusBottomRight), -80.0f, 80.0f, 1.0f, true},
             "rounded corner", true
         ));
         entries.push_back(makeEntry(
@@ -2502,6 +2551,28 @@ namespace settings {
             barPanelOverlapStepper(ovr.panelOverlap.value_or(bar.panelOverlap)),
             "seam gap overlap attached panel fractional scale", true
         ));
+        {
+          const std::string monitorInheritedFontFamily = bar.fontFamily.value_or(cfg.shell.fontFamily);
+          SettingControl fontFamilyControl = TextSetting{
+              .value = ovr.fontFamily.value_or(""),
+              .placeholder = monitorInheritedFontFamily,
+              .browseFileExtensions = {}
+          };
+          if (!env.fontFamilies.empty()) {
+            fontFamilyControl = SearchPickerSetting{
+                .options = env.fontFamilies,
+                .selectedValue = ovr.fontFamily.value_or(""),
+                .placeholder = monitorInheritedFontFamily,
+                .emptyText = tr("ui.controls.search-picker.empty"),
+                .preferredHeight = 280.0f,
+            };
+          }
+          entries.push_back(makeEntry(
+              section, "widgets", tr("settings.schema.bar.font-family.label"),
+              tr("settings.schema.bar.font-family.description"), monitorPath("font_family"),
+              std::move(fontFamilyControl), "typeface font", true
+          ));
+        }
         entries.push_back(makeEntry(
             section, "widgets", tr("settings.schema.bar.widget-spacing.label"),
             tr("settings.schema.bar.widget-spacing.description"), monitorPath("widget_spacing"),
@@ -2521,6 +2592,12 @@ namespace settings {
             section, "capsules", tr("settings.schema.bar.widget-capsules.label"),
             tr("settings.schema.bar.widget-capsules.description"), monitorPath("capsule"),
             ToggleSetting{ovr.widgetCapsuleDefault.value_or(bar.widgetCapsuleDefault)}, "pill"
+        ));
+        entries.push_back(makeEntry(
+            section, "capsules", tr("settings.schema.bar.capsule-thickness.label"),
+            tr("settings.schema.bar.capsule-thickness.description"), monitorPath("capsule_thickness"),
+            SliderSetting{ovr.capsuleThickness.value_or(bar.capsuleThickness), 0.1f, 1.0f, 0.01f, false},
+            "pill thickness size", true
         ));
         const SettingVisibility monitorCapsuleOn{monitorPath("capsule"), {"true"}};
         {

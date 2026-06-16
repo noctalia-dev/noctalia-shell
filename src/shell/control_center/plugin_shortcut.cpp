@@ -1,5 +1,6 @@
 #include "shell/control_center/plugin_shortcut.h"
 
+#include "compositors/compositor_platform.h"
 #include "core/log.h"
 #include "shell/panel/panel_manager.h"
 
@@ -25,10 +26,11 @@ namespace {
 
 PluginShortcut::PluginShortcut(
     std::string entryId, std::filesystem::path sourcePath, std::unordered_map<std::string, WidgetSettingValue> settings,
-    scripting::ScriptApiContext& scriptApi, HttpClient* httpClient, ClipboardService* clipboard
+    scripting::ScriptApiContext& scriptApi, HttpClient* httpClient, ClipboardService* clipboard,
+    CompositorPlatform* platform
 )
     : m_entryId(std::move(entryId)), m_sourcePath(std::move(sourcePath)), m_pluginDir(m_sourcePath.parent_path()),
-      m_scriptApi(scriptApi), m_httpClient(httpClient), m_clipboard(clipboard) {
+      m_scriptApi(scriptApi), m_httpClient(httpClient), m_clipboard(clipboard), m_platform(platform) {
   start(std::move(settings));
 }
 
@@ -63,7 +65,7 @@ void PluginShortcut::start(std::unordered_map<std::string, WidgetSettingValue> s
     handleResult(result);
   });
 
-  m_runtime->start(m_sourcePath.string(), std::move(code), {});
+  m_runtime->start(m_sourcePath.string(), std::move(code), makeScriptSnapshot());
   armTimer();
 }
 
@@ -109,19 +111,34 @@ void PluginShortcut::armTimer() {
   m_updateTimer.startRepeating(std::chrono::milliseconds(m_updateIntervalMs), [this, alive] {
     auto token = alive.lock();
     if (token != nullptr && *token && m_runtime != nullptr) {
-      (void)m_runtime->enqueueUpdate({});
+      (void)m_runtime->enqueueUpdate(makeScriptSnapshot());
     }
   });
 }
 
 void PluginShortcut::onClick() {
   if (m_runtime != nullptr) {
-    (void)m_runtime->enqueueCall("onClick", {});
+    (void)m_runtime->enqueueCall("onClick", makeScriptSnapshot());
   }
 }
 
 void PluginShortcut::onRightClick() {
   if (m_runtime != nullptr) {
-    (void)m_runtime->enqueueCall("onRightClick", {});
+    (void)m_runtime->enqueueCall("onRightClick", makeScriptSnapshot());
   }
+}
+
+scripting::ScriptSnapshot PluginShortcut::makeScriptSnapshot() const {
+  scripting::ScriptSnapshot snapshot;
+  snapshot.focusedOutputName = focusedOutputName();
+  return snapshot;
+}
+
+std::string PluginShortcut::focusedOutputName() const {
+  if (m_platform == nullptr) {
+    return {};
+  }
+  wl_output* output = m_platform->preferredInteractiveOutput();
+  const auto* info = m_platform->findOutputByWl(output);
+  return info != nullptr ? info->connectorName : std::string{};
 }

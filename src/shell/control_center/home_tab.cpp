@@ -11,7 +11,8 @@
 #include "dbus/mpris/mpris_service.h"
 #include "i18n/i18n.h"
 #include "net/http_client.h"
-#include "render/scene/input_area.h"
+#include "notification/notifications.h"
+#include "render/animation/animation_manager.h"
 #include "shell/avatar_path.h"
 #include "shell/control_center/shortcut_registry.h"
 #include "shell/panel/panel_button_style.h"
@@ -123,30 +124,58 @@ HomeTab::HomeTab(
     PowerProfilesService* powerProfiles, ConfigService* config, INetworkService* network, BluetoothService* bluetooth,
     GammaService* nightLight, noctalia::theme::ThemeService* theme, NotificationManager* notifications,
     IdleInhibitor* idleInhibitor, DependencyService* dependencies, CompositorPlatform* platform, IpcService* ipc,
-    Wallpaper* wallpaper, scripting::ScriptApiContext* scriptApi, ClipboardService* clipboard, AccountsService* accounts
+    Wallpaper* wallpaper, scripting::ScriptApiContext* scriptApi, ClipboardService* clipboard,
+    AccountsService* accounts, ThumbnailService* thumbnails
 )
     : m_mpris(mpris), m_httpClient(httpClient), m_weather(weather), m_config(config), m_accounts(accounts),
-      m_wallpaper(wallpaper), m_services{
-                                  .network = network,
-                                  .bluetooth = bluetooth,
-                                  .nightLight = nightLight,
-                                  .theme = theme,
-                                  .notifications = notifications,
-                                  .idleInhibitor = idleInhibitor,
-                                  .audio = audio,
-                                  .powerProfiles = powerProfiles,
-                                  .mpris = mpris,
-                                  .weather = weather,
-                                  .config = config,
-                                  .dependencies = dependencies,
-                                  .platform = platform,
-                                  .ipc = ipc,
-                                  .scriptApi = scriptApi,
-                                  .httpClient = httpClient,
-                                  .clipboard = clipboard,
-                              } {}
+      m_wallpaper(wallpaper), m_thumbnails(thumbnails), m_services{
+                                                            .network = network,
+                                                            .bluetooth = bluetooth,
+                                                            .nightLight = nightLight,
+                                                            .theme = theme,
+                                                            .notifications = notifications,
+                                                            .idleInhibitor = idleInhibitor,
+                                                            .audio = audio,
+                                                            .powerProfiles = powerProfiles,
+                                                            .mpris = mpris,
+                                                            .weather = weather,
+                                                            .config = config,
+                                                            .dependencies = dependencies,
+                                                            .platform = platform,
+                                                            .ipc = ipc,
+                                                            .scriptApi = scriptApi,
+                                                            .httpClient = httpClient,
+                                                            .clipboard = clipboard,
+                                                        } {
+  if (m_thumbnails != nullptr) {
+    m_thumbnailPendingSub = m_thumbnails->subscribePendingUpload([this]() {
+      if (m_wallpaperBg == nullptr) {
+        return;
+      }
+      PanelManager::instance().requestUpdateOnly();
+    });
+  }
 
-HomeTab::~HomeTab() = default;
+  // Pre-warm the wallpaper preview thumbnail as soon as the wallpaper changes,
+  // even while the control center is closed, so it is already decoded by the
+  // time the panel opens. Uses the last preview size the home card requested.
+  if (m_wallpaper != nullptr) {
+    m_wallpaperChangedConn = m_wallpaper->changed().connect([this]() {
+      if (m_thumbnails != nullptr && m_loadedWallpaperSize > 0) {
+        ensureWallpaperThumbnail(m_wallpaper->currentPath(), m_loadedWallpaperSize);
+      }
+      if (m_wallpaperBg != nullptr) {
+        PanelManager::instance().requestUpdateOnly();
+      }
+    });
+  }
+}
+
+HomeTab::~HomeTab() {
+  if (m_thumbnails != nullptr && !m_loadedWallpaperPath.empty()) {
+    m_thumbnails->release(m_loadedWallpaperPath, m_loadedWallpaperSize);
+  }
+}
 
 std::unique_ptr<Flex> HomeTab::create() {
   const float scale = contentScale();
@@ -170,13 +199,27 @@ std::unique_ptr<Flex> HomeTab::create() {
   });
 
   {
+    const float wallpaperRadius = std::max(0.0f, Style::scaledRadiusXl(scale) - Style::borderWidth);
+    userCard->addChild(
+        ui::image({
+            .out = &m_wallpaperPlaceholder,
+            .fit = ImageFit::Cover,
+            .radius = wallpaperRadius,
+            .participatesInLayout = false,
+            .configure = [](Image& image) { image.setZIndex(-2); },
+        })
+    );
+
     userCard->addChild(
         ui::image({
             .out = &m_wallpaperBg,
             .fit = ImageFit::Cover,
-            .radius = std::max(0.0f, Style::scaledRadiusXl(scale) - Style::borderWidth),
+            .radius = wallpaperRadius,
             .participatesInLayout = false,
-            .configure = [](Image& image) { image.setZIndex(-1); },
+            .configure = [](Image& image) {
+              image.setZIndex(-1);
+              image.setOpacity(0.0f);
+            },
         })
     );
 
@@ -206,13 +249,23 @@ std::unique_ptr<Flex> HomeTab::create() {
     options.extensions = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"};
     options.startDirectory = avatarStartDirectory(m_accounts, m_config);
 
-    (void)FileDialog::open(std::move(options), [this](std::optional<std::filesystem::path> result) {
-      if (!result.has_value() || m_config == nullptr) {
+    (void)FileDialog::open(std::move(options), [this](std::optional<std::filesystem::path> pickedPath) {
+      if (!pickedPath.has_value() || m_config == nullptr) {
         return;
       }
-      if (!shell::applyAvatarPath(m_accounts, m_config, result->string())) {
-        kLog.warn("failed to set avatar path");
+      const auto applyResult = shell::applyAvatarPath(m_accounts, m_config, pickedPath->string());
+      if (applyResult.success()) {
+        m_loadedAvatarPath.clear();
+        DeferredCall::callLater([]() {
+          PanelManager::instance().refresh();
+          PanelManager::instance().requestRedraw();
+        });
+        return;
       }
+      notify::error(
+          "Noctalia", i18n::tr("control-center.home.avatar-error-title"),
+          i18n::tr(shell::avatarApplyErrorTranslationKey(applyResult.error))
+      );
     });
   });
   m_userAvatarArea = avatarArea.get();
@@ -769,6 +822,10 @@ void HomeTab::layoutWallpaperBackground(Renderer& renderer) {
   const float ch = std::max(0.0f, m_userCard->height() - bw * 2.0f);
   m_wallpaperBg->setPosition(bw, bw);
   m_wallpaperBg->setSize(cw, ch);
+  if (m_wallpaperPlaceholder != nullptr) {
+    m_wallpaperPlaceholder->setPosition(bw, bw);
+    m_wallpaperPlaceholder->setSize(cw, ch);
+  }
 
   if (m_wallpaperGradient != nullptr) {
     const float radius = std::max(0.0f, Style::scaledRadiusXl(contentScale()) - bw);
@@ -793,25 +850,117 @@ void HomeTab::layoutWallpaperBackground(Renderer& renderer) {
   syncWallpaperBackground(renderer);
 }
 
+void HomeTab::ensureWallpaperThumbnail(const std::string& path, int targetPx) {
+  if (m_thumbnails == nullptr) {
+    return;
+  }
+  if (path == m_loadedWallpaperPath && targetPx == m_loadedWallpaperSize) {
+    return;
+  }
+  if (!m_loadedWallpaperPath.empty() && m_loadedWallpaperSize > 0) {
+    m_thumbnails->release(m_loadedWallpaperPath, m_loadedWallpaperSize);
+  }
+  if (!path.empty() && targetPx > 0) {
+    (void)m_thumbnails->acquire(path, targetPx);
+  }
+  m_loadedWallpaperPath = path;
+  m_loadedWallpaperSize = targetPx;
+}
+
 void HomeTab::syncWallpaperBackground(Renderer& renderer) {
+  if (m_wallpaperBg == nullptr || m_wallpaperPlaceholder == nullptr) {
+    return;
+  }
+
+  const std::string path = m_wallpaper != nullptr ? m_wallpaper->currentPath() : std::string{};
+  const float renderScale = std::max(1.0f, renderer.renderScale());
+  const int targetPx =
+      static_cast<int>(std::lround(std::max(m_wallpaperBg->width(), m_wallpaperBg->height()) * renderScale));
+
+  ensureWallpaperThumbnail(path, targetPx);
+
+  if (path.empty()) {
+    m_wallpaperPlaceholder->setVisible(false);
+    m_wallpaperBg->setVisible(false);
+    cancelCrispFade();
+    m_wallpaperBg->setOpacity(0.0f);
+    m_crispWorkingPath.clear();
+    m_crispWorkingSize = 0;
+    m_crispShown = false;
+    m_crispNeedsFade = false;
+    return;
+  }
+
+  // Instant placeholder: show the resident full-screen wallpaper texture (already
+  // in VRAM, mipmapped) so the correct wallpaper appears with no decode wait.
+  const TextureHandle resident = m_wallpaper != nullptr ? m_wallpaper->currentTexture() : TextureHandle{};
+  if (resident.valid()) {
+    m_wallpaperPlaceholder->setExternalTexture(renderer, resident);
+    m_wallpaperPlaceholder->setVisible(true);
+  } else {
+    m_wallpaperPlaceholder->setVisible(false);
+  }
+
+  // Reset the crisp layer when the wallpaper identity or target size changes; the
+  // placeholder carries the view until the new card-sized thumbnail is decoded.
+  if (path != m_crispWorkingPath || targetPx != m_crispWorkingSize) {
+    m_crispWorkingPath = path;
+    m_crispWorkingSize = targetPx;
+    m_crispShown = false;
+    m_crispNeedsFade = false;
+    cancelCrispFade();
+    m_wallpaperBg->setOpacity(0.0f);
+    m_wallpaperBg->setVisible(false);
+  }
+
+  if (m_thumbnails == nullptr || targetPx <= 0 || m_crispShown) {
+    return;
+  }
+
+  (void)m_thumbnails->uploadPending(renderer.textureManager());
+  const TextureHandle crisp = m_thumbnails->peek(path, targetPx);
+  if (!crisp.valid()) {
+    // Still decoding: keep the placeholder; fade the crisp layer in once it lands.
+    m_crispNeedsFade = true;
+    return;
+  }
+
+  m_wallpaperBg->setExternalTexture(renderer, crisp);
+  m_wallpaperBg->setVisible(true);
+  m_crispShown = true;
+  if (m_crispNeedsFade) {
+    startCrispFade();
+  } else {
+    // Ready on the first look (cached) — snap in without a crossfade.
+    cancelCrispFade();
+    m_wallpaperBg->setOpacity(1.0f);
+  }
+}
+
+void HomeTab::startCrispFade() {
   if (m_wallpaperBg == nullptr) {
     return;
   }
-
-  const TextureHandle source = m_wallpaper != nullptr ? m_wallpaper->currentTexture() : TextureHandle{};
-  if (!source.valid()) {
-    m_wallpaperBg->clear(renderer);
-    m_wallpaperBg->setVisible(false);
+  AnimationManager* animations = m_wallpaperBg->animationManager();
+  if (animations == nullptr) {
+    m_wallpaperBg->setOpacity(1.0f);
     return;
   }
+  cancelCrispFade();
+  Image* crisp = m_wallpaperBg;
+  m_wallpaperCrispAnimId = animations->animate(
+      0.0f, 1.0f, static_cast<float>(Style::animNormal), Easing::EaseOutCubic,
+      [crisp](float v) { crisp->setOpacity(v); }, [this]() { m_wallpaperCrispAnimId = 0; }, crisp
+  );
+}
 
-  if (m_wallpaperBg->width() <= 0.0f || m_wallpaperBg->height() <= 0.0f) {
-    m_wallpaperBg->setVisible(false);
-    return;
+void HomeTab::cancelCrispFade() {
+  if (m_wallpaperCrispAnimId != 0 && m_wallpaperBg != nullptr) {
+    if (AnimationManager* animations = m_wallpaperBg->animationManager()) {
+      animations->cancel(m_wallpaperCrispAnimId);
+    }
   }
-
-  m_wallpaperBg->setExternalTexture(renderer, source);
-  m_wallpaperBg->setVisible(true);
+  m_wallpaperCrispAnimId = 0;
 }
 
 void HomeTab::layoutCardButton(Renderer& renderer, Flex* card, Button* button) {
@@ -905,6 +1054,15 @@ void HomeTab::onClose() {
   m_mediaButton = nullptr;
   m_weatherButton = nullptr;
   m_loadedAvatarPath.clear();
+  m_loadedAvatarSize = 0;
+  // The crisp fade animation is tagged with the m_wallpaperBg node as owner, so
+  // it is cancelled automatically when the node tree is destroyed on close.
+  m_wallpaperCrispAnimId = 0;
+  m_crispWorkingPath.clear();
+  m_crispWorkingSize = 0;
+  m_crispShown = false;
+  m_crispNeedsFade = false;
+  m_wallpaperPlaceholder = nullptr;
   m_wallpaperBg = nullptr;
   m_wallpaperGradient = nullptr;
   m_mediaTrack = nullptr;
@@ -996,14 +1154,19 @@ void HomeTab::sync(Renderer& renderer) {
   syncWallpaperBackground(renderer);
 
   if (m_userAvatar != nullptr && m_config != nullptr) {
-    const std::string avatarPath = shell::resolvedAvatarPath(m_accounts, m_config->config());
-    if (avatarPath != m_loadedAvatarPath) {
-      if (avatarPath.empty()) {
+    const std::string displayPath = shell::avatarDisplayPath(m_accounts, m_config->config());
+    const int avatarSize = static_cast<int>(std::round(m_userAvatar->width()));
+    if (displayPath != m_loadedAvatarPath || avatarSize != m_loadedAvatarSize) {
+      if (displayPath.empty()) {
         m_userAvatar->clear(renderer);
       } else {
-        m_userAvatar->setSourceFile(renderer, avatarPath, static_cast<int>(std::round(m_userAvatar->width())), true);
+        // Decode at the avatar's final on-screen size with no mipmaps: layout grows the
+        // avatar to match the user text block, and trilinear mipmap sampling softens an
+        // image displayed near 1:1. Both made the avatar look blurry.
+        (void)m_userAvatar->setSourceFile(renderer, displayPath, avatarSize, false);
       }
-      m_loadedAvatarPath = avatarPath;
+      m_loadedAvatarPath = displayPath;
+      m_loadedAvatarSize = avatarSize;
     }
   }
 

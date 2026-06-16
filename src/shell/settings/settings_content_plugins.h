@@ -26,9 +26,9 @@ namespace settings {
 
     std::function<void(std::string id, bool enable)> setEnabled;
     std::function<void()> addSource;
-    std::function<void(PluginSourceConfig source, bool autoUpdate)> setSourceAutoUpdate;
+    std::function<void(PluginSourceConfig source, bool enabled)> setSourceEnabled;
+    std::function<void(PluginSourceConfig source)> editSource;
     std::function<void(std::string source)> updateSource;
-    std::function<void(std::string source)> removeSource;
     std::function<void()> refresh;
 
     // Used to derive current toggle state while async discovery refreshes.

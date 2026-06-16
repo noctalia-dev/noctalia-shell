@@ -20,7 +20,7 @@ public:
   void onClose() override;
 
 private:
-  void resetToCurrentMonth();
+  void focusToday();
   void doLayout(Renderer& renderer, float contentWidth, float bodyHeight) override;
   void doUpdate(Renderer& renderer) override;
   void rebuild();

@@ -146,7 +146,8 @@ public:
 private:
   void loadAll();
   [[nodiscard]] static Config makeDefaultConfig();
-  static void parseConfigTable(const toml::table& tbl, Config& config, bool logSummary);
+  static void
+  parseConfigTable(const toml::table& tbl, Config& config, bool logSummary, bool logSchemaDiagnostics = true);
   [[nodiscard]] std::optional<Config> configForOverrides(const toml::table& overrides) const;
   [[nodiscard]] bool overridePathEffectiveInTable(
       const std::vector<std::string>& path, const toml::table& overrides, const Config* parsedWith = nullptr

@@ -172,7 +172,8 @@ void Label::syncHoverInteraction() {
   if (!m_autoScroll || !m_autoScrollHoverOnly) {
     setOnEnter(nullptr);
     setOnLeave(nullptr);
-    setHitTestVisible(false);
+    // A tooltip needs hits to reach the label, so keep hit testing on for it.
+    setHitTestVisible(hasTooltip());
     return;
   }
   setHitTestVisible(true);

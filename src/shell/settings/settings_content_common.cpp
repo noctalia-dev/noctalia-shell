@@ -304,4 +304,40 @@ namespace settings {
     return i18n::tr("settings.idle.behavior.summary", "name", name, "seconds", std::to_string(row.timeoutSeconds));
   }
 
+  std::string notificationFilterRowSummary(const NotificationFilterConfig& filter) {
+    if (!filter.enabled) {
+      if (!filter.match.empty()) {
+        return i18n::tr("settings.notifications.filter.summary-disabled", "match", filter.match);
+      }
+      return i18n::tr("settings.notifications.filter.unnamed");
+    }
+
+    const std::string matchLabel =
+        filter.match.empty() ? i18n::tr("settings.notifications.filter.unnamed") : filter.match;
+    std::vector<std::string> parts;
+    if (filter.showToast) {
+      parts.emplace_back(i18n::tr("settings.notifications.filter.flag.toast"));
+    }
+    if (filter.saveHistory) {
+      parts.emplace_back(i18n::tr("settings.notifications.filter.flag.history"));
+    }
+    if (filter.playSound) {
+      parts.emplace_back(i18n::tr("settings.notifications.filter.flag.sound"));
+    }
+    if (!filter.allowedUrgencies.empty()) {
+      std::vector<std::string> urgencyLabels;
+      urgencyLabels.reserve(filter.allowedUrgencies.size());
+      for (const auto& urgency : filter.allowedUrgencies) {
+        urgencyLabels.emplace_back(i18n::tr("settings.options.notification-urgency." + urgency));
+      }
+      parts.emplace_back(StringUtils::join(urgencyLabels, ", "));
+    }
+    if (parts.empty()) {
+      return i18n::tr("settings.notifications.filter.summary-blocked", "match", matchLabel);
+    }
+    return i18n::tr(
+        "settings.notifications.filter.summary", "match", matchLabel, "flags", StringUtils::join(parts, ", ")
+    );
+  }
+
 } // namespace settings

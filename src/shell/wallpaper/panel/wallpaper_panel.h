@@ -67,17 +67,20 @@ private:
   void refreshScan();
   void applyFilter();
   void syncBrowseChrome();
-  void rebuildBreadcrumb();
+  void syncBackButton();
   void navigateInto(const std::filesystem::path& dir);
   void navigateUp();
   void applyWallpaperFromEntry(const WallpaperEntry& entry);
   void applyWallpaperPath(const std::string& path, const WallpaperFavorite* applyTheme);
   [[nodiscard]] const WallpaperFavorite* favoriteThemeToApply(std::string_view path) const;
   [[nodiscard]] WallpaperFavorite themeFromControls() const;
-  void applyLiveThemePreview(const std::string& path);
+  [[nodiscard]] WallpaperFavorite activeThemeSettings() const;
+  void applyThemeFromControls();
   void toggleFavoriteForPath(const std::string& path);
   void syncThemeControls();
   void rebuildFavoritePaletteDetailSelect(const WallpaperFavorite* favorite);
+  [[nodiscard]] std::optional<PaletteSource> paletteSourceForSegment(std::size_t index) const;
+  [[nodiscard]] std::size_t segmentForPaletteSource(PaletteSource source) const;
   [[nodiscard]] std::string selectedWallpaperPath() const;
   void appendFilteredFavoriteEntries(
       std::vector<WallpaperEntry>& out, std::unordered_set<std::string>& favoritePaths,
@@ -113,17 +116,13 @@ private:
 
   // UI nodes (owned by the root flex tree).
   Flex* m_rootLayout = nullptr;
-  Flex* m_header = nullptr;
   Flex* m_toolbar = nullptr;
   Flex* m_favoritesOptionsColumn = nullptr;
   Label* m_title = nullptr;
   Button* m_backButton = nullptr;
-  Label* m_breadcrumb = nullptr;
   Segmented* m_favoriteThemeSegmented = nullptr;
-  Label* m_favoriteThemeLabel = nullptr;
   Segmented* m_favoritePaletteSourceSegmented = nullptr;
   Select* m_favoritePaletteDetailSelect = nullptr;
-  Label* m_favoritePaletteLabel = nullptr;
   Select* m_monitorSelect = nullptr;
   Input* m_filterInput = nullptr;
   Toggle* m_flattenToggle = nullptr;
@@ -155,6 +154,7 @@ private:
   std::size_t m_pinnedFavoriteCount = 0;
   bool m_syncingFavoriteControls = false;
   std::vector<std::string> m_favoritePaletteDetailValues;
+  std::vector<PaletteSource> m_paletteSourceOrder;
   static constexpr std::size_t kNoVisibleSelection = std::numeric_limits<std::size_t>::max();
   std::size_t m_selectedVisibleIndex = kNoVisibleSelection;
   float m_lastWidth = 0.0f;

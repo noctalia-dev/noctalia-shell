@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -29,6 +30,10 @@ public:
   // Execute a command line using the same handler registry as socket IPC.
   [[nodiscard]] std::string execute(const std::string& line) const;
 
+  // When set, relative paths in IPC handlers should resolve against this directory
+  // (the caller's cwd) instead of the daemon's cwd. Only populated during execute().
+  [[nodiscard]] const std::optional<std::string>& callerCwd() const noexcept { return m_callerCwd; }
+
   // Register a handler for a command name. The handler receives everything after
   // the first space as `args`. Must return a string ending with '\n'.
   // `usage` describes the command signature, e.g. "panel-toggle <id>".
@@ -50,6 +55,7 @@ private:
 
   int m_listenFd = -1;
   std::string m_socketPath;
+  mutable std::optional<std::string> m_callerCwd;
   // Registration order is retained; --help output is sorted for display.
   std::vector<std::pair<std::string, HandlerEntry>> m_handlers;
 };

@@ -109,6 +109,7 @@ namespace settings {
     bool allowCustomColor = true;        // applies when control == ColorSpec
     std::vector<std::string> extensions; // applies when control == File
     std::optional<WidgetSettingVisibility> visibleWhen;
+    bool horizontalBarOnly = false; // hide on left/right bars (e.g. media album-art-only)
   };
 
   // The schema (validation) value type behind a UI control kind.

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/frame_rate_limiter.h"
 #include "shell/control_center/tab.h"
 
 #include <chrono>
@@ -8,7 +9,7 @@
 
 class Flex;
 class Glyph;
-class GraphNode;
+class Graph;
 class Label;
 class SystemMonitorService;
 
@@ -37,6 +38,7 @@ private:
   bool m_gpuVisible = false;
   float m_scrollProgress = 1.0f;
   std::chrono::steady_clock::time_point m_lastSampleAt{};
+  FrameRateLimiter m_redrawLimiter{std::chrono::milliseconds{200}};
 
   double m_cpuTempMin = 30.0;
   double m_cpuTempMax = 80.0;
@@ -46,10 +48,10 @@ private:
 
   Flex* m_root = nullptr;
 
-  GraphNode* m_cpuGraph = nullptr;
-  GraphNode* m_ramGraph = nullptr;
-  GraphNode* m_gpuGraph = nullptr;
-  GraphNode* m_netGraph = nullptr;
+  Graph* m_cpuGraph = nullptr;
+  Graph* m_ramGraph = nullptr;
+  Graph* m_gpuGraph = nullptr;
+  Graph* m_netGraph = nullptr;
 
   Flex* m_cpuCard = nullptr;
   Flex* m_ramCard = nullptr;
@@ -80,7 +82,7 @@ private:
   static constexpr int kSystemLines = 6;
   Label* m_systemLines[kSystemLines] = {};
 
-  // Resources card: load, memory, swap (hidden when no swap), then one line per discovered physical disk.
+  // Resources card: load, memory, swap (hidden when no swap), then up to four discovered physical disks.
   static constexpr int kResourcesLines = 2;
   Label* m_resourcesLines[kResourcesLines] = {};
   Flex* m_swapRow = nullptr;

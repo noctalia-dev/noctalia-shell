@@ -3,6 +3,7 @@
 #include "config/schema/engine.h"
 #include "config/schema/ranges.h"
 #include "core/key_chord.h"
+#include "notification/notification_filter.h"
 #include "scripting/plugin_id.h"
 #include "util/file_utils.h"
 
@@ -10,6 +11,7 @@
 #include <format>
 #include <stdexcept>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace noctalia::config::schema {
 
@@ -47,6 +49,7 @@ namespace noctalia::config::schema {
         field(&OsdKindsConfig::dnd, "dnd"),
         field(&OsdKindsConfig::lockKeys, "lock_keys"),
         field(&OsdKindsConfig::keyboardLayout, "keyboard_layout"),
+        field(&OsdKindsConfig::media, "media"),
     };
     return s;
   }
@@ -77,6 +80,8 @@ namespace noctalia::config::schema {
   const Schema<LockscreenConfig>& lockscreenSchema() {
     static const Schema<LockscreenConfig> s = {
         field(&LockscreenConfig::enabled, "enabled"),
+        field(&LockscreenConfig::fingerprint, "fingerprint"),
+        field(&LockscreenConfig::allowEmptyPassword, "allow_empty_password"),
         field(&LockscreenConfig::blurredDesktop, "blurred_desktop"),
         field(&LockscreenConfig::blurIntensity, "blur_intensity", kUnitRange),
         field(&LockscreenConfig::tintIntensity, "tint_intensity", kUnitRange),
@@ -92,6 +97,7 @@ namespace noctalia::config::schema {
     const Schema<SystemConfig::MonitorConfig>& systemMonitorSchema() {
       static const Schema<SystemConfig::MonitorConfig> s = {
           field(&SystemConfig::MonitorConfig::enabled, "enabled"),
+          field(&SystemConfig::MonitorConfig::cpuTempSensorPath, "cpu_temp_sensor_path"),
           field(&SystemConfig::MonitorConfig::cpuPollSeconds, "cpu_poll_seconds"),
           field(&SystemConfig::MonitorConfig::gpuPollSeconds, "gpu_poll_seconds"),
           field(&SystemConfig::MonitorConfig::memoryPollSeconds, "memory_poll_seconds"),
@@ -169,6 +175,47 @@ namespace noctalia::config::schema {
     return s;
   }
 
+  const Schema<NotificationFilterConfig>& notificationFilterSchema() {
+    static const Schema<NotificationFilterConfig> s = {
+        field(&NotificationFilterConfig::enabled, "enabled"),
+        custom<NotificationFilterConfig>(
+            "matches",
+            [](const toml::table& tbl, NotificationFilterConfig& out, std::string_view, Diagnostics&) {
+              if (!out.match.empty()) {
+                return;
+              }
+              const auto* arr = tbl["matches"].as_array();
+              if (arr == nullptr) {
+                return;
+              }
+              for (const auto& node : *arr) {
+                const auto token = node.value<std::string>();
+                if (!token.has_value() || StringUtils::trim(*token).empty()) {
+                  continue;
+                }
+                out.match = normalizeNotificationMatchToken(*token);
+                return;
+              }
+            },
+            [](toml::table&, const NotificationFilterConfig&) {}
+        ),
+        field(&NotificationFilterConfig::match, "match"),
+        field(&NotificationFilterConfig::showToast, "show_toast"),
+        field(&NotificationFilterConfig::saveHistory, "save_history"),
+        field(&NotificationFilterConfig::playSound, "play_sound"),
+        field(&NotificationFilterConfig::allowedUrgencies, "allowed_urgencies"),
+        custom<NotificationFilterConfig>(
+            "allow_critical", [](const toml::table&, NotificationFilterConfig&, std::string_view, Diagnostics&) {},
+            [](toml::table&, const NotificationFilterConfig&) {}
+        ),
+        finalize<NotificationFilterConfig>([](NotificationFilterConfig& filter, std::string_view, Diagnostics&) {
+          filter.match = normalizeNotificationMatchToken(std::move(filter.match));
+          filter.allowedUrgencies = normalizeFilterAllowedUrgencyStrings(std::move(filter.allowedUrgencies));
+        }),
+    };
+    return s;
+  }
+
   const Schema<NotificationConfig>& notificationSchema() {
     static const Schema<NotificationConfig> s = {
         field(&NotificationConfig::enableDaemon, "enable_daemon"),
@@ -182,9 +229,114 @@ namespace noctalia::config::schema {
         field(&NotificationConfig::offsetY, "offset_y"),
         field(&NotificationConfig::monitors, "monitors"),
         field(&NotificationConfig::collapseOnDismiss, "collapse_on_dismiss"),
-        field(&NotificationConfig::blacklist, "blacklist"),
-        field(&NotificationConfig::blacklistAllowCritical, "blacklist_allow_critical"),
-        field(&NotificationConfig::allowedUrgencies, "allowed_urgencies"),
+        custom<NotificationConfig>(
+            "blacklist",
+            [](const toml::table& tbl, NotificationConfig& out, std::string_view, Diagnostics&) {
+              if (!out.filters.empty()) {
+                return;
+              }
+              const auto* arr = tbl["blacklist"].as_array();
+              if (arr == nullptr) {
+                return;
+              }
+              for (const auto& node : *arr) {
+                const auto token = node.value<std::string>();
+                if (!token.has_value() || StringUtils::trim(*token).empty()) {
+                  continue;
+                }
+                NotificationFilterConfig filter;
+                filter.match = normalizeNotificationMatchToken(*token);
+                filter.showToast = false;
+                filter.saveHistory = false;
+                filter.playSound = false;
+                out.filters.push_back(std::move(filter));
+              }
+              normalizeNotificationFilterNames(out.filters);
+            },
+            [](toml::table&, const NotificationConfig&) {}
+        ),
+        custom<NotificationConfig>(
+            "blacklist_allow_critical", [](const toml::table&, NotificationConfig&, std::string_view, Diagnostics&) {},
+            [](toml::table&, const NotificationConfig&) {}
+        ),
+        custom<NotificationConfig>(
+            "filter_order", [](const toml::table&, NotificationConfig&, std::string_view, Diagnostics&) {},
+            [](toml::table& tbl, const NotificationConfig& in) {
+              toml::array order;
+              for (const auto& filter : in.filters) {
+                if (!filter.name.empty()) {
+                  order.push_back(filter.name);
+                }
+              }
+              if (!order.empty()) {
+                tbl.insert_or_assign("filter_order", std::move(order));
+              }
+            }
+        ),
+        namedMap<NotificationConfig, NotificationFilterConfig>(
+            &NotificationConfig::filters, "filter", notificationFilterSchema(),
+            [](NotificationFilterConfig& filter, std::string_view name) { filter.name = std::string(name); },
+            [](const NotificationFilterConfig& filter) { return filter.name; }
+        ),
+        custom<NotificationConfig>(
+            "",
+            [](const toml::table& tbl, NotificationConfig& out, std::string_view, Diagnostics&) {
+              if (const auto* arr = tbl["allowed_urgencies"].as_array()) {
+                std::vector<std::string> global;
+                for (const auto& node : *arr) {
+                  if (auto value = node.value<std::string>()) {
+                    global.push_back(*value);
+                  }
+                }
+                global = normalizeFilterAllowedUrgencyStrings(std::move(global));
+                if (!global.empty()) {
+                  for (auto& filter : out.filters) {
+                    if (filter.allowedUrgencies.empty()) {
+                      filter.allowedUrgencies = global;
+                    }
+                  }
+                }
+              }
+
+              const auto* orderArr = tbl["filter_order"].as_array();
+              if (orderArr == nullptr || out.filters.empty()) {
+                normalizeNotificationFilterNames(out.filters);
+                return;
+              }
+
+              std::unordered_map<std::string, NotificationFilterConfig> byName;
+              byName.reserve(out.filters.size());
+              for (auto& filter : out.filters) {
+                if (!filter.name.empty()) {
+                  byName.emplace(filter.name, std::move(filter));
+                }
+              }
+
+              std::vector<NotificationFilterConfig> ordered;
+              ordered.reserve(byName.size());
+              std::unordered_set<std::string> placed;
+              for (const auto& node : *orderArr) {
+                const auto name = node.value<std::string>();
+                if (!name.has_value()) {
+                  continue;
+                }
+                const auto it = byName.find(*name);
+                if (it == byName.end()) {
+                  continue;
+                }
+                ordered.push_back(std::move(it->second));
+                placed.insert(*name);
+              }
+              for (auto& [name, filter] : byName) {
+                if (!placed.contains(name)) {
+                  ordered.push_back(std::move(filter));
+                }
+              }
+              out.filters = std::move(ordered);
+              normalizeNotificationFilterNames(out.filters);
+            },
+            [](toml::table&, const NotificationConfig&) {}
+        ),
     };
     return s;
   }
@@ -292,6 +444,7 @@ namespace noctalia::config::schema {
     static const Schema<BrightnessConfig> s = {
         field(&BrightnessConfig::enableDdcutil, "enable_ddcutil"),
         field(&BrightnessConfig::ddcutilIgnoreMmids, "ignore_mmids"),
+        field(&BrightnessConfig::minimumBrightness, "minimum_brightness", kUnitRange),
         // Map key seeds `match`; an explicit `match` key inside overrides it.
         namedMap<BrightnessConfig, BrightnessMonitorOverride>(
             &BrightnessConfig::monitorOverrides, "monitor", brightnessMonitorSchema(),
@@ -341,6 +494,7 @@ namespace noctalia::config::schema {
           enumField(&PluginSourceConfig::kind, "kind", kPluginSourceKinds),
           field(&PluginSourceConfig::location, "location"),
           field(&PluginSourceConfig::autoUpdate, "auto_update"),
+          field(&PluginSourceConfig::enabled, "enabled"),
           finalize<PluginSourceConfig>([](PluginSourceConfig& src, std::string_view parentPath, Diagnostics& diag) {
             if (!src.name.empty() && !isValidPluginSourceName(src.name)) {
               diag.warn(
@@ -972,6 +1126,7 @@ namespace noctalia::config::schema {
           enumField(&ShellConfig::PanelConfig::controlCenterPlacement, "control_center_placement", kPanelPlacements),
           enumField(&ShellConfig::PanelConfig::wallpaperPlacement, "wallpaper_placement", kPanelPlacements),
           enumField(&ShellConfig::PanelConfig::sessionPlacement, "session_placement", kPanelPlacements),
+          field(&ShellConfig::PanelConfig::floatingOffset, "floating_offset", Range<std::int64_t>{0, 100}),
           field(&ShellConfig::PanelConfig::openNearClickControlCenter, "open_near_click_control_center"),
           field(&ShellConfig::PanelConfig::openNearClickLauncher, "open_near_click_launcher"),
           field(&ShellConfig::PanelConfig::openNearClickClipboard, "open_near_click_clipboard"),
@@ -981,6 +1136,7 @@ namespace noctalia::config::schema {
           field(&ShellConfig::PanelConfig::launcherShowIcons, "launcher_show_icons"),
           field(&ShellConfig::PanelConfig::launcherCompact, "launcher_compact"),
           field(&ShellConfig::PanelConfig::launcherSessionSearch, "launcher_session_search"),
+          field(&ShellConfig::PanelConfig::launcherSortByUsage, "launcher_sort_by_usage"),
       };
       return s;
     }
@@ -1068,12 +1224,15 @@ namespace noctalia::config::schema {
       return s;
     }
 
+    const Schema<typename ShellSessionConfig::ShellSessionPowerConfig>& shellSessionPowerSchema();
+
     const Schema<ShellSessionConfig>& shellSessionSchema() {
       static const Schema<ShellSessionConfig> s = {
           arrayOf<ShellSessionConfig, SessionPanelActionConfig>(
               &ShellSessionConfig::actions, "actions", sessionActionSchema(),
               [](const SessionPanelActionConfig& a) { return !a.action.empty(); }
           ),
+          subTable(&ShellSessionConfig::power, "power", shellSessionPowerSchema()),
       };
       return s;
     }
@@ -1320,8 +1479,8 @@ namespace noctalia::config::schema {
         return true;
       }
       static const std::unordered_set<std::string> kWidgetKeys = {
-          "id",         "type",     "output",  "cx",       "cy",    "box_width",
-          "box_height", "rotation", "enabled", "settings", "scale", // "scale" is a legacy (v1) key
+          "id",         "type",     "output", "cx",     "cy",      "box_width",
+          "box_height", "rotation", "flip_x", "flip_y", "enabled", "settings",
       };
       if (!kWidgetKeys.contains(path[3])) {
         return false;
@@ -1384,8 +1543,12 @@ namespace noctalia::config::schema {
     // optional BarMonitorOverride fields — declared once so the two schemas can't
     // drift apart.
     constexpr Range<std::int64_t> kBarThicknessRange{10, 300};
-    constexpr Range<std::int64_t> kBarRadiusRange{0, 500};
+    // Negative corner radius marks a concave corner of magnitude |value|; positive
+    // is the usual convex rounding. Only the two corners on the bar's inner edge
+    // (away from the screen) render a concave spike.
+    constexpr Range<std::int64_t> kBarRadiusRange{-500, 500};
     constexpr Range<std::int64_t> kBarPanelOverlapRange{-2, 3};
+    constexpr Range<float> kBarCapsuleThicknessRange{0.1f, 1.0f};
     constexpr Range<float> kBarOpacityRange{0.0f, 1.0f};
     constexpr Range<float> kBarBorderWidthRange{0.0f, 20.0f};
     constexpr Range<float> kBarScaleRange{0.5f, 4.0f};
@@ -1491,6 +1654,37 @@ namespace noctalia::config::schema {
             }
           }
       );
+    }
+
+    // Like optionalStringField but trims; a present-but-empty value stays unset so it inherits the parent.
+    template <typename Struct>
+    Field<Struct> optionalTrimmedStringField(std::optional<std::string> Struct::* member, std::string_view key) {
+      return custom<Struct>(
+          key,
+          [member, key](const toml::table& tbl, Struct& out, std::string_view, Diagnostics&) {
+            if (auto v = tbl[key].value<std::string>()) {
+              std::string trimmed = StringUtils::trim(*v);
+              if (!trimmed.empty()) {
+                out.*member = std::move(trimmed);
+              }
+            }
+          },
+          [member, key](toml::table& tbl, const Struct& in) {
+            if ((in.*member).has_value()) {
+              tbl.insert_or_assign(key, *(in.*member));
+            }
+          }
+      );
+    }
+
+    const Schema<typename ShellSessionConfig::ShellSessionPowerConfig>& shellSessionPowerSchema() {
+      using Power = ShellSessionConfig::ShellSessionPowerConfig;
+      static const Schema<Power> s = {
+          optionalTrimmedStringField(&Power::suspend, "suspend"),
+          optionalTrimmedStringField(&Power::reboot, "reboot"),
+          optionalTrimmedStringField(&Power::shutdown, "shutdown"),
+      };
+      return s;
     }
 
     template <typename Struct>
@@ -1667,8 +1861,10 @@ namespace noctalia::config::schema {
         field(&BarConfig::shadow, "shadow"),
         field(&BarConfig::contactShadow, "contact_shadow"),
         field(&BarConfig::panelOverlap, "panel_overlap", kBarPanelOverlapRange),
+        field(&BarConfig::capsuleThickness, "capsule_thickness", kBarCapsuleThicknessRange),
         field(&BarConfig::scale, "scale", kBarScaleRange),
         field(&BarConfig::fontWeight, "font_weight"),
+        optionalTrimmedStringField(&BarConfig::fontFamily, "font_family"),
         field(&BarConfig::startWidgets, "start"),
         field(&BarConfig::centerWidgets, "center"),
         field(&BarConfig::endWidgets, "end"),
@@ -1731,6 +1927,8 @@ namespace noctalia::config::schema {
         optionalBoolField(&BarMonitorOverride::shadow, "shadow"),
         optionalBoolField(&BarMonitorOverride::contactShadow, "contact_shadow"),
         optionalIntField(&BarMonitorOverride::panelOverlap, "panel_overlap", kBarPanelOverlapRange),
+        optionalFloatField(&BarMonitorOverride::capsuleThickness, "capsule_thickness", kBarCapsuleThicknessRange),
+        optionalTrimmedStringField(&BarMonitorOverride::fontFamily, "font_family"),
         optionalStringVectorField(&BarMonitorOverride::startWidgets, "start"),
         optionalStringVectorField(&BarMonitorOverride::centerWidgets, "center"),
         optionalStringVectorField(&BarMonitorOverride::endWidgets, "end"),

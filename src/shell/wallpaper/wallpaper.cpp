@@ -69,6 +69,50 @@ namespace {
     return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".webp" || ext == ".bmp" || ext == ".gif";
   }
 
+  [[nodiscard]] std::optional<std::string>
+  resolveWallpaperPath(std::string_view path, std::optional<std::string_view> callerCwd = std::nullopt) {
+    if (path.empty()) {
+      return std::nullopt;
+    }
+    if (path.starts_with("color:")) {
+      return std::string(path);
+    }
+    const std::filesystem::path resolved = FileUtils::resolvePath(path, callerCwd);
+    std::error_code ec;
+    if (std::filesystem::exists(resolved, ec)) {
+      return resolved.string();
+    }
+    return std::nullopt;
+  }
+
+  struct WallpaperSetParsed {
+    std::optional<std::string> connector;
+    std::string path;
+  };
+
+  template <typename IsConnectorFn>
+  [[nodiscard]] WallpaperSetParsed parseWallpaperSetTokens(
+      const std::vector<std::string>& tokens, IsConnectorFn&& isConnector, std::optional<std::string_view> callerCwd
+  ) {
+    if (tokens.size() == 1) {
+      return {.connector = std::nullopt, .path = tokens[0]};
+    }
+
+    const std::string allJoined = StringUtils::join(tokens, " ");
+    if (resolveWallpaperPath(allJoined, callerCwd).has_value()) {
+      return {.connector = std::nullopt, .path = allJoined};
+    }
+
+    if (isConnector(tokens[0])) {
+      return {
+          .connector = tokens[0],
+          .path = StringUtils::join(std::vector<std::string>(tokens.begin() + 1, tokens.end()), " "),
+      };
+    }
+
+    return {.connector = std::nullopt, .path = allJoined};
+  }
+
   void
   collectWallpaperCandidates(const std::filesystem::path& directory, bool recursive, std::vector<std::string>& out) {
     out.clear();
@@ -280,6 +324,15 @@ TextureHandle Wallpaper::currentTexture() const {
   for (const auto& inst : m_instances) {
     if (inst->currentTexture.id != 0) {
       return inst->currentTexture;
+    }
+  }
+  return {};
+}
+
+std::string Wallpaper::currentPath() const {
+  for (const auto& inst : m_instances) {
+    if (inst->currentTexture.id != 0 && !inst->currentPath.empty()) {
+      return inst->currentPath;
     }
   }
   return {};
@@ -572,7 +625,7 @@ void Wallpaper::registerIpc(IpcService& ipc) {
   );
   ipc.registerHandler(
       "wallpaper-set",
-      [this, validateOutputConnector](const std::string& args) -> std::string {
+      [this, &ipc, validateOutputConnector](const std::string& args) -> std::string {
         if (m_config == nullptr) {
           return "error: wallpaper service not initialized\n";
         }
@@ -580,29 +633,24 @@ void Wallpaper::registerIpc(IpcService& ipc) {
         if (tokens.empty()) {
           return "error: path required (wallpaper-set [<connector>] <path>)\n";
         }
-        std::optional<std::string> outputConnector;
-        std::string path;
-        if (tokens.size() == 1) {
-          path = tokens[0];
-        } else {
-          outputConnector = tokens[0];
-          std::string joined = tokens[1];
-          for (std::size_t i = 2; i < tokens.size(); ++i) {
-            joined.push_back(' ');
-            joined += tokens[i];
-          }
-          path = std::move(joined);
-        }
-        if (path.empty()) {
+
+        const std::optional<std::string_view> callerCwd =
+            ipc.callerCwd().has_value() ? std::optional<std::string_view>{*ipc.callerCwd()} : std::nullopt;
+
+        const auto isConnector = [&](const std::string& connector) {
+          return validateOutputConnector(connector).empty();
+        };
+        const auto parsed = parseWallpaperSetTokens(tokens, isConnector, callerCwd);
+        if (parsed.path.empty()) {
           return "error: path required (wallpaper-set [<connector>] <path>)\n";
         }
-        std::string resolved = path;
-        if (!path.starts_with("color:")) {
-          resolved = FileUtils::expandUserPath(path).string();
-          std::error_code ec;
-          if (!std::filesystem::exists(resolved, ec)) {
-            return "error: path does not exist\n";
-          }
+
+        std::optional<std::string> outputConnector = parsed.connector;
+        std::string resolved;
+        if (const auto path = resolveWallpaperPath(parsed.path, callerCwd); path.has_value()) {
+          resolved = *path;
+        } else {
+          return "error: path does not exist\n";
         }
 
         if (outputConnector.has_value()) {
@@ -746,6 +794,33 @@ void Wallpaper::resetAutomationState() {
 }
 
 void Wallpaper::setAutomationGate(std::function<bool()> gate) { m_automationGate = std::move(gate); }
+
+void Wallpaper::pauseRendering() {
+  if (m_renderingPaused) {
+    return;
+  }
+  m_renderingPaused = true;
+  for (const auto& instance : m_instances) {
+    if (instance == nullptr || instance->surface == nullptr) {
+      continue;
+    }
+    instance->surface->pauseFrameLoop();
+  }
+}
+
+void Wallpaper::resumeRendering() {
+  if (!m_renderingPaused) {
+    return;
+  }
+  m_renderingPaused = false;
+  for (const auto& instance : m_instances) {
+    if (instance == nullptr || instance->surface == nullptr) {
+      continue;
+    }
+    instance->surface->resumeFrameLoop();
+    instance->surface->requestLayout();
+  }
+}
 
 bool Wallpaper::automationAllowed() const noexcept { return !m_automationGate || m_automationGate(); }
 
@@ -1062,6 +1137,10 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
     return;
   }
 
+  if (m_renderingPaused) {
+    instance->surface->pauseFrameLoop();
+  }
+
   m_instances.push_back(std::move(instance));
 }
 
@@ -1154,6 +1233,7 @@ void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& pa
     instance.queuedPath.clear();
     updateRendererState(instance);
     instance.surface->requestRedraw();
+    m_changed.emit();
     return;
   }
 
@@ -1201,6 +1281,7 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
         // The frame loop stops once there are no active animations, so the
         // promoted final wallpaper needs one explicit redraw.
         inst->surface->requestRedraw();
+        m_changed.emit();
 
         if (!inst->queuedPath.empty() && inst->queuedPath != inst->currentPath) {
           const std::string queuedPath = inst->queuedPath;

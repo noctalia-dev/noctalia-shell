@@ -42,10 +42,18 @@ public:
   void onGpuResourcesInvalidated();
   void registerIpc(IpcService& ipc);
   void setAutomationGate(std::function<bool()> gate);
+  void pauseRendering();
+  void resumeRendering();
   [[nodiscard]] bool ownsSurface(wl_surface* surface) const noexcept;
   bool onPointerEvent(const PointerEvent& event);
 
   [[nodiscard]] TextureHandle currentTexture() const;
+  [[nodiscard]] std::string currentPath() const;
+
+  // Emits whenever the displayed wallpaper (path/texture) changes, including
+  // automation rotation and transition completion. Lets consumers pre-warm
+  // previews while their UI is closed.
+  [[nodiscard]] Signal<>& changed() noexcept { return m_changed; }
 
 private:
   void reload();
@@ -81,7 +89,9 @@ private:
   std::int64_t m_lastAutomationSecondStamp = -1;
   std::int64_t m_lastAutomationSwitchSecond = -1;
   std::function<bool()> m_automationGate;
+  bool m_renderingPaused = false;
   Signal<>::ScopedConnection m_paletteConn;
+  Signal<> m_changed;
   std::vector<std::unique_ptr<WallpaperInstance>> m_instances;
 
   Timer m_visualizerTimer;

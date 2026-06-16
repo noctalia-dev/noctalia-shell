@@ -32,6 +32,7 @@ private:
   void flushPendingBrightness(bool force = false);
 
   BrightnessService* m_brightness = nullptr;
+  ConfigService* m_configService = nullptr;
 
   struct DisplayCard {
     std::string displayId;

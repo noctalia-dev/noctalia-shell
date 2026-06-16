@@ -2,6 +2,7 @@
 
 #include "config/config_types.h"
 #include "core/process.h"
+#include "ui/ui_tree.h"
 
 #include <chrono>
 #include <cstdint>
@@ -46,6 +47,28 @@ namespace scripting {
     bool operator==(const ScriptTooltipPatch&) const = default;
   };
 
+  // One launcher result published by a [[launcher_provider]] entry's onQuery.
+  struct ScriptLauncherResult {
+    std::string id;
+    std::string title;
+    std::string subtitle;
+    std::string glyph;
+    std::string icon;
+    std::string badge;
+    double score = 0.0;
+
+    bool operator==(const ScriptLauncherResult&) const = default;
+  };
+
+  // The full result set for a single query. `query` echoes the text onQuery was
+  // answering, so the provider can map late async results back to the right query.
+  struct ScriptLauncherResultSet {
+    std::string query;
+    std::vector<ScriptLauncherResult> results;
+
+    bool operator==(const ScriptLauncherResultSet&) const = default;
+  };
+
   struct ScriptPatch {
     std::optional<std::string> text;
     std::optional<std::string> glyph;
@@ -64,6 +87,15 @@ namespace scripting {
     std::optional<bool> active;
     std::optional<bool> enabled;
 
+    // Launcher-provider results (the `launcher.*` namespace).
+    std::optional<ScriptLauncherResultSet> launcherResults;
+
+    // Desktop-widget fields (the `desktopWidget.*` namespace): the declarative
+    // control tree from desktopWidget.render() plus tick opt-ins.
+    std::optional<ui::UiTreeNode> uiTree;
+    std::optional<bool> wantsSecondTicks;
+    std::optional<bool> needsFrameTick;
+
     [[nodiscard]] bool empty() const {
       return !text.has_value()
           && !glyph.has_value()
@@ -78,7 +110,11 @@ namespace scripting {
           && !iconOn.has_value()
           && !iconOff.has_value()
           && !active.has_value()
-          && !enabled.has_value();
+          && !enabled.has_value()
+          && !launcherResults.has_value()
+          && !uiTree.has_value()
+          && !wantsSecondTicks.has_value()
+          && !needsFrameTick.has_value();
     }
   };
 

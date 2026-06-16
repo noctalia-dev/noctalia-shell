@@ -87,7 +87,7 @@ std::vector<LauncherResult> EmojiProvider::query(std::string_view text) const {
       r.title = e.name;
       r.subtitle = emojiCategoryLabel(e.category);
       r.category = r.subtitle;
-      r.actionText = e.emoji;
+      r.badge = e.emoji;
       r.score = static_cast<int>(m_entries.size() - i);
       results.push_back(std::move(r));
     }
@@ -145,7 +145,7 @@ std::vector<LauncherResult> EmojiProvider::query(std::string_view text) const {
     r.title = e.name;
     r.subtitle = emojiCategoryLabel(e.category);
     r.category = r.subtitle;
-    r.actionText = e.emoji;
+    r.badge = e.emoji;
     r.score = scored[i].score;
     results.push_back(std::move(r));
   }

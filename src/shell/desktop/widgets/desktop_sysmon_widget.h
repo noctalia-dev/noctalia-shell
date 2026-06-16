@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/frame_rate_limiter.h"
 #include "shell/desktop/desktop_widget.h"
 #include "ui/palette.h"
 
@@ -7,11 +8,12 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 
 struct SystemStats;
 
 class Glyph;
-class GraphNode;
+class Graph;
 class Label;
 class SystemMonitorService;
 
@@ -31,7 +33,7 @@ class DesktopSysmonWidget : public DesktopWidget {
 public:
   DesktopSysmonWidget(
       SystemMonitorService* monitor, DesktopSysmonStat stat, std::optional<DesktopSysmonStat> stat2,
-      ColorSpec lineColor, ColorSpec lineColor2, bool showLabel, bool shadow
+      ColorSpec lineColor, ColorSpec lineColor2, std::string networkInterface, bool showLabel, bool shadow
   );
   ~DesktopSysmonWidget() override;
 
@@ -53,8 +55,10 @@ private:
   void clearGraph();
   void updateGraph(Renderer& renderer);
   [[nodiscard]] float scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt) const;
-  [[nodiscard]] static double
-  normalizedFromStats(DesktopSysmonStat stat, const SystemStats& stats, double& tempMin, double& tempMax);
+  [[nodiscard]] static double normalizedFromStats(
+      DesktopSysmonStat stat, const SystemStats& stats, double& tempMin, double& tempMax,
+      std::string_view networkInterface
+  );
   [[nodiscard]] static const char* glyphName(DesktopSysmonStat stat);
 
   SystemMonitorService* m_monitor;
@@ -62,15 +66,17 @@ private:
   std::optional<DesktopSysmonStat> m_stat2;
   ColorSpec m_lineColor;
   ColorSpec m_lineColor2;
+  std::string m_networkInterface;
   bool m_showLabel;
   bool m_shadow;
 
   Glyph* m_glyph = nullptr;
   Label* m_label = nullptr;
-  GraphNode* m_graphNode = nullptr;
+  Graph* m_graph = nullptr;
 
   bool m_graphInitialized = false;
   float m_scrollProgress = 1.0f;
+  FrameRateLimiter m_redrawLimiter{std::chrono::milliseconds{200}};
   std::chrono::steady_clock::time_point m_lastSampleAt{};
   std::string m_lastRawValue;
 

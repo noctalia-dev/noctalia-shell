@@ -827,13 +827,13 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
   } else {
     preferred = item.iconName;
   }
-  if (tray::looksGenericStatusItemName(preferred)) {
-    preferred.clear();
-  }
-
   if (const auto themed = resolveFromTrayThemePath(item.iconThemePath, preferred); !themed.empty()) {
     m_preferredIconPaths[item.id] = themed;
     return themed;
+  }
+
+  if (tray::looksGenericStatusItemName(preferred)) {
+    preferred.clear();
   }
 
   // Match the on-screen request size used when the icon is loaded (see rebuild).

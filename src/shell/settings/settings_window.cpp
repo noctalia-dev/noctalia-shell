@@ -65,6 +65,12 @@ namespace {
     return {"bar", barName, std::string(lane)};
   }
 
+  void focusExistingSettingsWindow(WaylandConnection& wayland, wl_surface* surface) {
+    static constexpr std::string_view kSettingsAppId = "dev.noctalia.Noctalia.Settings";
+    wayland.activateSurface(surface);
+    wayland.activateToplevelForAppId(kSettingsAppId);
+  }
+
 } // namespace
 
 SettingsWindow::~SettingsWindow() { destroyWindow(); }
@@ -279,7 +285,13 @@ void SettingsWindow::open() {
   }
 
   if (isOpen()) {
-    m_wayland->activateSurface(m_surface->wlSurface());
+    const auto refocus = [this]() {
+      if (m_wayland != nullptr && m_surface != nullptr) {
+        focusExistingSettingsWindow(*m_wayland, m_surface->wlSurface());
+      }
+    };
+    refocus();
+    DeferredCall::callLater(refocus);
     return;
   }
 

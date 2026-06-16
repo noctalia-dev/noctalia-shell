@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/frame_rate_limiter.h"
 #include "core/timer_manager.h"
 #include "shell/bar/widget.h"
 #include "ui/palette.h"
@@ -7,12 +8,13 @@
 
 #include <chrono>
 #include <string>
+#include <string_view>
 #include <utility>
 
 class Box;
 class ConfigService;
 class Glyph;
-class GraphNode;
+class Graph;
 class Label;
 class ProgressBar;
 class SystemMonitorService;
@@ -38,8 +40,8 @@ class SysmonWidget : public Widget {
 public:
   SysmonWidget(
       SystemMonitorService* monitor, wl_output* output, SysmonStat stat, std::string diskPath,
-      SysmonDisplayMode displayMode, ColorSpec highlightColor, ConfigService& configService, bool showLabel = true,
-      float labelMinWidth = 0.0f
+      SysmonDisplayMode displayMode, ColorSpec highlightColor, ConfigService& configService,
+      std::string networkInterface = {}, bool showLabel = true, float labelMinWidth = 0.0f, std::string glyph = {}
   );
   ~SysmonWidget() override;
 
@@ -64,8 +66,9 @@ private:
   [[nodiscard]] Color currentValueColor(ColorSpec baseColor);
   [[nodiscard]] double currentGradientValue();
   [[nodiscard]] std::pair<double, double> currentThresholds() const;
-  [[nodiscard]] static double
-  normalizedFromStats(SysmonStat stat, const SystemStats& stats, double& tempMin, double& tempMax);
+  [[nodiscard]] static double normalizedFromStats(
+      SysmonStat stat, const SystemStats& stats, double& tempMin, double& tempMax, std::string_view networkInterface
+  );
 
   SystemMonitorService* m_monitor;
   SysmonStat m_stat;
@@ -75,6 +78,8 @@ private:
   bool m_showLabel;
   float m_labelMinWidth = 0.0f;
   std::string m_diskPath;
+  std::string m_networkInterface;
+  std::string m_glyphOverride;
   std::string m_lastRawValue;
   bool m_isVerticalBar = false;
   bool m_lastLabelVertical = false;
@@ -88,9 +93,10 @@ private:
   double m_tempMin = 30.0;
   double m_tempMax = 80.0;
   Box* m_chartBg = nullptr;
-  GraphNode* m_graphNode = nullptr;
+  Graph* m_graph = nullptr;
   float m_scrollProgress = 1.0f;
   Timer m_updateTimer;
+  FrameRateLimiter m_redrawLimiter{std::chrono::milliseconds{200}};
 
   // Gauge mode
   ProgressBar* m_gauge = nullptr;

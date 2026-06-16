@@ -63,6 +63,8 @@ public:
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
   void setLabelFontWeight(FontWeight fontWeight) noexcept { m_labelFontWeight = fontWeight; }
   [[nodiscard]] FontWeight labelFontWeight() const noexcept { return m_labelFontWeight; }
+  void setLabelFontFamily(std::string family) noexcept { m_labelFontFamily = std::move(family); }
+  [[nodiscard]] const std::string& labelFontFamily() const noexcept { return m_labelFontFamily; }
   void setConfigName(std::string name) { m_configName = std::move(name); }
   [[nodiscard]] std::string_view configName() const noexcept { return m_configName; }
   void setAnchor(bool anchor) noexcept { m_anchor = anchor; }
@@ -104,6 +106,7 @@ protected:
 
   float m_contentScale = 1.0f;
   FontWeight m_labelFontWeight = FontWeight::Medium;
+  std::string m_labelFontFamily; // empty = inherit renderer-global family
   std::string m_configName;
   bool m_anchor = false;
   AnimationManager* m_animations = nullptr;

@@ -1,8 +1,10 @@
 #pragma once
 
 #include "core/timer_manager.h"
+#include "render/core/thumbnail_service.h"
 #include "shell/control_center/shortcut_services.h"
 #include "shell/control_center/tab.h"
+#include "ui/signal.h"
 
 #include <chrono>
 #include <cstdint>
@@ -46,7 +48,7 @@ public:
       GammaService* nightLight, noctalia::theme::ThemeService* theme, NotificationManager* notifications,
       IdleInhibitor* idleInhibitor, DependencyService* dependencies, CompositorPlatform* platform, IpcService* ipc,
       Wallpaper* wallpaper = nullptr, scripting::ScriptApiContext* scriptApi = nullptr,
-      ClipboardService* clipboard = nullptr, AccountsService* accounts = nullptr
+      ClipboardService* clipboard = nullptr, AccountsService* accounts = nullptr, ThumbnailService* thumbnails = nullptr
   );
   ~HomeTab() override;
 
@@ -62,6 +64,9 @@ private:
   void layoutWallpaperBackground(Renderer& renderer);
   void layoutCardButton(Renderer& renderer, Flex* card, Button* button);
   void syncWallpaperBackground(Renderer& renderer);
+  void ensureWallpaperThumbnail(const std::string& path, int targetPx);
+  void startCrispFade();
+  void cancelCrispFade();
   void sync(Renderer& renderer);
   void syncScaledFonts();
   void syncShortcuts();
@@ -74,6 +79,7 @@ private:
   ConfigService* m_config = nullptr;
   AccountsService* m_accounts = nullptr;
   Wallpaper* m_wallpaper = nullptr;
+  ThumbnailService* m_thumbnails = nullptr;
   ShortcutServices m_services;
   bool m_active = false;
 
@@ -100,9 +106,23 @@ private:
   Button* m_mediaButton = nullptr;
   Button* m_weatherButton = nullptr;
   std::string m_loadedAvatarPath;
+  int m_loadedAvatarSize = 0;
 
+  // Two stacked layers: m_wallpaperPlaceholder shows the resident full-screen
+  // wallpaper texture immediately (slightly soft), m_wallpaperBg holds the crisp
+  // card-sized thumbnail and crossfades in over it once decoded.
+  Image* m_wallpaperPlaceholder = nullptr;
   Image* m_wallpaperBg = nullptr;
   Box* m_wallpaperGradient = nullptr;
+  std::string m_loadedWallpaperPath;
+  int m_loadedWallpaperSize = 0;
+  std::string m_crispWorkingPath;
+  int m_crispWorkingSize = 0;
+  bool m_crispShown = false;
+  bool m_crispNeedsFade = false;
+  std::uint32_t m_wallpaperCrispAnimId = 0;
+  ThumbnailService::Subscription m_thumbnailPendingSub;
+  Signal<>::ScopedConnection m_wallpaperChangedConn;
 
   Label* m_mediaTrack = nullptr;
   Label* m_mediaArtist = nullptr;

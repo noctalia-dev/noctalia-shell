@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
+#include "core/key_modifiers.h"
 #include "core/key_symbols.h"
 #include "core/keybind_matcher.h"
 #include "core/ui_phase.h"
@@ -147,7 +148,7 @@ namespace {
 
       m_row->addChild(
           ui::label({
-              .out = &m_actionLabel,
+              .out = &m_badgeLabel,
               .fontSize = iconSize,
               .color = colorSpecFromRole(ColorRole::OnSurface),
               .visible = false,
@@ -174,7 +175,7 @@ namespace {
 
       m_image->setAsyncReadyCallback([this]() {
         if (!m_style.showIcons
-            || m_actionTextVisible
+            || m_badgeVisible
             || m_iconPath.empty()
             || m_image == nullptr
             || m_glyph == nullptr
@@ -221,26 +222,26 @@ namespace {
       m_fallbackGlyph = result.glyphName.empty() ? "app-window" : result.glyphName;
       const float iconSize = launcherIconSize(m_style);
       m_iconTargetSize = static_cast<int>(std::round(iconSize));
-      m_actionTextVisible = !result.actionText.empty();
+      m_badgeVisible = !result.badge.empty();
       m_rowHeight = launcherRowHeight(renderer, m_style);
 
       setSize(width, m_rowHeight);
       m_row->setFrameSize(width, m_rowHeight);
 
-      m_actionLabel->setVisible(false);
-      m_actionLabel->setParticipatesInLayout(false);
+      m_badgeLabel->setVisible(false);
+      m_badgeLabel->setParticipatesInLayout(false);
       m_image->setVisible(false);
       m_image->setParticipatesInLayout(false);
       m_glyph->setVisible(false);
       m_glyph->setParticipatesInLayout(false);
 
-      const bool showAppIcon = m_style.showIcons && !m_actionTextVisible;
-      const bool showLeadingVisual = m_actionTextVisible || showAppIcon;
-      if (m_actionTextVisible) {
-        m_actionLabel->setText(result.actionText);
-        m_actionLabel->setSize(iconSize, iconSize);
-        m_actionLabel->setVisible(true);
-        m_actionLabel->setParticipatesInLayout(true);
+      const bool showAppIcon = m_style.showIcons && !m_badgeVisible;
+      const bool showLeadingVisual = m_badgeVisible || showAppIcon;
+      if (m_badgeVisible) {
+        m_badgeLabel->setText(result.badge);
+        m_badgeLabel->setSize(iconSize, iconSize);
+        m_badgeLabel->setVisible(true);
+        m_badgeLabel->setParticipatesInLayout(true);
         m_image->clear(renderer);
       } else if (showAppIcon) {
         m_image->setParticipatesInLayout(true);
@@ -280,7 +281,7 @@ namespace {
     }
 
     bool refreshAsyncIcon(Renderer& renderer) {
-      if (!m_style.showIcons || m_actionTextVisible || m_iconPath.empty()) {
+      if (!m_style.showIcons || m_badgeVisible || m_iconPath.empty()) {
         m_image->setVisible(false);
         m_glyph->setVisible(false);
         return false;
@@ -304,7 +305,7 @@ namespace {
 
   protected:
     void doLayout(Renderer& renderer) override {
-      if (m_style.showIcons && !m_actionTextVisible && !m_iconPath.empty()) {
+      if (m_style.showIcons && !m_badgeVisible && !m_iconPath.empty()) {
         (void)refreshAsyncIcon(renderer);
       }
       Node::doLayout(renderer);
@@ -325,7 +326,7 @@ namespace {
       const ColorSpec foreground = colorSpecFromRole(active ? activeRole : ColorRole::OnSurface);
       const ColorSpec mutedForeground =
           active ? colorSpecFromRole(activeRole, 0.7f) : colorSpecFromRole(ColorRole::OnSurfaceVariant);
-      m_actionLabel->setColor(foreground);
+      m_badgeLabel->setColor(foreground);
       m_glyph->setColor(foreground);
       m_title->setColor(foreground);
       m_subtitle->setColor(mutedForeground);
@@ -336,7 +337,7 @@ namespace {
     bool m_selected = false;
     bool m_hovered = false;
     Flex* m_row = nullptr;
-    Label* m_actionLabel = nullptr;
+    Label* m_badgeLabel = nullptr;
     Image* m_image = nullptr;
     Glyph* m_glyph = nullptr;
     Flex* m_textCol = nullptr;
@@ -346,7 +347,7 @@ namespace {
     std::string m_iconPath;
     std::string m_fallbackGlyph;
     int m_iconTargetSize = 0;
-    bool m_actionTextVisible = false;
+    bool m_badgeVisible = false;
   };
 
 } // namespace
@@ -411,7 +412,12 @@ PanelPlacement LauncherPanel::panelPlacement() const noexcept {
 
 void LauncherPanel::addProvider(std::unique_ptr<LauncherProvider> provider) {
   provider->initialize();
+  provider->setResultsChangedCallback([this]() { onProviderResultsChanged(); });
   m_providers.push_back(std::move(provider));
+}
+
+void LauncherPanel::clearDynamicProviders() {
+  std::erase_if(m_providers, [](const std::unique_ptr<LauncherProvider>& provider) { return provider->isDynamic(); });
 }
 
 void LauncherPanel::create() {
@@ -608,6 +614,10 @@ void LauncherPanel::onClose() {
     DeferredCall::callLater([asyncTextures = m_asyncTextures]() { asyncTextures->trimUnused(0); });
   }
 
+  for (auto& provider : m_providers) {
+    provider->reset();
+  }
+
   m_query.clear();
   m_results.clear();
   m_allResults.clear();
@@ -633,7 +643,16 @@ void LauncherPanel::onClose() {
   clearReleasedRoot();
 }
 
-void LauncherPanel::onIconThemeChanged() {
+void LauncherPanel::onIconThemeChanged() { reapplyCurrentQuery(); }
+
+void LauncherPanel::clearUsage() {
+  m_usageTracker.clear();
+  if (m_input != nullptr) {
+    reapplyCurrentQuery();
+  }
+}
+
+void LauncherPanel::reapplyCurrentQuery() {
   std::string selectedProvider;
   std::string selectedId;
   if (m_selectedIndex < m_results.size()) {
@@ -652,6 +671,15 @@ void LauncherPanel::onIconThemeChanged() {
     }
   }
   refreshResults();
+}
+
+void LauncherPanel::onProviderResultsChanged() {
+  // Only re-gather while the panel is open and built; after onClose the scene
+  // nodes are gone and a refresh would touch null grid/label pointers.
+  if (m_input == nullptr) {
+    return;
+  }
+  reapplyCurrentQuery();
 }
 
 InputArea* LauncherPanel::initialFocusArea() const { return m_input != nullptr ? m_input->inputArea() : nullptr; }
@@ -690,8 +718,12 @@ void LauncherPanel::onInputChanged(const std::string& text) {
   }
 
   const bool typedQuery = !queryText.empty();
+  const bool sortByUsage = m_config != nullptr && m_config->config().shell.panel.launcherSortByUsage;
 
   auto applyUsageBoost = [&](std::vector<LauncherResult>& results, const LauncherProvider& provider) {
+    if (!sortByUsage) {
+      return;
+    }
     for (auto& result : results) {
       const int usageCount = m_usageTracker.getCount(provider.id(), result.id);
       result.score += usageBoostForScore(result.score, usageCount, typedQuery);
@@ -707,7 +739,7 @@ void LauncherPanel::onInputChanged(const std::string& text) {
     m_allResults = activeProvider->query(queryText);
     if (activeProvider->trackUsage()) {
       applyUsageBoost(m_allResults, *activeProvider);
-      if (m_usageTracker.getRecentlyUsedCount(activeProvider->id()) > 0) {
+      if (sortByUsage && m_usageTracker.getRecentlyUsedCount(activeProvider->id()) > 0) {
         hasRecentlyUsed = true;
       }
     }
@@ -731,7 +763,7 @@ void LauncherPanel::onInputChanged(const std::string& text) {
       auto results = provider->query(queryText);
       if (provider->trackUsage()) {
         applyUsageBoost(results, *provider);
-        if (m_usageTracker.getRecentlyUsedCount(provider->id()) > 0) {
+        if (sortByUsage && m_usageTracker.getRecentlyUsedCount(provider->id()) > 0) {
           hasRecentlyUsed = true;
         }
       }
@@ -1167,31 +1199,38 @@ bool LauncherPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
     }
   };
 
-  if (KeySymbol::isTab(sym) && !m_currentCategories.empty()) {
-    m_categoryFilterVisible = !m_categoryFilterVisible;
-    setCategoryFilterVisible(m_categoryFilterVisible);
-    return true;
-  }
+  const auto categoryOptionCount = [this]() -> std::size_t {
+    if (m_currentCategories.empty() && !m_hasRecentlyUsed) {
+      return 0;
+    }
+    return m_currentCategories.size() + (m_hasRecentlyUsed ? 2u : 1u);
+  };
 
-  if (KeybindMatcher::matches(KeybindAction::Left, sym, modifiers)) {
-    if (m_categoryFilter != nullptr && m_categoryFilter->visible() && m_categoryFilter->selectedIndex() > 0) {
-      m_categoryFilter->setSelectedIndex(m_categoryFilter->selectedIndex() - 1);
+  const auto cycleCategory = [this, categoryOptionCount](bool reverse) {
+    if (m_categoryFilter == nullptr) {
+      return false;
+    }
+    const std::size_t total = categoryOptionCount();
+    if (total == 0) {
+      return false;
+    }
+
+    const bool wasVisible = m_categoryFilter->visible();
+    m_categoryFilterVisible = true;
+    setCategoryFilterVisible(true);
+    if (!wasVisible) {
       return true;
     }
-    return false;
-  }
 
-  if (KeybindMatcher::matches(KeybindAction::Right, sym, modifiers)) {
-    if (m_categoryFilter != nullptr && m_categoryFilter->visible()) {
-      const std::size_t next = m_categoryFilter->selectedIndex() + 1;
-      const std::size_t total = m_currentCategories.size()
-          + (m_hasRecentlyUsed ? 2 : 1); // +1 for "All" category, +2 for "Recently Used" if present
-      if (next < total) {
-        m_categoryFilter->setSelectedIndex(next);
-        return true;
-      }
-    }
-    return false;
+    const std::size_t selected = std::min(m_categoryFilter->selectedIndex(), total - 1);
+    const std::size_t next =
+        reverse ? (selected == 0 ? total - 1 : selected - 1) : (selected + 1 < total ? selected + 1 : 0);
+    m_categoryFilter->setSelectedIndex(next);
+    return true;
+  };
+
+  if (sym == XKB_KEY_F6 && (modifiers & ~(KeyMod::Shift)) == 0) {
+    return cycleCategory((modifiers & KeyMod::Shift) != 0);
   }
 
   if (KeySymbol::isPageUp(sym)) {

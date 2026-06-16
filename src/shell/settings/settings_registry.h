@@ -196,6 +196,10 @@ namespace settings {
     std::vector<IdleBehaviorConfig> items;
   };
 
+  struct NotificationFiltersSetting {
+    std::vector<NotificationFilterConfig> items;
+  };
+
   struct MultiSelectSetting {
     std::vector<SelectOption> options;
     std::vector<std::string> selectedValues;
@@ -225,8 +229,8 @@ namespace settings {
   using SettingControl = std::variant<
       ToggleSetting, SelectSetting, SliderSetting, RangeSliderSetting, TextSetting, OptionalNumberSetting,
       OptionalStepperSetting, StepperSetting, ListSetting, ShortcutListSetting, KeybindListSetting,
-      SessionPanelActionsSetting, IdleBehaviorsSetting, MultiSelectSetting, TemplateGridSetting, ButtonSetting,
-      ColorSpecPickerSetting, SearchPickerSetting>;
+      SessionPanelActionsSetting, IdleBehaviorsSetting, NotificationFiltersSetting, MultiSelectSetting,
+      TemplateGridSetting, ButtonSetting, ColorSpecPickerSetting, SearchPickerSetting>;
 
   struct SettingVisibilityCondition {
     std::vector<std::string> path;
