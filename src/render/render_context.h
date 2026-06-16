@@ -32,6 +32,7 @@ public:
     m_graphicsResetCallback = std::move(callback);
   }
   void makeCurrent(RenderTarget& target);
+  void makeCurrentNoSurface();
   // Sync text/glyph renderer content scale to the given target's
   // buffer-to-logical ratio. Must be called before any measureText /
   // measureGlyph performed on behalf of this target, because those
@@ -68,7 +69,6 @@ public:
   [[nodiscard]] std::uint64_t textMetricsGeneration() const noexcept override { return m_textMetricsGeneration; }
 
 private:
-  void makeCurrentNoSurface();
   void handleGraphicsReset(RenderGraphicsResetStatus status);
   void renderNode(
       const Node* node, const Mat3& parentTransform, float parentOpacity, float sw, float sh, float bw, float bh,
