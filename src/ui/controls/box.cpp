@@ -139,6 +139,8 @@ void Box::setPanelStyle(bool showBorder) {
   syncStyle();
 }
 
+void Box::setDialogStyle() { setPanelStyle(/*showBorder=*/true); }
+
 void Box::setCardStyle(float scale, float fillOpacity, bool showBorder) {
   setFill(colorSpecFromRole(ColorRole::SurfaceVariant, fillOpacity));
   if (showBorder) {
