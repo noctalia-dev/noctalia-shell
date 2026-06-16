@@ -211,6 +211,7 @@ void LockscreenWidgetsHost::createInstance(
   m_renderContext->makeCurrent(surface.renderTarget());
   widget->update(*m_renderContext);
   widget->layout(*m_renderContext);
+  m_renderContext->makeCurrentNoSurface();
 
   const float intrinsicWidth = std::max(1.0f, widget->intrinsicWidth());
   const float intrinsicHeight = std::max(1.0f, widget->intrinsicHeight());
@@ -314,6 +315,7 @@ void LockscreenWidgetsHost::syncSurfaceFrameTick(LockSurface* surfacePtr) {
     if (needsContinuousRedraw) {
       surfacePtr->requestRedraw();
     }
+    host->m_renderContext->makeCurrentNoSurface();
   });
 }
 
@@ -387,4 +389,5 @@ void LockscreenWidgetsHost::prepareFrame(LockSurface& surface, bool needsUpdate,
     desktop_widgets::widgetNodeScale(instance->state, flipScaleX, flipScaleY);
     instance->transformNode->setScale(flipScaleX, flipScaleY);
   }
+  m_renderContext->makeCurrentNoSurface();
 }
