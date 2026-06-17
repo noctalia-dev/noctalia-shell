@@ -575,7 +575,7 @@ TooltipManager::Size TooltipManager::measureContent(const TooltipContent& conten
       const auto vm = m_renderContext->measureText(row.value, Style::fontSizeCaption);
       maxKeyW = std::max(maxKeyW, km.width);
       maxValW = std::max(maxValW, vm.width);
-      rowH = std::max(rowH, std::max(km.bottom - km.top, vm.bottom - vm.top));
+      rowH = std::max({rowH, km.bottom - km.top, vm.bottom - vm.top});
     }
     const TableColumnWidths columns = fitTableColumns(maxKeyW, maxValW);
     float contentW = columns.key + kTableColumnGap + columns.value;

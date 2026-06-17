@@ -1638,7 +1638,7 @@ float Input::clearButtonTextReserveWidth() const noexcept {
 bool Input::hasSelection() const noexcept { return selectionStart() != selectionEnd(); }
 
 std::size_t Input::selectionStart() const noexcept {
-  return std::min(std::min(m_selectionAnchor, m_cursorPos), m_value.size());
+  return std::min({m_selectionAnchor, m_cursorPos, m_value.size()});
 }
 
 std::size_t Input::selectionEnd() const noexcept {

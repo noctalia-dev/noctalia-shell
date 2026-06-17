@@ -706,7 +706,7 @@ void LauncherPanel::onInputChanged(const std::string& text) {
       continue;
     }
     if (text.size() >= prefix.size()
-        && std::string_view(text).substr(0, prefix.size()) == prefix
+        && std::string_view(text).starts_with(prefix)
         && (activeProvider == nullptr || prefix.size() > activeProvider->prefix().size())) {
       activeProvider = provider.get();
       queryText = std::string_view(text).substr(prefix.size());

@@ -294,7 +294,7 @@ struct PolkitAgent::Impl {
       g_cancellable_cancel(registerCancellable);
     }
     {
-      std::lock_guard lock(registerMutex);
+      std::scoped_lock lock(registerMutex);
       registrationShutdown = true;
     }
     if (registerThread.joinable()) {
@@ -398,7 +398,7 @@ struct PolkitAgent::Impl {
   void setRegistrationResult(gpointer handle, bool ok, std::string error) {
     bool shouldUnregister = false;
     {
-      std::lock_guard lock(registerMutex);
+      std::scoped_lock lock(registerMutex);
       if (registrationShutdown) {
         shouldUnregister = handle != nullptr;
       } else {
@@ -415,7 +415,7 @@ struct PolkitAgent::Impl {
   }
 
   bool registrationReady() const {
-    std::lock_guard lock(registerMutex);
+    std::scoped_lock lock(registerMutex);
     return registrationComplete;
   }
 
@@ -424,7 +424,7 @@ struct PolkitAgent::Impl {
     bool ok = false;
     std::string error;
     {
-      std::lock_guard lock(registerMutex);
+      std::scoped_lock lock(registerMutex);
       if (!registrationComplete) {
         return;
       }

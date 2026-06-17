@@ -97,7 +97,7 @@ namespace i18n::detail {
     [[nodiscard]] ParsedTag parseTag(std::string_view tag) {
       ParsedTag parsed;
       for (std::string_view part : split(tag)) {
-        parsed.parts.push_back(std::string(part));
+        parsed.parts.emplace_back(part);
       }
       if (parsed.parts.empty()) {
         return parsed;

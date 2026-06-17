@@ -51,6 +51,11 @@
       "network": {
         "wired": "Rete cablata"
       },
+      "privacy": {
+        "camera": "Camera",
+        "microphone": "Microfono",
+        "screen-sharing": "Condivisione schermo"
+      },
       "scripted": {
         "reload-failed": "Ricaricamento dello script non riuscito",
         "reloaded": "Script ricaricato"
@@ -113,6 +118,8 @@
   "control-center": {
     "audio": {
       "application-volumes": "Volume applicazioni",
+      "choose-effects-profile": "Scegli un profilo",
+      "effects-profile": "Effetti:",
       "input-volume": "Volume ingresso",
       "no-application-audio": "Nessun audio applicazione",
       "no-application-audio-body": "Nessun flusso di riproduzione applicazione disponibile al momento.",
@@ -376,6 +383,7 @@
         "inner-diameter": "Diametro interno",
         "input-opacity": "Opacità input",
         "input-radius": "Raggio input",
+        "interface": "Interfaccia",
         "layout": "Layout",
         "mirrored": "Specchiato",
         "opacity": "Opacità",
@@ -597,6 +605,10 @@
       "off": "Non disturbare disattivato",
       "on": "Non disturbare attivato"
     },
+    "effects": {
+      "input": "Effetti input",
+      "output": "Effetti output"
+    },
     "lock-keys": {
       "caps-off": "Caps Lock disattivato",
       "caps-on": "Caps Lock attivato",
@@ -751,7 +763,7 @@
           "clear": "Cancella",
           "edit": "Modifica stile",
           "fill": "Sfondo",
-          "fill-description": "Ruolo colore dello sfondo capsula; sono supportati anche codici colore esadecimali",
+          "fill-description": "Ruolo colore dello sfondo capsula; sono supportati anche codici colore in formato esadecimale",
           "foreground": "Primo piano",
           "foreground-description": "Ruolo colore di icone ed etichette per i widget in questo gruppo",
           "hint": "Parte di un gruppo capsula",
@@ -1255,7 +1267,7 @@
           "description": "Opacità dello sfondo della barra"
         },
         "border": {
-          "description": "Ruolo colore per il contorno della barra; sono supportati anche codici colore esadecimali",
+          "description": "Ruolo colore per il contorno della barra; sono supportati anche codici colore in formato esadecimale",
           "label": "Bordo"
         },
         "border-width": {
@@ -1263,15 +1275,15 @@
           "label": "Larghezza bordo"
         },
         "capsule-border": {
-          "description": "Ruolo colore predefinito del contorno capsula; sono supportati anche codici colore esadecimali",
+          "description": "Ruolo colore predefinito del contorno capsula; sono supportati anche codici colore in formato esadecimale",
           "label": "Bordo capsula"
         },
         "capsule-fill": {
-          "description": "Ruolo colore predefinito dello sfondo capsula; sono supportati anche codici colore esadecimali",
+          "description": "Ruolo colore predefinito dello sfondo capsula; sono supportati anche codici colore in formato esadecimale",
           "label": "Riempimento capsula"
         },
         "capsule-foreground": {
-          "description": "Ruolo colore predefinito per icone ed etichette dentro le capsule; sono supportati anche codici colore esadecimali",
+          "description": "Ruolo colore predefinito per icone ed etichette dentro le capsule; sono supportati anche codici colore in formato esadecimale",
           "label": "Primo piano capsula"
         },
         "capsule-opacity": {
@@ -1371,11 +1383,11 @@
           "label": "Capsule widget"
         },
         "widget-color": {
-          "description": "Ruolo colore predefinito per icone ed etichette dei widget su questa barra; sono supportati anche codici colore esadecimali",
+          "description": "Ruolo colore predefinito per icone ed etichette dei widget su questa barra; sono supportati anche codici colore in formato esadecimale",
           "label": "Colore widget"
         },
         "widget-icon-color": {
-          "description": "Sostituisce il colore del widget per le icone su questa barra; sono supportati anche codici colore esadecimali",
+          "description": "Sostituisce il colore del widget per le icone su questa barra; sono supportati anche codici colore in formato esadecimale",
           "label": "Colore icona widget"
         },
         "widget-spacing": {
@@ -1743,6 +1755,10 @@
         "control-center-sidebar-section": {
           "description": "Quando si apre una scheda specifica (volume, media ecc.)",
           "label": "Barra laterale aprendo una scheda"
+        },
+        "floating-offset": {
+          "description": "Spazio in pixel tra un pannello mobile o staccato e il bordo della barra",
+          "label": "Offset mobile"
         },
         "home-shortcuts": {
           "description": "Scegli fino a sei pulsanti scorciatoia per la scheda home",
@@ -2404,6 +2420,10 @@
         "workspace-label-inside": "Dentro pillola"
       },
       "settings": {
+        "active-color": {
+          "description": "Colore utilizzato per gli indicatori di privacy attiva; sono supportati anche codici colore in formato esadecimale",
+          "label": "Colore attivo"
+        },
         "active-opacity": {
           "description": "Opacità dell'icona per la finestra attiva (con focus).",
           "label": "Opacità icona attiva"
@@ -2424,20 +2444,24 @@
           "description": "Numero di bande del visualizzatore",
           "label": "Bande"
         },
+        "cam-filter-regex": {
+          "description": "Espressione regolare per i nomi dei processi della camera da ignorare",
+          "label": "Filtro Regex camera"
+        },
         "capsule": {
           "description": "Disegna una capsula dietro il widget",
           "label": "Capsula"
         },
         "capsule-border": {
-          "description": "Ruolo colore per il contorno capsula; sono supportati anche codici colore esadecimali",
+          "description": "Ruolo colore per il contorno capsula; sono supportati anche codici colore in formato esadecimale",
           "label": "Bordo capsula"
         },
         "capsule-fill": {
-          "description": "Ruolo colore per lo sfondo capsula; sono supportati anche codici colore esadecimali",
+          "description": "Ruolo colore per lo sfondo capsula; sono supportati anche codici colore in formato esadecimale",
           "label": "Riempimento capsula"
         },
         "capsule-foreground": {
-          "description": "Ruolo colore per il contenuto dentro la capsula; sono supportati anche codici colore esadecimali",
+          "description": "Ruolo colore per il contenuto dentro la capsula; sono supportati anche codici colore in formato esadecimale",
           "label": "Primo piano capsula"
         },
         "capsule-opacity": {
@@ -2459,7 +2483,7 @@
           "label": "Centrato"
         },
         "color": {
-          "description": "Ruolo colore per il primo piano del widget; sono supportati anche codici colore esadecimali",
+          "description": "Ruolo colore per il primo piano del widget; sono supportati anche codici colore in formato esadecimale",
           "label": "Colore"
         },
         "color-1": {
@@ -2517,11 +2541,11 @@
           "label": "Colonne cassetto"
         },
         "empty-color": {
-          "description": "Ruolo colore usato per workspace vuoti; sono supportati anche codici colore esadecimali",
+          "description": "Ruolo colore usato per workspace vuoti; sono supportati anche codici colore in formato esadecimale",
           "label": "Colore vuoto"
         },
         "focused-color": {
-          "description": "Ruolo colore usato per il workspace con focus; sono supportati anche codici colore esadecimali",
+          "description": "Ruolo colore usato per il workspace con focus; sono supportati anche codici colore in formato esadecimale",
           "label": "Colore focus"
         },
         "font-family": {
@@ -2538,7 +2562,8 @@
         },
         "glyph": {
           "description": "Nome glifo icona",
-          "label": "Glifo"
+          "label": "Glifo",
+          "sysmon-description": "Glifo icona personalizzata. Lasciare vuoto per usare l'icona della metrica selezionata."
         },
         "group-by-workspace": {
           "description": "Raggruppa le icone della taskbar in capsule workspace quando i dati del compositor sono disponibili",
@@ -2559,6 +2584,10 @@
         "hide-empty-workspaces": {
           "description": "Quando si raggruppa per workspace, omette le capsule senza finestre in esecuzione nell'elenco taskbar.",
           "label": "Nascondi workspace vuoti"
+        },
+        "hide-inactive": {
+          "description": "Nascondi le icone privacy inattive e nascondi il widget quando non c'è nulla di attivo",
+          "label": "Nascondi inattivo"
         },
         "hide-when-empty": {
           "description": "Nasconde le pillole workspace quando non ci sono finestre aperte",
@@ -2602,16 +2631,28 @@
           "label": "Aggiornamento a caldo"
         },
         "icon-color": {
-          "description": "Sostituisce il colore del widget solo per le icone; sono supportati anche i colori in formato esadecimale",
+          "description": "Sostituisce il colore del widget solo per le icone; sono supportati anche codici colore in formato esadecimale",
           "label": "Colore icona"
         },
         "icon-size": {
           "description": "Dimensione icona in pixel",
           "label": "Dimensione icona"
         },
+        "icon-spacing": {
+          "description": "Spaziatura in pixel tra le icone dell'indicatore privacy",
+          "label": "Spaziatura icone"
+        },
+        "inactive-color": {
+          "description": "Colore utilizzato per gli indicatori di privacy inattivi; sono supportati anche codici colore in formato esadecimale",
+          "label": "Colore inattivo"
+        },
         "inactive-opacity": {
           "description": "Opacità delle icone per finestre inattive (senza focus).",
           "label": "Opacità icona inattiva"
+        },
+        "interface": {
+          "description": "Interfaccia di rete da monitorare; lasciare vuoto per riportare il totale su tutte le interfacce",
+          "label": "Interfaccia"
         },
         "label": {
           "description": "Testo statico opzionale mostrato su questo pulsante",
@@ -2643,6 +2684,10 @@
           "description": "Lunghezza massima widget in pixel",
           "label": "Lunghezza max"
         },
+        "mic-filter-regex": {
+          "description": "Espressione regolare per i nomi dei processi microfono da ignorare",
+          "label": "Filtro Regex microfono"
+        },
         "middle-command": {
           "description": "Comando shell eseguito al click centrale su questo pulsante. Se impostato, il click centrale apre questo comando invece delle impostazioni widget.",
           "label": "Comando click centrale"
@@ -2661,7 +2706,7 @@
           "label": "Specchiato"
         },
         "occupied-color": {
-          "description": "Ruolo colore usato per workspace occupati; sono supportati anche codici colore esadecimali",
+          "description": "Ruolo colore usato per workspace occupati; sono supportati anche codici colore in formato esadecimale",
           "label": "Colore occupato"
         },
         "only-active-workspace": {
@@ -2829,6 +2874,7 @@
         "nightlight": "Luce notturna",
         "notifications": "Notifiche",
         "power-profile": "Profilo energetico",
+        "privacy": "Indicatore privacy",
         "screenshot": "Cattura schermo",
         "scripted": "Scriptato",
         "session": "Sessione",

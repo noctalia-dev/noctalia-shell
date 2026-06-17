@@ -68,14 +68,14 @@ namespace {
     // Try key[lang_COUNTRY]=
     if (!locale.country.empty()) {
       std::string locKey = key + "[" + locale.country + "]=";
-      if (line.size() > locKey.size() && line.compare(0, locKey.size(), locKey) == 0) {
+      if (line.size() > locKey.size() && line.starts_with(locKey)) {
         return line.substr(locKey.size());
       }
     }
     // Try key[lang]=
     if (!locale.lang.empty()) {
       std::string locKey = key + "[" + locale.lang + "]=";
-      if (line.size() > locKey.size() && line.compare(0, locKey.size(), locKey) == 0) {
+      if (line.size() > locKey.size() && line.starts_with(locKey)) {
         return line.substr(locKey.size());
       }
     }
@@ -141,7 +141,7 @@ namespace {
 
         if (line == "[Desktop Entry]") {
           inDesktopEntry = true;
-        } else if (line.size() > 17 && line.compare(0, 16, "[Desktop Action ") == 0 && line.back() == ']') {
+        } else if (line.size() > 17 && line.starts_with("[Desktop Action ") && line.back() == ']') {
           currentActionId = line.substr(16, line.size() - 17);
           if (!currentActionId.empty()) {
             inAction = true;

@@ -51,6 +51,11 @@
       "network": {
         "wired": "Правадны"
       },
+      "privacy": {
+        "camera": "Камера",
+        "microphone": "Мікрафон",
+        "screen-sharing": "Абагульненне экрана"
+      },
       "scripted": {
         "reload-failed": "Не ўдалося перазапусціць скрыпт",
         "reloaded": "Скрыпт перазапушчаны"
@@ -113,6 +118,8 @@
   "control-center": {
     "audio": {
       "application-volumes": "Гучнасць праграм",
+      "choose-effects-profile": "Выберыце профіль",
+      "effects-profile": "Эфекты:",
       "input-volume": "Гучнасць уводу",
       "no-application-audio": "Аўдыя не прайграваецца",
       "no-application-audio-body": "Зараз няма праграм, якія прайграваюць аўдыя.",
@@ -376,6 +383,7 @@
         "inner-diameter": "Унутраны дыяметр",
         "input-opacity": "Непразрыстасць поля уводу",
         "input-radius": "Радыус поля ўводу",
+        "interface": "Інтэрфейс",
         "layout": "Макет",
         "mirrored": "Адлюстраванне",
         "opacity": "Непразрыстасць",
@@ -577,6 +585,7 @@
       "lockscreen-widgets-editor-blocked-locked": "Разблакіруйце сеанс перад тым, як рэдагаваць віджэты.",
       "lockscreen-widgets-editor-enabled": "Рэдактар віджэтаў працоўнага стала ўключаны. Наладзьце віджэты на накладке папярэдняга прагляду, затым заблакіруйце сеанс, каб пацвердзіць макет.",
       "mpris-disabled": "MPRIS выключаны",
+      "screen-time-reset": "Экранны час",
       "screen-time-reset-success": "Гісторыя выкарыстання ачышчана.",
       "session-bus-unavailable": "Шына сеанса недаступна",
       "wallpaper-palette-export": "Уласная палітра",
@@ -595,6 +604,10 @@
     "dnd": {
       "off": "Не турбаваць выключана",
       "on": "Не турбаваць уключана"
+    },
+    "effects": {
+      "input": "Эфекты уводу",
+      "output": "Эфекты вываду"
     },
     "lock-keys": {
       "caps-off": "Caps Lock выключаны",
@@ -700,6 +713,54 @@
       },
       "select": {
         "unknown-value": "Невядома: {value}"
+      }
+    },
+    "dialogs": {
+      "color-picker": {
+        "title": "Выберыце колер"
+      }
+    },
+    "entities": {
+      "bar": {
+        "create": "Стварыць",
+        "delete": "Выдаліць",
+        "delete-confirm-desc": "Гэта графічная панэль будзе выдалена з файла settings.toml.",
+        "delete-confirm-title": "Выдаліць «{name}»?",
+        "id-placeholder": "Ідэнтыфікатар панэлі",
+        "label": "Панэль: {name}",
+        "management": "Панэль",
+        "move-down": "Перамясціць уніз",
+        "move-up": "Перамясціць уверх",
+        "new": "Новая панэль",
+        "rename": "Перайменаваць",
+        "rename-save": "Захаваць"
+      },
+      "monitor-override": {
+        "create": "Стварыць",
+        "delete": "Выдаліць",
+        "delete-confirm-desc": "Гэты графічны манітор будзе выдалены з файла settings.toml.",
+        "delete-confirm-title": "Выдаліць «{name}»?",
+        "label": "Манітор: {name}",
+        "management": "Перавызначэнне манітора",
+        "match-placeholder": "Суаднясенне манітора",
+        "new": "Перавызначэнне манітора",
+        "rename": "Перайменаваць",
+        "rename-save": "Захаваць"
+      },
+      "widget": {
+        "add": "Дадаць віджэт",
+        "detail": {
+          "custom": "уласны віджэт"
+        },
+        "editor": {
+          "description": "Упарадкаванне віджэтаў на панэлях",
+          "title": "Віджэты панэлі"
+        },
+        "group": {
+          "action": "Згрупіраваць",
+          "border": "Мяжа",
+          "clear": "Ачысціць"
+        }
       }
     },
     "schema": {

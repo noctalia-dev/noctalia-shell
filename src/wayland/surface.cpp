@@ -669,7 +669,7 @@ std::vector<InputRect> Surface::tessellateShape(
       l = std::clamp(l, 0.0f, W);
       r = std::clamp(r, l, W);
       if (r > l) {
-        segs.push_back({l, r});
+        segs.emplace_back(l, r);
       }
     };
 

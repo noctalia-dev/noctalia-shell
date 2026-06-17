@@ -1231,7 +1231,7 @@ bool ConfigService::createBarOverride(std::string_view name) {
   barTbl->insert_or_assign("enabled", true);
 
   auto order = barOrderNames(m_config.bars);
-  order.push_back(std::string(name));
+  order.emplace_back(name);
   if (!setBarOverrideOrder(m_overridesTable, order)) {
     return false;
   }

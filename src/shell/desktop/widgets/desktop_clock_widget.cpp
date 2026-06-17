@@ -13,6 +13,7 @@
 #include <cmath>
 #include <ctime>
 #include <memory>
+#include <numbers>
 
 namespace {
 
@@ -61,12 +62,11 @@ namespace {
 
   constexpr float kShadowAlpha = 0.6f;
   constexpr float kShadowOffset = 1.5f;
-  constexpr float kPi = 3.14159265358979323846f;
   constexpr float kHourHandReach = 0.54f;
   constexpr float kMinuteHandReach = 0.90f;
   constexpr float kSecondHandReach = 0.84f;
 
-  [[nodiscard]] float degreesToRadians(float degrees) { return degrees * (kPi / 180.0f); }
+  [[nodiscard]] float degreesToRadians(float degrees) { return degrees * (std::numbers::pi_v<float> / 180.0f); }
 
   struct LocalTimeParts {
     int hour = 0;

@@ -110,7 +110,7 @@ std::vector<LauncherResult> EmojiProvider::query(std::string_view text) const {
       bestScore = 1000;
     }
     // Name prefix
-    else if (e.nameLower.size() >= query.size() && e.nameLower.compare(0, query.size(), query) == 0) {
+    else if (e.nameLower.size() >= query.size() && e.nameLower.starts_with(query)) {
       bestScore = 500;
     }
     // Name contains
@@ -122,7 +122,7 @@ std::vector<LauncherResult> EmojiProvider::query(std::string_view text) const {
       for (const auto& kw : e.keywords) {
         if (kw == query) {
           bestScore = std::max(bestScore, 150);
-        } else if (kw.size() >= query.size() && kw.compare(0, query.size(), query) == 0) {
+        } else if (kw.size() >= query.size() && kw.starts_with(query)) {
           bestScore = std::max(bestScore, 100);
         } else if (kw.contains(query)) {
           bestScore = std::max(bestScore, 50);
@@ -154,7 +154,7 @@ std::vector<LauncherResult> EmojiProvider::query(std::string_view text) const {
 }
 
 bool EmojiProvider::activate(const LauncherResult& result) {
-  if (result.id.substr(0, 6) != "emoji-") {
+  if (!result.id.starts_with("emoji-")) {
     return false;
   }
 

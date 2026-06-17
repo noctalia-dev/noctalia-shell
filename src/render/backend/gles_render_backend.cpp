@@ -236,11 +236,11 @@ void GlesRenderBackend::initialize(GlSharedContext& shared) {
 
   if (!g_backendInfoLogged) {
     kLog.info(
-        "EGL vendor=\"{}\" version=\"{}\" APIs=\"{}\"", safeCString(eglQueryString(m_display, EGL_VENDOR)),
+        R"(EGL vendor="{}" version="{}" APIs="{}")", safeCString(eglQueryString(m_display, EGL_VENDOR)),
         safeCString(eglQueryString(m_display, EGL_VERSION)), safeCString(eglQueryString(m_display, EGL_CLIENT_APIS))
     );
     kLog.info(
-        "OpenGL ES vendor=\"{}\" renderer=\"{}\" version=\"{}\"",
+        R"(OpenGL ES vendor="{}" renderer="{}" version="{}")",
         safeCString(reinterpret_cast<const char*>(glGetString(GL_VENDOR))),
         safeCString(reinterpret_cast<const char*>(glGetString(GL_RENDERER))),
         safeCString(reinterpret_cast<const char*>(glGetString(GL_VERSION)))

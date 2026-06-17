@@ -881,10 +881,10 @@ void MediaTab::refresh(Renderer& renderer) {
         kLog.debug("artwork unresolved url=\"{}\"", resolvedArtUrl);
         clearArt(renderer);
       } else if (!m_artwork->setSourceFile(renderer, artPath, mediaTabArtDecodeSize(contentScale()), true, true)) {
-        kLog.warn("artwork load failed url=\"{}\" path=\"{}\"", resolvedArtUrl, artPath);
+        kLog.warn(R"(artwork load failed url="{}" path="{}")", resolvedArtUrl, artPath);
         clearArt(renderer);
       } else {
-        kLog.debug("artwork loaded url=\"{}\" path=\"{}\"", resolvedArtUrl, artPath);
+        kLog.debug(R"(artwork loaded url="{}" path="{}")", resolvedArtUrl, artPath);
         loaded = true;
       }
 

@@ -8,6 +8,7 @@
 #include "core/ui_phase.h"
 #include "ipc/ipc_service.h"
 #include "render/render_context.h"
+#include "shell/bar/bar_reserved_zone.h"
 #include "shell/clipboard/clipboard_panel.h"
 #include "shell/control_center/control_center_panel.h"
 #include "shell/surface/shadow.h"
@@ -467,6 +468,32 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     }
   }
 
+  // Single-bar detached panels are placed relative to the bar's config edge. Honor
+  // other surfaces' exclusive zones (exclusive_zone = 0 below) and anchor to the
+  // bar's reserved edge so the panel tracks the bar's real on-screen position;
+  // subtract the bar's own reservation on the main axis to avoid double-counting.
+  // Reproduces the prior absolute placement when nothing else reserves space.
+  const bool useBarRelativeDetached = !useCenteredPlacement && !useReservedEdgePlacement;
+  if (useBarRelativeDetached) {
+    const std::int32_t barReserved =
+        barConfig.reserveSpace ? reservedBarExclusiveZone(barConfig, m_config->config().shell.shadow) : 0;
+    const auto sw = static_cast<std::int32_t>(detachedSurfaceWidth);
+    const auto sh = static_cast<std::int32_t>(detachedSurfaceHeight);
+    if (isBottom) {
+      standaloneAnchor = LayerShellAnchor::Bottom | LayerShellAnchor::Left;
+      standaloneMarginBottom = outputHeight - sh - standaloneMarginTop - barReserved;
+      standaloneMarginTop = 0;
+    } else if (isRight) {
+      standaloneAnchor = LayerShellAnchor::Top | LayerShellAnchor::Right;
+      standaloneMarginRight = outputWidth - sw - standaloneMarginLeft - barReserved;
+      standaloneMarginLeft = 0;
+    } else if (isLeft) {
+      standaloneMarginLeft -= barReserved;
+    } else {
+      standaloneMarginTop -= barReserved;
+    }
+  }
+
   const bool useAttachedPlacement = activePlacement == PanelPlacement::Attached
       && !multipleBarsOnEdge
       && (m_attachedPanelAvailabilityCallback == nullptr
@@ -487,7 +514,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
       .anchor = standaloneAnchor,
       .width = detachedSurfaceWidth,
       .height = detachedSurfaceHeight,
-      .exclusiveZone = useReservedEdgePlacement ? 0 : -1,
+      .exclusiveZone = useCenteredPlacement ? -1 : 0,
       .marginTop = standaloneMarginTop,
       .marginRight = standaloneMarginRight,
       .marginBottom = standaloneMarginBottom,
@@ -681,19 +708,44 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     }
     m_attachedPanelGeometry = attachedGeometry;
 
-    // Layer-shell surface anchored top-left of the output for absolute positioning.
-    // exclusive_zone = -1 so the bar reservation does not shift our marginTop.
+    // Anchor against the bar's reserved edge and honor other surfaces' exclusive
+    // zones (exclusive_zone = 0). The compositor stacks the panel past any external
+    // reservation on that edge exactly as it does the bar, so the panel tracks the
+    // bar's real on-screen position. surfaceX/surfaceY are computed from the bar's
+    // config edge; subtracting the bar's own reservation on the main axis avoids
+    // double-counting it. With no other reservation this matches the old absolute
+    // placement; it self-corrects by the external reservation when one exists.
+    const std::int32_t barReserved = barConfig.reserveSpace ? reservedBarExclusiveZone(barConfig, shadowConfig) : 0;
+    std::uint32_t attachedAnchor = LayerShellAnchor::Top | LayerShellAnchor::Left;
+    std::int32_t attachedMarginTop = surfaceY;
+    std::int32_t attachedMarginRight = 0;
+    std::int32_t attachedMarginBottom = 0;
+    std::int32_t attachedMarginLeft = surfaceX;
+    if (barIsBottom) {
+      attachedAnchor = LayerShellAnchor::Bottom | LayerShellAnchor::Left;
+      attachedMarginTop = 0;
+      attachedMarginBottom = outputHeight - static_cast<std::int32_t>(surfaceHeight) - surfaceY - barReserved;
+    } else if (barIsRight) {
+      attachedAnchor = LayerShellAnchor::Top | LayerShellAnchor::Right;
+      attachedMarginLeft = 0;
+      attachedMarginRight = outputWidth - static_cast<std::int32_t>(surfaceWidth) - surfaceX - barReserved;
+    } else if (barIsLeft) {
+      attachedMarginLeft = surfaceX - barReserved;
+    } else {
+      attachedMarginTop = surfaceY - barReserved;
+    }
+
     auto attachedConfig = LayerSurfaceConfig{
         .nameSpace = "noctalia-attached-panel",
         .layer = panelLayer,
-        .anchor = LayerShellAnchor::Top | LayerShellAnchor::Left,
+        .anchor = attachedAnchor,
         .width = surfaceWidth,
         .height = surfaceHeight,
-        .exclusiveZone = -1,
-        .marginTop = surfaceY,
-        .marginRight = 0,
-        .marginBottom = 0,
-        .marginLeft = surfaceX,
+        .exclusiveZone = 0,
+        .marginTop = attachedMarginTop,
+        .marginRight = attachedMarginRight,
+        .marginBottom = attachedMarginBottom,
+        .marginLeft = attachedMarginLeft,
         .keyboard = (m_platform != nullptr
                      && m_platform->focusGrabService() != nullptr
                      && m_platform->focusGrabService()->available())

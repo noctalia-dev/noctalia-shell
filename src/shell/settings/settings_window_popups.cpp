@@ -376,7 +376,7 @@ void SettingsWindow::openBarWidgetAddPopup(const std::vector<std::string>& laneP
         for (const auto& [key, settingValue] : initialSettings) {
           overrides.push_back({{"widget", newInstanceId, key}, settingValue});
         }
-        overrides.push_back({selectedLanePath, laneItems});
+        overrides.emplace_back(selectedLanePath, laneItems);
         setSettingOverrides(overrides);
         return;
       }

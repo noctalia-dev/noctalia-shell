@@ -1032,8 +1032,8 @@ void WallpaperPanel::rebuildFavoritePaletteDetailSelect(const WallpaperFavorite*
     switch (source) {
     case PaletteSource::Builtin:
       for (const auto& builtin : noctalia::theme::builtinPalettes()) {
-        m_favoritePaletteDetailValues.push_back(std::string(builtin.name));
-        labels.push_back(std::string(builtin.name));
+        m_favoritePaletteDetailValues.emplace_back(builtin.name);
+        labels.emplace_back(builtin.name);
       }
       selectedValue = favorite->builtinPalette;
       break;

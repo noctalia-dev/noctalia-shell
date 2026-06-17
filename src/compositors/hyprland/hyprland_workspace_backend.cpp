@@ -738,7 +738,7 @@ std::vector<std::string_view> HyprlandWorkspaceBackend::parseEventArgs(std::stri
     args.push_back(data.substr(start));
   }
   while (args.size() < count) {
-    args.push_back({});
+    args.emplace_back();
   }
   return args;
 }

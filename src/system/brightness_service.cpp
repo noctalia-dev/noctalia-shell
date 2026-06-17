@@ -39,6 +39,7 @@
 #include <thread>
 #include <unistd.h>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -538,10 +539,10 @@ namespace {
   std::vector<std::string> ddcDetectArgs(const std::vector<std::string>& ignoreMmids) {
     std::vector<std::string> args{"ddcutil", "--noconfig"};
     for (const auto& mmid : ignoreMmids) {
-      args.push_back("--ignore-mmid");
+      args.emplace_back("--ignore-mmid");
       args.push_back(mmid);
     }
-    args.push_back("detect");
+    args.emplace_back("detect");
     return args;
   }
 
@@ -553,8 +554,8 @@ namespace {
   std::optional<std::pair<int, int>>
   queryDdcBrightness(int bus, std::chrono::milliseconds timeout, std::string* detailOut) {
     auto args = ddcBaseArgs(bus);
-    args.push_back("getvcp");
-    args.push_back("10");
+    args.emplace_back("getvcp");
+    args.emplace_back("10");
 
     const CommandResult result = runCommandCapture(args, timeout);
     if (detailOut != nullptr) {
@@ -682,15 +683,16 @@ struct BrightnessService::Impl {
   std::unordered_map<std::string, DdcJob> pendingRefreshes;
   std::queue<WorkerCompletion> completions;
 
-  Impl(SystemBus* systemBus, CompositorPlatform& compositorPlatform, const BrightnessConfig& config)
-      : bus(systemBus), wayland(compositorPlatform.wayland()), platform(compositorPlatform), activeConfig(config) {
+  Impl(SystemBus* systemBus, CompositorPlatform& compositorPlatform, BrightnessConfig config)
+      : bus(systemBus), wayland(compositorPlatform.wayland()), platform(compositorPlatform),
+        activeConfig(std::move(config)) {
     setupPollFds();
     workerThread = std::thread([this]() { workerLoop(); });
   }
 
   ~Impl() {
     {
-      std::lock_guard lock(workerMutex);
+      std::scoped_lock lock(workerMutex);
       workerStop = true;
       workerCv.notify_all();
     }
@@ -808,7 +810,7 @@ struct BrightnessService::Impl {
         internals.end()
     );
     {
-      std::lock_guard lock(workerMutex);
+      std::scoped_lock lock(workerMutex);
       pendingWrites.clear();
       pendingRefreshes.clear();
       detectPending = false;
@@ -931,7 +933,7 @@ struct BrightnessService::Impl {
     }
 
     warnedMissingDdcutil = false;
-    std::lock_guard lock(workerMutex);
+    std::scoped_lock lock(workerMutex);
     detectPending = true;
     detectGeneration = generation;
     workerCv.notify_all();
@@ -1045,7 +1047,7 @@ struct BrightnessService::Impl {
         .maxRaw = display.maxRaw,
     };
 
-    std::lock_guard lock(workerMutex);
+    std::scoped_lock lock(workerMutex);
     pendingWrites[display.pub.id] = job;
     pendingRefreshes.erase(display.pub.id);
     workerCv.notify_all();
@@ -1053,7 +1055,7 @@ struct BrightnessService::Impl {
 
   void queueDdcRefreshes() {
     const auto now = std::chrono::steady_clock::now();
-    std::lock_guard lock(workerMutex);
+    std::scoped_lock lock(workerMutex);
 
     for (const auto& display : internals) {
       if (display.backend != RuntimeBackend::Ddcutil) {
@@ -1134,9 +1136,9 @@ struct BrightnessService::Impl {
         completion.displayId = writeJob->displayId;
 
         auto args = ddcBaseArgs(writeJob->bus);
-        args.push_back("--noverify");
-        args.push_back("setvcp");
-        args.push_back("10");
+        args.emplace_back("--noverify");
+        args.emplace_back("setvcp");
+        args.emplace_back("10");
         args.push_back(std::to_string(std::clamp(writeJob->targetRaw, 0, std::max(1, writeJob->maxRaw))));
 
         const CommandResult result = runCommandCapture(args, kDdcSetTimeout);
@@ -1173,7 +1175,7 @@ struct BrightnessService::Impl {
 
   void enqueueCompletion(WorkerCompletion completion) {
     {
-      std::lock_guard lock(workerMutex);
+      std::scoped_lock lock(workerMutex);
       completions.push(std::move(completion));
     }
 
@@ -1217,7 +1219,7 @@ struct BrightnessService::Impl {
   void processCompletions() {
     std::queue<WorkerCompletion> ready;
     {
-      std::lock_guard lock(workerMutex);
+      std::scoped_lock lock(workerMutex);
       std::swap(ready, completions);
     }
 

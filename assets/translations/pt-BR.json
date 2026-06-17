@@ -39,6 +39,11 @@
       "network": {
         "wired": "Cabeada"
       },
+      "privacy": {
+        "camera": "Câmera",
+        "microphone": "Microfone",
+        "screen-sharing": "Compartilhamento de Tela"
+      },
       "scripted": {
         "reload-failed": "Falha ao recarregar o script",
         "reloaded": "script recarregado"
@@ -101,6 +106,8 @@
   "control-center": {
     "audio": {
       "application-volumes": "Volume de Aplicativos",
+      "choose-effects-profile": "Escolha um perfil",
+      "effects-profile": "Efeitos:",
       "input-volume": "Volume de Entrada",
       "no-application-audio": "Sem áudio de aplicativos",
       "no-application-audio-body": "Não há fluxos de reprodução de aplicativos disponíveis no momento.",
@@ -145,7 +152,8 @@
     "calendar": {
       "all-day": "O dia todo",
       "events": "Eventos",
-      "no-events": "nenhum evento."
+      "no-events": "nenhum evento.",
+      "today": "Hoje"
     },
     "display": {
       "disabled": "Desabilitado",
@@ -153,6 +161,7 @@
       "unknown-resolution": "Resolução desconhecida"
     },
     "home": {
+      "avatar-error-title": "Avatar não atualizado",
       "media": {
         "idle": "Ocioso",
         "no-active-player": "nenhum reprodutor ativo",
@@ -254,6 +263,11 @@
       "wifi": "Wi-Fi"
     },
     "system": {
+      "labels": {
+        "load": "Carga da CPU",
+        "ram": "RAM",
+        "swap": "Swap"
+      },
       "titles": {
         "cpu": "CPU",
         "gpu": "GPU",
@@ -307,6 +321,8 @@
       "actions": {
         "add": "Adicionar",
         "done": "Pronto",
+        "flip-horizontal": "Virar horizontalmente",
+        "flip-vertical": "Virar verticalmente",
         "hide": "Esconder",
         "settings": "Configurações",
         "show": "Exibir",
@@ -335,12 +351,15 @@
         "clock-style-analog": "Analógico",
         "clock-style-digital": "Digital",
         "color": "Cor",
+        "color-1": "Cor Um",
+        "color-2": "Cor Dois",
         "color2": "Cor 2",
         "custom-color": "Personalizar...",
         "description": "Descrição",
         "fade-when-idle": "Esmaecer Quando Ocioso",
         "font-family": "Fonte",
         "font-family-default": "Padrão do sistema",
+        "forecast-days": "Dias de Previsão do Tempo",
         "format": "Formato",
         "hide-when-no-media": "Esconder Quando Não houver mídia",
         "horizontal": "Horizontal",
@@ -348,6 +367,7 @@
         "inner-diameter": "Diâmetro Interno",
         "input-opacity": "Opacidade de Entrada",
         "input-radius": "Raio Externo da Entrada",
+        "interface": "Interface",
         "layout": "Layout",
         "mirrored": "Espelhado",
         "opacity": "Opacidade",
@@ -358,6 +378,7 @@
         "secondary-color": "Cor Secundária",
         "sensitivity": "Sensibilidade",
         "shadow": "Sombra",
+        "show-forecast": "Mostrar Previsão do Tempo",
         "show-label": "Mostrar rótulo",
         "show-login-button": "Botão de Login",
         "show-when-idle": "Mostrar Quando Ocioso",
@@ -395,6 +416,7 @@
         "clock": "Relógio",
         "fancy-audio-visualizer": "Vizualizador de Áudio Sofisticado",
         "label": "Texto",
+        "login-box": "Caixa de Login",
         "media-player": "Reprodutor de Mídia",
         "sticker": "Adesivo",
         "system-monitor": "Monitor do Sistema",
@@ -541,10 +563,14 @@
       "keybind-invalid-printable": "Teclas imprimíveis (letras, números, símbolos) requerem uma tecla modificadora como Ctrl ou Alt.",
       "keybind-invalid-super": "A tecla Super/Windows não pode ser usada em atalhos de teclado do shell.",
       "keybind-invalid-title": "Atalho de teclado não permitido",
+      "launcher-usage-reset": "Launcher",
+      "launcher-usage-reset-success": "Dados de uso limpos.",
       "lockscreen-widgets-editor": "Editor de widgets da tela de bloqueio",
       "lockscreen-widgets-editor-blocked-locked": "Desbloqueie a sessão antes de editar os widgets da tela de bloqueio.",
       "lockscreen-widgets-editor-enabled": "O editor de widgets da tela de bloqueio está ativado. Organize os widgets na sobreposição de visualização e, em seguida, bloqueie a sessão para verificar o layout.",
       "mpris-disabled": "MPRIS desabilitado",
+      "screen-time-reset": "Tempo de Tela",
+      "screen-time-reset-success": "Histórico de uso limpo.",
       "session-bus-unavailable": "Sessão bus indisponível",
       "wallpaper-palette-export": "Paleta personalizada",
       "wallpaper-palette-export-success": "Salvou \"{name}\" e mudou a origem da paleta para personalizada."
@@ -562,6 +588,10 @@
     "dnd": {
       "off": "Não perturbe desligado",
       "on": "Não perturbe ligado"
+    },
+    "effects": {
+      "input": "Efeitos de Entrada",
+      "output": "Efeitos de Saída"
     },
     "lock-keys": {
       "caps-off": "Caps Lock desligado",
@@ -623,6 +653,7 @@
       "advanced": "Avançado",
       "inherited": "herdado",
       "monitor": "Monitor",
+      "official": "Oficial",
       "override": "Sobrescrever"
     },
     "calendar-accounts": {
@@ -842,7 +873,7 @@
     "navigation": {
       "groups": {
         "audio": "áudio",
-        "automation": "automação",
+        "automation": "Automação",
         "backdrop": "Camada de fundo",
         "background": "Plano de fundo",
         "battery": "Bateria",
@@ -923,6 +954,20 @@
         "system": "Sistema",
         "templates": "Modelos",
         "wallpaper": "Papel de parede"
+      }
+    },
+    "notifications": {
+      "filter": {
+        "add": "Adicionar filtro",
+        "add-title": "Adicionar Filtro de Notificação",
+        "allowed-urgencies-label": "Permitir urgências",
+        "flag": {
+          "history": "histórico",
+          "sound": "som",
+          "toast": "notificação flutuante"
+        },
+        "match-label": "App",
+        "save-history": "Salvar no histórico"
       }
     },
     "options": {

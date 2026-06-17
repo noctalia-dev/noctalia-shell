@@ -35,8 +35,8 @@ void DesktopWidget::layout(Renderer& renderer) {
       m_maxNaturalHeight = 0.0f;
       m_fitRefScale = m_baseScale;
     }
-    m_maxNaturalWidth = std::max(m_maxNaturalWidth, std::max(1.0f, m_contentRoot->width()));
-    m_maxNaturalHeight = std::max(m_maxNaturalHeight, std::max(1.0f, m_contentRoot->height()));
+    m_maxNaturalWidth = std::max({m_maxNaturalWidth, 1.0f, m_contentRoot->width()});
+    m_maxNaturalHeight = std::max({m_maxNaturalHeight, 1.0f, m_contentRoot->height()});
 
     const float pad = m_bgEnabled ? std::round(m_bgPadding * m_baseScale) : 0.0f;
     const float innerW = std::max(1.0f, m_boxWidth - 2.0f * pad);

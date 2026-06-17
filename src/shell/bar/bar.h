@@ -140,6 +140,9 @@ private:
   [[nodiscard]] std::string hideBarIpc(std::string_view args);
   [[nodiscard]] std::string toggleBarIpc(std::string_view args);
   [[nodiscard]] std::string setBarAutoHideIpc(std::string_view args);
+  [[nodiscard]] std::string attachedPanelResizeTestIpc(std::string_view args);
+  [[nodiscard]] std::uint32_t attachedPanelResizeTestMaxExtent(const BarInstance& instance) const;
+  void setAttachedPanelResizeTestOpen(BarInstance& instance, bool open, std::uint32_t extent);
   [[nodiscard]] std::optional<std::string> collectBarIpcInstances(
       std::optional<std::string_view> barName, std::optional<std::string_view> monitorSelector,
       std::vector<BarInstance*>& instancesOut

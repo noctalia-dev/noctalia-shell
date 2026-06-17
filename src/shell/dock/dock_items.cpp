@@ -22,6 +22,7 @@
 #include <cmath>
 #include <linux/input-event-codes.h>
 #include <memory>
+#include <numbers>
 #include <utility>
 #include <vector>
 
@@ -232,7 +233,7 @@ namespace {
       return 1.0f;
     }
     const float t = distance / influence;
-    const float cosine = std::cos(t * static_cast<float>(M_PI) * 0.5f);
+    const float cosine = std::cos(t * std::numbers::pi_v<float> * 0.5f);
     // Squared cosine keeps the center pop but drops neighbors toward rest scale faster.
     const float falloff = cosine * cosine;
     return 1.0f + (maxMultiplier - 1.0f) * falloff;

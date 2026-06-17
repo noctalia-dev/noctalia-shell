@@ -480,7 +480,7 @@ bool EasyEffectsService::loadEffectsProfile(AudioEffectsProfileKind kind, std::s
   }
   if (*activePreset != trimmed) {
     kLog.warn(
-        "EasyEffects {} profile load mismatch requested=\"{}\" active=\"{}\"", effectsProfileKindName(kind), trimmed,
+        R"(EasyEffects {} profile load mismatch requested="{}" active="{}")", effectsProfileKindName(kind), trimmed,
         *activePreset
     );
     return false;

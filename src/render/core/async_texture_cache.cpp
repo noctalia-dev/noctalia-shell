@@ -82,7 +82,7 @@ AsyncTextureCache::~AsyncTextureCache() {
   m_readyListeners.clear();
 
   {
-    std::lock_guard<std::mutex> lock(m_queueMutex);
+    std::scoped_lock lock(m_queueMutex);
     m_shutdown.store(true);
   }
   m_queueCv.notify_all();
@@ -149,7 +149,7 @@ TextureHandle AsyncTextureCache::acquire(const std::string& path, int targetSize
   }
 
   {
-    std::lock_guard<std::mutex> lock(m_queueMutex);
+    std::scoped_lock lock(m_queueMutex);
     m_canceled.erase(key);
     if (!m_inFlight.contains(key)) {
       m_inFlight.insert(key);
@@ -199,7 +199,7 @@ void AsyncTextureCache::release(const std::string& path, int targetSize, bool mi
   }
 
   {
-    std::lock_guard<std::mutex> lock(m_queueMutex);
+    std::scoped_lock lock(m_queueMutex);
     if (m_inFlight.contains(key)) {
       m_canceled.insert(key);
     }
@@ -229,7 +229,7 @@ void AsyncTextureCache::dispatch(const std::vector<pollfd>& fds, std::size_t sta
 
   std::deque<DecodedJob> jobs;
   {
-    std::lock_guard<std::mutex> lock(m_resultMutex);
+    std::scoped_lock lock(m_resultMutex);
     jobs = std::move(m_results);
     m_results.clear();
   }
@@ -242,7 +242,7 @@ void AsyncTextureCache::dispatch(const std::vector<pollfd>& fds, std::size_t sta
   for (auto& job : jobs) {
     bool dropped = false;
     {
-      std::lock_guard<std::mutex> lock(m_queueMutex);
+      std::scoped_lock lock(m_queueMutex);
       m_inFlight.erase(job.key);
       if (auto canceled = m_canceled.find(job.key); canceled != m_canceled.end()) {
         m_canceled.erase(canceled);
@@ -379,7 +379,7 @@ void AsyncTextureCache::signalMain() {
 
 void AsyncTextureCache::pushResult(DecodedJob job) {
   {
-    std::lock_guard<std::mutex> lock(m_resultMutex);
+    std::scoped_lock lock(m_resultMutex);
     m_results.push_back(std::move(job));
   }
   signalMain();

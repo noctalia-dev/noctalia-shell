@@ -97,5 +97,5 @@ int IpcClient::send(const std::string& command) {
   std::fputs(response.c_str(), stdout);
 
   // Return 1 if the response indicates an error
-  return (response.compare(0, 6, "error:") == 0) ? 1 : 0;
+  return (response.starts_with("error:")) ? 1 : 0;
 }

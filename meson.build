@@ -965,6 +965,17 @@ log_test = executable('log_test',
 
 test('log', log_test)
 
+ipc_service_test = executable('ipc_service_test',
+  sources: files(
+    'tests/ipc_service_test.cpp',
+    'src/ipc/ipc_service.cpp',
+    'src/core/log.cpp',
+  ),
+  include_directories: _noctalia_inc,
+)
+
+test('ipc_service', ipc_service_test)
+
 process_test = executable('process_test',
   sources: files(
     'tests/process_test.cpp',

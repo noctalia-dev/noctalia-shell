@@ -344,7 +344,7 @@ namespace noctalia::theme {
         int tot = 0;
         for (const auto& e : entries)
           tot += e.count;
-        familyTotals.push_back({fam, tot});
+        familyTotals.emplace_back(fam, tot);
       }
       std::stable_sort(familyTotals.begin(), familyTotals.end(), [](const auto& a, const auto& b) {
         return a.second > b.second;
@@ -408,7 +408,7 @@ namespace noctalia::theme {
         int tot = 0;
         for (const auto& e : entries)
           tot += e.count;
-        familyTotals.push_back({fam, tot});
+        familyTotals.emplace_back(fam, tot);
       }
       std::stable_sort(familyTotals.begin(), familyTotals.end(), [](const auto& a, const auto& b) {
         return a.second > b.second;
@@ -526,10 +526,10 @@ namespace noctalia::theme {
       scoringInput.reserve(clusters.size());
       if (scheme == Scheme::Vibrant) {
         for (const auto& c : clusters)
-          scoringInput.push_back({c.centroid, c.count});
+          scoringInput.emplace_back(c.centroid, c.count);
       } else {
         for (const auto& c : clusters)
-          scoringInput.push_back({c.representative, c.count});
+          scoringInput.emplace_back(c.representative, c.count);
       }
 
       std::vector<Scored> scored;

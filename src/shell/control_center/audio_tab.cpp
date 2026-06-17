@@ -266,7 +266,7 @@ namespace {
     if (needle.empty() || haystack.size() < needle.size()) {
       return false;
     }
-    if (haystack.substr(0, needle.size()) != needle) {
+    if (!haystack.starts_with(needle)) {
       return false;
     }
     const std::size_t end = needle.size();

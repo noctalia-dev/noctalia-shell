@@ -2292,9 +2292,9 @@ void Application::initIpc() {
 bool Application::runUserCommand(const std::string& command) {
   constexpr std::string_view prefix = "noctalia:";
 
-  if (command.rfind(prefix, 0) == 0) {
+  if (command.starts_with(prefix)) {
     const std::string response = m_ipcService.execute(command.substr(prefix.size()));
-    if (response.rfind("error:", 0) == 0) {
+    if (response.starts_with("error:")) {
       kLog.warn("IPC command '{}' failed: {}", command, response.substr(0, response.find('\n')));
       return false;
     }
@@ -2311,9 +2311,9 @@ bool Application::runUserCommand(const std::string& command) {
 bool Application::runUserCommandBlocking(const std::string& command) {
   constexpr std::string_view prefix = "noctalia:";
 
-  if (command.rfind(prefix, 0) == 0) {
+  if (command.starts_with(prefix)) {
     const std::string response = m_ipcService.execute(command.substr(prefix.size()));
-    if (response.rfind("error:", 0) == 0) {
+    if (response.starts_with("error:")) {
       kLog.warn("IPC command '{}' failed: {}", command, response.substr(0, response.find('\n')));
       return false;
     }

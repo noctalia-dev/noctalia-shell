@@ -27,6 +27,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -593,8 +594,8 @@ namespace noctalia::theme {
 
     class EngineImpl {
     public:
-      explicit EngineImpl(const TemplateEngine::ThemeData& themeData, const TemplateEngine::Options& options)
-          : m_themeData(themeData), m_options(options) {}
+      explicit EngineImpl(TemplateEngine::ThemeData themeData, TemplateEngine::Options options)
+          : m_themeData(std::move(themeData)), m_options(std::move(options)) {}
 
       RenderResult render(std::string_view templateText) {
         m_errorCount = 0;
@@ -700,7 +701,7 @@ namespace noctalia::theme {
         while (pos < tokens.size()) {
           if (const auto* text = std::get_if<std::string>(&tokens[pos])) {
             if (!text->empty())
-              nodes.push_back(TextNode{*text});
+              nodes.emplace_back(TextNode{*text});
             ++pos;
             continue;
           }
@@ -715,9 +716,9 @@ namespace noctalia::theme {
           if (shouldStop)
             return nodes;
           if (cmd.starts_with("for ")) {
-            nodes.push_back(parseFor(tokens, pos));
+            nodes.emplace_back(parseFor(tokens, pos));
           } else if (cmd.starts_with("if ")) {
-            nodes.push_back(parseIf(tokens, pos));
+            nodes.emplace_back(parseIf(tokens, pos));
           } else {
             ++pos;
           }
@@ -1227,7 +1228,7 @@ namespace noctalia::theme {
           {"$XDG_CACHE_HOME", "XDG_CACHE_HOME", ".cache"},
       }};
       for (const XdgBase& b : kBases) {
-        if (path.rfind(b.token, 0) != 0)
+        if (!path.starts_with(b.token))
           continue;
         if (path.size() != b.token.size() && path[b.token.size()] != '/')
           continue;

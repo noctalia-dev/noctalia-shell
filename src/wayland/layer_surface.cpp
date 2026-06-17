@@ -122,7 +122,17 @@ void LayerSurface::requestSize(std::uint32_t width, std::uint32_t height) {
   std::uint32_t resolvedWidth = width;
   std::uint32_t resolvedHeight = height;
   if (resolvedWidth == 0) {
-    resolvedWidth = m_config.width != 0 ? m_config.width : std::max(Surface::width(), 1u);
+    const bool stretchWidth =
+        (m_config.anchor & LayerShellAnchor::Left) != 0 && (m_config.anchor & LayerShellAnchor::Right) != 0;
+    if (stretchWidth) {
+      resolvedWidth = 0;
+    } else if (m_config.width != 0) {
+      resolvedWidth = m_config.width;
+    } else if (Surface::width() != 0) {
+      resolvedWidth = Surface::width();
+    } else {
+      resolvedWidth = std::max(m_config.defaultWidth, 1u);
+    }
   }
   if (resolvedHeight == 0) {
     const bool stretchHeight =

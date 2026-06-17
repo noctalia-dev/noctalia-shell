@@ -551,7 +551,7 @@ namespace noctalia::theme {
       options.defaultMode = defaultMode;
       options.imagePath = imagePath ? imagePath : "";
       options.closestColor.clear();
-      options.schemeType = schemeName.rfind("m3-", 0) == 0 ? schemeName.substr(3) : schemeName;
+      options.schemeType = schemeName.starts_with("m3-") ? schemeName.substr(3) : schemeName;
       options.verbose = true;
       TemplateEngine engine(TemplateEngine::makeThemeData(palette), std::move(options));
 

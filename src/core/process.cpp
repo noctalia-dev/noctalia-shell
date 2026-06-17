@@ -217,7 +217,7 @@ namespace {
   }
 
   [[nodiscard]] std::vector<std::string> cachedProcessCommandLines() {
-    std::lock_guard lock(processCommandLineCacheMutex());
+    std::scoped_lock lock(processCommandLineCacheMutex());
     auto& cache = processCommandLineCache();
     const auto now = std::chrono::steady_clock::now();
     if (cache.capturedAt.time_since_epoch().count() == 0 || now - cache.capturedAt >= kProcessCommandLineCacheTtl) {
@@ -627,13 +627,13 @@ namespace {
       const std::string& appName
   ) {
     std::vector<std::string> systemdArgs;
-    systemdArgs.push_back("systemd-run");
-    systemdArgs.push_back("--user");
-    systemdArgs.push_back("--slice=app.slice");
+    systemdArgs.emplace_back("systemd-run");
+    systemdArgs.emplace_back("--user");
+    systemdArgs.emplace_back("--slice=app.slice");
     // Only end the service when all subprocesses have exited. Otherwise, apps using a launcher
     // script, e.g. vscode, would end prematurely when the script exits, and the actual app process
     // is still running.
-    systemdArgs.push_back("--property=ExitType=cgroup");
+    systemdArgs.emplace_back("--property=ExitType=cgroup");
 
     // We launch the app as a systemd service instead of a scope so the user can:
     // 1. Place drop-in files in ~/.config/systemd/user/app-<desktop-id>@.service.d/ to set properties like resource
@@ -652,10 +652,10 @@ namespace {
     process::RunOptions runOptions;
 
     if (!activationToken.empty()) {
-      systemdArgs.push_back("-E");
-      systemdArgs.push_back("XDG_ACTIVATION_TOKEN");
-      systemdArgs.push_back("-E");
-      systemdArgs.push_back("DESKTOP_STARTUP_ID");
+      systemdArgs.emplace_back("-E");
+      systemdArgs.emplace_back("XDG_ACTIVATION_TOKEN");
+      systemdArgs.emplace_back("-E");
+      systemdArgs.emplace_back("DESKTOP_STARTUP_ID");
       runOptions.env.push_back({"XDG_ACTIVATION_TOKEN", activationToken});
       runOptions.env.push_back({"DESKTOP_STARTUP_ID", activationToken});
     }
@@ -668,11 +668,11 @@ namespace {
         continue;
       }
       std::string name{*s, std::string_view(*s).find('=')};
-      systemdArgs.push_back("-E");
+      systemdArgs.emplace_back("-E");
       systemdArgs.push_back(name);
     }
 
-    systemdArgs.push_back("--");
+    systemdArgs.emplace_back("--");
     systemdArgs.insert(systemdArgs.end(), args.begin(), args.end());
     return process::runAsync(
         systemdArgs,

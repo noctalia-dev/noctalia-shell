@@ -422,7 +422,7 @@ const DataControlOps* extDataControlOps() { return &kExtDataControlOps; }
 const DataControlOps* wlrDataControlOps() { return &kWlrDataControlOps; }
 
 bool ClipboardEntry::isImage() const {
-  return std::ranges::any_of(mimeTypes, [](const std::string& mimeType) { return mimeType.rfind("image/", 0) == 0; });
+  return std::ranges::any_of(mimeTypes, [](const std::string& mimeType) { return mimeType.starts_with("image/"); });
 }
 
 bool ClipboardService::bind(void* manager, const DataControlOps* ops, wl_seat* seat) {
@@ -612,10 +612,10 @@ bool ClipboardService::copyEntry(const ClipboardEntry& entry) {
   mimeTypes.push_back(entry.dataMimeType);
   if (isTextMimeType(entry.dataMimeType)) {
     if (std::ranges::find(mimeTypes, std::string("text/plain;charset=utf-8")) == mimeTypes.end()) {
-      mimeTypes.push_back("text/plain;charset=utf-8");
+      mimeTypes.emplace_back("text/plain;charset=utf-8");
     }
     if (std::ranges::find(mimeTypes, std::string("text/plain")) == mimeTypes.end()) {
-      mimeTypes.push_back("text/plain");
+      mimeTypes.emplace_back("text/plain");
     }
   }
   return copyData(std::move(mimeTypes), entry.data);

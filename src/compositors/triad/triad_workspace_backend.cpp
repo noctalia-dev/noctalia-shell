@@ -710,7 +710,7 @@ std::string TriadWorkspaceBackend::workspaceKey(const WorkspaceState& workspace)
 }
 
 bool TriadWorkspaceBackend::isSyntheticPlaceholder(const WorkspaceState& workspace) {
-  return workspace.output.rfind("triad-", 0) == 0 && !workspace.active && !workspace.occupied && !workspace.urgent;
+  return workspace.output.starts_with("triad-") && !workspace.active && !workspace.occupied && !workspace.urgent;
 }
 
 std::optional<std::uint64_t> TriadWorkspaceBackend::jsonUnsigned(const nlohmann::json& json) {

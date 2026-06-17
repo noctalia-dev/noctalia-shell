@@ -39,6 +39,7 @@
 #include <limits>
 #include <linux/input-event-codes.h>
 #include <memory>
+#include <numbers>
 #include <string>
 #include <vector>
 #include <xkbcommon/xkbcommon-keysyms.h>
@@ -53,7 +54,7 @@ namespace {
   constexpr float kRotatePadding = 14.0f;
   constexpr float kHandleSize = 14.0f;
   constexpr float kDisabledWidgetOpacity = 0.25f;
-  constexpr float kRotationSnap = static_cast<float>(M_PI) / 12.0f;
+  constexpr float kRotationSnap = std::numbers::pi_v<float> / 12.0f;
   constexpr float kSnapGuideThresholdMin = 6.0f;
   constexpr float kSnapGuideThresholdMax = 18.0f;
   constexpr float kCenterGuideThickness = 3.0f;
@@ -120,11 +121,11 @@ namespace {
   }
 
   float normalizeAngle(float radians) {
-    while (radians > static_cast<float>(M_PI)) {
-      radians -= static_cast<float>(M_PI * 2.0);
+    while (radians > std::numbers::pi_v<float>) {
+      radians -= 2.0f * std::numbers::pi_v<float>;
     }
-    while (radians < -static_cast<float>(M_PI)) {
-      radians += static_cast<float>(M_PI * 2.0);
+    while (radians < -std::numbers::pi_v<float>) {
+      radians += 2.0f * std::numbers::pi_v<float>;
     }
     return radians;
   }

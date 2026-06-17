@@ -394,11 +394,11 @@ std::vector<std::string> physicalDiskMountPoints() {
     if (!(iss >> device >> mount >> fstype)) {
       continue;
     }
-    if (device.rfind("/dev/", 0) != 0 || device.rfind("/dev/loop", 0) == 0 || fstype == "squashfs") {
+    if (!device.starts_with("/dev/") || device.starts_with("/dev/loop") || fstype == "squashfs") {
       continue;
     }
     mount = unescapeMountField(mount);
-    if (mount == "/boot" || mount.rfind("/boot/", 0) == 0) {
+    if (mount == "/boot" || mount.starts_with("/boot/")) {
       continue;
     }
     const auto it = byDevice.find(device);

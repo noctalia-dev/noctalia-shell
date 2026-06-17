@@ -286,7 +286,7 @@ TextureHandle GlesTextureManager::uploadBgra(const std::uint8_t* data, int width
   }
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  m_textures.push_back(TextureId{tex});
+  m_textures.emplace_back(tex);
   return TextureHandle{.id = TextureId{tex}, .width = width, .height = height};
 }
 
@@ -319,6 +319,6 @@ TextureHandle GlesTextureManager::uploadPixels(
   }
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, toGlesFilter(filter));
 
-  m_textures.push_back(TextureId{tex});
+  m_textures.emplace_back(tex);
   return TextureHandle{.id = TextureId{tex}, .width = width, .height = height};
 }

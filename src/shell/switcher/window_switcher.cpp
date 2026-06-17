@@ -931,7 +931,7 @@ void WindowSwitcher::ensureSurface() {
 
   destroySurface();
 
-  auto inst = std::unique_ptr<Instance>(new Instance());
+  auto inst = std::make_unique<Instance>();
   inst->output = m_output;
   inst->uiLayoutScale = shellUiScale(m_config);
 

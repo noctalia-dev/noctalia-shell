@@ -547,7 +547,7 @@ namespace noctalia::config::schema {
             }
             if (out.provider.empty()) {
               diag.error(
-                  joinPath(parentPath, "provider"), "caldav accounts require provider = \"icloud\" or \"custom\""
+                  joinPath(parentPath, "provider"), R"(caldav accounts require provider = "icloud" or "custom")"
               );
               return;
             }

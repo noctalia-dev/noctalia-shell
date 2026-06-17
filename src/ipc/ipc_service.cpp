@@ -95,14 +95,15 @@ bool IpcService::start() {
 }
 
 void IpcService::registerHandler(
-    const std::string& command, Handler handler, std::string usage, std::string description
+    const std::string& command, Handler handler, std::string usage, std::string description,
+    HandlerVisibility visibility
 ) {
   // Remove existing entry for this command if re-registering
   m_handlers.erase(
       std::remove_if(m_handlers.begin(), m_handlers.end(), [&command](const auto& e) { return e.first == command; }),
       m_handlers.end()
   );
-  m_handlers.push_back({command, {std::move(handler), std::move(usage), std::move(description)}});
+  m_handlers.push_back({command, {std::move(handler), std::move(usage), std::move(description), visibility}});
 }
 
 void IpcService::dispatch() {
@@ -195,6 +196,9 @@ std::string IpcService::buildHelp() const {
   // Find the longest usage string for alignment
   std::size_t maxUsage = 0;
   for (const auto& [cmd, entry] : m_handlers) {
+    if (entry.visibility == HandlerVisibility::Hidden) {
+      continue;
+    }
     const auto& u = entry.usage.empty() ? cmd : entry.usage;
     maxUsage = std::max(maxUsage, u.size());
   }
@@ -202,6 +206,9 @@ std::string IpcService::buildHelp() const {
   std::string out = "Usage: noctalia msg <command> [args]\n\nCommands:\n";
   for (const auto index : order) {
     const auto& [cmd, entry] = m_handlers[index];
+    if (entry.visibility == HandlerVisibility::Hidden) {
+      continue;
+    }
     const auto& u = entry.usage.empty() ? cmd : entry.usage;
     out += "  ";
     out += u;

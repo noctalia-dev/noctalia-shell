@@ -51,6 +51,11 @@
       "network": {
         "wired": "Mạng có dây"
       },
+      "privacy": {
+        "camera": "Camera",
+        "microphone": "Micrô",
+        "screen-sharing": "Chia sẻ màn hình"
+      },
       "scripted": {
         "reload-failed": "Tải lại script thất bại",
         "reloaded": "Script đã được tải lại"
@@ -113,6 +118,8 @@
   "control-center": {
     "audio": {
       "application-volumes": "Âm lượng ứng dụng",
+      "choose-effects-profile": "Chọn một cấu hình",
+      "effects-profile": "Hiệu ứng:",
       "input-volume": "Âm lượng đầu vào",
       "no-application-audio": "Không có âm thanh từ ứng dụng",
       "no-application-audio-body": "Hiện không có ứng dụng nào đang phát âm thanh.",
@@ -376,6 +383,7 @@
         "inner-diameter": "Đường kính trong",
         "input-opacity": "Độ mờ đầu vào",
         "input-radius": "Bo góc đầu vào",
+        "interface": "Giao diện",
         "layout": "Bố cục",
         "mirrored": "Phản chiếu",
         "opacity": "Độ trong suốt",
@@ -596,6 +604,10 @@
     "dnd": {
       "off": "DND Tắt",
       "on": "DND Bật"
+    },
+    "effects": {
+      "input": "Hiệu ứng đầu vào",
+      "output": "Hiệu ứng đầu ra"
     },
     "lock-keys": {
       "caps-off": "Caps Lock Tắt",
@@ -1744,6 +1756,10 @@
           "description": "Khi mở một tab cụ thể (âm lượng, phương tiện, v.v.)",
           "label": "Thanh bên khi mở thẻ"
         },
+        "floating-offset": {
+          "description": "Khoảng cách (tính bằng pixel) giữa bảng nổi hoặc bảng tách rời và mép của thanh",
+          "label": "Độ lệch nổi"
+        },
         "home-shortcuts": {
           "description": "Chọn tối đa sáu nút lối tắt cho tab Trang chủ",
           "label": "Lối tắt Trang chủ"
@@ -2110,6 +2126,10 @@
           "description": "Hiển thị OSD popups khi Caps Lock, Num Lock và Scroll Lock thay đổi",
           "label": "Phím khóa"
         },
+        "osd-kinds-media": {
+          "description": "Hiển thị cửa sổ OSD khi bắt đầu phát bài hát mới",
+          "label": "Đang phát"
+        },
         "osd-kinds-power-profile": {
           "description": "Hiển thị OSD khi cấu hình nguồn thay đổi",
           "label": "Chế độ nguồn"
@@ -2400,6 +2420,10 @@
         "workspace-label-inside": "Bên trong viên thuốc"
       },
       "settings": {
+        "active-color": {
+          "description": "Màu dùng cho các chỉ báo quyền riêng tư đang hoạt động. Mã màu hex cố định cũng được hỗ trợ",
+          "label": "Màu khi hoạt động"
+        },
         "active-opacity": {
           "description": "Độ mờ đục của biểu tượng cho cửa sổ đang hoạt động (được lấy nét).",
           "label": "Độ mờ biểu tượng đang hoạt động"
@@ -2419,6 +2443,10 @@
         "bands": {
           "description": "Số lượng dải tần trực quan hóa",
           "label": "Băng"
+        },
+        "cam-filter-regex": {
+          "description": "Biểu thức chính quy cho tên tiến trình camera cần bỏ qua",
+          "label": "Bộ lọc camera"
         },
         "capsule": {
           "description": "Vẽ một Capsule phía sau Widget này",
@@ -2534,7 +2562,8 @@
         },
         "glyph": {
           "description": "Tên ký hiệu biểu tượng",
-          "label": "Biểu tượng"
+          "label": "Biểu tượng",
+          "sysmon-description": "Ký tự biểu tượng tùy chỉnh. Để trống để sử dụng biểu tượng của chỉ số đã chọn."
         },
         "group-by-workspace": {
           "description": "Nhóm các biểu tượng Taskbar vào các viên nang Workspace khi dữ liệu compositor có sẵn",
@@ -2555,6 +2584,10 @@
         "hide-empty-workspaces": {
           "description": "Khi nhóm theo Workspace, bỏ qua các Capsule không có cửa sổ nào đang chạy trong danh sách Taskbar.",
           "label": "Ẩn các không gian làm việc trống"
+        },
+        "hide-inactive": {
+          "description": "Ẩn các biểu tượng quyền riêng tư không hoạt động và ẩn widget khi không có mục nào đang hoạt động",
+          "label": "Ẩn khi không hoạt động"
         },
         "hide-when-empty": {
           "description": "Ẩn các thẻ không gian làm việc khi không có cửa sổ nào đang mở",
@@ -2605,9 +2638,21 @@
           "description": "Kích thước biểu tượng (pixel)",
           "label": "Kích thước biểu tượng"
         },
+        "icon-spacing": {
+          "description": "Khoảng cách giữa các biểu tượng chỉ báo quyền riêng tư (tính bằng pixel)",
+          "label": "Khoảng cách giữa các biểu tượng"
+        },
+        "inactive-color": {
+          "description": "Màu dùng cho các chỉ báo quyền riêng tư không hoạt động. Mã màu hex cố định cũng được hỗ trợ",
+          "label": "Màu khi không hoạt động"
+        },
         "inactive-opacity": {
           "description": "Độ mờ của các biểu tượng cho các cửa sổ không hoạt động (không được lấy nét)",
           "label": "Độ mờ biểu tượng không hoạt động"
+        },
+        "interface": {
+          "description": "Giao diện mạng cần theo dõi. Để trống để sử dụng tổng lưu lượng của tất cả giao diện",
+          "label": "Giao diện"
         },
         "label": {
           "description": "Văn bản tĩnh tùy chọn hiển thị trên nút này",
@@ -2638,6 +2683,10 @@
         "max-length": {
           "description": "Chiều dài tối đa của tiện ích (pixel)",
           "label": "Độ dài tối đa"
+        },
+        "mic-filter-regex": {
+          "description": "Biểu thức chính quy cho tên ứng dụng microphone cần bỏ qua",
+          "label": "Bộ lọc micrô"
         },
         "middle-command": {
           "description": "Lệnh shell được chạy khi nhấp chuột giữa vào nút này. Khi được đặt, nhấp chuột giữa sẽ mở lệnh này thay vì cài đặt widget.",
@@ -2825,6 +2874,7 @@
         "nightlight": "Ánh sáng đêm",
         "notifications": "Thông báo",
         "power-profile": "Chế độ nguồn",
+        "privacy": "Trạng thái quyền riêng tư",
         "screenshot": "Chụp màn hình",
         "scripted": "Kịch bản",
         "session": "Phiên",

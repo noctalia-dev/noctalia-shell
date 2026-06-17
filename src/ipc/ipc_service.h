@@ -9,6 +9,11 @@ class IpcService {
 public:
   using Handler = std::function<std::string(const std::string& args)>;
 
+  enum class HandlerVisibility {
+    Public,
+    Hidden,
+  };
+
   IpcService() = default;
   ~IpcService();
 
@@ -38,14 +43,18 @@ public:
   // the first space as `args`. Must return a string ending with '\n'.
   // `usage` describes the command signature, e.g. "panel-toggle <id>".
   // `description` is a short human-readable explanation shown in --help.
-  void
-  registerHandler(const std::string& command, Handler handler, std::string usage = {}, std::string description = {});
+  // Hidden handlers remain executable but are omitted from --help.
+  void registerHandler(
+      const std::string& command, Handler handler, std::string usage = {}, std::string description = {},
+      HandlerVisibility visibility = HandlerVisibility::Public
+  );
 
 private:
   struct HandlerEntry {
     Handler fn;
     std::string usage;
     std::string description;
+    HandlerVisibility visibility = HandlerVisibility::Public;
   };
 
   void handleConnection(int connFd);

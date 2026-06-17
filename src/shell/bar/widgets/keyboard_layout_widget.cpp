@@ -266,7 +266,7 @@ namespace {
     }
 
     for (const auto& [lang, mapped] : languageMap()) {
-      if (lower.rfind(lang, 0) == 0) {
+      if (lower.starts_with(lang)) {
         code = std::string(mapped);
         uppercaseAscii(code);
         return code;

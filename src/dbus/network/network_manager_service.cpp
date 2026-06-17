@@ -916,7 +916,7 @@ void NetworkManagerService::refreshSavedConnections(std::function<void()> onComp
                           try {
                             const auto type = typeIt->second.get<std::string>();
                             if (type == kNmWiredConnectionType) {
-                              savedState->wiredConnectionPaths.push_back(std::string(connectionPath));
+                              savedState->wiredConnectionPaths.emplace_back(connectionPath);
                             }
                           } catch (const sdbus::Error&) {
                           }

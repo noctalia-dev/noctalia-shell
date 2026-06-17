@@ -290,11 +290,11 @@ namespace noctalia::theme {
           }
           if (!dup) {
             chosen.push_back(hct);
-            if ((int)chosen.size() >= desired)
+            if (static_cast<int>(chosen.size()) >= desired)
               break;
           }
         }
-        if ((int)chosen.size() >= desired)
+        if (static_cast<int>(chosen.size()) >= desired)
           break;
       }
 

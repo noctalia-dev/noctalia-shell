@@ -1424,7 +1424,7 @@ void MprisService::registerBusSignals() {
           return;
         }
 
-        kLog.debug("name owner changed name={} old_owner=\"{}\" new_owner=\"{}\"", name, old_owner, new_owner);
+        kLog.debug(R"(name owner changed name={} old_owner="{}" new_owner="{}")", name, old_owner, new_owner);
 
         if (new_owner.empty()) {
           removePlayer(name);

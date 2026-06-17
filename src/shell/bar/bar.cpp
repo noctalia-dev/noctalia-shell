@@ -11,6 +11,7 @@
 #include "ipc/ipc_service.h"
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
+#include "shell/bar/bar_reserved_zone.h"
 #include "shell/bar/widget.h"
 #include "shell/bar/widgets/plugin_widget.h"
 #include "shell/panel/panel_manager.h"
@@ -30,9 +31,11 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <charconv>
 #include <cmath>
 #include <linux/input-event-codes.h>
 #include <optional>
+#include <system_error>
 #include <unordered_set>
 #include <wayland-client-core.h>
 
@@ -40,6 +43,9 @@ namespace {
 
   constexpr std::int32_t kAutoHideTriggerPx = 3;
   constexpr float kAutoHideSlideExtraPx = 4.0f;
+  constexpr std::uint32_t kAttachedPanelResizeTestDefaultExtent = 360;
+  constexpr std::uint32_t kAttachedPanelResizeTestMaxExtent = 4096;
+  constexpr float kAttachedPanelResizeTestCycleHoldMs = 1800.0f;
 
   [[nodiscard]] FontWeight parseWidgetLabelFontWeight(const WidgetConfig& config, FontWeight fallback) {
     const auto it = config.settings.find("font_weight");
@@ -73,25 +79,6 @@ namespace {
       return 0;
     }
     return cfg.marginEdge;
-  }
-
-  [[nodiscard]] std::int32_t
-  reservedBarExclusiveZone(const BarConfig& barConfig, const ShellConfig::ShadowConfig& shadowConfig) {
-    const auto sb = shell::surface_shadow::bleed(barConfig.shadow, shadowConfig);
-    const std::int32_t mEdge = barConfig.marginEdge;
-    if (barConfig.position == "bottom") {
-      return barConfig.thickness + std::min(mEdge, sb.down);
-    }
-    if (barConfig.position == "top") {
-      return std::min(mEdge, sb.up) + barConfig.thickness;
-    }
-    if (barConfig.position == "right") {
-      return barConfig.thickness + std::min(mEdge, sb.right);
-    }
-    if (barConfig.position == "left") {
-      return std::min(mEdge, sb.left) + barConfig.thickness;
-    }
-    return barConfig.thickness;
   }
 
   // "Concave corners": a per-corner radius < 0 marks that corner Concave, bulging
@@ -402,6 +389,16 @@ namespace {
     return spec;
   }
 
+  [[nodiscard]] float barInnerSurfaceExtension(
+      const BarConfig& cfg, const ShellConfig::ShadowConfig& shadow, float surfaceWidth, float surfaceHeight
+  ) {
+    const auto base = computeBarSurfaceSpec(cfg, shadow);
+    const bool isVertical = (cfg.position == "left" || cfg.position == "right");
+    const float current = isVertical ? surfaceWidth : surfaceHeight;
+    const float normal = static_cast<float>(isVertical ? base.surfaceWidth : base.surfaceHeight);
+    return std::max(0.0f, current - normal);
+  }
+
   // Returns true when two bar configs would produce an identical layer-shell
   // surface (same anchor, size, exclusive zone, namespace). When true, an
   // existing BarInstance can be retained on reload and only its widget tree
@@ -455,7 +452,8 @@ namespace {
   }
 
   BarVisualGeometry computeBarVisualGeometry(
-      const BarConfig& cfg, const ShellConfig::ShadowConfig& shadow, float surfaceWidth, float surfaceHeight
+      const BarConfig& cfg, const ShellConfig::ShadowConfig& shadow, float surfaceWidth, float surfaceHeight,
+      float innerSurfaceExtension = 0.0f
   ) {
     const float barThickness = static_cast<float>(cfg.thickness);
     const float marginEnds = static_cast<float>(cfg.marginEnds);
@@ -487,6 +485,8 @@ namespace {
         } else {
           x = static_cast<float>(gutter);
         }
+      } else if (isRight) {
+        x += innerSurfaceExtension;
       }
       return {
           .x = x,
@@ -505,6 +505,8 @@ namespace {
       } else {
         y = static_cast<float>(gutter);
       }
+    } else if (isBottom) {
+      y += innerSurfaceExtension;
     }
     return {
         .x = x,
@@ -516,11 +518,39 @@ namespace {
 
   [[nodiscard]] InputRect
   barContentInputRegion(const BarConfig& cfg, const ShellConfig::ShadowConfig& shadow, int surfW, int surfH) {
-    const auto barVisual = computeBarVisualGeometry(cfg, shadow, static_cast<float>(surfW), static_cast<float>(surfH));
+    const float innerSurfaceExtension =
+        barInnerSurfaceExtension(cfg, shadow, static_cast<float>(surfW), static_cast<float>(surfH));
+    const auto barVisual = computeBarVisualGeometry(
+        cfg, shadow, static_cast<float>(surfW), static_cast<float>(surfH), innerSurfaceExtension
+    );
     return InputRect{
         static_cast<int>(barVisual.x), static_cast<int>(barVisual.y), static_cast<int>(barVisual.width),
         static_cast<int>(barVisual.height)
     };
+  }
+
+  [[nodiscard]] std::optional<InputRect>
+  attachedPanelResizeTestRect(const BarConfig& cfg, const ShellConfig::ShadowConfig& shadow, int surfW, int surfH) {
+    const auto base = computeBarSurfaceSpec(cfg, shadow);
+    if (surfW <= 0 || surfH <= 0) {
+      return std::nullopt;
+    }
+
+    if (cfg.position == "left" || cfg.position == "right") {
+      const int baseW = static_cast<int>(base.surfaceWidth);
+      const int extraW = surfW - baseW;
+      if (extraW <= 0) {
+        return std::nullopt;
+      }
+      return InputRect{cfg.position == "right" ? 0 : baseW, 0, extraW, surfH};
+    }
+
+    const int baseH = static_cast<int>(base.surfaceHeight);
+    const int extraH = surfH - baseH;
+    if (extraH <= 0) {
+      return std::nullopt;
+    }
+    return InputRect{0, cfg.position == "bottom" ? 0 : baseH, surfW, extraH};
   }
 
   std::pair<float, float> computeAutoHideHiddenDelta(
@@ -548,7 +578,10 @@ namespace {
     }
 
     const auto concave = barConcaveShape(instance.barConfig);
-    const auto barVisual = computeBarVisualGeometry(instance.barConfig, shadowConfig, surfaceWidth, surfaceHeight);
+    const float innerSurfaceExtension =
+        barInnerSurfaceExtension(instance.barConfig, shadowConfig, surfaceWidth, surfaceHeight);
+    const auto barVisual =
+        computeBarVisualGeometry(instance.barConfig, shadowConfig, surfaceWidth, surfaceHeight, innerSurfaceExtension);
     // Shadow follows the same shape as the background: the body expanded outward by
     // the concave inset into the visual rect, so concave spikes cast a matching shadow.
     const float barAreaW = barVisual.width + concave.logicalInset.left + concave.logicalInset.right;
@@ -1998,6 +2031,17 @@ void Bar::syncBarAutoHideInputRegion(BarInstance& instance) const {
     instance.surface->setInputRegion({});
     return;
   }
+  if (instance.attachedPanelResizeTestOpen) {
+    std::vector<InputRect> regions{
+        barContentInputRegion(instance.barConfig, m_config->config().shell.shadow, surfW, surfH)
+    };
+    if (auto panelRect = attachedPanelResizeTestRect(instance.barConfig, m_config->config().shell.shadow, surfW, surfH);
+        panelRect.has_value()) {
+      regions.push_back(*panelRect);
+    }
+    instance.surface->setInputRegion(regions);
+    return;
+  }
   if (instance.barConfig.autoHide) {
     const bool fullSurface = instance.pointerInside || instance.attachedPopupCount > 0 || instance.hideOpacity > 0.5f;
     instance.surface->setInputRegion(barAutoHideSurfaceInputRegion(instance.barConfig, surfW, surfH, fullSurface));
@@ -2132,7 +2176,8 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
   const auto concave = barConcaveShape(instance.barConfig);
 
-  const auto barVisual = computeBarVisualGeometry(instance.barConfig, shadowConfig, w, h);
+  const float innerSurfaceExtension = barInnerSurfaceExtension(instance.barConfig, shadowConfig, w, h);
+  const auto barVisual = computeBarVisualGeometry(instance.barConfig, shadowConfig, w, h, innerSurfaceExtension);
   const float barAreaX = barVisual.x;
   const float barAreaY = barVisual.y;
   const float barAreaW = barVisual.width;
@@ -2171,6 +2216,26 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
       instance.shadowRight = static_cast<Box*>(instance.shadowRightClip->addChild(ui::box()));
     }
     // Note: shadow is inserted before bar sections so it renders below them (z=-1 is set below).
+
+    instance.attachedPanelResizeTestRect = static_cast<Box*>(instance.slideRoot->addChild(
+        ui::box({
+            .visible = false,
+            .participatesInLayout = false,
+            .configure = [](Box& panel) {
+              panel.setHitTestVisible(false);
+              panel.setStyle(
+                  RoundedRectStyle{
+                      .fill = rgba(0.10f, 0.68f, 1.0f, 0.72f),
+                      .border = rgba(1.0f, 1.0f, 1.0f, 0.92f),
+                      .fillMode = FillMode::Solid,
+                      .radius = 0.0f,
+                      .softness = 0.0f,
+                      .borderWidth = 2.0f,
+                  }
+              );
+            },
+        })
+    ));
 
     auto contentClip = std::make_unique<Node>();
     contentClip->setClipChildren(true);
@@ -2273,6 +2338,17 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
 
   applyBarShadowStyle(instance, shadowConfig, w, h);
 
+  if (instance.attachedPanelResizeTestRect != nullptr) {
+    const auto rect = attachedPanelResizeTestRect(
+        instance.barConfig, shadowConfig, static_cast<int>(std::lround(w)), static_cast<int>(std::lround(h))
+    );
+    instance.attachedPanelResizeTestRect->setVisible(instance.attachedPanelResizeTestOpen && rect.has_value());
+    if (rect.has_value()) {
+      instance.attachedPanelResizeTestRect->setPosition(static_cast<float>(rect->x), static_cast<float>(rect->y));
+      instance.attachedPanelResizeTestRect->setSize(static_cast<float>(rect->width), static_cast<float>(rect->height));
+    }
+  }
+
   layoutBarSections(instance, *renderer, barAreaW, barAreaH, padding, isVertical);
 
   if (instance.barConfig.autoHide) {
@@ -2318,24 +2394,12 @@ void Bar::updateWidgets(BarInstance& instance) {
   const auto w = static_cast<float>(instance.surface->width());
   const auto h = static_cast<float>(instance.surface->height());
   const float padding = static_cast<float>(instance.barConfig.padding);
-  const float barThickness = static_cast<float>(instance.barConfig.thickness);
-  const float marginEnds = static_cast<float>(instance.barConfig.marginEnds);
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
-  const auto sbi = shell::surface_shadow::bleed(instance.barConfig.shadow, m_config->config().shell.shadow);
-  const float bleedLeft = static_cast<float>(sbi.left);
-  const float bleedRight = static_cast<float>(sbi.right);
-  const float bleedUp = static_cast<float>(sbi.up);
-  const float bleedDown = static_cast<float>(sbi.down);
-  float barAreaW, barAreaH;
-  if (isVertical) {
-    const float barAreaY = std::min(marginEnds, bleedUp);
-    barAreaW = barThickness;
-    barAreaH = h - barAreaY - std::min(marginEnds, bleedDown);
-  } else {
-    const float barAreaX = std::min(marginEnds, bleedLeft);
-    barAreaW = w - barAreaX - std::min(marginEnds, bleedRight);
-    barAreaH = barThickness;
-  }
+  const auto& shadowConfig = m_config->config().shell.shadow;
+  const float innerSurfaceExtension = barInnerSurfaceExtension(instance.barConfig, shadowConfig, w, h);
+  const auto barVisual = computeBarVisualGeometry(instance.barConfig, shadowConfig, w, h, innerSurfaceExtension);
+  const float barAreaW = barVisual.width;
+  const float barAreaH = barVisual.height;
 
   auto updateSection = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
     for (auto& widget : widgets) {
@@ -2373,25 +2437,12 @@ void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout
   const auto w = static_cast<float>(instance.surface->width());
   const auto h = static_cast<float>(instance.surface->height());
   const float padding = static_cast<float>(instance.barConfig.padding);
-  const float barThickness = static_cast<float>(instance.barConfig.thickness);
-  const float marginEnds = static_cast<float>(instance.barConfig.marginEnds);
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
-  const auto sbi = shell::surface_shadow::bleed(instance.barConfig.shadow, m_config->config().shell.shadow);
-  const float bleedLeft = static_cast<float>(sbi.left);
-  const float bleedRight = static_cast<float>(sbi.right);
-  const float bleedUp = static_cast<float>(sbi.up);
-  const float bleedDown = static_cast<float>(sbi.down);
-  float barAreaW = 0.0f;
-  float barAreaH = 0.0f;
-  if (isVertical) {
-    const float barAreaY = std::min(marginEnds, bleedUp);
-    barAreaW = barThickness;
-    barAreaH = h - barAreaY - std::min(marginEnds, bleedDown);
-  } else {
-    const float barAreaX = std::min(marginEnds, bleedLeft);
-    barAreaW = w - barAreaX - std::min(marginEnds, bleedRight);
-    barAreaH = barThickness;
-  }
+  const auto& shadowConfig = m_config->config().shell.shadow;
+  const float innerSurfaceExtension = barInnerSurfaceExtension(instance.barConfig, shadowConfig, w, h);
+  const auto barVisual = computeBarVisualGeometry(instance.barConfig, shadowConfig, w, h, innerSurfaceExtension);
+  const float barAreaW = barVisual.width;
+  const float barAreaH = barVisual.height;
 
   {
     UiPhaseScope layoutPhase(UiPhase::Layout);
@@ -2789,6 +2840,17 @@ namespace {
     return std::nullopt;
   }
 
+  [[nodiscard]] std::optional<std::uint32_t> parseAttachedPanelResizeTestSize(std::string_view value) {
+    std::uint32_t parsed = 0;
+    const char* begin = value.data();
+    const char* end = begin + value.size();
+    const auto [ptr, ec] = std::from_chars(begin, end, parsed);
+    if (ec != std::errc{} || ptr != end || parsed == 0 || parsed > kAttachedPanelResizeTestMaxExtent) {
+      return std::nullopt;
+    }
+    return parsed;
+  }
+
 } // namespace
 
 std::string Bar::showBarIpc(std::string_view args) {
@@ -2982,6 +3044,162 @@ std::string Bar::setBarAutoHideIpc(std::string_view args) {
   return "ok\n";
 }
 
+std::uint32_t Bar::attachedPanelResizeTestMaxExtent(const BarInstance& instance) const {
+  if (m_config == nullptr) {
+    return 0;
+  }
+
+  const auto base = computeBarSurfaceSpec(instance.barConfig, m_config->config().shell.shadow);
+  const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
+  const std::uint32_t baseAxis = isVertical ? base.surfaceWidth : base.surfaceHeight;
+  std::uint32_t outputAxis = 0;
+  if (m_platform != nullptr) {
+    const auto& outputs = m_platform->outputs();
+    const auto it = std::find_if(outputs.begin(), outputs.end(), [&instance](const WaylandOutput& output) {
+      return output.output == instance.output;
+    });
+    if (it != outputs.end()) {
+      const auto logicalAxis = isVertical ? it->logicalWidth : it->logicalHeight;
+      if (logicalAxis > 0) {
+        outputAxis = static_cast<std::uint32_t>(logicalAxis);
+      }
+    }
+  }
+  if (outputAxis <= baseAxis) {
+    return kAttachedPanelResizeTestMaxExtent;
+  }
+  return std::min(kAttachedPanelResizeTestMaxExtent, outputAxis - baseAxis);
+}
+
+void Bar::setAttachedPanelResizeTestOpen(BarInstance& instance, bool open, std::uint32_t extent) {
+  if (m_config == nullptr || instance.surface == nullptr) {
+    return;
+  }
+
+  instance.animations.cancelForOwner(&instance.attachedPanelResizeTestOpen);
+  instance.attachedPanelResizeTestOpen = open;
+  instance.attachedPanelResizeTestExtent = open ? extent : 0;
+
+  const auto base = computeBarSurfaceSpec(instance.barConfig, m_config->config().shell.shadow);
+  const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
+  std::uint32_t targetWidth = base.surfaceWidth;
+  std::uint32_t targetHeight = base.surfaceHeight;
+  if (open) {
+    if (isVertical) {
+      targetWidth += extent;
+    } else {
+      targetHeight += extent;
+    }
+  }
+
+  instance.surface->requestSize(targetWidth, targetHeight);
+  syncBarAutoHideInputRegion(instance);
+  syncBarSurfaceChrome(instance);
+  instance.surface->requestLayout();
+  instance.surface->requestRedraw();
+}
+
+std::string Bar::attachedPanelResizeTestIpc(std::string_view args) {
+  if (m_config == nullptr) {
+    return "error: config service not initialized\n";
+  }
+
+  auto parts = StringUtils::splitWhitespace(StringUtils::trim(args));
+  if (parts.empty()) {
+    return "error: usage: bar-attached-resize-test <open|close|cycle> [bar-name] [monitor-selector] [size=<px>]\n";
+  }
+
+  std::uint32_t extent = kAttachedPanelResizeTestDefaultExtent;
+  bool explicitSize = false;
+  if (parts.back().starts_with("size=")) {
+    explicitSize = true;
+    const std::string_view rawSize(parts.back().data() + 5, parts.back().size() - 5);
+    const auto parsed = parseAttachedPanelResizeTestSize(rawSize);
+    if (!parsed.has_value()) {
+      return "error: size must be an integer from 1 to 4096 pixels\n";
+    }
+    extent = *parsed;
+    parts.pop_back();
+  }
+
+  if (parts.empty() || parts.size() > 3) {
+    return "error: usage: bar-attached-resize-test <open|close|cycle> [bar-name] [monitor-selector] [size=<px>]\n";
+  }
+
+  const std::string action = parts[0];
+  if (action != "open" && action != "close" && action != "cycle") {
+    return "error: action must be one of: open, close, cycle\n";
+  }
+  if (action == "close" && explicitSize) {
+    return "error: size=<px> is only valid with open or cycle\n";
+  }
+
+  std::optional<std::string_view> barName;
+  std::optional<std::string_view> monitorSelector;
+  if (parts.size() >= 2) {
+    barName = parts[1];
+  }
+  if (parts.size() >= 3) {
+    monitorSelector = parts[2];
+  }
+
+  std::vector<BarInstance*> targets;
+  if (const auto collectError = collectBarIpcInstances(barName, monitorSelector, targets)) {
+    return *collectError;
+  }
+
+  if (action != "close") {
+    std::uint32_t maxExtent = kAttachedPanelResizeTestMaxExtent;
+    for (const BarInstance* instance : targets) {
+      if (instance == nullptr) {
+        continue;
+      }
+      maxExtent = std::min(maxExtent, attachedPanelResizeTestMaxExtent(*instance));
+    }
+    if (extent > maxExtent) {
+      return "error: size="
+          + std::to_string(extent)
+          + " exceeds available inner-axis space for at least one target (max "
+          + std::to_string(maxExtent)
+          + ")\n";
+    }
+  }
+
+  if (action == "close") {
+    for (BarInstance* instance : targets) {
+      if (instance != nullptr) {
+        setAttachedPanelResizeTestOpen(*instance, false, 0);
+      }
+    }
+    return "ok: attached panel resize test closed on " + std::to_string(targets.size()) + " bar instance(s)\n";
+  }
+
+  for (BarInstance* instance : targets) {
+    if (instance == nullptr) {
+      continue;
+    }
+    setAttachedPanelResizeTestOpen(*instance, true, extent);
+    if (action == "cycle") {
+      instance->animations.animateTimer(
+          0.0f, 1.0f, kAttachedPanelResizeTestCycleHoldMs, Easing::Linear, [](float) {},
+          [this, instance] { setAttachedPanelResizeTestOpen(*instance, false, 0); },
+          &instance->attachedPanelResizeTestOpen
+      );
+      if (instance->surface != nullptr) {
+        instance->surface->requestRedraw();
+      }
+    }
+  }
+
+  return "ok: attached panel resize test "
+      + action
+      + " on "
+      + std::to_string(targets.size())
+      + " bar instance(s), size="
+      + std::to_string(extent)
+      + "\n";
+}
+
 void Bar::registerIpc(IpcService& ipc) {
   ipc.registerHandler(
       "bar-show", [this](const std::string& args) -> std::string { return showBarIpc(args); },
@@ -3001,5 +3219,12 @@ void Bar::registerIpc(IpcService& ipc) {
   ipc.registerHandler(
       "bar-auto-hide-set", [this](const std::string& args) -> std::string { return setBarAutoHideIpc(args); },
       "bar-auto-hide-set <on|off|true|false|1|0> [bar-name] [monitor-selector]", "Set auto-hide state for a bar"
+  );
+
+  ipc.registerHandler(
+      "bar-attached-resize-test",
+      [this](const std::string& args) -> std::string { return attachedPanelResizeTestIpc(args); },
+      "bar-attached-resize-test <open|close|cycle> [bar-name] [monitor-selector] [size=<px>]",
+      "Exercise live bar-surface resize for attached-panel validation", IpcService::HandlerVisibility::Hidden
   );
 }

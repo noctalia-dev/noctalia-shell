@@ -51,6 +51,11 @@
       "network": {
         "wired": "有线网络"
       },
+      "privacy": {
+        "camera": "摄像头",
+        "microphone": "麦克风",
+        "screen-sharing": "屏幕共享"
+      },
       "scripted": {
         "reload-failed": "脚本重载失败",
         "reloaded": "已重载脚本"
@@ -72,7 +77,7 @@
     },
     "confirm": {
       "clear-desc": "选择是否保留已固定的条目。",
-      "clear-desc-all-pinned": "所有条目均已固定。使用“全部清除”以移除它们。",
+      "clear-desc-all-pinned": "所有条目均已固定。可使用“全部清除”以移除它们。",
       "clear-desc-no-pinned": "清除剪贴板历史记录中的所有条目。",
       "clear-title": "清除剪贴板历史记录？",
       "delete-desc": "从剪贴板历史记录中移除所选条目。",
@@ -113,6 +118,8 @@
   "control-center": {
     "audio": {
       "application-volumes": "应用音量",
+      "choose-effects-profile": "选择音效预设",
+      "effects-profile": "音效预设：",
       "input-volume": "输入音量",
       "no-application-audio": "无应用音频",
       "no-application-audio-body": "当前没有应用正在播放音频。",
@@ -376,6 +383,7 @@
         "inner-diameter": "内径",
         "input-opacity": "输入框不透明度",
         "input-radius": "输入框圆角",
+        "interface": "界面",
         "layout": "布局",
         "mirrored": "镜像",
         "opacity": "不透明度",
@@ -597,6 +605,10 @@
       "off": "勿扰模式关闭",
       "on": "勿扰模式开启"
     },
+    "effects": {
+      "input": "输入效果",
+      "output": "输出效果"
+    },
     "lock-keys": {
       "caps-off": "大写锁定关闭",
       "caps-on": "大写锁定开启",
@@ -751,7 +763,7 @@
           "clear": "清除",
           "edit": "编辑样式",
           "fill": "背景",
-          "fill-description": "将颜色应用于胶囊背景；也支持固定的十六进制颜色值",
+          "fill-description": "胶囊背景的颜色；也支持固定的十六进制颜色值",
           "foreground": "前景",
           "foreground-description": "将颜色应用于组内小组件图标和标签",
           "hint": "属于胶囊组",
@@ -1230,8 +1242,8 @@
           "label": "UI 缩放"
         },
         "wallpaper-generation-scheme": {
-          "description": "选择壁纸颜色转换为配色方案",
-          "label": "壁纸生成方案"
+          "description": "选择壁纸颜色转换为配色方案的方式",
+          "label": "壁纸取色方案"
         }
       },
       "backdrop": {
@@ -1255,7 +1267,7 @@
           "description": "状态栏的背景不透明度"
         },
         "border": {
-          "description": "将颜色应用于状态栏轮廓；也支持固定的十六进制颜色",
+          "description": "状态栏轮廓的颜色；也支持固定的十六进制颜色值",
           "label": "边框"
         },
         "border-width": {
@@ -1263,15 +1275,15 @@
           "label": "边框宽度"
         },
         "capsule-border": {
-          "description": "应用于胶囊轮廓的默认颜色；也支持固定的十六进制颜色",
+          "description": "胶囊轮廓的默认颜色；也支持固定的十六进制颜色值",
           "label": "胶囊边框"
         },
         "capsule-fill": {
-          "description": "应用于胶囊背景的默认颜色；也支持固定的十六进制颜色",
+          "description": "胶囊背景的默认颜色；也支持固定的十六进制颜色值",
           "label": "胶囊填充"
         },
         "capsule-foreground": {
-          "description": "应用于胶囊内部图标和标签的默认颜色；也支持固定的十六进制颜色",
+          "description": "胶囊内部图标和标签的默认颜色；也支持固定的十六进制颜色值",
           "label": "胶囊前景"
         },
         "capsule-opacity": {
@@ -1371,11 +1383,11 @@
           "label": "小组件胶囊"
         },
         "widget-color": {
-          "description": "应用于此状态栏上小组件图标和标签的默认颜色；也支持固定的十六进制颜色",
+          "description": "此状态栏上小组件图标和标签的默认颜色；也支持固定的十六进制颜色值",
           "label": "小组件颜色"
         },
         "widget-icon-color": {
-          "description": "覆盖此状态栏上小组件图标的颜色；也支持固定的十六进制颜色",
+          "description": "覆盖此状态栏上小组件图标的颜色；也支持固定的十六进制颜色值",
           "label": "小组件图标颜色"
         },
         "widget-spacing": {
@@ -1484,7 +1496,7 @@
           "description": "Dock 两端的内边距（图标和 Dock 两端之间）"
         },
         "monitors": {
-          "description": "选择显示 Dock 的屏幕（留空为全部）；在所选范围内应用“仅当前显示器应用”规则",
+          "description": "选择显示 Dock 的屏幕（留空为全部）；“仅当前屏幕应用”设置在所选范围内生效",
           "label": "屏幕"
         },
         "pinned-apps": {
@@ -1505,7 +1517,7 @@
           "label": "显示指示点"
         },
         "show-instance-count": {
-          "description": "显示带有打开实例数量的徽章",
+          "description": "显示带有打开实例数量的徽标",
           "label": "显示实例数量"
         },
         "show-running": {
@@ -1744,6 +1756,10 @@
           "description": "打开特定选项卡时（音量、媒体等）",
           "label": "打开选项卡时的侧边栏"
         },
+        "floating-offset": {
+          "description": "悬浮或独立面板与状态栏边缘之间的间距（像素）",
+          "label": "悬浮间距"
+        },
         "home-shortcuts": {
           "description": "为主页选项卡选择最多六个快捷按钮",
           "label": "主页快捷方式"
@@ -1880,7 +1896,7 @@
           "label": "经度"
         },
         "minimum-brightness": {
-          "description": "防止屏幕完全变黑",
+          "description": "防止屏幕完全黑屏",
           "label": "最低亮度限制"
         },
         "mpris-blacklist": {
@@ -2075,8 +2091,8 @@
           "label": "中键点击打开小组件设置"
         },
         "niri-overview-type-to-launch": {
-          "description": "在 niri 概览界面输入时自动打开启动器；概览打开期间会使用一个极小的键盘焦点窗口来接收输入",
-          "label": "输入以启动"
+          "description": "在 niri 概览界面键入时即可打开启动器；进入概览时，会使用一个极小的键盘焦点窗口来接收输入",
+          "label": "触键启动"
         },
         "offline-mode": {
           "description": "阻止所有出站网络请求",
@@ -2404,6 +2420,10 @@
         "workspace-label-inside": "胶囊内部"
       },
       "settings": {
+        "active-color": {
+          "description": "隐私指示器激活时的颜色；也支持固定的十六进制颜色值",
+          "label": "激活颜色"
+        },
         "active-opacity": {
           "description": "活动（焦点）窗口图标的不透明度。",
           "label": "焦点图标不透明度"
@@ -2424,20 +2444,24 @@
           "description": "可视化频段数量",
           "label": "频段"
         },
+        "cam-filter-regex": {
+          "description": "用于匹配并忽略特定摄像头应用名称的正则表达式",
+          "label": "摄像头过滤正则"
+        },
         "capsule": {
           "description": "为小组件添加胶囊背景",
           "label": "胶囊"
         },
         "capsule-border": {
-          "description": "将颜色应用于胶囊轮廓；也支持固定的十六进制颜色值",
+          "description": "胶囊轮廓的颜色；也支持固定的十六进制颜色值",
           "label": "胶囊边框"
         },
         "capsule-fill": {
-          "description": "将颜色应用于胶囊背景；也支持固定的十六进制颜色值",
+          "description": "胶囊背景的颜色；也支持固定的十六进制颜色值",
           "label": "胶囊填充"
         },
         "capsule-foreground": {
-          "description": "将颜色应用于胶囊内容；也支持固定的十六进制颜色",
+          "description": "胶囊内容的颜色；也支持固定的十六进制颜色值",
           "label": "胶囊前景"
         },
         "capsule-opacity": {
@@ -2459,7 +2483,7 @@
           "label": "居中"
         },
         "color": {
-          "description": "将颜色应用于小组件图标和标签；也支持固定的十六进制颜色",
+          "description": "小组件图标和标签的颜色；也支持固定的十六进制颜色值",
           "label": "颜色"
         },
         "color-1": {
@@ -2480,7 +2504,7 @@
           "label": "自定义图片"
         },
         "custom-image-colorize": {
-          "description": "按“图标颜色”设置给自定义图片着色",
+          "description": "使用小组件的“图标颜色”设置为自定义图片着色",
           "label": "自定义图片着色"
         },
         "custom-labels": {
@@ -2496,7 +2520,7 @@
           "label": "独立面板"
         },
         "device": {
-          "description": "需要监控或控制的设备",
+          "description": "需要监视或控制的设备",
           "label": "设备"
         },
         "display": {
@@ -2517,11 +2541,11 @@
           "label": "抽屉列数"
         },
         "empty-color": {
-          "description": "将颜色应用于空工作区；也支持固定的十六进制颜色",
+          "description": "空工作区的颜色；也支持固定的十六进制颜色值",
           "label": "空工作区颜色"
         },
         "focused-color": {
-          "description": "将颜色应用于当前工作区；也支持固定的十六进制颜色",
+          "description": "当前工作区的颜色；也支持固定的十六进制颜色值",
           "label": "焦点工作区颜色"
         },
         "font-family": {
@@ -2538,7 +2562,8 @@
         },
         "glyph": {
           "description": "图标名称",
-          "label": "图标"
+          "label": "图标",
+          "sysmon-description": "自定义图标；留空则使用当前所选统计项的默认图标"
         },
         "group-by-workspace": {
           "description": "可获取合成器数据时，按工作区将任务栏图标分组到胶囊中。",
@@ -2557,13 +2582,17 @@
           "label": "隐藏项目"
         },
         "hide-empty-workspaces": {
-          "description": "按工作区分组时，隐藏任务栏中没有窗口的工作区胶囊。",
+          "description": "按工作区分组时，隐藏任务栏中无窗口的工作区胶囊。",
           "label": "隐藏空工作区"
         },
+        "hide-inactive": {
+          "description": "隐藏未激活的隐私图标，无任何活动项时隐藏小组件",
+          "label": "隐藏未激活项"
+        },
         "hide-when-empty": {
-          "description": "隐藏没有打开窗口的工作区胶囊",
+          "description": "隐藏无窗口的工作区胶囊",
           "label": "无窗口时隐藏",
-          "workspaces-description": "隐藏没有打开窗口的工作区胶囊"
+          "workspaces-description": "隐藏无窗口的工作区胶囊"
         },
         "hide-when-full": {
           "description": "电池充满时隐藏电池小组件",
@@ -2602,16 +2631,28 @@
           "label": "热重载"
         },
         "icon-color": {
-          "description": "仅覆盖此小组件图标的颜色；也支持固定的十六进制颜色",
+          "description": "仅覆盖此小组件图标的颜色；也支持固定的十六进制颜色值",
           "label": "图标颜色"
         },
         "icon-size": {
           "description": "图标大小（像素）",
           "label": "图标大小"
         },
+        "icon-spacing": {
+          "description": "隐私指示器图标之间的间距（像素）",
+          "label": "图标间距"
+        },
+        "inactive-color": {
+          "description": "隐私指示器未激活时的颜色；也支持固定的十六进制颜色值",
+          "label": "未激活颜色"
+        },
         "inactive-opacity": {
           "description": "非活动（非焦点）窗口图标的不透明度。",
           "label": "非焦点图标不透明度"
+        },
+        "interface": {
+          "description": "需要监视的网络接口；留空则统计所有接口的总流量",
+          "label": "网络接口"
         },
         "label": {
           "description": "可选的按钮固定文本",
@@ -2643,6 +2684,10 @@
           "description": "小组件最大长度（像素）",
           "label": "最大长度"
         },
+        "mic-filter-regex": {
+          "description": "用于匹配并忽略特定麦克风应用名称的正则表达式",
+          "label": "麦克风过滤正则"
+        },
         "middle-command": {
           "description": "中键点击按钮时执行的 Shell 命令。设置后，中键点击将执行此命令而非打开小组件设置。",
           "label": "中键点击命令"
@@ -2661,7 +2706,7 @@
           "label": "镜像"
         },
         "occupied-color": {
-          "description": "将颜色应用于非空工作区；也支持固定的十六进制颜色",
+          "description": "非空工作区的颜色；也支持固定的十六进制颜色值",
           "label": "非空工作区颜色"
         },
         "only-active-workspace": {
@@ -2762,7 +2807,7 @@
           "label": "工作区胶囊标签"
         },
         "stat": {
-          "description": "需要显示的系统统计数据",
+          "description": "需要显示的系统统计项",
           "label": "统计数据"
         },
         "taskbar-max-width": {
@@ -2790,7 +2835,7 @@
           "label": "垂直格式"
         },
         "warning-color": {
-          "description": "电量处于或低于系统电池警告阈值时应用的颜色",
+          "description": "电量处于或低于系统电池警告阈值时的颜色",
           "label": "警告颜色"
         },
         "width": {
@@ -2829,6 +2874,7 @@
         "nightlight": "夜间模式",
         "notifications": "通知",
         "power-profile": "电源配置",
+        "privacy": "隐私指示器",
         "screenshot": "截图",
         "scripted": "脚本",
         "session": "会话",

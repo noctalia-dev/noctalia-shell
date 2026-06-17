@@ -20,6 +20,7 @@
 #include <cmath>
 #include <linux/input-event-codes.h>
 #include <memory>
+#include <numbers>
 
 namespace {
 
@@ -345,7 +346,7 @@ void Select::applyVisualState() {
 
   m_triggerLabel->setColor(triggerText);
   m_triggerGlyph->setColor(triggerText);
-  m_triggerGlyph->setRotation(m_caretProgress * static_cast<float>(M_PI));
+  m_triggerGlyph->setRotation(m_caretProgress * std::numbers::pi_v<float>);
 
   m_triggerBackground->setStyle(
       RoundedRectStyle{

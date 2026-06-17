@@ -371,7 +371,7 @@ namespace settings {
         std::vector<std::string> items, std::string_view widgetName
     ) {
       if (removeWidgetReference(items, widgetName)) {
-        overrides.push_back({std::move(path), std::move(items)});
+        overrides.emplace_back(std::move(path), std::move(items));
       }
     }
 
@@ -418,7 +418,7 @@ namespace settings {
             }
           }
           if (changed) {
-            overrides.push_back({std::move(path), std::move(items)});
+            overrides.emplace_back(std::move(path), std::move(items));
           }
         };
 
@@ -674,7 +674,7 @@ namespace settings {
             return;
           }
         }
-        laneEdits.push_back({zoneIndex, std::move(items)});
+        laneEdits.emplace_back(zoneIndex, std::move(items));
       };
       const auto laneItemsFor = [&](std::size_t zoneIndex) {
         for (const auto& edit : laneEdits) {
@@ -735,12 +735,12 @@ namespace settings {
 
       std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> batch;
       for (const auto& edit : laneEdits) {
-        batch.push_back({zones[edit.first].lanePath, edit.second});
+        batch.emplace_back(zones[edit.first].lanePath, edit.second);
       }
       if (groupsTouched) {
         const std::vector<std::string> groupPath = capsuleGroupPathForLanePath(laneListPath);
         if (!groupPath.empty()) {
-          batch.push_back({groupPath, groups});
+          batch.emplace_back(groupPath, groups);
         }
       }
       if (batch.size() == 1) {
@@ -837,16 +837,16 @@ namespace settings {
           }
           lane.push_back(dz.items[k]);
         }
-        batch.push_back({dz.lanePath, lane});
+        batch.emplace_back(dz.lanePath, lane);
       } else {
         std::vector<std::string> draggedLane = dz.items;
         draggedLane.erase(draggedLane.begin() + static_cast<std::ptrdiff_t>(draggedIdx));
         std::vector<std::string> targetLane = tz.items;
         targetLane[targetIdx] = token;
-        batch.push_back({dz.lanePath, draggedLane});
-        batch.push_back({tz.lanePath, targetLane});
+        batch.emplace_back(dz.lanePath, draggedLane);
+        batch.emplace_back(tz.lanePath, targetLane);
       }
-      batch.push_back({groupPath, groups});
+      batch.emplace_back(groupPath, groups);
       setOverrides(batch);
     }
 
@@ -2108,7 +2108,7 @@ namespace settings {
         const std::string base = std::string("settings.entities.widget.group.") + std::string(field);
         std::vector<std::string> fieldPath = groupPath;
         fieldPath.push_back(groupId);
-        fieldPath.push_back(std::string(field));
+        fieldPath.emplace_back(field);
         return SettingEntry{
             .section = SettingsSection::Bar,
             .group = "capsule-group",
@@ -2214,7 +2214,7 @@ namespace settings {
                   const std::size_t pos = static_cast<std::size_t>(it - lane.begin());
                   lane.erase(lane.begin() + static_cast<std::ptrdiff_t>(pos));
                   lane.insert(lane.begin() + static_cast<std::ptrdiff_t>(pos), members.begin(), members.end());
-                  batch.push_back({lanePath, lane});
+                  batch.emplace_back(lanePath, lane);
                 }
                 std::vector<BarCapsuleGroupStyle> remaining;
                 for (const auto& gx : currentGroups) {
@@ -2222,7 +2222,7 @@ namespace settings {
                     remaining.push_back(gx);
                   }
                 }
-                batch.push_back({groupPath, remaining});
+                batch.emplace_back(groupPath, remaining);
                 setOverrides(std::move(batch));
                 if (closeHostedEditor) {
                   closeHostedEditor();
