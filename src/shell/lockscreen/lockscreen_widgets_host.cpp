@@ -208,7 +208,15 @@ void LockscreenWidgetsHost::createInstance(
 
   widget->create();
   widget->setBox(state.boxWidth, state.boxHeight);
-  m_renderContext->makeCurrent(surface.renderTarget());
+  // The EGL surface may not exist yet if the Wayland compositor hasn't sent a
+  // configure event for this lock surface. Fall back to surfaceless so GL
+  // resource creation (texture uploads etc.) can still proceed — objects are
+  // shared across the context group regardless of surface attachment.
+  if (surface.renderTarget().isReady()) {
+    m_renderContext->makeCurrent(surface.renderTarget());
+  } else {
+    m_renderContext->makeCurrentNoSurface();
+  }
   widget->update(*m_renderContext);
   widget->layout(*m_renderContext);
   m_renderContext->makeCurrentNoSurface();
