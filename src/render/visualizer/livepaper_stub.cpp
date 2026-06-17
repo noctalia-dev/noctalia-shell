@@ -17,6 +17,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 // ── ProjectMRenderer ─────────────────────────────────────────────────────────
 
@@ -33,6 +34,7 @@ TextureHandle ProjectMRenderer::textureHandle() const noexcept { return TextureH
 void ProjectMRenderer::setMeshSize(int /*meshW*/, int /*meshH*/) {}
 void ProjectMRenderer::setFps(int /*fps*/) {}
 void ProjectMRenderer::loadPreset(const std::string& /*path*/) {}
+void ProjectMRenderer::setTextureSearchPaths(const std::vector<std::string>& /*paths*/) {}
 void ProjectMRenderer::renderFrame() {}
 
 // ── VisualizerService ────────────────────────────────────────────────────────
@@ -50,6 +52,7 @@ void VisualizerService::setEnabled(bool /*enabled*/) {}
 void VisualizerService::toggleEnabled() {}
 void VisualizerService::setSessionLocked(bool /*locked*/) {}
 bool VisualizerService::enabled() const noexcept { return false; }
+std::vector<std::string> VisualizerService::resolveTextureSearchPaths() const { return {}; }
 
 // ── PipeWirePcmTap ───────────────────────────────────────────────────────────
 

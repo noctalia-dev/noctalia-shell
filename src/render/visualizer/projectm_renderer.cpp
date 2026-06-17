@@ -180,6 +180,19 @@ void ProjectMRenderer::loadPreset(const std::string& path) {
   restore(prev);
 }
 
+void ProjectMRenderer::setTextureSearchPaths(const std::vector<std::string>& paths) {
+  if (m_projectm == nullptr) {
+    return;
+  }
+  std::vector<const char*> cstrs;
+  cstrs.reserve(paths.size());
+  for (const auto& p : paths) {
+    cstrs.push_back(p.c_str());
+  }
+  projectm_set_texture_search_paths(static_cast<projectm_handle>(m_projectm), cstrs.data(),
+                                    cstrs.size());
+}
+
 void ProjectMRenderer::renderFrame() {
   if (m_projectm == nullptr || m_shared == nullptr || m_eglSurface == nullptr) {
     return;

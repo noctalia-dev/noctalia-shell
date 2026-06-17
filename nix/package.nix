@@ -45,6 +45,13 @@ let
   # so the linker can't resolve it. Rewrite to the conventional "-lprojectM-4".
   libprojectm-gles = libprojectm.overrideAttrs (old: {
     pname = "libprojectm-gles";
+    patches = (old.patches or [ ]) ++ [
+      # TextureSamplerDescriptor::Empty() dereferences m_texture without a null
+      # check. GetRandomTexture() returns a default-constructed descriptor (null
+      # m_texture) when no texture search paths are configured, causing a SIGSEGV
+      # in MilkdropShader::LoadVariables on any preset that uses rand-samplers.
+      ./patches/libprojectm-null-texture-descriptor.patch
+    ];
     cmakeFlags = (old.cmakeFlags or [ ]) ++ [
       "-DENABLE_GLES=ON"
     ];

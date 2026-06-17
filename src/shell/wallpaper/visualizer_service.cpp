@@ -97,6 +97,30 @@ void VisualizerService::applyConfigToRenderer() {
   const auto& lp = m_config->config().wallpaper.livePaper;
   m_renderer->setMeshSize(lp.meshW, lp.meshH);
   m_renderer->setFps(lp.fps);
+  m_renderer->setTextureSearchPaths(resolveTextureSearchPaths());
+}
+
+std::vector<std::string> VisualizerService::resolveTextureSearchPaths() const {
+  const std::string dir = resolvePresetsDir();
+  if (dir.empty()) {
+    return {};
+  }
+  std::vector<std::string> paths;
+  // Conventional layout: textures/ is a sibling of presets/ under the same
+  // parent (e.g. ~/.local/share/waylivepaper/textures).
+  const std::filesystem::path presetsPath{dir};
+  const auto texturesPath = presetsPath.parent_path() / "textures";
+  std::error_code ec;
+  if (std::filesystem::is_directory(texturesPath, ec)) {
+    paths.push_back(texturesPath.string());
+  }
+  // Also include the presets directory itself — some packs bundle image
+  // textures alongside .milk files (libprojectM filters by extension, so
+  // preset files are not accidentally treated as textures).
+  if (std::filesystem::is_directory(presetsPath, ec)) {
+    paths.push_back(dir);
+  }
+  return paths;
 }
 
 void VisualizerService::onMprisChanged() {

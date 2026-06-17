@@ -78,6 +78,7 @@ private:
   [[nodiscard]] std::string pickRandomPreset();
   [[nodiscard]] std::string resolvePresetsDir() const;
   void applyConfigToRenderer();
+  [[nodiscard]] std::vector<std::string> resolveTextureSearchPaths() const;
 
   ProjectMRenderer* m_renderer = nullptr;
   ConfigService* m_config = nullptr;

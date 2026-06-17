@@ -62,6 +62,11 @@ public:
   // Empty path is silently ignored — the existing preset keeps running.
   void loadPreset(const std::string& path);
 
+  // Set the directories libprojectM scans for textures referenced by rand00..15
+  // samplers. Must be called before loading any preset that uses rand-samplers.
+  // Calling with an empty vector clears the search paths.
+  void setTextureSearchPaths(const std::vector<std::string>& paths);
+
   // Audio source. Renderer holds a non-owning pointer; null = silent.
   void setPcmTap(PipeWirePcmTap* tap) noexcept { m_pcmTap = tap; }
 
