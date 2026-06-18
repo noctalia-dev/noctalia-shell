@@ -96,8 +96,7 @@ namespace settings {
         )
     );
     const auto urgencyEnabled = [&row](std::string_view level) {
-      return row.allowedUrgencies.empty()
-          || std::find(row.allowedUrgencies.begin(), row.allowedUrgencies.end(), level) != row.allowedUrgencies.end();
+      return row.allowedUrgencies.empty() || std::ranges::contains(row.allowedUrgencies, level);
     };
     const auto setUrgency = [&row, persist](std::string_view level, bool enabled) {
       std::vector<std::string> selected;
@@ -107,7 +106,7 @@ namespace settings {
         selected = row.allowedUrgencies;
       }
       if (enabled) {
-        if (std::find(selected.begin(), selected.end(), level) == selected.end()) {
+        if (!std::ranges::contains(selected, level)) {
           selected.emplace_back(level);
         }
       } else if (selected.size() <= 1) {

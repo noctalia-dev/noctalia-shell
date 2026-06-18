@@ -99,10 +99,7 @@ void IpcService::registerHandler(
     HandlerVisibility visibility
 ) {
   // Remove existing entry for this command if re-registering
-  m_handlers.erase(
-      std::remove_if(m_handlers.begin(), m_handlers.end(), [&command](const auto& e) { return e.first == command; }),
-      m_handlers.end()
-  );
+  std::erase_if(m_handlers, [&command](const auto& e) { return e.first == command; });
   m_handlers.push_back({command, {std::move(handler), std::move(usage), std::move(description), visibility}});
 }
 
@@ -188,8 +185,8 @@ void IpcService::handleConnection(int connFd) {
 
 std::string IpcService::buildHelp() const {
   std::vector<std::size_t> order(m_handlers.size());
-  std::iota(order.begin(), order.end(), 0);
-  std::sort(order.begin(), order.end(), [this](std::size_t lhs, std::size_t rhs) {
+  std::ranges::iota(order, 0);
+  std::ranges::sort(order, [this](std::size_t lhs, std::size_t rhs) {
     return m_handlers[lhs].first < m_handlers[rhs].first;
   });
 
@@ -222,8 +219,7 @@ std::string IpcService::buildHelp() const {
 }
 
 std::string IpcService::executeParsed(const std::string& command, const std::string& args) const {
-  const auto it =
-      std::find_if(m_handlers.begin(), m_handlers.end(), [&command](const auto& e) { return e.first == command; });
+  const auto it = std::ranges::find_if(m_handlers, [&command](const auto& e) { return e.first == command; });
   if (it == m_handlers.end()) {
     return "error: unknown command (try: noctalia msg --help)\n";
   }

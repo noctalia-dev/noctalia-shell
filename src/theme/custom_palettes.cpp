@@ -242,9 +242,7 @@ namespace noctalia::theme {
       }
       out.push_back(AvailablePalette{.name = path.stem().string(), .preview = palettePreviewFromFile(path)});
     }
-    std::sort(out.begin(), out.end(), [](const AvailablePalette& a, const AvailablePalette& b) {
-      return a.name < b.name;
-    });
+    std::ranges::sort(out, {}, &AvailablePalette::name);
     return out;
   }
 

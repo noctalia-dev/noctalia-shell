@@ -36,9 +36,7 @@ namespace {
       | XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_X
       | XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_Y;
 
-  bool containsTrayWidget(const std::vector<std::string>& widgets) {
-    return std::find(widgets.begin(), widgets.end(), "tray") != widgets.end();
-  }
+  bool containsTrayWidget(const std::vector<std::string>& widgets) { return std::ranges::contains(widgets, "tray"); }
 
   void closeTrayDrawerPanelIfOpen() {
     auto& panelManager = PanelManager::instance();
@@ -922,8 +920,7 @@ std::optional<TrayItemInfo> TrayMenu::activeTrayItem() const {
     return std::nullopt;
   }
   const auto allItems = m_tray->items();
-  const auto it =
-      std::ranges::find_if(allItems, [this](const TrayItemInfo& item) { return item.id == m_activeItemId; });
+  const auto it = std::ranges::find(allItems, m_activeItemId, &TrayItemInfo::id);
   if (it == allItems.end()) {
     return std::nullopt;
   }

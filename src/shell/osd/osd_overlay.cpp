@@ -282,7 +282,7 @@ bool OsdOverlay::shouldRenderOnOutput(const WaylandOutput& output) const {
   if (selectedMonitors.empty()) {
     return true;
   }
-  return std::any_of(selectedMonitors.begin(), selectedMonitors.end(), [&output](const std::string& match) {
+  return std::ranges::any_of(selectedMonitors, [&output](const std::string& match) {
     return outputMatchesSelector(match, output);
   });
 }
@@ -381,7 +381,7 @@ void OsdOverlay::ensureSurfaces() {
       continue;
     }
 
-    auto existingIt = std::find_if(m_instances.begin(), m_instances.end(), [&output](const auto& inst) {
+    auto existingIt = std::ranges::find_if(m_instances, [&output](const auto& inst) {
       return inst != nullptr && inst->output == output.output;
     });
     if (existingIt != m_instances.end()) {
@@ -786,7 +786,7 @@ void OsdOverlay::animateInstance(Instance& inst) {
               inst.hideAnimId = 0;
               inst.visible = false;
               DeferredCall::callLater([this]() {
-                const bool allIdle = std::all_of(m_instances.begin(), m_instances.end(), [](const auto& i) {
+                const bool allIdle = std::ranges::all_of(m_instances, [](const auto& i) {
                   return !i->visible && !i->showPending && i->showAnimId == 0 && i->hideAnimId == 0;
                 });
                 if (allIdle) {

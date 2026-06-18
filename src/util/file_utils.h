@@ -35,7 +35,7 @@ namespace FileUtils {
 
   [[nodiscard]] inline bool
   containsPath(const std::vector<std::filesystem::path>& paths, const std::filesystem::path& path) {
-    return std::ranges::find(paths, path) != paths.end();
+    return std::ranges::contains(paths, path);
   }
 
   [[nodiscard]] inline std::optional<std::string> readSmallTextFile(const std::filesystem::path& path) {

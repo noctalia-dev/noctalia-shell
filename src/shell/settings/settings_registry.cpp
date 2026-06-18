@@ -52,10 +52,7 @@ namespace settings {
     }};
 
     const SettingsSectionDescriptor& descriptorFor(SettingsSection section) {
-      const auto it = std::find_if(
-          kSettingsSections.begin(), kSettingsSections.end(),
-          [section](const SettingsSectionDescriptor& descriptor) { return descriptor.section == section; }
-      );
+      const auto it = std::ranges::find(kSettingsSections, section, &SettingsSectionDescriptor::section);
       if (it == kSettingsSections.end()) {
         std::abort();
       }
@@ -350,10 +347,7 @@ namespace settings {
   std::string_view sectionGlyph(SettingsSection section) { return descriptorFor(section).glyph; }
 
   std::optional<SettingsSection> settingsSectionFromId(std::string_view id) {
-    const auto it = std::find_if(
-        kSettingsSections.begin(), kSettingsSections.end(),
-        [id](const SettingsSectionDescriptor& descriptor) { return descriptor.id == id; }
-    );
+    const auto it = std::ranges::find(kSettingsSections, id, &SettingsSectionDescriptor::id);
     if (it == kSettingsSections.end()) {
       return std::nullopt;
     }

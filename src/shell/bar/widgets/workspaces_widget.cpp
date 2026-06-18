@@ -38,7 +38,7 @@ namespace {
   // Numeric workspace IDs ("10", "11") must not be truncated like word labels.
   [[nodiscard]] bool isNumericLabel(std::string_view label) {
     return !label.empty()
-        && std::all_of(label.begin(), label.end(), [](char c) { return std::isdigit(static_cast<unsigned char>(c)); });
+        && std::ranges::all_of(label, [](char c) { return std::isdigit(static_cast<unsigned char>(c)); });
   }
 } // namespace
 
@@ -117,15 +117,14 @@ void WorkspacesWidget::syncWidgetVisibility(bool showWidget) {
 void WorkspacesWidget::doUpdate(Renderer& renderer) {
   auto current = m_platform.workspaces(m_output);
 
-  if (!m_cachedState.empty()
-      && !current.empty()
-      && !std::any_of(current.begin(), current.end(), [](const Workspace& ws) { return ws.active; })) {
+  if (!m_cachedState.empty() && !current.empty() && !std::ranges::any_of(current, [](const Workspace& ws) {
+        return ws.active;
+      })) {
     return;
   }
 
   const bool showWidget = !current.empty()
-      && (!m_hideWhenEmpty
-          || std::any_of(current.begin(), current.end(), [](const Workspace& ws) { return !isEmptyWorkspace(ws); }));
+      && (!m_hideWhenEmpty || std::ranges::any_of(current, [](const Workspace& ws) { return !isEmptyWorkspace(ws); }));
   syncWidgetVisibility(showWidget);
   if (!showWidget) {
     if (!m_cachedState.empty() || !m_items.empty()) {
@@ -376,8 +375,8 @@ void WorkspacesWidget::updateContainerSize() {
     return;
   }
   float total = 0.0f;
-  for (std::size_t i = 0; i < m_items.size(); ++i) {
-    total = std::max(total, m_items[i].currentX + m_items[i].currentWidth);
+  for (const auto& item : m_items) {
+    total = std::max(total, item.currentX + item.currentWidth);
   }
   if (m_isVertical) {
     m_container->setFrameSize(m_indicatorHeight, total);

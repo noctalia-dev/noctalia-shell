@@ -854,7 +854,7 @@ bool NetworkManagerService::hasSavedConnection(const std::string& ssid) const {
       return false;
     }
   }
-  return std::find(m_savedSsids.begin(), m_savedSsids.end(), ssid) != m_savedSsids.end();
+  return std::ranges::contains(m_savedSsids, ssid);
 }
 
 void NetworkManagerService::refreshSavedConnections(std::function<void()> onComplete) {
@@ -1372,13 +1372,11 @@ void NetworkManagerService::finishSavedConnections(
     std::vector<std::string>& ssids, std::vector<std::string>& wiredConnectionPaths, std::function<void()> onComplete
 ) {
   std::ranges::sort(ssids);
-  ssids.erase(std::unique(ssids.begin(), ssids.end()), ssids.end());
+  ssids.erase(std::ranges::unique(ssids).begin(), ssids.end());
   m_savedSsids = std::move(ssids);
 
   std::ranges::sort(wiredConnectionPaths);
-  wiredConnectionPaths.erase(
-      std::unique(wiredConnectionPaths.begin(), wiredConnectionPaths.end()), wiredConnectionPaths.end()
-  );
+  wiredConnectionPaths.erase(std::ranges::unique(wiredConnectionPaths).begin(), wiredConnectionPaths.end());
   m_savedWiredConnectionPaths = std::move(wiredConnectionPaths);
   onComplete();
 }
@@ -1390,9 +1388,7 @@ void NetworkManagerService::finishRefreshAccessPoints(
   std::vector<AccessPointInfo> deduped;
   deduped.reserve(aps.size());
   for (auto& ap : aps) {
-    auto it = std::find_if(deduped.begin(), deduped.end(), [&](const AccessPointInfo& other) {
-      return other.ssid == ap.ssid;
-    });
+    auto it = std::ranges::find(deduped, ap.ssid, &AccessPointInfo::ssid);
     if (it == deduped.end()) {
       deduped.push_back(std::move(ap));
       continue;

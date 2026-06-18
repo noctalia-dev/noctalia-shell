@@ -533,8 +533,8 @@ namespace shell::dock {
         const float dot = std::max(kDotMinSize, std::round(iSize * kDotSizeRatio));
         const bool verticalDots = shell::dock::isVerticalEdge(edge);
 
-        for (std::size_t dotIndex = 0; dotIndex < item.dotIndicators.size(); ++dotIndex) {
-          item.dotIndicators[dotIndex] = static_cast<Box*>(areaNode->addChild(
+        for (auto& dotIndicator : item.dotIndicators) {
+          dotIndicator = static_cast<Box*>(areaNode->addChild(
               ui::box({
                   .fill = colorSpecFromRole(ColorRole::Secondary),
                   .radius = dot * 0.5f,

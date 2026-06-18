@@ -79,6 +79,8 @@ public:
   void setPanelOpenedCallback(std::function<void()> callback);
   void setAttachedPanelAvailabilityCallback(std::function<bool(wl_output*, std::string_view)> callback);
   void setAttachedPanelBarSettledCallback(std::function<bool(wl_output*, std::string_view)> callback);
+  // Called when an auto-hide bar finishes revealing for an attached panel open.
+  void onAttachedBarRevealSettled(wl_output* output, std::string_view barName);
 
   void registerPanel(const std::string& id, std::unique_ptr<Panel> content);
 

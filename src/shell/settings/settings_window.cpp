@@ -53,7 +53,7 @@ namespace {
         continue;
       }
       const auto inLane = [&](const std::vector<std::string>& widgets) {
-        return std::find(widgets.begin(), widgets.end(), widgetName) != widgets.end();
+        return std::ranges::contains(widgets, widgetName);
       };
       if (inLane(bar.startWidgets)) {
         lane = "start";

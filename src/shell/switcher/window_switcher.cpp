@@ -399,25 +399,23 @@ namespace {
       addCandidate(std::move(candidate), key);
     }
 
-    std::stable_sort(
-        candidates.begin(), candidates.end(), [](const WindowSwitcherCandidate& a, const WindowSwitcherCandidate& b) {
-          if (a.workspaceKey != b.workspaceKey) {
-            return a.workspaceKey < b.workspaceKey;
-          }
-          if (a.sortY != b.sortY) {
-            return a.sortY < b.sortY;
-          }
-          if (a.sortX != b.sortX) {
-            return a.sortX < b.sortX;
-          }
-          if (a.toplevelOrder != b.toplevelOrder) {
-            return a.toplevelOrder < b.toplevelOrder;
-          }
-          const std::string titleA = !a.entry.title.empty() ? a.entry.title : a.entry.appId;
-          const std::string titleB = !b.entry.title.empty() ? b.entry.title : b.entry.appId;
-          return StringUtils::toLower(titleA) < StringUtils::toLower(titleB);
-        }
-    );
+    std::ranges::stable_sort(candidates, [](const WindowSwitcherCandidate& a, const WindowSwitcherCandidate& b) {
+      if (a.workspaceKey != b.workspaceKey) {
+        return a.workspaceKey < b.workspaceKey;
+      }
+      if (a.sortY != b.sortY) {
+        return a.sortY < b.sortY;
+      }
+      if (a.sortX != b.sortX) {
+        return a.sortX < b.sortX;
+      }
+      if (a.toplevelOrder != b.toplevelOrder) {
+        return a.toplevelOrder < b.toplevelOrder;
+      }
+      const std::string titleA = !a.entry.title.empty() ? a.entry.title : a.entry.appId;
+      const std::string titleB = !b.entry.title.empty() ? b.entry.title : b.entry.appId;
+      return StringUtils::toLower(titleA) < StringUtils::toLower(titleB);
+    });
 
     out.clear();
     out.reserve(candidates.size());

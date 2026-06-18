@@ -166,7 +166,7 @@ TrayWidget::TrayWidget(
     normalized.reserve(tokens.size());
     for (const auto& token : tokens) {
       for (const auto& variant : identifierVariants(token)) {
-        if (std::ranges::find(normalized, variant) == normalized.end()) {
+        if (!std::ranges::contains(normalized, variant)) {
           normalized.push_back(variant);
         }
       }
@@ -747,7 +747,7 @@ bool TrayWidget::isHiddenItem(const TrayItemInfo& item) const {
   std::vector<std::string> candidates;
   auto appendVariants = [&candidates](std::string_view text) {
     for (const auto& variant : identifierVariants(text)) {
-      if (std::ranges::find(candidates, variant) == candidates.end()) {
+      if (!std::ranges::contains(candidates, variant)) {
         candidates.push_back(variant);
       }
     }
@@ -763,7 +763,7 @@ bool TrayWidget::isHiddenItem(const TrayItemInfo& item) const {
   appendVariants(item.attentionIconName);
 
   for (const auto& needle : m_hiddenItems) {
-    if (std::ranges::find(candidates, needle) != candidates.end()) {
+    if (std::ranges::contains(candidates, needle)) {
       return true;
     }
   }

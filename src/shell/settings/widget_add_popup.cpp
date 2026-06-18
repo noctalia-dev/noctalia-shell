@@ -38,7 +38,7 @@ namespace settings {
     }
 
     void sortSearchOptions(std::vector<SearchPickerOption>& options) {
-      std::sort(options.begin(), options.end(), [](const SearchPickerOption& a, const SearchPickerOption& b) {
+      std::ranges::sort(options, [](const SearchPickerOption& a, const SearchPickerOption& b) {
         const std::string aLabel = StringUtils::toLower(a.label);
         const std::string bLabel = StringUtils::toLower(b.label);
         if (aLabel == bLabel) {

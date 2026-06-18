@@ -58,7 +58,6 @@ private:
 
   void syncInstances();
   void createInstance(const DesktopWidgetState& state, const WaylandOutput& output);
-  void teardownInstance(DesktopWidgetInstance& instance);
   void buildScene(DesktopWidgetInstance& instance);
   void prepareFrame(DesktopWidgetInstance& instance, bool needsUpdate, bool needsLayout);
   [[nodiscard]] DesktopWidgetInstance* findInstance(const std::string& id);

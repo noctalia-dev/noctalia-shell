@@ -70,13 +70,11 @@ namespace settings {
       if (trimmed.empty()) {
         return false;
       }
-      return std::all_of(trimmed.begin(), trimmed.end(), [](unsigned char c) {
-        return std::isalnum(c) != 0 || c == '_' || c == '-';
-      });
+      return std::ranges::all_of(trimmed, [](unsigned char c) { return std::isalnum(c) != 0 || c == '_' || c == '-'; });
     }
 
     bool barNameExists(const Config& cfg, std::string_view name) {
-      return std::any_of(cfg.bars.begin(), cfg.bars.end(), [name](const BarConfig& bar) { return bar.name == name; });
+      return std::ranges::contains(cfg.bars, name, &BarConfig::name);
     }
 
     Flex* makeSection(Flex& content, std::string_view title, float scale, bool showBorder) {
@@ -154,8 +152,7 @@ namespace settings {
               requestRebuild();
               return;
             }
-            if (newMatch.empty()
-                || std::find(existingMatches.begin(), existingMatches.end(), newMatch) != existingMatches.end()) {
+            if (newMatch.empty() || std::ranges::contains(existingMatches, newMatch)) {
               inputPtr->setInvalid(true);
               return;
             }

@@ -4,6 +4,7 @@
 #include "core/log.h"
 #include "util/string_utils.h"
 
+#include <algorithm>
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
@@ -608,7 +609,7 @@ void SwayWorkspaceBackend::parseWorkspaceList(const std::string& payload) {
       }
     }
 
-    std::sort(next.begin(), next.end(), [](const auto& a, const auto& b) {
+    std::ranges::sort(next, [](const auto& a, const auto& b) {
       if ((a.num >= 0) != (b.num >= 0)) {
         return a.num >= 0;
       }

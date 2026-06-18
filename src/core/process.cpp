@@ -148,7 +148,7 @@ namespace {
     if (name.empty()) {
       return false;
     }
-    return std::all_of(name.begin(), name.end(), [](char ch) { return ch >= '0' && ch <= '9'; });
+    return std::ranges::all_of(name, [](char ch) { return ch >= '0' && ch <= '9'; });
   }
 
   [[nodiscard]] std::string readProcCmdline(const std::filesystem::path& path) {
@@ -229,8 +229,8 @@ namespace {
 
   [[nodiscard]] bool cachedProcessMatchesAny(std::initializer_list<std::string_view> needles) {
     const auto& commandLines = cachedProcessCommandLines();
-    return std::any_of(commandLines.begin(), commandLines.end(), [needles](const auto& commandLine) {
-      return std::any_of(needles.begin(), needles.end(), [&commandLine](std::string_view needle) {
+    return std::ranges::any_of(commandLines, [needles](const auto& commandLine) {
+      return std::ranges::any_of(needles, [&commandLine](std::string_view needle) {
         return commandLine.find(needle) != std::string::npos;
       });
     });
@@ -862,13 +862,13 @@ namespace process {
     if (needles.empty()) {
       return false;
     }
-    if (std::any_of(needles.begin(), needles.end(), [](const auto& needle) { return needle.empty(); })) {
+    if (std::ranges::any_of(needles, [](const auto& needle) { return needle.empty(); })) {
       return false;
     }
 
     const auto& commandLines = cachedProcessCommandLines();
-    return std::any_of(commandLines.begin(), commandLines.end(), [&needles](const auto& commandLine) {
-      return std::all_of(needles.begin(), needles.end(), [&commandLine](const auto& needle) {
+    return std::ranges::any_of(commandLines, [&needles](const auto& commandLine) {
+      return std::ranges::all_of(needles, [&commandLine](const auto& needle) {
         return commandLine.find(needle) != std::string::npos;
       });
     });

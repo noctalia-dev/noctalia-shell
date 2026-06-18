@@ -939,7 +939,7 @@ void NotificationToast::dismissPopup(std::size_t index) {
 }
 
 void NotificationToast::finishRemoval(uint32_t notificationId) {
-  const auto it = std::find_if(m_entries.begin(), m_entries.end(), [notificationId](const PopupEntry& entry) {
+  const auto it = std::ranges::find_if(m_entries, [notificationId](const PopupEntry& entry) {
     return entry.notificationId == notificationId;
   });
   if (it == m_entries.end()) {
@@ -1122,7 +1122,7 @@ void NotificationToast::removeCardFromInstance(Instance& inst, std::size_t entry
 }
 
 void NotificationToast::finishExitingEntryIfOrphaned(uint32_t notificationId) {
-  const auto it = std::find_if(m_entries.begin(), m_entries.end(), [notificationId](const PopupEntry& entry) {
+  const auto it = std::ranges::find_if(m_entries, [notificationId](const PopupEntry& entry) {
     return entry.notificationId == notificationId && entry.exiting;
   });
   if (it == m_entries.end()) {
@@ -1224,7 +1224,7 @@ void NotificationToast::dismissCardFromInstance(Instance& inst, std::size_t entr
 }
 
 NotificationToast::PopupEntry* NotificationToast::findEntry(uint32_t notificationId) {
-  const auto it = std::find_if(m_entries.begin(), m_entries.end(), [notificationId](const PopupEntry& entry) {
+  const auto it = std::ranges::find_if(m_entries, [notificationId](const PopupEntry& entry) {
     return entry.notificationId == notificationId;
   });
   if (it == m_entries.end()) {
@@ -1555,7 +1555,7 @@ bool NotificationToast::shouldRenderOnOutput(const WaylandOutput& output) const 
   if (selectedMonitors.empty()) {
     return true;
   }
-  return std::any_of(selectedMonitors.begin(), selectedMonitors.end(), [&output](const std::string& match) {
+  return std::ranges::any_of(selectedMonitors, [&output](const std::string& match) {
     return outputMatchesSelector(match, output);
   });
 }
@@ -1629,7 +1629,7 @@ float NotificationToast::cardSurfaceY(const Instance& inst, std::size_t entryInd
   if (items.empty()) {
     return bottom ? layoutBottom : paddingTop(scale);
   }
-  std::sort(items.begin(), items.end(), [](const Item& a, const Item& b) { return a.primary < b.primary; });
+  std::ranges::sort(items, {}, &Item::primary);
 
   float cursor = items.front().primary;
   for (std::size_t k = 0; k < items.size(); ++k) {
@@ -1742,9 +1742,7 @@ void NotificationToast::collapseStack() {
     return;
   }
 
-  std::sort(placed.begin(), placed.end(), [](const PlacedEntry& a, const PlacedEntry& b) {
-    return a.oldPrimary < b.oldPrimary;
-  });
+  std::ranges::sort(placed, {}, &PlacedEntry::oldPrimary);
 
   const float initialCursor = isBottomStacking() ? 0.0f : topPad;
   float cursor = initialCursor;
@@ -1864,9 +1862,7 @@ NotificationToast::findPlacementY(float candidateHeight, std::optional<uint32_t>
   const float layoutGap = kGap * scale;
   const float topPadding = paddingTop(scale);
   if (isBottomStacking()) {
-    std::sort(occupied.begin(), occupied.end(), [](const Interval& a, const Interval& b) {
-      return a.bottom > b.bottom;
-    });
+    std::ranges::sort(occupied, std::ranges::greater{}, &Interval::bottom);
     float cursorBottom = bottom;
     for (const auto& interval : occupied) {
       const float candidateTop = cursorBottom - candidateHeight;
@@ -1882,7 +1878,7 @@ NotificationToast::findPlacementY(float candidateHeight, std::optional<uint32_t>
     return std::nullopt;
   }
 
-  std::sort(occupied.begin(), occupied.end(), [](const Interval& a, const Interval& b) { return a.top < b.top; });
+  std::ranges::sort(occupied, {}, &Interval::top);
   float cursor = topPadding;
   for (const auto& interval : occupied) {
     if (cursor + candidateHeight <= interval.top - layoutGap + 0.5f) {
@@ -1959,7 +1955,7 @@ void NotificationToast::ensureSurfaces() {
       continue;
     }
 
-    auto existingIt = std::find_if(m_instances.begin(), m_instances.end(), [&output](const auto& inst) {
+    auto existingIt = std::ranges::find_if(m_instances, [&output](const auto& inst) {
       return inst != nullptr && inst->output == output.output;
     });
     if (existingIt != m_instances.end()) {

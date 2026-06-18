@@ -42,7 +42,7 @@ namespace noctalia::config {
           files.push_back(entry.path());
         }
       }
-      std::sort(files.begin(), files.end());
+      std::ranges::sort(files);
       return files;
     }
 
@@ -183,7 +183,7 @@ namespace noctalia::config {
         }
         if (!value) {
           diag.error(path, "expected a string or integer");
-        } else if (std::find(f.enumValues.begin(), f.enumValues.end(), *value) == f.enumValues.end()) {
+        } else if (!std::ranges::contains(f.enumValues, *value)) {
           diag.warn(path, "\"" + *value + "\" is not one of the allowed values");
         }
         break;
@@ -214,7 +214,7 @@ namespace noctalia::config {
         if (ignoreKeys.contains(keyStr)) {
           continue;
         }
-        const auto field = std::find_if(fields.begin(), fields.end(), [&](const auto& f) { return f.key == keyStr; });
+        const auto field = std::ranges::find(fields, keyStr, &schema::WidgetSettingField::key);
         if (field == fields.end()) {
           if (flagUnknown) {
             diag.warn(base + "." + keyStr, "unknown setting");

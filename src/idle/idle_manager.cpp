@@ -280,7 +280,7 @@ void IdleManager::graceFadeComplete() {
 }
 
 void IdleManager::joinActiveGrace(BehaviorState& behavior) {
-  if (std::find(m_graceBehaviors.begin(), m_graceBehaviors.end(), &behavior) != m_graceBehaviors.end()) {
+  if (std::ranges::contains(m_graceBehaviors, &behavior)) {
     return;
   }
   behavior.phase = BehaviorPhase::Fading;

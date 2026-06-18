@@ -424,7 +424,7 @@ void LockScreen::runAfterSessionLocked(std::function<void()> fn) {
 void LockScreen::handleLocked(void* data, ext_session_lock_v1* /*lock*/) {
   auto* self = static_cast<LockScreen*>(data);
   // Ignore locked events after unlock()/handleFinished() tore down the lock object.
-  // Late events would pause background shell rendering without a matching unlock hook.
+  // A late event would re-engage the locked state with no matching unlock hook.
   if (self->m_lock == nullptr || !self->m_lockPending) {
     return;
   }
@@ -493,9 +493,7 @@ void LockScreen::syncInstances() {
   const auto& outputs = m_wayland->outputs();
 
   std::erase_if(m_instances, [&](Instance& instance) {
-    const bool exists = std::any_of(outputs.begin(), outputs.end(), [&](const WaylandOutput& output) {
-      return output.name == instance.outputName;
-    });
+    const bool exists = std::ranges::contains(outputs, instance.outputName, &WaylandOutput::name);
     if (!exists && instance.surface != nullptr && instance.surface->wlSurface() == m_pointerSurface) {
       m_pointerSurface = nullptr;
     }
@@ -503,9 +501,7 @@ void LockScreen::syncInstances() {
   });
 
   for (const auto& output : outputs) {
-    const bool exists = std::any_of(m_instances.begin(), m_instances.end(), [&](const Instance& instance) {
-      return instance.outputName == output.name;
-    });
+    const bool exists = std::ranges::contains(m_instances, output.name, &Instance::outputName);
     if (!exists) {
       createInstance(output);
     }
@@ -594,18 +590,16 @@ bool LockScreen::isInteractiveOutput(const WaylandOutput& output) const {
   }
 
   const bool anyConfiguredPresent =
-      m_wayland != nullptr
-      && std::any_of(m_wayland->outputs().begin(), m_wayland->outputs().end(), [&](const WaylandOutput& candidate) {
-           return candidate.output != nullptr
-               && std::any_of(selectedMonitors.begin(), selectedMonitors.end(), [&](const std::string& match) {
-                    return outputMatchesSelector(match, candidate);
-                  });
-         });
+      m_wayland != nullptr && std::ranges::any_of(m_wayland->outputs(), [&](const WaylandOutput& candidate) {
+        return candidate.output != nullptr && std::ranges::any_of(selectedMonitors, [&](const std::string& match) {
+                 return outputMatchesSelector(match, candidate);
+               });
+      });
   if (!anyConfiguredPresent) {
     return true;
   }
 
-  return std::any_of(selectedMonitors.begin(), selectedMonitors.end(), [&](const std::string& match) {
+  return std::ranges::any_of(selectedMonitors, [&](const std::string& match) {
     return outputMatchesSelector(match, output);
   });
 }

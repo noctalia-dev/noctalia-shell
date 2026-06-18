@@ -30,6 +30,7 @@
 #include "wayland/surface.h"
 #include "wayland/wayland_toplevels.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cerrno>
 #include <format>
@@ -259,33 +260,6 @@ void Dock::unsuppressDisplay() {
   m_overlayDisplaySuppressed = false;
   if (m_hadInstancesBeforeOverlaySuppress) {
     show();
-  }
-}
-
-void Dock::pauseUnderSessionLock() {
-  if (m_sessionLockPaused) {
-    return;
-  }
-  m_sessionLockPaused = true;
-  for (const auto& instance : m_instances) {
-    if (instance == nullptr || instance->surface == nullptr) {
-      continue;
-    }
-    instance->surface->pauseFrameLoop();
-  }
-}
-
-void Dock::resumeAfterSessionLock() {
-  if (!m_sessionLockPaused) {
-    return;
-  }
-  m_sessionLockPaused = false;
-  for (const auto& instance : m_instances) {
-    if (instance == nullptr || instance->surface == nullptr) {
-      continue;
-    }
-    instance->surface->resumeFrameLoop();
-    instance->surface->requestLayout();
   }
 }
 
@@ -526,10 +500,9 @@ void Dock::syncInstances() {
       ? !m_platform->runningAppIds(nullptr).empty()
       : false;
   const auto outputAllowed = [&](const WaylandOutput& output) {
-    if (!selectedMonitors.empty()
-        && std::none_of(selectedMonitors.begin(), selectedMonitors.end(), [&output](const std::string& m) {
-             return outputMatchesSelector(m, output);
-           })) {
+    if (!selectedMonitors.empty() && std::ranges::none_of(selectedMonitors, [&output](const std::string& m) {
+          return outputMatchesSelector(m, output);
+        })) {
       return false;
     }
     if (hasStaticContent) {
@@ -546,8 +519,7 @@ void Dock::syncInstances() {
 
   // Remove instances for dead outputs or outputs no longer selected.
   std::erase_if(m_instances, [this, &outputs, &outputAllowed](const auto& inst) {
-    const auto it =
-        std::find_if(outputs.begin(), outputs.end(), [&inst](const auto& o) { return o.name == inst->outputName; });
+    const auto it = std::ranges::find(outputs, inst->outputName, &WaylandOutput::name);
     const bool drop = (it == outputs.end()) || !outputAllowed(*it);
     if (drop) {
       detachInstanceState(*inst);
@@ -560,9 +532,8 @@ void Dock::syncInstances() {
       continue;
     if (!outputAllowed(output))
       continue;
-    const bool exists = std::any_of(m_instances.begin(), m_instances.end(), [&output](const auto& inst) {
-      return inst->outputName == output.name;
-    });
+    const bool exists =
+        std::ranges::any_of(m_instances, [&output](const auto& inst) { return inst->outputName == output.name; });
     if (!exists) {
       createInstance(output);
     }
@@ -631,11 +602,6 @@ void Dock::createInstance(const WaylandOutput& output) {
 
   m_surfaceMap[instance->surface->wlSurface()] = instance.get();
   m_instances.push_back(std::move(instance));
-  if (m_sessionLockPaused) {
-    if (const auto& created = m_instances.back(); created != nullptr && created->surface != nullptr) {
-      created->surface->pauseFrameLoop();
-    }
-  }
 }
 
 // ── Private: scene building ───────────────────────────────────────────────────

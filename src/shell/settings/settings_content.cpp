@@ -389,14 +389,14 @@ namespace settings {
       for (const auto& option : options) {
         auto item = ui::row({.align = FlexAlign::Center, .gap = Style::spaceXs * scale});
 
-        const bool isSelected = std::find(selected.begin(), selected.end(), option.value) != selected.end();
+        const bool isSelected = std::ranges::contains(selected, option.value);
         const std::string optionValue = option.value;
         auto checkbox = ui::checkbox({
             .checked = isSelected,
             .scale = scale,
             .onChange = [setOverride = ctx.setOverride, requestRebuild = ctx.requestRebuild, path, options, selected,
                          optionValue, requireAtLeastOne](bool checked) mutable {
-              auto it = std::find(selected.begin(), selected.end(), optionValue);
+              auto it = std::ranges::find(selected, optionValue);
               if (checked) {
                 if (it == selected.end()) {
                   selected.push_back(optionValue);
@@ -414,7 +414,7 @@ namespace settings {
               std::vector<std::string> ordered;
               ordered.reserve(selected.size());
               for (const auto& opt : options) {
-                if (std::find(selected.begin(), selected.end(), opt.value) != selected.end()) {
+                if (std::ranges::contains(selected, opt.value)) {
                   ordered.push_back(opt.value);
                 }
               }
@@ -454,7 +454,7 @@ namespace settings {
         std::vector<std::string> ordered;
         ordered.reserve(selected->size());
         for (const auto& opt : *options) {
-          if (std::find(selected->begin(), selected->end(), opt.value) != selected->end()) {
+          if (std::ranges::contains(*selected, opt.value)) {
             ordered.push_back(opt.value);
           }
         }
@@ -486,7 +486,7 @@ namespace settings {
           row = ui::row({.align = FlexAlign::Stretch, .gap = Style::spaceSm * scale, .fillWidth = true});
         }
 
-        const bool checked = std::find(selected->begin(), selected->end(), option.value) != selected->end();
+        const bool checked = std::ranges::contains(*selected, option.value);
         const std::string value = option.value;
         Button* card = nullptr;
         Label* titleLabel = nullptr;
@@ -774,9 +774,7 @@ namespace settings {
       listEditor->setItems(std::move(itemTypes));
       listEditor->setOnAddRequested([setOverride = ctx.setOverride, items = shortcuts.items,
                                      path = entry.path](std::string value) mutable {
-        if (value.empty() || std::any_of(items.begin(), items.end(), [&value](const ShortcutConfig& item) {
-              return item.type == value;
-            })) {
+        if (value.empty() || std::ranges::contains(items, value, &ShortcutConfig::type)) {
           return;
         }
         items.push_back(ShortcutConfig{std::move(value)});

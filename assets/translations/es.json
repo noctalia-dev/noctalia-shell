@@ -8,7 +8,8 @@
       "present": "Leyendo huella...",
       "ready": "Situa tu dedo en el lector",
       "remove-and-retry": "Retira tu dedo y prueba de nuevo",
-      "retry": "Por favor lee tu huella de nuevo"
+      "retry": "Por favor lee tu huella de nuevo",
+      "too-many-attempts": "Lector de huellas deshabilitado (demasiados intentos)"
     },
     "pam": {
       "authentication-failed": "Autenticación fallida",
@@ -48,6 +49,11 @@
       },
       "network": {
         "wired": "Cableado"
+      },
+      "privacy": {
+        "camera": "Camara",
+        "microphone": "Microfono",
+        "screen-sharing": "Compartir pantalla"
       },
       "scripted": {
         "reload-failed": "Recarga del script fallida",
@@ -111,6 +117,8 @@
   "control-center": {
     "audio": {
       "application-volumes": "Volumen de aplicaciones",
+      "choose-effects-profile": "Selecciona un perfil",
+      "effects-profile": "Efectos:",
       "input-volume": "Volumen de entrada",
       "no-application-audio": "Sin aplicacion de audio",
       "no-application-audio-body": "No hay ninguna aplicación reproduciendo audio en este momento.",
@@ -511,6 +519,7 @@
   "lockscreen": {
     "authenticating": "Autenticando...",
     "authentication-failed": "Autenticación fallida",
+    "password-cleared": "Contraseña eliminada",
     "password-placeholder": "Contraseña",
     "ready": "Ingrese su contraseña y presione Enter.",
     "unlocked": "Desbloqueado",
@@ -531,12 +540,16 @@
       "battery-low-body": "{device}: {percent}% restante",
       "battery-low-title": "Batería baja",
       "calendar": "Calendario",
+      "calendar-google-connect-failed-title": "Conexion fallida con Calendario Google",
       "calendar-google-connect-start-failed": "No se pudo empezar la autorización con Google. Revise su conexión al internet",
+      "dbus-disabled": "Notificaciones DBus deshabilitada",
       "desktop-widgets-editor": "Editor de Widget",
       "desktop-widgets-editor-enabled": "El editor de widgets del escritorio está activado. Cambia a un espacio de trabajo vacío para ver el panel del editor.",
       "greeter-sync": "Noctalia Greeter",
       "greeter-sync-success": "Apariencia sincronizada. Los cambios se aplican en el siguiente login",
       "keybind-app": "Noctalia",
+      "launcher-usage-reset-success": "Datos de uso eliminados.",
+      "lockscreen-widgets-editor": "Editor de widgets de la pantalla de bloqueo",
       "wallpaper-palette-export": "Paleta Personalizada"
     }
   },
@@ -557,7 +570,9 @@
       "caps-off": "Bloqueo de Mayúsculas Encendido",
       "caps-on": "Bloqueo de Mayúsculas Apagado",
       "num-off": "Bloqueo Numérico Apagado",
-      "num-on": "Bloqueo Numérico Encendido"
+      "num-on": "Bloqueo Numérico Encendido",
+      "scroll-off": "Bloq. Despl. Apagado",
+      "scroll-on": "Bloq. Despl. Encendido"
     },
     "wifi": {
       "off": "Wi-Fi Apagado",
@@ -691,9 +706,11 @@
         "group": {
           "action": "Grupo",
           "border": "Borde",
+          "clear": "Eliminar",
           "edit": "Eliminar estilo",
           "fill": "Fondo",
           "opacity": "Opacidad",
+          "orphan": "Grupo desconocido",
           "radius": "Radio",
           "selected": "{count} seleccionados",
           "style": "Estilo",
@@ -713,6 +730,7 @@
       }
     },
     "errors": {
+      "avatar-load": "No se puede cargar la imagen seleccionada. Usa PNG, JPEG, WebP, GIF, BMP o SVG.",
       "bar": {
         "create": "No se pudo crear la barra.",
         "delete": "No se pudo eliminar la barra.",
@@ -720,10 +738,40 @@
         "rename": "No se pudo renombar la barra."
       }
     },
+    "export-config": {
+      "title": "Exportar Configuracion"
+    },
+    "idle": {
+      "behavior": {
+        "kind": {
+          "lock": "Bloquear",
+          "lock-and-suspend": "Bloquear y Suspender",
+          "screen-off": "Apagar pantalla",
+          "suspend": "Suspender"
+        },
+        "kind-section-label": "Accion",
+        "name-label": "Nombre"
+      },
+      "live-status": {
+        "active": "Activo"
+      }
+    },
     "navigation": {
       "groups": {
+        "audio": "Sonido",
+        "automation": "Automatizacion",
+        "brightness": "Brillo",
+        "calendar": "Calendario",
         "clipboard": "Portapapeles",
+        "control-center": "Centro de Control",
+        "effects": "Efectos",
+        "formats": "Formatos",
+        "general": "General",
         "launcher": "Launcher",
+        "lock-screen": "Pantalla de Bloqueo",
+        "monitor": "Monitor del Sistema",
+        "network": "Red",
+        "notifications": "Notificaciones",
         "osd": "OSD",
         "power": "Energía",
         "privacy-security": "Privacidad & Seguridad",
@@ -733,13 +781,18 @@
         "screenshot": "Captura de pantalla",
         "security": "Seguridad",
         "session-panel": "Sesión",
+        "system": "Sistema",
+        "theme": "Tema",
+        "user": "Usuario",
         "wallpaper": "Fondo de Pantalla",
         "weather": "Pronóstico"
       },
       "sections": {
+        "appearance": "Apariencia",
         "bar": "Barra",
         "desktop": "Escritorio",
         "dock": "Dock",
+        "location": "Localizacion",
         "niri": "Niri",
         "notifications": "Notificaciones",
         "osd": "OSD",

@@ -51,9 +51,6 @@ public:
   /// Hides on-screen desktop widgets while another overlay editor (e.g. lockscreen layout) is active.
   void suppressDisplay();
   void unsuppressDisplay();
-  /// Tears down desktop widget surfaces while the session lock is active.
-  void pauseUnderSessionLock();
-  void resumeAfterSessionLock();
 
   /// Ephemeral, IPC-driven runtime visibility override layered on top of the saved
   /// `desktop_widgets.enabled` setting (in the spirit of the bar's bar-show/bar-hide/bar-toggle, but
@@ -92,7 +89,6 @@ private:
   RuntimeVisibility m_runtimeVisibility = RuntimeVisibility::FollowConfig;
   // Last-seen saved desktop_widgets.enabled; an explicit transition clears the runtime override.
   bool m_lastEnabled = false;
-  bool m_sessionLockPaused = false;
   std::unique_ptr<DesktopWidgetsHost> m_host;
   std::unique_ptr<BackgroundWidgetsEditor> m_editor;
 };

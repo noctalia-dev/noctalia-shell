@@ -53,7 +53,7 @@ namespace config_export {
         (void)value;
         keys.push_back(key);
       }
-      std::sort(keys.begin(), keys.end());
+      std::ranges::sort(keys);
 
       for (const auto& key : keys) {
         insertWidgetSettingValue(table, key, widget.settings.at(key));
@@ -64,7 +64,7 @@ namespace config_export {
         (void)map;
         tableKeys.push_back(key);
       }
-      std::sort(tableKeys.begin(), tableKeys.end());
+      std::ranges::sort(tableKeys);
       for (const auto& key : tableKeys) {
         const auto& map = widget.tables.at(key);
         toml::table subtable;
@@ -74,7 +74,7 @@ namespace config_export {
           (void)value;
           mapKeys.push_back(mapKey);
         }
-        std::sort(mapKeys.begin(), mapKeys.end());
+        std::ranges::sort(mapKeys);
         for (const auto& mapKey : mapKeys) {
           const auto& value = map.at(mapKey);
           subtable.insert_or_assign(mapKey, value);
@@ -242,7 +242,7 @@ namespace config_export {
             (void)value;
             keys.push_back(key);
           }
-          std::sort(keys.begin(), keys.end());
+          std::ranges::sort(keys);
           for (const auto& key : keys) {
             insertWidgetSettingValue(settings, key, widget.settings.at(key));
           }
@@ -323,7 +323,7 @@ namespace config_export {
       (void)widget;
       widgetNames.push_back(name);
     }
-    std::sort(widgetNames.begin(), widgetNames.end());
+    std::ranges::sort(widgetNames);
     for (const auto& name : widgetNames) {
       widgetRoot.insert_or_assign(name, widgetConfigTable(config.widgets.at(name)));
     }

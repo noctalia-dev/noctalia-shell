@@ -38,9 +38,6 @@ public:
   /// Tears down dock surfaces without changing config (e.g. lockscreen widget editor overlay).
   void suppressDisplay();
   void unsuppressDisplay();
-  /// Stops dock surface frame loops while the session lock is active.
-  void pauseUnderSessionLock();
-  void resumeAfterSessionLock();
   void closeAllInstances();
   void onOutputChange();
   void refresh();
@@ -89,5 +86,4 @@ private:
   Signal<>::ScopedConnection m_appIconColorizeConn;
   bool m_overlayDisplaySuppressed = false;
   bool m_hadInstancesBeforeOverlaySuppress = false;
-  bool m_sessionLockPaused = false;
 };

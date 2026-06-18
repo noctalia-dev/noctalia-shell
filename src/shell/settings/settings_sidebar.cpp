@@ -27,15 +27,11 @@ namespace settings {
       if (trimmed.empty()) {
         return false;
       }
-      return std::all_of(trimmed.begin(), trimmed.end(), [](unsigned char c) {
-        return std::isalnum(c) != 0 || c == '_' || c == '-';
-      });
+      return std::ranges::all_of(trimmed, [](unsigned char c) { return std::isalnum(c) != 0 || c == '_' || c == '-'; });
     }
 
     bool barNameExists(const std::vector<std::string>& barNames, std::string_view name) {
-      return std::any_of(barNames.begin(), barNames.end(), [name](const std::string& barName) {
-        return barName == name;
-      });
+      return std::ranges::contains(barNames, name);
     }
 
     std::string nextAvailableBarName(const std::vector<std::string>& barNames) {
@@ -301,8 +297,7 @@ namespace settings {
       auto doCreate = [barName, createMonitorOverride, inputPtr,
                        existingMatches = std::move(existingMatches)](std::string rawMatch) {
         const std::string match = normalizedConfigId(rawMatch);
-        if (match.empty()
-            || std::find(existingMatches.begin(), existingMatches.end(), match) != existingMatches.end()) {
+        if (match.empty() || std::ranges::contains(existingMatches, match)) {
           inputPtr->setInvalid(true);
           return;
         }

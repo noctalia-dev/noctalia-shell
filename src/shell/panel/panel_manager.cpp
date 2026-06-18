@@ -300,6 +300,17 @@ void PanelManager::setAttachedPanelBarSettledCallback(std::function<bool(wl_outp
   m_attachedPanelBarSettledCallback = std::move(callback);
 }
 
+void PanelManager::onAttachedBarRevealSettled(wl_output* output, std::string_view barName) {
+  if (!m_attachedOpenAnimationPending || !isAttachedOpen() || m_output != output) {
+    return;
+  }
+  if (!m_sourceBarName.empty() && !barName.empty() && m_sourceBarName != barName) {
+    return;
+  }
+  startAttachedOpenAnimation();
+  requestFrameTick();
+}
+
 void PanelManager::registerPanel(const std::string& id, std::unique_ptr<Panel> content) {
   m_panels[id] = std::move(content);
 }
@@ -2032,7 +2043,7 @@ void PanelManager::registerIpc(IpcService& ipc) {
     for (const auto& entry : m_panels) {
       ids.push_back(entry.first);
     }
-    std::sort(ids.begin(), ids.end());
+    std::ranges::sort(ids);
 
     std::string error = "error: unknown panel \"" + std::string(panelId) + "\"";
     if (!ids.empty()) {

@@ -23,6 +23,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <string_view>
 #include <unistd.h>
@@ -866,9 +867,9 @@ bool NotificationsTab::refreshDataSnapshot() {
   m_filtered.clear();
   if (m_notifications != nullptr) {
     m_filtered.reserve(m_notifications->history().size());
-    for (auto it = m_notifications->history().rbegin(); it != m_notifications->history().rend(); ++it) {
-      if (matchesHistoryFilter(*it, m_filterIndex)) {
-        m_filtered.push_back(&*it);
+    for (const auto& historyEntry : std::views::reverse(m_notifications->history())) {
+      if (matchesHistoryFilter(historyEntry, m_filterIndex)) {
+        m_filtered.push_back(&historyEntry);
       }
     }
   }

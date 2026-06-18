@@ -347,8 +347,7 @@ std::unique_ptr<Flex> SystemTab::create() {
     // Mount path and usage are separate labels: the path grows and ellipsizes when long,
     // while the usage column keeps its natural width so it is never truncated. The full
     // mount path is recoverable via the path label's tooltip.
-    for (std::size_t i = 0; i < m_diskMountPoints.size(); ++i) {
-      const std::string& mountPoint = m_diskMountPoints[i];
+    for (const auto& mountPoint : m_diskMountPoints) {
       Label* usageLabel = nullptr;
       resourcesCard->addChild(
           ui::row(

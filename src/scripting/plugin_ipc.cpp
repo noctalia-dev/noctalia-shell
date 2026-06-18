@@ -105,8 +105,7 @@ namespace scripting {
         return "error: target '" + target + "' matched multiple outputs; use a connector name or 'all'\n";
       }
       for (auto* e : m_endpoints) {
-        if (matchesEntry(e)
-            && std::find(connectors.begin(), connectors.end(), std::string(e->ipcOutputName())) != connectors.end()) {
+        if (matchesEntry(e) && std::ranges::contains(connectors, e->ipcOutputName())) {
           candidates.push_back(e);
         }
       }

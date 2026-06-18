@@ -611,10 +611,10 @@ bool ClipboardService::copyEntry(const ClipboardEntry& entry) {
   std::vector<std::string> mimeTypes;
   mimeTypes.push_back(entry.dataMimeType);
   if (isTextMimeType(entry.dataMimeType)) {
-    if (std::ranges::find(mimeTypes, std::string("text/plain;charset=utf-8")) == mimeTypes.end()) {
+    if (!std::ranges::contains(mimeTypes, "text/plain;charset=utf-8")) {
       mimeTypes.emplace_back("text/plain;charset=utf-8");
     }
-    if (std::ranges::find(mimeTypes, std::string("text/plain")) == mimeTypes.end()) {
+    if (!std::ranges::contains(mimeTypes, "text/plain")) {
       mimeTypes.emplace_back("text/plain");
     }
   }
@@ -1014,7 +1014,7 @@ void ClipboardService::finishRead(bool discard) {
   ClipboardEntry entry;
   entry.storageId = generateStorageId();
   entry.mimeTypes = std::move(mimeTypes);
-  if (std::ranges::find(entry.mimeTypes, mimeType) == entry.mimeTypes.end()) {
+  if (!std::ranges::contains(entry.mimeTypes, mimeType)) {
     entry.mimeTypes.push_back(mimeType);
   }
   entry.dataMimeType = mimeType;
@@ -1173,7 +1173,7 @@ void ClipboardService::loadPersistedHistory() {
 
     // Enforce the storage invariant: pinned block first (relative order
     // preserved = most-recently-pinned first), then the unpinned region.
-    std::stable_partition(m_history.begin(), m_history.end(), [](const ClipboardEntry& entry) { return entry.pinned; });
+    std::ranges::stable_partition(m_history, [](const ClipboardEntry& entry) { return entry.pinned; });
 
     trimHistoryToBudget();
     kLog.info("loaded {} persisted clipboard entries", m_history.size());
@@ -1382,7 +1382,7 @@ std::string ClipboardService::chooseMimeType(const OfferState& offer) const {
 }
 
 bool ClipboardService::isTextMimeType(std::string_view mimeType) {
-  return std::ranges::find(kTextMimeTypes, mimeType) != kTextMimeTypes.end();
+  return std::ranges::contains(kTextMimeTypes, mimeType);
 }
 
 bool ClipboardService::isEmptyTextPayload(const std::vector<std::uint8_t>& data) {

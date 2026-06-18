@@ -241,7 +241,7 @@ namespace scripting {
         // to a single pending event per callback (e.g. onAudioSpectrum at 60Hz),
         // so a slow script can never accumulate stale spectrum frames.
         if (event.kind == ScriptEventKind::CallStrings && event.coalesce) {
-          const auto existing = std::find_if(queue.begin(), queue.end(), [&event](const auto& queued) {
+          const auto existing = std::ranges::find_if(queue, [&event](const auto& queued) {
             return queued.kind == ScriptEventKind::CallStrings
                 && queued.coalesce
                 && queued.functionName == event.functionName;
@@ -275,7 +275,7 @@ namespace scripting {
           if (event.kind == ScriptEventKind::CallBool) {
             return false;
           }
-          const auto droppable = std::find_if(queue.begin(), queue.end(), [](const auto& queued) {
+          const auto droppable = std::ranges::find_if(queue, [](const auto& queued) {
             return queued.kind == ScriptEventKind::Update || queued.kind == ScriptEventKind::CallBool;
           });
           if (droppable != queue.end()) {

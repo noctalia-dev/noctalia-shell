@@ -192,8 +192,7 @@ void Backdrop::syncInstances() {
 
   // Remove instances for outputs that no longer exist
   std::erase_if(m_instances, [&](const auto& inst) {
-    bool found =
-        std::any_of(outputs.begin(), outputs.end(), [&inst](const auto& out) { return out.name == inst->outputName; });
+    bool found = std::ranges::contains(outputs, inst->outputName, &WaylandOutput::name);
     if (!found) {
       kLog.info("removing instance for output {}", inst->outputName);
       releaseInstanceTexture(*inst);
@@ -207,9 +206,8 @@ void Backdrop::syncInstances() {
       continue;
     }
 
-    bool exists = std::any_of(m_instances.begin(), m_instances.end(), [&output](const auto& inst) {
-      return inst->outputName == output.name;
-    });
+    bool exists =
+        std::ranges::any_of(m_instances, [&output](const auto& inst) { return inst->outputName == output.name; });
     if (!exists) {
       createInstance(output);
     }

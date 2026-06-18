@@ -346,7 +346,7 @@ void TriadWorkspaceBackend::apply(std::vector<Workspace>& workspaces, const std:
   const auto candidates = sortedWorkspaces(outputName);
   for (auto& workspace : workspaces) {
     const auto parsed = parseWorkspaceIndex(workspace.id);
-    const auto found = std::find_if(candidates.begin(), candidates.end(), [&](const WorkspaceState* candidate) {
+    const auto found = std::ranges::find_if(candidates, [&](const WorkspaceState* candidate) {
       if (parsed.has_value() && candidate->index == *parsed) {
         return true;
       }
@@ -775,7 +775,7 @@ TriadWorkspaceBackend::sortedWorkspaces(const std::string& outputName) const {
     }
     result.push_back(&workspace);
   }
-  std::sort(result.begin(), result.end(), [](const WorkspaceState* lhs, const WorkspaceState* rhs) {
+  std::ranges::sort(result, [](const WorkspaceState* lhs, const WorkspaceState* rhs) {
     if (lhs->index != rhs->index) {
       return lhs->index < rhs->index;
     }

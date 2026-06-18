@@ -175,6 +175,8 @@ namespace {
 
 } // namespace
 
+Button::ButtonPalette Button::defaultPalette(ButtonVariant variant) { return paletteForVariant(variant); }
+
 Button::Button() {
   setAlign(FlexAlign::Center);
   setMinHeight(Style::controlHeightSm);

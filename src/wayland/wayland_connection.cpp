@@ -368,7 +368,7 @@ void WaylandConnection::notifySurfaceOutputEnter(wl_surface* surface, wl_output*
     return;
   }
   auto& outputs = m_surfaceOutputs[surface];
-  if (std::find(outputs.begin(), outputs.end(), output) == outputs.end()) {
+  if (!std::ranges::contains(outputs, output)) {
     outputs.push_back(output);
   }
   m_surfaceOutputMap[surface] = output;
@@ -382,7 +382,7 @@ void WaylandConnection::notifySurfaceOutputLeave(wl_surface* surface, wl_output*
   auto it = m_surfaceOutputs.find(surface);
   if (it != m_surfaceOutputs.end()) {
     auto& outputs = it->second;
-    outputs.erase(std::remove(outputs.begin(), outputs.end(), output), outputs.end());
+    std::erase(outputs, output);
     if (outputs.empty()) {
       m_surfaceOutputs.erase(it);
     } else if (

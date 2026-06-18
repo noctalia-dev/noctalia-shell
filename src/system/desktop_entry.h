@@ -45,3 +45,4 @@ const std::vector<DesktopEntry>& desktopEntries();
 std::uint64_t desktopEntriesVersion();
 int desktopEntryWatchFd() noexcept;
 void checkDesktopEntryReload();
+void requestDesktopEntryRescan() noexcept;

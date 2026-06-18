@@ -212,9 +212,9 @@ std::unique_ptr<Flex> ScreenTimeTab::create() {
       .fillWidth = true,
   });
 
-  for (std::size_t bucket = 0; bucket < m_bucketColumns.size(); ++bucket) {
+  for (auto& bucketColumn : m_bucketColumns) {
     auto plotColumn = ui::column({
-        .out = &m_bucketColumns[bucket].plotColumn,
+        .out = &bucketColumn.plotColumn,
         .align = FlexAlign::Stretch,
         .justify = FlexJustify::End,
         .flexGrow = 1.0f,
@@ -231,7 +231,7 @@ std::unique_ptr<Flex> ScreenTimeTab::create() {
 
     plotColumn->addChild(
         ui::box({
-            .out = &m_bucketColumns[bucket].track,
+            .out = &bucketColumn.track,
             .fill = colorSpecFromRole(ColorRole::SurfaceVariant),
             .participatesInLayout = false,
             .configure = [](Box& box) { box.setZIndex(-1); },
@@ -248,21 +248,21 @@ std::unique_ptr<Flex> ScreenTimeTab::create() {
           .visible = false,
           .participatesInLayout = false,
       });
-      m_bucketColumns[bucket].segments[series] = static_cast<Box*>(hitArea->addChild(std::move(segment)));
-      m_bucketColumns[bucket].segmentHits[series] = hitArea.get();
+      bucketColumn.segments[series] = static_cast<Box*>(hitArea->addChild(std::move(segment)));
+      bucketColumn.segmentHits[series] = hitArea.get();
       plotColumn->addChild(std::move(hitArea));
     }
 
     chartPlotRow->addChild(std::move(plotColumn));
 
     auto labelCell = ui::row(
-        {.out = &m_bucketColumns[bucket].labelCell,
+        {.out = &bucketColumn.labelCell,
          .align = FlexAlign::Center,
          .justify = FlexJustify::Center,
          .flexGrow = 1.0f,
          .visible = false},
         ui::label({
-            .out = &m_bucketColumns[bucket].label,
+            .out = &bucketColumn.label,
             .fontSize = Style::fontSizeMini * scale,
             .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
             .visible = false,

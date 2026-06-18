@@ -46,7 +46,7 @@ DialogPopupHost::DialogPopupHost() { activeDialogHosts().push_back(this); }
 
 DialogPopupHost::~DialogPopupHost() {
   auto& hosts = activeDialogHosts();
-  hosts.erase(std::remove(hosts.begin(), hosts.end(), this), hosts.end());
+  std::erase(hosts, this);
   // Subclass destructors are responsible for calling destroyPopup() before
   // their own members go away — by the time we reach this destructor the
   // subclass vtable has already been replaced and any virtual hook would

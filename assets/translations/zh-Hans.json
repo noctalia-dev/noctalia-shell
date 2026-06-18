@@ -1295,7 +1295,7 @@
           "label": "胶囊内边距"
         },
         "capsule-radius": {
-          "description": "小组件胶囊、工作区胶囊和任务栏工作区组的默认圆角半径。留空将自动应用胶囊形状，设为 0 则显示为直角。",
+          "description": "小组件胶囊、工作区胶囊和任务栏工作区组的默认圆角半径。留空将自动应用胶囊形状，设为 0 则显示为直角",
           "label": "胶囊圆角半径"
         },
         "capsule-thickness": {
@@ -1500,7 +1500,7 @@
           "label": "屏幕"
         },
         "pinned-apps": {
-          "description": "固定到 Dock 的应用的桌面项 ID",
+          "description": "固定到 Dock 的应用桌面项 ID",
           "label": "已固定应用"
         },
         "position": {
@@ -1604,7 +1604,7 @@
       },
       "idle": {
         "behaviors": {
-          "description": "包含预设（锁定、关闭屏幕、挂起）或自定义命令的命名空闲行为，支持配置超时时间、恢复命令以及执行顺序。",
+          "description": "包含预设（锁定、关闭屏幕、挂起）或自定义命令的命名空闲行为，支持配置超时时间、恢复命令以及执行顺序",
           "label": "行为"
         },
         "pre-action-fade": {
@@ -2566,7 +2566,7 @@
           "sysmon-description": "自定义图标；留空则使用当前所选统计项的默认图标"
         },
         "group-by-workspace": {
-          "description": "可获取合成器数据时，按工作区将任务栏图标分组到胶囊中。",
+          "description": "可获取合成器数据时，按工作区将任务栏图标分组到胶囊中",
           "label": "按工作区分组"
         },
         "group-single-icon-per-app": {

@@ -454,9 +454,8 @@ void BatteryWidget::syncState(Renderer& renderer) {
   // Tooltip (both modes)
   if (rootNode != nullptr) {
     auto devices = m_upower->batteryDevices();
-    auto laptopEnd = std::stable_partition(devices.begin(), devices.end(), [](const UPowerDeviceInfo& d) {
-      return d.isLaptopBattery();
-    });
+    auto laptopEnd =
+        std::ranges::stable_partition(devices, [](const UPowerDeviceInfo& d) { return d.isLaptopBattery(); }).begin();
     int laptopBatteryCount = static_cast<int>(laptopEnd - devices.begin());
 
     std::vector<TooltipRow> rows;

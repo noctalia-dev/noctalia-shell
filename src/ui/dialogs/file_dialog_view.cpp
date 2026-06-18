@@ -1046,7 +1046,7 @@ void FileDialogView::cycleFocus(bool reverse) {
   }
 
   InputArea* current = hostFocusedArea();
-  auto it = std::find(order.begin(), order.end(), current);
+  auto it = std::ranges::find(order, current);
   std::size_t index = it == order.end() ? 0 : static_cast<std::size_t>(std::distance(order.begin(), it));
   if (reverse) {
     index = index == 0 ? order.size() - 1 : index - 1;

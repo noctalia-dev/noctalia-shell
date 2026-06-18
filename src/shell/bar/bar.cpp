@@ -35,6 +35,7 @@
 #include <cmath>
 #include <linux/input-event-codes.h>
 #include <optional>
+#include <ranges>
 #include <system_error>
 #include <unordered_set>
 #include <wayland-client-core.h>
@@ -215,8 +216,8 @@ namespace {
   }
 
   Widget* widgetAtPoint(const std::vector<std::unique_ptr<Widget>>& widgets, float sceneX, float sceneY) {
-    for (auto it = widgets.rbegin(); it != widgets.rend(); ++it) {
-      auto* widget = it->get();
+    for (const auto& widgetPtr : std::views::reverse(widgets)) {
+      auto* widget = widgetPtr.get();
       if (widget == nullptr || widget->root() == nullptr || !widget->root()->visible()) {
         continue;
       }
@@ -224,8 +225,8 @@ namespace {
         return widget;
       }
     }
-    for (auto it = widgets.rbegin(); it != widgets.rend(); ++it) {
-      auto* widget = it->get();
+    for (const auto& widgetPtr : std::views::reverse(widgets)) {
+      auto* widget = widgetPtr.get();
       auto* root = widget != nullptr ? widget->root() : nullptr;
       auto* bounds = widget != nullptr ? widget->layoutBoundsNode() : nullptr;
       if (root == nullptr || bounds == nullptr || bounds == root || root->parent() != bounds || !bounds->visible()) {
@@ -433,8 +434,7 @@ namespace {
     std::vector<std::string> preserved;
     preserved.reserve(previous.size());
     for (const auto& oldBar : previous) {
-      const auto it =
-          std::find_if(next.begin(), next.end(), [&](const BarConfig& newBar) { return newBar.name == oldBar.name; });
+      const auto it = std::ranges::find(next, oldBar.name, &BarConfig::name);
       if (it != next.end()) {
         preserved.push_back(oldBar.name);
       }
@@ -872,7 +872,7 @@ namespace {
   }
 
   bool widgetsNeedFrameTick(const std::vector<std::unique_ptr<Widget>>& widgets) {
-    return std::any_of(widgets.begin(), widgets.end(), [](const auto& widget) {
+    return std::ranges::any_of(widgets, [](const auto& widget) {
       return widget != nullptr && widget->needsFrameTick();
     });
   }
@@ -1007,8 +1007,7 @@ void Bar::reload() {
       return true;
     }
     const auto& outputs = m_platform->outputs();
-    auto outIt =
-        std::find_if(outputs.begin(), outputs.end(), [&inst](const auto& o) { return o.name == inst.outputName; });
+    auto outIt = std::ranges::find(outputs, inst.outputName, &WaylandOutput::name);
     if (outIt == outputs.end()) {
       return true;
     }
@@ -1051,8 +1050,7 @@ void Bar::reload() {
     }
 
     const auto& outputs = m_platform->outputs();
-    auto outIt =
-        std::find_if(outputs.begin(), outputs.end(), [&inst](const auto& o) { return o.name == inst.outputName; });
+    auto outIt = std::ranges::find(outputs, inst.outputName, &WaylandOutput::name);
     if (outIt == outputs.end()) {
       return destroy();
     }
@@ -1144,9 +1142,7 @@ void Bar::setOpenWidgetSettingsCallback(std::function<void(std::string, std::str
 }
 
 bool Bar::isRunning() const noexcept {
-  return std::any_of(m_instances.begin(), m_instances.end(), [](const auto& inst) {
-    return inst->surface && inst->surface->isRunning();
-  });
+  return std::ranges::any_of(m_instances, [](const auto& inst) { return inst->surface && inst->surface->isRunning(); });
 }
 
 bool Bar::instanceEffectivelyVisible(const BarInstance& instance) const noexcept {
@@ -1161,9 +1157,7 @@ bool Bar::instanceAcceptsPointerInput(const BarInstance& instance) const noexcep
 }
 
 bool Bar::isVisible() const noexcept {
-  return std::any_of(m_instances.begin(), m_instances.end(), [this](const auto& inst) {
-    return instanceEffectivelyVisible(*inst);
-  });
+  return std::ranges::any_of(m_instances, [this](const auto& inst) { return instanceEffectivelyVisible(*inst); });
 }
 
 void Bar::clearInstancePointerState(BarInstance& instance) {
@@ -1470,35 +1464,8 @@ void Bar::unsuppressDisplay() {
   }
 }
 
-void Bar::pauseUnderSessionLock() {
-  if (m_sessionLockPaused) {
-    return;
-  }
-  m_sessionLockPaused = true;
-  for (const auto& instance : m_instances) {
-    if (instance == nullptr || instance->surface == nullptr) {
-      continue;
-    }
-    instance->surface->pauseFrameLoop();
-  }
-}
-
-void Bar::resumeAfterSessionLock() {
-  if (!m_sessionLockPaused) {
-    return;
-  }
-  m_sessionLockPaused = false;
-  for (const auto& instance : m_instances) {
-    if (instance == nullptr || instance->surface == nullptr) {
-      continue;
-    }
-    instance->surface->resumeFrameLoop();
-    instance->surface->requestLayout();
-  }
-}
-
 void Bar::toggle() {
-  const bool anyEffectivelyVisible = std::any_of(m_instances.begin(), m_instances.end(), [this](const auto& inst) {
+  const bool anyEffectivelyVisible = std::ranges::any_of(m_instances, [this](const auto& inst) {
     return inst != nullptr && instanceEffectivelyVisible(*inst);
   });
 
@@ -1526,8 +1493,7 @@ void Bar::syncInstances() {
 
   // Remove instances for outputs that no longer exist
   std::erase_if(m_instances, [&outputs](const auto& inst) {
-    bool found =
-        std::any_of(outputs.begin(), outputs.end(), [&inst](const auto& out) { return out.name == inst->outputName; });
+    bool found = std::ranges::contains(outputs, inst->outputName, &WaylandOutput::name);
     if (!found) {
       kLog.info("removing instance for output {}", inst->outputName);
     }
@@ -1541,7 +1507,7 @@ void Bar::syncInstances() {
         continue;
       }
 
-      bool exists = std::any_of(m_instances.begin(), m_instances.end(), [&output, barIdx](const auto& inst) {
+      bool exists = std::ranges::any_of(m_instances, [&output, barIdx](const auto& inst) {
         return inst->outputName == output.name && inst->barIndex == barIdx;
       });
       if (!exists) {
@@ -1612,11 +1578,6 @@ void Bar::createInstance(const WaylandOutput& output, std::size_t barIndex, cons
 
   m_surfaceMap[instance->surface->wlSurface()] = instance.get();
   m_instances.push_back(std::move(instance));
-  if (m_sessionLockPaused) {
-    if (const auto& created = m_instances.back(); created != nullptr && created->surface != nullptr) {
-      created->surface->pauseFrameLoop();
-    }
-  }
 }
 
 void Bar::destroyInstance(std::uint32_t outputName) {
@@ -2063,6 +2024,23 @@ void Bar::revealAutoHideBar(BarInstance& instance) {
   instance.ipcLayoutReleased = false;
   instance.animations.cancelForOwner(instance.slideRoot);
   const float current = instance.hideOpacity;
+  wl_output* output = instance.output;
+  const std::string barName = instance.barConfig.name;
+  const auto notifyAttachedPanel = [output, barName]() {
+    PanelManager::instance().onAttachedBarRevealSettled(output, barName);
+  };
+
+  constexpr float kSettledThreshold = 0.999f;
+  if (current >= kSettledThreshold) {
+    const int surfW = static_cast<int>(instance.surface->width());
+    const int surfH = static_cast<int>(instance.surface->height());
+    instance.surface->setInputRegion(barAutoHideSurfaceInputRegion(instance.barConfig, surfW, surfH, true));
+    syncBarSurfaceChrome(instance);
+    instance.surface->requestRedraw();
+    notifyAttachedPanel();
+    return;
+  }
+
   instance.animations.animate(
       current, 1.0f, Style::animNormal, Easing::EaseOutCubic,
       [inst = &instance, this](float v) {
@@ -2070,7 +2048,7 @@ void Bar::revealAutoHideBar(BarInstance& instance) {
         syncBarSlideLayerTransform(*inst);
         syncBarSurfaceChrome(*inst);
       },
-      {}, instance.slideRoot
+      notifyAttachedPanel, instance.slideRoot
   );
   const int surfW = static_cast<int>(instance.surface->width());
   const int surfH = static_cast<int>(instance.surface->height());
@@ -2721,10 +2699,7 @@ std::optional<std::string> Bar::collectBarIpcInstances(
   }
 
   if (barName.has_value()) {
-    const bool knownBar =
-        std::any_of(m_config->config().bars.begin(), m_config->config().bars.end(), [&](const BarConfig& bar) {
-          return bar.name == *barName;
-        });
+    const bool knownBar = std::ranges::contains(m_config->config().bars, *barName, &BarConfig::name);
     if (!knownBar) {
       std::vector<std::string> knownBars;
       knownBars.reserve(m_config->config().bars.size());
@@ -2773,10 +2748,10 @@ std::optional<std::string> Bar::collectBarIpcInstances(
     }
   }
 
-  std::sort(knownOutputs.begin(), knownOutputs.end());
-  knownOutputs.erase(std::unique(knownOutputs.begin(), knownOutputs.end()), knownOutputs.end());
-  std::sort(outputMatches.begin(), outputMatches.end());
-  outputMatches.erase(std::unique(outputMatches.begin(), outputMatches.end()), outputMatches.end());
+  std::ranges::sort(knownOutputs);
+  knownOutputs.erase(std::ranges::unique(knownOutputs).begin(), knownOutputs.end());
+  std::ranges::sort(outputMatches);
+  outputMatches.erase(std::ranges::unique(outputMatches).begin(), outputMatches.end());
 
   if (outputMatches.empty()) {
     std::string error = "error: unknown monitor selector \"" + selector + "\"";
@@ -2907,7 +2882,7 @@ std::string Bar::toggleBarIpc(std::string_view args) {
     return *collectError;
   }
 
-  const bool anyEffectivelyVisible = std::any_of(targets.begin(), targets.end(), [this](const BarInstance* instance) {
+  const bool anyEffectivelyVisible = std::ranges::any_of(targets, [this](const BarInstance* instance) {
     return instance != nullptr && instanceEffectivelyVisible(*instance);
   });
 
@@ -3055,7 +3030,7 @@ std::uint32_t Bar::attachedPanelResizeTestMaxExtent(const BarInstance& instance)
   std::uint32_t outputAxis = 0;
   if (m_platform != nullptr) {
     const auto& outputs = m_platform->outputs();
-    const auto it = std::find_if(outputs.begin(), outputs.end(), [&instance](const WaylandOutput& output) {
+    const auto it = std::ranges::find_if(outputs, [&instance](const WaylandOutput& output) {
       return output.output == instance.output;
     });
     if (it != outputs.end()) {

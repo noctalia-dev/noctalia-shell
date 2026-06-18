@@ -54,6 +54,11 @@ public:
 private:
   enum ActiveCategoryType { All, RecentlyUsed, Category };
 
+  struct CategoryFilterSlot {
+    ActiveCategoryType type;
+    std::size_t categoryIndex = 0;
+  };
+
   void onPanelCardOpacityChanged(float opacity) override;
   void doLayout(Renderer& renderer, float width, float height) override;
   void onInputChanged(const std::string& text);
@@ -70,6 +75,7 @@ private:
   void openAppActionsMenu(std::size_t index, float anchorX, float anchorY);
   void rebuildCategoryFilter(const std::vector<LauncherCategory>& categories);
   void setCategoryFilterVisible(bool visible);
+  void setActiveCategorySlot(std::size_t slotIndex);
   void applyActiveCategory();
   void syncLauncherListStyle();
   void refreshLauncherAppIconColorization();
@@ -93,6 +99,7 @@ private:
   ActiveCategoryType m_activeCategoryType = All;
   std::string m_activeCategory;
   std::vector<LauncherCategory> m_currentCategories;
+  std::vector<CategoryFilterSlot> m_categoryFilterSlots;
   bool m_hasRecentlyUsed = false;
   std::size_t m_selectedIndex = 0;
   bool m_categoryFilterVisible = true;

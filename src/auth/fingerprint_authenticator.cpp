@@ -88,10 +88,7 @@ void FingerprintAuthenticator::start() {
   if (m_active) {
     return;
   }
-  if (!m_bus.nameHasOwner(kFprintBusName)) {
-    kLog.debug("fprintd not available on system bus; fingerprint disabled");
-    return;
-  }
+
   m_active = true;
   m_abort = false;
   m_retries = 0;
@@ -215,8 +212,13 @@ void FingerprintAuthenticator::startVerify(bool isRetry) {
           // recreate+reclaim once. The one-shot guard keeps a permanently failing device from looping.
           if (!m_reclaimAttempted && m_active && !m_sleeping && !m_abort) {
             m_reclaimAttempted = true;
-            m_device.reset();
-            m_retryTimer.start(kRetryDelay, [this]() { startVerify(false); });
+            // Reset the device from the timer callback, not here: destroying the
+            // sdbus proxy while still inside its async reply handler corrupts the
+            // callback context and causes a crash on the very next line.
+            m_retryTimer.start(kRetryDelay, [this]() {
+              m_device.reset();
+              startVerify(false);
+            });
             return;
           }
           emitStatus({}, false); // issue loading: drop the status message

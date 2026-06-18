@@ -16,6 +16,7 @@
 #include "util/string_utils.h"
 
 #include <optional>
+#include <ranges>
 #include <system_error>
 #include <thread>
 #include <unordered_set>
@@ -281,11 +282,11 @@ namespace scripting {
     // Highest precedence wins: a later source overrides an earlier one for the same id,
     // so materialize the copy that the registry will actually load (reverse config order).
     const auto& sources = m_config.config().plugins.sources;
-    for (auto it = sources.rbegin(); it != sources.rend(); ++it) {
-      const auto catalog = discoverCatalog(*it);
+    for (const auto& source : std::views::reverse(sources)) {
+      const auto catalog = discoverCatalog(source);
       for (const auto& entry : catalog.entries) {
         if (entry.id == pluginId) {
-          return *it;
+          return source;
         }
       }
     }
@@ -543,11 +544,11 @@ namespace scripting {
       collect("local", discoverCatalog(localSource));
     }
     // Reverse config order: a later user source outranks earlier ones and the defaults.
-    for (auto it = plugins.sources.rbegin(); it != plugins.sources.rend(); ++it) {
-      if (!it->enabled) {
+    for (const auto& source : std::views::reverse(plugins.sources)) {
+      if (!source.enabled) {
         continue;
       }
-      collect(it->name, discoverCatalog(*it));
+      collect(source.name, discoverCatalog(source));
     }
     return out;
   }

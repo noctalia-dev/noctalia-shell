@@ -1,5 +1,7 @@
 #pragma once
 
+#include "scripting/plugin_i18n.h"
+
 #include <atomic>
 #include <chrono>
 #include <cstdint>
@@ -105,7 +107,7 @@ public:
   // A missing key is logged and returned verbatim (no silent fallback chain).
   [[nodiscard]] std::string
   translate(std::string_view key, const std::unordered_map<std::string, std::string>& subst) const;
-  [[nodiscard]] bool hasTranslation(std::string_view key) const { return m_translations.contains(std::string(key)); }
+  [[nodiscard]] bool hasTranslation(std::string_view key) const { return m_translations.has(key); }
   void setAsyncCommandResultHandler(AsyncCommandResultHandler handler) {
     m_asyncCommandResultHandler = std::move(handler);
   }
@@ -150,7 +152,7 @@ private:
   scripting::PluginBindingContext* m_scriptContext = nullptr;
   std::filesystem::path m_pluginDir;
   std::string m_pluginId;
-  std::unordered_map<std::string, std::string> m_translations;
+  scripting::PluginTranslationCatalog m_translations;
   std::unordered_set<int> m_stateWatchCallbackRefs;
   StateWatchHandler m_stateWatchHandler;
   std::unordered_set<int> m_streamCallbackRefs;

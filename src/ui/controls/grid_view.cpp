@@ -205,15 +205,15 @@ void GridView::doLayout(Renderer& renderer) {
       }
     }
 
-    std::fill(columnWidths.begin(), columnWidths.end(), uniformWidth);
-    std::fill(rowHeights.begin(), rowHeights.end(), uniformHeight);
+    std::ranges::fill(columnWidths, uniformWidth);
+    std::ranges::fill(rowHeights, uniformHeight);
 
     for (Node* child : visibleChildren) {
       layoutWithAssignedSize(child, uniformWidth, uniformHeight);
     }
   } else {
     if (hasFixedWidth && m_stretchItems) {
-      std::fill(columnWidths.begin(), columnWidths.end(), stretchedWidth);
+      std::ranges::fill(columnWidths, stretchedWidth);
     }
 
     for (std::size_t index = 0; index < visibleChildren.size(); ++index) {

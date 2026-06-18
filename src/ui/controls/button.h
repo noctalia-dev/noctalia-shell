@@ -86,6 +86,8 @@ public:
   [[nodiscard]] bool pressed() const noexcept;
   [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
 
+  [[nodiscard]] static ButtonPalette defaultPalette(ButtonVariant variant);
+
 private:
   void refreshInputAreaEnabled();
   void ensureLabel();

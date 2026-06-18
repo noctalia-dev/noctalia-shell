@@ -157,8 +157,7 @@ namespace scripting {
       if (!seeded.has_value()) {
         continue;
       }
-      const auto existing =
-          std::find_if(m_services.begin(), m_services.end(), [&](const auto& s) { return s->entryId == id; });
+      const auto existing = std::ranges::find_if(m_services, [&](const auto& s) { return s->entryId == id; });
       if (existing == m_services.end()) {
         if (auto service = makeService(id, entry.sourcePath, *seeded)) {
           kLog.info("started service '{}'", id);

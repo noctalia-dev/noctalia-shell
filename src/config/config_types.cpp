@@ -70,9 +70,7 @@ std::vector<PluginSourceConfig> defaultPluginSources() {
 
 bool isDefaultPluginSourceName(std::string_view name) {
   const auto sources = defaultPluginSources();
-  return std::any_of(sources.begin(), sources.end(), [name](const PluginSourceConfig& source) {
-    return source.name == name;
-  });
+  return std::ranges::contains(sources, name, &PluginSourceConfig::name);
 }
 
 bool isValidPluginSourceName(std::string_view name) {

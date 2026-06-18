@@ -67,13 +67,9 @@ namespace {
     }
 
     const auto oldSize = snapshot.forecastDays.size();
-    snapshot.forecastDays.erase(
-        std::remove_if(
-            snapshot.forecastDays.begin(), snapshot.forecastDays.end(),
-            [&todayIso](const WeatherForecastDay& day) { return isIsoDate(day.dateIso) && day.dateIso < todayIso; }
-        ),
-        snapshot.forecastDays.end()
-    );
+    std::erase_if(snapshot.forecastDays, [&todayIso](const WeatherForecastDay& day) {
+      return isIsoDate(day.dateIso) && day.dateIso < todayIso;
+    });
     return snapshot.forecastDays.size() != oldSize;
   }
 

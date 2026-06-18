@@ -213,8 +213,7 @@ std::uint32_t ScreenSaverService::onInhibit(std::string app, std::string reason,
 }
 
 void ScreenSaverService::onUninhibit(std::uint32_t cookie, const char* sender) {
-  const auto it =
-      std::ranges::find_if(m_cookies, [cookie](const InhibitCookie& entry) { return entry.cookie == cookie; });
+  const auto it = std::ranges::find(m_cookies, cookie, &InhibitCookie::cookie);
   if (it == m_cookies.end()) {
     kLog.warn("screensaver uninhibit: unknown cookie {} from {}", cookie, sender != nullptr ? sender : "?");
     return;

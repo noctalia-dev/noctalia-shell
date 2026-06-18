@@ -183,7 +183,7 @@ MangoWorkspaceBackend::appIdsByWorkspace(wl_output* output) const {
         continue;
       }
       auto& apps = result[std::to_string(tag)];
-      if (std::find(apps.begin(), apps.end(), client.appId) == apps.end()) {
+      if (!std::ranges::contains(apps, client.appId)) {
         apps.push_back(client.appId);
       }
     }
@@ -232,15 +232,13 @@ void MangoWorkspaceBackend::cleanup() {
 }
 
 void MangoWorkspaceBackend::onOutputAdded(wl_output* output) {
-  if (output == nullptr || std::find(m_knownOutputs.begin(), m_knownOutputs.end(), output) != m_knownOutputs.end()) {
+  if (output == nullptr || std::ranges::contains(m_knownOutputs, output)) {
     return;
   }
   m_knownOutputs.push_back(output);
 }
 
-void MangoWorkspaceBackend::onOutputRemoved(wl_output* output) {
-  m_knownOutputs.erase(std::remove(m_knownOutputs.begin(), m_knownOutputs.end(), output), m_knownOutputs.end());
-}
+void MangoWorkspaceBackend::onOutputRemoved(wl_output* output) { std::erase(m_knownOutputs, output); }
 
 int MangoWorkspaceBackend::pollFd() const noexcept { return m_watchFd; }
 
@@ -593,7 +591,7 @@ std::optional<MangoWorkspaceBackend::OutputState> MangoWorkspaceBackend::parseMo
   const auto activeTags = jsonTagArray(json, "active_tags");
   if (!activeTags.empty() && !(activeTags.size() == 1 && activeTags.front() == 0)) {
     for (auto& tag : state.tags) {
-      tag.active = std::find(activeTags.begin(), activeTags.end(), tag.index) != activeTags.end();
+      tag.active = std::ranges::contains(activeTags, tag.index);
     }
   }
 

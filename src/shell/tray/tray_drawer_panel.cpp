@@ -120,7 +120,7 @@ std::size_t TrayDrawerPanel::visibleItemCount() const {
       variants.push_back(raw.substr(slash + 1));
       variants.push_back(StringUtils::toLower(raw.substr(slash + 1)));
     }
-    return std::ranges::find(variants, std::string(token)) != variants.end();
+    return std::ranges::contains(variants, token);
   };
   auto tokenMatches = [&](std::string_view token, const TrayItemInfo& item) {
     if (token.empty()) {

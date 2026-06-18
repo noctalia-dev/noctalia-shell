@@ -517,9 +517,7 @@ void RenderContext::renderNode(
     for (const auto& child : children) {
       orderedChildren.push_back(child.get());
     }
-    std::stable_sort(orderedChildren.begin(), orderedChildren.end(), [](const Node* a, const Node* b) {
-      return a->zIndex() < b->zIndex();
-    });
+    std::ranges::stable_sort(orderedChildren, [](const Node* a, const Node* b) { return a->zIndex() < b->zIndex(); });
   }
 
   float childClipLeft = clipLeft;

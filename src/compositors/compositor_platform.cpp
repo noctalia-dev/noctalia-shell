@@ -1075,7 +1075,7 @@ std::string CompositorPlatform::connectorNameForOutput(wl_output* output) const 
 
 std::vector<CompositorPlatform::WorkspaceModelSnapshot> CompositorPlatform::workspaceModelSnapshot() const {
   auto sortedAssignments = [](std::vector<WorkspaceWindowAssignment> assignments) {
-    std::sort(assignments.begin(), assignments.end(), [](const auto& lhs, const auto& rhs) {
+    std::ranges::sort(assignments, [](const auto& lhs, const auto& rhs) {
       if (lhs.windowId != rhs.windowId) {
         return lhs.windowId < rhs.windowId;
       }

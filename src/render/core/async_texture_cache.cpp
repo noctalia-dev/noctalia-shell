@@ -434,9 +434,7 @@ void AsyncTextureCache::pruneUnusedEntries(std::size_t maxUnusedEntries) {
     return;
   }
 
-  std::sort(unused.begin(), unused.end(), [](const It& a, const It& b) {
-    return a->second.lastTouch < b->second.lastTouch;
-  });
+  std::ranges::sort(unused, [](const It& a, const It& b) { return a->second.lastTouch < b->second.lastTouch; });
 
   const std::size_t toEvict = unused.size() - maxUnusedEntries;
   bool madeCurrent = false;

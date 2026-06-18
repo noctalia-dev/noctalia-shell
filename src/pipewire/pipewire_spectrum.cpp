@@ -458,7 +458,7 @@ void PipeWireSpectrum::rebuildStream() {
   m_samplesReceived = false;
   m_sensitivity = 0.01f;
   m_sensInit = true;
-  std::fill(m_analysisBands.begin(), m_analysisBands.end(), 0.0f);
+  std::ranges::fill(m_analysisBands, 0.0f);
   for (auto& [id, state] : m_listeners) {
     (void)id;
     resetListenerState(state, false);
@@ -486,11 +486,11 @@ const AudioNode* PipeWireSpectrum::resolvedTargetNode() const noexcept {
   }
 
   const auto& state = m_service.state();
-  auto sink = std::ranges::find_if(state.sinks, [id](const AudioNode& node) { return node.id == id; });
+  auto sink = std::ranges::find(state.sinks, id, &AudioNode::id);
   if (sink != state.sinks.end()) {
     return &*sink;
   }
-  auto source = std::ranges::find_if(state.sources, [id](const AudioNode& node) { return node.id == id; });
+  auto source = std::ranges::find(state.sources, id, &AudioNode::id);
   if (source != state.sources.end()) {
     return &*source;
   }
@@ -508,7 +508,7 @@ void PipeWireSpectrum::clearValues(bool notify) {
       changedListeners.push_back(id);
     }
   }
-  std::fill(m_analysisBands.begin(), m_analysisBands.end(), 0.0f);
+  std::ranges::fill(m_analysisBands, 0.0f);
   m_idleFrames = 0;
   m_idle = true;
   m_samplesReceived = false;

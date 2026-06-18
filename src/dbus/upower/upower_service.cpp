@@ -209,7 +209,7 @@ void UPowerService::rescanDevices() {
     }
   }
 
-  std::sort(nextDevices.begin(), nextDevices.end(), [](const TrackedDevice& lhs, const TrackedDevice& rhs) {
+  std::ranges::sort(nextDevices, [](const TrackedDevice& lhs, const TrackedDevice& rhs) {
     return lhs.info.path < rhs.info.path;
   });
 

@@ -467,9 +467,7 @@ namespace {
     if (lookupIndex < 0) {
       return;
     }
-    const auto existing = std::find_if(routes.begin(), routes.end(), [lookupIndex](const auto& entry) {
-      return entry.index == lookupIndex;
-    });
+    const auto existing = std::ranges::find(routes, lookupIndex, &PipeWireService::DeviceRouteData::index);
     if (existing == routes.end()) {
       routes.push_back(route);
       return;

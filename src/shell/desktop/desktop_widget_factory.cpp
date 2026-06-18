@@ -4,6 +4,7 @@
 #include "pipewire/pipewire_spectrum.h"
 #include "scripting/plugin_registry.h"
 #include "shell/desktop/widgets/desktop_audio_visualizer_widget.h"
+#include "shell/desktop/widgets/desktop_button_widget.h"
 #include "shell/desktop/widgets/desktop_clock_widget.h"
 #include "shell/desktop/widgets/desktop_fancy_audio_visualizer_widget.h"
 #include "shell/desktop/widgets/desktop_label_widget.h"
@@ -13,6 +14,7 @@
 #include "shell/desktop/widgets/desktop_sysmon_widget.h"
 #include "shell/desktop/widgets/desktop_weather_widget.h"
 #include "shell/desktop/widgets/plugin_desktop_widget.h"
+#include "ui/controls/button.h"
 
 #include <algorithm>
 #include <optional>
@@ -95,6 +97,20 @@ namespace {
     return fallback;
   }
 
+  std::optional<ColorSpec> getOptionalColorSpecSetting(
+      const std::unordered_map<std::string, WidgetSettingValue>& settings, const std::string& key
+  ) {
+    const auto it = settings.find(key);
+    if (it == settings.end()) {
+      return std::nullopt;
+    }
+    const auto* value = std::get_if<std::string>(&it->second);
+    if (value == nullptr || value->empty()) {
+      return std::nullopt;
+    }
+    return colorSpecFromConfigString(*value, key);
+  }
+
   constexpr float kDefaultBgRadius = 12.0f;
   constexpr float kDefaultBgPadding = 10.0f;
 
@@ -123,6 +139,26 @@ namespace {
       return FancyAudioVisualizerMode::All;
     kLog.warn("desktop widget factory: invalid fancy_audio_visualizer visualization_mode '{}'", *value);
     return std::nullopt;
+  }
+
+  ButtonVariant getButtonVariant(const std::unordered_map<std::string, WidgetSettingValue>& settings) {
+    const std::string value = getStringSetting(settings, "variant", "default");
+    if (value == "primary") {
+      return ButtonVariant::Primary;
+    }
+    if (value == "secondary") {
+      return ButtonVariant::Secondary;
+    }
+    if (value == "destructive") {
+      return ButtonVariant::Destructive;
+    }
+    if (value == "outline") {
+      return ButtonVariant::Outline;
+    }
+    if (value == "ghost") {
+      return ButtonVariant::Ghost;
+    }
+    return ButtonVariant::Default;
   }
 
   void applyCommonSettings(
@@ -160,7 +196,8 @@ std::unique_ptr<DesktopWidget> DesktopWidgetFactory::create(
     auto widget = std::make_unique<DesktopClockWidget>(
         style, getStringSetting(settings, "format", "{:%H:%M}"),
         getColorSpecSetting(settings, "color", colorSpecFromRole(ColorRole::OnSurface)),
-        getBoolSetting(settings, "shadow", true), getBoolSetting(settings, "circle", true)
+        getBoolSetting(settings, "shadow", true), getBoolSetting(settings, "circle", true),
+        getBoolSetting(settings, "center_text", false)
     );
     applyCommonSettings(*widget, settings);
     widget->setContentScale(contentScale);
@@ -254,6 +291,18 @@ std::unique_ptr<DesktopWidget> DesktopWidgetFactory::create(
         getBoolSetting(settings, "shadow", true)
     );
     applyCommonSettings(*widget, settings);
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "button") {
+    auto widget = std::make_unique<DesktopButtonWidget>(
+        getStringSetting(settings, "glyph"), getStringSetting(settings, "label"), getStringSetting(settings, "command"),
+        getButtonVariant(settings), getBoolSetting(settings, "background", true),
+        getOptionalColorSpecSetting(settings, "color"),
+        getColorSpecSetting(settings, "hover_background", colorSpecFromRole(ColorRole::Hover))
+    );
+    widget->setFontFamily(getStringSetting(settings, "font_family", ""));
     widget->setContentScale(contentScale);
     return widget;
   }

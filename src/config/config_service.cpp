@@ -73,7 +73,7 @@ namespace {
   // setting schema (the single source — not a hand-maintained key list).
   [[nodiscard]] const schema::WidgetSettingField*
   findColorField(const schema::WidgetSettingSchema& fields, std::string_view key) {
-    const auto it = std::find_if(fields.begin(), fields.end(), [&](const auto& f) { return f.key == key; });
+    const auto it = std::ranges::find(fields, key, &schema::WidgetSettingField::key);
     if (it == fields.end() || it->type != schema::WidgetSettingType::Color) {
       return nullptr;
     }
@@ -282,7 +282,7 @@ namespace {
         files.push_back(entry.path());
       }
     }
-    std::sort(files.begin(), files.end());
+    std::ranges::sort(files);
     return files;
   }
 
@@ -1608,7 +1608,7 @@ void ConfigService::parseConfigTable(
 bool ConfigService::matchesKeybind(KeybindAction action, std::uint32_t sym, std::uint32_t modifiers) const {
   const auto& configured = keybindSet(m_config.keybinds, action);
   const auto active = configured.empty() ? defaultKeybindSet(action) : configured;
-  return std::any_of(active.begin(), active.end(), [sym, modifiers](const KeyChord& chord) {
+  return std::ranges::any_of(active, [sym, modifiers](const KeyChord& chord) {
     return keyChordMatches(chord, sym, modifiers);
   });
 }

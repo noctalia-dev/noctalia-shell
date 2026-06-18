@@ -522,7 +522,7 @@ void EasyEffectsService::registerIpc(
         if (profiles.empty()) {
           return std::format("error: no EasyEffects {} profiles found\n", effectsProfileKindName(*kind));
         }
-        if (std::ranges::find(profiles, profile) == profiles.end()) {
+        if (!std::ranges::contains(profiles, profile)) {
           return std::format(
               "error: unknown EasyEffects {} profile \"{}\"{}", effectsProfileKindName(*kind), profile,
               availableEffectsProfilesSuffix(profiles)

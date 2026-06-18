@@ -137,7 +137,7 @@ namespace calendar {
       const std::size_t slash = trimmed.rfind('/');
       std::string_view tail = slash == std::string_view::npos ? trimmed : trimmed.substr(slash + 1);
       std::string id = uri::decodeComponent(tail);
-      id.erase(std::remove_if(id.begin(), id.end(), [](unsigned char c) { return std::isspace(c) != 0; }), id.end());
+      std::erase_if(id, [](unsigned char c) { return std::isspace(c) != 0; });
       return id;
     }
 

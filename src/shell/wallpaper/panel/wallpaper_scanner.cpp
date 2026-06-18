@@ -113,7 +113,7 @@ const WallpaperScanResult& WallpaperScanner::scan(const std::filesystem::path& d
   }
 
   // Directories first, then files; both sorted case-insensitively by name.
-  std::sort(result.entries.begin(), result.entries.end(), [](const WallpaperEntry& a, const WallpaperEntry& b) {
+  std::ranges::sort(result.entries, [](const WallpaperEntry& a, const WallpaperEntry& b) {
     if (a.isDir != b.isDir) {
       return a.isDir;
     }

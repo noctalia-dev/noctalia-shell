@@ -9,6 +9,7 @@
 #include "ui/style.h"
 #include "util/string_utils.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <memory>
@@ -79,7 +80,7 @@ namespace {
     if (inner.size() < 2 || inner.size() > 3) {
       return false;
     }
-    if (!std::all_of(inner.begin(), inner.end(), [](char ch) { return isAsciiAlpha(ch); })) {
+    if (!std::ranges::all_of(inner, [](char ch) { return isAsciiAlpha(ch); })) {
       return false;
     }
     out.assign(inner);

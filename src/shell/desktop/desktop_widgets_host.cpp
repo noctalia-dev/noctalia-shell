@@ -48,9 +48,6 @@ void DesktopWidgetsHost::show(const DesktopWidgetsSnapshot& snapshot) {
 }
 
 void DesktopWidgetsHost::hide() {
-  for (auto& instance : m_instances) {
-    teardownInstance(*instance);
-  }
   m_visible = false;
   m_instances.clear();
 }
@@ -118,11 +115,7 @@ void DesktopWidgetsHost::syncInstances() {
 
   std::erase_if(m_instances, [this](const auto& instance) {
     const DesktopWidgetState* state = findStateById(m_snapshot, instance->state.id);
-    const bool remove = state == nullptr || !state->enabled;
-    if (remove) {
-      teardownInstance(*instance);
-    }
-    return remove;
+    return state == nullptr || !state->enabled;
   });
 
   for (const auto& state : m_snapshot.widgets) {
@@ -133,13 +126,7 @@ void DesktopWidgetsHost::syncInstances() {
     const WaylandOutput* output = desktop_widgets::resolveStateOutput(*m_wayland, state);
     if (output == nullptr) {
       // Explicitly bound widgets are hidden while their target output is unavailable.
-      std::erase_if(m_instances, [this, &state](const auto& instance) {
-        const bool remove = instance->state.id == state.id;
-        if (remove) {
-          teardownInstance(*instance);
-        }
-        return remove;
-      });
+      std::erase_if(m_instances, [&state](const auto& instance) { return instance->state.id == state.id; });
       continue;
     }
 
@@ -155,13 +142,7 @@ void DesktopWidgetsHost::syncInstances() {
         || existing->effectiveOutputName != effectiveOutputName;
 
     if (widgetDefinitionChanged) {
-      std::erase_if(m_instances, [this, &state](const auto& instance) {
-        const bool remove = instance->state.id == state.id;
-        if (remove) {
-          teardownInstance(*instance);
-        }
-        return remove;
-      });
+      std::erase_if(m_instances, [&state](const auto& instance) { return instance->state.id == state.id; });
       createInstance(state, *output);
       continue;
     }
@@ -277,30 +258,6 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
   }
 
   m_instances.push_back(std::move(instance));
-}
-
-void DesktopWidgetsHost::teardownInstance(DesktopWidgetInstance& instance) {
-  instance.animations.cancelAll();
-
-  if (instance.widget != nullptr) {
-    instance.widget->setAnimationManager(nullptr);
-    instance.widget->setFrameTickRequestCallback(nullptr);
-    instance.widget->setUpdateCallback(nullptr);
-    instance.widget->setLayoutCallback(nullptr);
-    instance.widget->setRedrawCallback(nullptr);
-  }
-
-  instance.inputDispatcher.setSceneRoot(nullptr);
-
-  if (instance.surface != nullptr) {
-    instance.surface->pauseFrameLoop();
-    instance.surface->setConfigureCallback(nullptr);
-    instance.surface->setPrepareFrameCallback(nullptr);
-    instance.surface->setFrameTickCallback(nullptr);
-    instance.surface->setUpdateCallback(nullptr);
-    instance.surface->setSceneRoot(nullptr);
-    instance.surface->setAnimationManager(nullptr);
-  }
 }
 
 void DesktopWidgetsHost::buildScene(DesktopWidgetInstance& instance) {

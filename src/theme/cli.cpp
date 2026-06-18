@@ -74,7 +74,7 @@ namespace noctalia::theme {
     std::string templateNameOrId(const std::string& id, const std::string& name) { return name.empty() ? id : name; }
 
     void sortTemplateList(std::vector<TemplateListEntry>& entries) {
-      std::sort(entries.begin(), entries.end(), [](const TemplateListEntry& lhs, const TemplateListEntry& rhs) {
+      std::ranges::sort(entries, [](const TemplateListEntry& lhs, const TemplateListEntry& rhs) {
         return std::tie(lhs.category, lhs.id, lhs.name) < std::tie(rhs.category, rhs.id, rhs.name);
       });
     }

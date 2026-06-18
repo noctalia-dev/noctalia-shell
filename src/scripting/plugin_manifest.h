@@ -19,6 +19,7 @@ namespace scripting {
     Int,
     Double,
     String,
+    StringList,
     File,
     Folder,
     Glyph,
@@ -29,6 +30,7 @@ namespace scripting {
   struct ManifestSelectOption {
     std::string value;
     std::string label;
+    std::string labelKey;
   };
 
   struct ManifestVisibility {
@@ -39,13 +41,16 @@ namespace scripting {
   struct ManifestField {
     std::string key;
     std::string label;
+    std::string labelKey;
     std::string description;
+    std::string descriptionKey;
     ManifestFieldType type = ManifestFieldType::String;
 
     // Typed default; the active member is selected by `type`.
     bool boolDefault = false;
     double numberDefault = 0.0;
     std::string stringDefault;
+    std::vector<std::string> stringListDefault;
 
     std::optional<double> minValue;
     std::optional<double> maxValue;

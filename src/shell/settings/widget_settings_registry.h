@@ -12,6 +12,10 @@
 #include <utility>
 #include <vector>
 
+namespace scripting {
+  class PluginTranslationCatalog;
+}
+
 namespace settings {
 
   enum class WidgetReferenceKind : std::uint8_t {
@@ -133,8 +137,10 @@ namespace settings {
   [[nodiscard]] std::vector<WidgetSettingSpec>
   widgetSettingSpecs(std::string_view type, const WidgetConfig* config, std::string_view shellFontFamily);
   // Build settings specs from a plugin entry's declared setting schema.
-  [[nodiscard]] std::vector<WidgetSettingSpec>
-  manifestSettingSpecs(const std::vector<scripting::ManifestField>& fields);
+  [[nodiscard]] std::vector<WidgetSettingSpec> manifestSettingSpecs(
+      const std::vector<scripting::ManifestField>& fields,
+      const scripting::PluginTranslationCatalog* translations = nullptr
+  );
 
   // Schema projection (the validity half of the specs), consumed by the config
   // layer (e.g. `config validate`). For plugin widgets the type alone resolves the

@@ -23,7 +23,7 @@ void UsageTracker::record(std::string_view providerId, std::string_view resultId
 
   auto& recentlyUsedList = m_recentlyUsed[std::string(providerId)];
   const auto id = std::string(resultId);
-  recentlyUsedList.erase(std::remove(recentlyUsedList.begin(), recentlyUsedList.end(), id), recentlyUsedList.end());
+  std::erase(recentlyUsedList, id);
   recentlyUsedList.push_front(id);
   while (recentlyUsedList.size() > kMaxRecentlyUsedCount) {
     recentlyUsedList.pop_back();

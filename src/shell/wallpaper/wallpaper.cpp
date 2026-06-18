@@ -195,14 +195,12 @@ namespace {
     if (candidates.empty()) {
       return {};
     }
-    std::sort(candidates.begin(), candidates.end(), [](const std::string& a, const std::string& b) {
-      return lessCaseInsensitive(a, b);
-    });
+    std::ranges::sort(candidates, [](const std::string& a, const std::string& b) { return lessCaseInsensitive(a, b); });
     if (candidates.size() == 1) {
       return candidates.front();
     }
 
-    const auto it = std::find(candidates.begin(), candidates.end(), currentPath);
+    const auto it = std::ranges::find(candidates, currentPath);
     if (it == candidates.end()) {
       return candidates.front();
     }
@@ -566,7 +564,7 @@ void Wallpaper::registerIpc(IpcService& ipc) {
       return {};
     }
     const auto& outputs = m_wayland->outputs();
-    const bool found = std::any_of(outputs.begin(), outputs.end(), [&](const WaylandOutput& out) {
+    const bool found = std::ranges::any_of(outputs, [&](const WaylandOutput& out) {
       return !out.connectorName.empty() && out.connectorName == outputConnector;
     });
     if (found) {
@@ -767,9 +765,8 @@ void Wallpaper::syncInstances() {
       continue;
     }
 
-    bool exists = std::any_of(m_instances.begin(), m_instances.end(), [&output](const auto& inst) {
-      return inst->outputName == output.name;
-    });
+    bool exists =
+        std::ranges::any_of(m_instances, [&output](const auto& inst) { return inst->outputName == output.name; });
     if (exists) {
       continue;
     }
@@ -794,33 +791,6 @@ void Wallpaper::resetAutomationState() {
 }
 
 void Wallpaper::setAutomationGate(std::function<bool()> gate) { m_automationGate = std::move(gate); }
-
-void Wallpaper::pauseRendering() {
-  if (m_renderingPaused) {
-    return;
-  }
-  m_renderingPaused = true;
-  for (const auto& instance : m_instances) {
-    if (instance == nullptr || instance->surface == nullptr) {
-      continue;
-    }
-    instance->surface->pauseFrameLoop();
-  }
-}
-
-void Wallpaper::resumeRendering() {
-  if (!m_renderingPaused) {
-    return;
-  }
-  m_renderingPaused = false;
-  for (const auto& instance : m_instances) {
-    if (instance == nullptr || instance->surface == nullptr) {
-      continue;
-    }
-    instance->surface->resumeFrameLoop();
-    instance->surface->requestLayout();
-  }
-}
 
 bool Wallpaper::automationAllowed() const noexcept { return !m_automationGate || m_automationGate(); }
 
@@ -975,7 +945,7 @@ bool Wallpaper::switchToRandomWallpaper(std::optional<std::string_view> connecto
   if (connector.has_value()) {
     if (m_wayland != nullptr) {
       const auto& outputs = m_wayland->outputs();
-      const bool found = std::any_of(outputs.begin(), outputs.end(), [&](const WaylandOutput& out) {
+      const bool found = std::ranges::any_of(outputs, [&](const WaylandOutput& out) {
         return !out.connectorName.empty() && out.connectorName == *connector;
       });
       if (!found) {
@@ -1135,10 +1105,6 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
   if (!instance->surface->initialize(output.output)) {
     kLog.warn("failed to initialize surface for output {}", output.name);
     return;
-  }
-
-  if (m_renderingPaused) {
-    instance->surface->pauseFrameLoop();
   }
 
   m_instances.push_back(std::move(instance));

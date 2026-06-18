@@ -111,7 +111,7 @@ namespace {
         return;
       }
       value = StringUtils::toLower(value);
-      if (std::ranges::find(hints, value) == hints.end()) {
+      if (!std::ranges::contains(hints, value)) {
         hints.push_back(std::move(value));
       }
     };
@@ -124,11 +124,11 @@ namespace {
     push(tail);
 
     std::string dashed = tail;
-    std::replace(dashed.begin(), dashed.end(), '_', '-');
+    std::ranges::replace(dashed, '_', '-');
     push(dashed);
 
     std::string underscored = tail;
-    std::replace(underscored.begin(), underscored.end(), '-', '_');
+    std::ranges::replace(underscored, '-', '_');
     push(underscored);
 
     for (const auto& suffix : {"_client", "-client", ".desktop"}) {
@@ -266,7 +266,7 @@ namespace {
   }
 
   bool propertyRemoved(const std::vector<std::string>& removed, std::string_view property) {
-    return std::ranges::any_of(removed, [property](const std::string& value) { return value == property; });
+    return std::ranges::contains(removed, property);
   }
 
   void applyMenuEntryProperties(
@@ -635,7 +635,7 @@ std::vector<TrayItemInfo> TrayService::items() const {
   for (const auto& [_, item] : m_items) {
     out.push_back(item);
   }
-  std::ranges::sort(out, [](const TrayItemInfo& a, const TrayItemInfo& b) { return a.id < b.id; });
+  std::ranges::sort(out, {}, &TrayItemInfo::id);
   return out;
 }
 
@@ -1661,7 +1661,7 @@ void TrayService::resolvePathOnlyItemProxy(const std::string& itemId) {
           candidates->reserve(std::min<std::size_t>(names.size(), kMaxProbeAttempts));
 
           auto appendCandidate = [candidates](const std::string& candidate) {
-            if (std::ranges::find(*candidates, candidate) == candidates->end()) {
+            if (!std::ranges::contains(*candidates, candidate)) {
               candidates->push_back(candidate);
             }
           };

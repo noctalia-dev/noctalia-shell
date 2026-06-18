@@ -65,7 +65,7 @@ namespace {
     }
 
     std::ranges::sort(profiles);
-    profiles.erase(std::unique(profiles.begin(), profiles.end()), profiles.end());
+    profiles.erase(std::ranges::unique(profiles).begin(), profiles.end());
     return profiles;
   }
 
@@ -99,9 +99,9 @@ PowerProfilesService::PowerProfilesService(SystemBus& bus) : m_bus(bus) {
             || changedProperties.contains("PerformanceInhibited");
 
         if (!relevant) {
-          relevant = std::ranges::find(invalidatedProperties, "ActiveProfile") != invalidatedProperties.end()
-              || std::ranges::find(invalidatedProperties, "Profiles") != invalidatedProperties.end()
-              || std::ranges::find(invalidatedProperties, "PerformanceInhibited") != invalidatedProperties.end();
+          relevant = std::ranges::contains(invalidatedProperties, "ActiveProfile")
+              || std::ranges::contains(invalidatedProperties, "Profiles")
+              || std::ranges::contains(invalidatedProperties, "PerformanceInhibited");
         }
 
         if (relevant) {
@@ -144,7 +144,7 @@ bool PowerProfilesService::cycleActiveProfile() {
     return false;
   }
   const std::string& current = activeProfile();
-  auto it = std::find(profs.begin(), profs.end(), current);
+  auto it = std::ranges::find(profs, current);
   if (it == profs.end()) {
     return setActiveProfile(profs.front());
   }
@@ -204,11 +204,11 @@ void PowerProfilesService::registerIpc(IpcService& ipc, StateFeedbackCallback st
         }
         const auto& available = profiles();
         if (!available.empty()) {
-          if (std::find(available.begin(), available.end(), profile) == available.end()) {
+          if (!std::ranges::contains(available, profile)) {
             std::string suffix = "; available:";
-            for (std::size_t i = 0; i < available.size(); ++i) {
+            for (const auto& availableProfile : available) {
               suffix.push_back(' ');
-              suffix += available[i];
+              suffix += availableProfile;
             }
             suffix.push_back('\n');
             return "error: unknown profile \"" + profile + "\"" + suffix;

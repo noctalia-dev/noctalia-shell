@@ -50,8 +50,7 @@ namespace noctalia::system::cpu_temp {
         return false;
       }
       const std::string_view number{fileName.data() + prefix.size(), fileName.size() - prefix.size() - suffix.size()};
-      return !number.empty()
-          && std::all_of(number.begin(), number.end(), [](char ch) { return ch >= '0' && ch <= '9'; });
+      return !number.empty() && std::ranges::all_of(number, [](char ch) { return ch >= '0' && ch <= '9'; });
     }
 
     [[nodiscard]] int tempInputIndex(const std::string& fileName) {
@@ -179,7 +178,7 @@ namespace noctalia::system::cpu_temp {
           paths.push_back(entry.path());
         }
       }
-      std::sort(paths.begin(), paths.end());
+      std::ranges::sort(paths);
       return paths;
     }
 
@@ -203,7 +202,7 @@ namespace noctalia::system::cpu_temp {
             inputPaths.push_back(entry.path());
           }
         }
-        std::sort(inputPaths.begin(), inputPaths.end());
+        std::ranges::sort(inputPaths);
 
         for (const auto& inputPath : inputPaths) {
           const auto tempC = readInputCelsius(inputPath);
@@ -235,16 +234,12 @@ namespace noctalia::system::cpu_temp {
         return std::nullopt;
       }
 
-      const bool hasNonZero =
-          std::any_of(sensors.begin(), sensors.end(), [](const Sensor& sensor) { return sensor.tempC > 0.0; });
+      const bool hasNonZero = std::ranges::any_of(sensors, [](const Sensor& sensor) { return sensor.tempC > 0.0; });
       if (hasNonZero) {
-        sensors.erase(
-            std::remove_if(sensors.begin(), sensors.end(), [](const Sensor& sensor) { return sensor.tempC <= 0.0; }),
-            sensors.end()
-        );
+        std::erase_if(sensors, [](const Sensor& sensor) { return sensor.tempC <= 0.0; });
       }
 
-      const auto best = std::min_element(sensors.begin(), sensors.end(), [](const Sensor& lhs, const Sensor& rhs) {
+      const auto best = std::ranges::min_element(sensors, [](const Sensor& lhs, const Sensor& rhs) {
         if (lhs.driverPriority != rhs.driverPriority) {
           return lhs.driverPriority < rhs.driverPriority;
         }
@@ -302,23 +297,17 @@ namespace noctalia::system::cpu_temp {
       }
 
       const bool hasNonZero =
-          std::any_of(sensors.begin(), sensors.end(), [](const ThermalSensor& sensor) { return sensor.tempC > 0.0; });
+          std::ranges::any_of(sensors, [](const ThermalSensor& sensor) { return sensor.tempC > 0.0; });
       if (hasNonZero) {
-        sensors.erase(
-            std::remove_if(
-                sensors.begin(), sensors.end(), [](const ThermalSensor& sensor) { return sensor.tempC <= 0.0; }
-            ),
-            sensors.end()
-        );
+        std::erase_if(sensors, [](const ThermalSensor& sensor) { return sensor.tempC <= 0.0; });
       }
 
-      const auto best =
-          std::min_element(sensors.begin(), sensors.end(), [](const ThermalSensor& lhs, const ThermalSensor& rhs) {
-            if (lhs.priority != rhs.priority) {
-              return lhs.priority < rhs.priority;
-            }
-            return lhs.inputPath.string() < rhs.inputPath.string();
-          });
+      const auto best = std::ranges::min_element(sensors, [](const ThermalSensor& lhs, const ThermalSensor& rhs) {
+        if (lhs.priority != rhs.priority) {
+          return lhs.priority < rhs.priority;
+        }
+        return lhs.inputPath.string() < rhs.inputPath.string();
+      });
       if (best == sensors.end()) {
         return std::nullopt;
       }

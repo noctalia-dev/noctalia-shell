@@ -253,11 +253,10 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
     return false;
   }
 
-  for (std::size_t i = 0; i < m_visibleEntries.size(); ++i) {
-    const auto& cfg = m_visibleEntries[i];
-    if (cfg.shortcut.has_value() && keyChordMatches(*cfg.shortcut, sym, modifiers)) {
+  for (const auto& entryConfig : m_visibleEntries) {
+    if (entryConfig.shortcut.has_value() && keyChordMatches(*entryConfig.shortcut, sym, modifiers)) {
       PanelManager::instance().close();
-      invokeEntry(cfg);
+      invokeEntry(entryConfig);
       return true;
     }
   }

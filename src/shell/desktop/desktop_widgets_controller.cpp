@@ -321,24 +321,6 @@ void DesktopWidgetsController::unsuppressDisplay() {
   applyVisibility();
 }
 
-void DesktopWidgetsController::pauseUnderSessionLock() {
-  if (m_sessionLockPaused) {
-    return;
-  }
-  m_sessionLockPaused = true;
-  if (m_host != nullptr) {
-    m_host->hide();
-  }
-}
-
-void DesktopWidgetsController::resumeAfterSessionLock() {
-  if (!m_sessionLockPaused) {
-    return;
-  }
-  m_sessionLockPaused = false;
-  applyVisibility();
-}
-
 bool DesktopWidgetsController::isEditing() const noexcept { return m_editor != nullptr && m_editor->isOpen(); }
 
 std::optional<LayerPopupParentContext>

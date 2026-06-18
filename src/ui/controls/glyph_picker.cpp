@@ -44,7 +44,7 @@ public:
         categories.insert(metadata.category);
       }
     }
-    std::sort(m_master.begin(), m_master.end(), [](const Entry& a, const Entry& b) { return a.name < b.name; });
+    std::ranges::sort(m_master, {}, &Entry::name);
     m_categories.assign(categories.begin(), categories.end());
 
     m_visible.reserve(m_master.size());

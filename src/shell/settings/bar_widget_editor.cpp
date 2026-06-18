@@ -362,7 +362,7 @@ namespace settings {
     bool removeWidgetReference(std::vector<std::string>& items, std::string_view widgetName) {
       const auto oldSize = items.size();
       const std::string key(widgetName);
-      items.erase(std::remove(items.begin(), items.end(), key), items.end());
+      std::erase(items, key);
       return items.size() != oldSize;
     }
 
@@ -509,20 +509,15 @@ namespace settings {
 
     const BarCapsuleGroupStyle*
     findCapsuleGroupStyle(const std::vector<BarCapsuleGroupStyle>& groups, std::string_view id) {
-      const auto it = std::find_if(groups.begin(), groups.end(), [id](const BarCapsuleGroupStyle& group) {
-        return group.id == id;
-      });
+      const auto it = std::ranges::find(groups, id, &BarCapsuleGroupStyle::id);
       return it != groups.end() ? &*it : nullptr;
     }
 
     // Smallest unused `g<N>` id within an owner scope's existing groups.
     std::string nextCapsuleGroupId(const std::vector<BarCapsuleGroupStyle>& groups) {
       int n = 1;
-      const auto exists = [&](const std::string& id) {
-        return std::any_of(groups.begin(), groups.end(), [&](const auto& g) { return g.id == id; });
-      };
       std::string candidate = "g" + std::to_string(n);
-      while (exists(candidate)) {
+      while (std::ranges::contains(groups, candidate, &BarCapsuleGroupStyle::id)) {
         candidate = "g" + std::to_string(++n);
       }
       return candidate;
@@ -717,7 +712,7 @@ namespace settings {
               continue;
             }
             std::vector<std::string> items = laneItemsFor(zi);
-            const auto it = std::find(items.begin(), items.end(), token);
+            const auto it = std::ranges::find(items, token);
             if (it != items.end()) {
               items.erase(it);
               setLane(zi, std::move(items));
@@ -1070,9 +1065,7 @@ namespace settings {
           }
         }
       }
-      const auto inLane = [&](const std::vector<std::string>& lane) {
-        return std::find(lane.begin(), lane.end(), widgetName) != lane.end();
-      };
+      const auto inLane = [&](const std::vector<std::string>& lane) { return std::ranges::contains(lane, widgetName); };
       for (const BarConfig& bar : cfg.bars) {
         if (inLane(bar.startWidgets) || inLane(bar.centerWidgets) || inLane(bar.endWidgets)) {
           if (bar.fontFamily && !bar.fontFamily->empty()) {
@@ -1185,9 +1178,7 @@ namespace settings {
         options.push_back(SelectOption{.value = "auto", .label = i18n::tr("common.states.auto")});
       }
 
-      const auto hasSelected = std::any_of(options.begin(), options.end(), [&selectedValue](const SelectOption& opt) {
-        return opt.value == selectedValue;
-      });
+      const auto hasSelected = std::ranges::contains(options, selectedValue, &SelectOption::value);
       if (!selectedValue.empty() && !hasSelected) {
         options.push_back(
             SelectOption{
@@ -1235,7 +1226,7 @@ namespace settings {
       if (rawKeys.empty()) {
         return;
       }
-      std::sort(rawKeys.begin(), rawKeys.end());
+      std::ranges::sort(rawKeys);
 
       panel.addChild(
           ui::column(
@@ -1669,7 +1660,7 @@ namespace settings {
         for (const auto laneKey : kLaneKeys) {
           auto p = pathWithLastSegment(laneListPath, std::string(laneKey));
           auto items = barWidgetItemsForPath(ctx.config, p);
-          if (std::find(items.begin(), items.end(), widgetName) != items.end()) {
+          if (std::ranges::contains(items, widgetName)) {
             currentLaneKey = std::string(laneKey);
             currentLanePath = std::move(p);
             currentLaneItems = std::move(items);
@@ -1682,7 +1673,7 @@ namespace settings {
         const std::vector<BarCapsuleGroupStyle> inspectorGroups = capsuleGroupsForLanePath(ctx.config, laneListPath);
         std::string capsuleGroup;
         for (const auto& g : inspectorGroups) {
-          if (std::find(g.members.begin(), g.members.end(), widgetName) != g.members.end()) {
+          if (std::ranges::contains(g.members, widgetName)) {
             capsuleGroup = g.id;
             break;
           }
@@ -1748,7 +1739,7 @@ namespace settings {
                     .radius = Style::scaledRadiusSm(ctx.scale),
                     .onClick = [setOverrides = ctx.setOverrides, sourceItems, sourcePath, targetItems, targetPath,
                                 widgetName]() mutable {
-                      auto it = std::find(sourceItems.begin(), sourceItems.end(), widgetName);
+                      auto it = std::ranges::find(sourceItems, widgetName);
                       if (it == sourceItems.end()) {
                         return;
                       }
@@ -2207,7 +2198,7 @@ namespace settings {
                 for (const auto laneKey : {"start", "center", "end"}) {
                   std::vector<std::string> lanePath = pathWithLastSegment(laneListPath, laneKey);
                   std::vector<std::string> lane = barWidgetItemsForPath(*config, lanePath);
-                  const auto it = std::find(lane.begin(), lane.end(), token);
+                  const auto it = std::ranges::find(lane, token);
                   if (it == lane.end()) {
                     continue;
                   }
@@ -2262,7 +2253,7 @@ namespace settings {
         }
         indices.push_back(static_cast<std::size_t>(std::strtoul(token.c_str() + hash + 1, nullptr, 10)));
       }
-      std::sort(indices.begin(), indices.end());
+      std::ranges::sort(indices);
       for (std::size_t k = 1; k < indices.size(); ++k) {
         if (indices[k] != indices[k - 1] + 1) {
           return plan; // not contiguous
@@ -2938,7 +2929,7 @@ namespace settings {
                       const std::vector<std::string> members = g->members;
                       std::vector<std::string> laneEntries = barWidgetItemsForPath(*config, lanePath);
                       const std::string token = makeCapsuleGroupToken(gid);
-                      const auto it = std::find(laneEntries.begin(), laneEntries.end(), token);
+                      const auto it = std::ranges::find(laneEntries, token);
                       if (it != laneEntries.end()) {
                         const std::size_t pos = static_cast<std::size_t>(it - laneEntries.begin());
                         laneEntries.erase(laneEntries.begin() + static_cast<std::ptrdiff_t>(pos));
@@ -3013,7 +3004,7 @@ namespace settings {
                 }
                 std::vector<std::string> laneEntries = barWidgetItemsForPath(*config, lanePath);
                 const std::string token = makeCapsuleGroupToken(gid);
-                const auto it = std::find(laneEntries.begin(), laneEntries.end(), token);
+                const auto it = std::ranges::find(laneEntries, token);
                 std::size_t insertAt = it != laneEntries.end() ? static_cast<std::size_t>(it - laneEntries.begin()) + 1
                                                                : laneEntries.size();
                 if (emptyNow && it != laneEntries.end()) {
@@ -3048,9 +3039,7 @@ namespace settings {
 
         // Loose widget card.
         const std::string selectionToken = std::string(laneKey) + "#" + std::to_string(i);
-        const bool isSelected =
-            std::find(ctx.selectedLaneWidgets.begin(), ctx.selectedLaneWidgets.end(), selectionToken)
-            != ctx.selectedLaneWidgets.end();
+        const bool isSelected = std::ranges::contains(ctx.selectedLaneWidgets, selectionToken);
         std::function<void()> removeClose;
         if (!inherited) {
           removeClose = [setOverride = ctx.setOverride, items = laneItems, lanePath, i]() mutable {
@@ -3062,7 +3051,7 @@ namespace settings {
         if (!inherited) {
           toggleSelect = [&selectedLaneWidgets = ctx.selectedLaneWidgets, selectionToken,
                           requestRebuild = ctx.requestRebuild]() {
-            const auto it = std::find(selectedLaneWidgets.begin(), selectedLaneWidgets.end(), selectionToken);
+            const auto it = std::ranges::find(selectedLaneWidgets, selectionToken);
             if (it != selectedLaneWidgets.end()) {
               selectedLaneWidgets.erase(it);
             } else {

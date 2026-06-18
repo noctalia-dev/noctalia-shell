@@ -193,10 +193,8 @@ void CalendarService::accountDone(const std::string& accountId, bool ok, std::ve
 void CalendarService::rebuildSnapshot() {
   // Drop cached events for accounts no longer configured.
   for (auto it = m_eventsByAccount.begin(); it != m_eventsByAccount.end();) {
-    const bool stillConfigured = std::any_of(
-        m_activeConfig.accounts.begin(), m_activeConfig.accounts.end(),
-        [&](const CalendarConfig::Account& a) { return a.id == it->first; }
-    );
+    const bool stillConfigured =
+        std::ranges::contains(m_activeConfig.accounts, it->first, &CalendarConfig::Account::id);
     it = stillConfigured ? std::next(it) : m_eventsByAccount.erase(it);
   }
 
@@ -204,9 +202,7 @@ void CalendarService::rebuildSnapshot() {
   for (const auto& [accountId, events] : m_eventsByAccount) {
     merged.insert(merged.end(), events.begin(), events.end());
   }
-  std::sort(merged.begin(), merged.end(), [](const CalendarEvent& a, const CalendarEvent& b) {
-    return a.start < b.start;
-  });
+  std::ranges::sort(merged, {}, &CalendarEvent::start);
   m_snapshot.events = std::move(merged);
   m_snapshot.valid = true;
 }
@@ -238,13 +234,9 @@ void CalendarService::fetchCalDav(const CalendarConfig::Account& account) {
 
         if (!selectedCalendars.empty()) {
           const std::unordered_set<std::string> selected(selectedCalendars.begin(), selectedCalendars.end());
-          collections.erase(
-              std::remove_if(
-                  collections.begin(), collections.end(),
-                  [&](const calendar::CalDavCollection& collection) { return !selected.contains(collection.id); }
-              ),
-              collections.end()
-          );
+          std::erase_if(collections, [&](const calendar::CalDavCollection& collection) {
+            return !selected.contains(collection.id);
+          });
         }
 
         if (collections.empty()) {
@@ -373,10 +365,9 @@ void CalendarService::fetchGoogle(const CalendarConfig::Account& account) {
 }
 
 void CalendarService::connectGoogleAccount(const std::string& accountId, const std::string& activationToken) {
-  const auto it = std::find_if(
-      m_activeConfig.accounts.begin(), m_activeConfig.accounts.end(),
-      [&](const CalendarConfig::Account& a) { return a.id == accountId && a.type == "google"; }
-  );
+  const auto it = std::ranges::find_if(m_activeConfig.accounts, [&](const CalendarConfig::Account& a) {
+    return a.id == accountId && a.type == "google";
+  });
   if (it == m_activeConfig.accounts.end()) {
     kLog.warn("connectGoogleAccount: no google account with id {}", accountId);
     notifyGoogleConnectFailure(

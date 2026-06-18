@@ -25,7 +25,7 @@ public:
 
   virtual void create() = 0;
 
-  void layout(Renderer& renderer);
+  virtual void layout(Renderer& renderer);
   void update(Renderer& renderer);
 
   [[nodiscard]] virtual bool wantsSecondTicks() const { return false; }
@@ -103,6 +103,9 @@ protected:
     }
   }
 
+  [[nodiscard]] float boxInnerWidth() const noexcept;
+  [[nodiscard]] float boxInnerHeight() const noexcept;
+
   virtual void doLayout(Renderer& renderer) = 0;
   virtual void doUpdate(Renderer& renderer) { (void)renderer; }
 
@@ -131,7 +134,6 @@ protected:
   float m_fitRefScale = -1.0f;
   AnimationManager* m_animations = nullptr;
 
-private:
   void applyBackground();
 
   std::unique_ptr<Node> m_outerRoot;

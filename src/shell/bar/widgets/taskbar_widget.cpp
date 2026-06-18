@@ -642,7 +642,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
           tasks.push_back(&task);
         }
       }
-      std::stable_sort(tasks.begin(), tasks.end(), [](const TaskModel* lhs, const TaskModel* rhs) {
+      std::ranges::stable_sort(tasks, [](const TaskModel* lhs, const TaskModel* rhs) {
         if (lhs->workspaceOrder != rhs->workspaceOrder) {
           return lhs->workspaceOrder < rhs->workspaceOrder;
         }
@@ -1014,7 +1014,7 @@ void TaskbarWidget::updateModels() {
       workspaceKeyToOrder[nextWorkspaces[i].key] = i;
     }
 
-    std::stable_sort(workspaceAssignments.begin(), workspaceAssignments.end(), [&](const auto& a, const auto& b) {
+    std::ranges::stable_sort(workspaceAssignments, [&](const auto& a, const auto& b) {
       if (a.workspaceKey != b.workspaceKey) {
         const auto itA = workspaceKeyToOrder.find(a.workspaceKey);
         const auto itB = workspaceKeyToOrder.find(b.workspaceKey);
@@ -1077,7 +1077,7 @@ void TaskbarWidget::updateModels() {
     }
   }
 
-  std::stable_sort(nextTasks.begin(), nextTasks.end(), [](const TaskModel& a, const TaskModel& b) {
+  std::ranges::stable_sort(nextTasks, [](const TaskModel& a, const TaskModel& b) {
     if (a.order != b.order) {
       return a.order < b.order;
     }
@@ -1120,7 +1120,7 @@ void TaskbarWidget::updateModels() {
           if (value.empty()) {
             return;
           }
-          if (std::find(candidate.appIds.begin(), candidate.appIds.end(), value) == candidate.appIds.end()) {
+          if (!std::ranges::contains(candidate.appIds, value)) {
             candidate.appIds.push_back(value);
           }
         };
@@ -1611,10 +1611,10 @@ void TaskbarWidget::updateModels() {
       previousWorkspaceByHandle[task.handleKey] = task.workspaceKey;
     }
   }
-  const bool hasStableWorkspaceWindowAssignments = std::any_of(
-      workspaceAssignments.begin(), workspaceAssignments.end(),
-      [](const WorkspaceWindowAssignment& assignment) { return !assignment.windowId.empty(); }
-  );
+  const bool hasStableWorkspaceWindowAssignments =
+      std::ranges::any_of(workspaceAssignments, [](const WorkspaceWindowAssignment& assignment) {
+        return !assignment.windowId.empty();
+      });
   if (assignmentMode != TaskbarAssignmentMode::WorkspaceOccurrenceTitle && !hasStableWorkspaceWindowAssignments) {
     std::unordered_set<std::uintptr_t> seenHandles;
     seenHandles.reserve(nextTasks.size());
@@ -1674,23 +1674,11 @@ void TaskbarWidget::updateModels() {
       }
     }
     if (!activeKeys.empty()) {
-      nextTasks.erase(
-          std::remove_if(
-              nextTasks.begin(), nextTasks.end(),
-              [&activeKeys](const TaskModel& t) {
-                return !t.workspaceKey.empty() && !activeKeys.contains(t.workspaceKey);
-              }
-          ),
-          nextTasks.end()
-      );
+      std::erase_if(nextTasks, [&activeKeys](const TaskModel& t) {
+        return !t.workspaceKey.empty() && !activeKeys.contains(t.workspaceKey);
+      });
       if (m_groupByWorkspace) {
-        nextWorkspaces.erase(
-            std::remove_if(
-                nextWorkspaces.begin(), nextWorkspaces.end(),
-                [](const WorkspaceModel& wsm) { return !wsm.workspace.active; }
-            ),
-            nextWorkspaces.end()
-        );
+        std::erase_if(nextWorkspaces, [](const WorkspaceModel& wsm) { return !wsm.workspace.active; });
       }
     }
   }
@@ -1704,18 +1692,12 @@ void TaskbarWidget::updateModels() {
       }
       return false;
     };
-    nextWorkspaces.erase(
-        std::remove_if(
-            nextWorkspaces.begin(), nextWorkspaces.end(),
-            [&](const WorkspaceModel& wsm) { return !workspaceHasTask(wsm, nextTasks); }
-        ),
-        nextWorkspaces.end()
-    );
+    std::erase_if(nextWorkspaces, [&](const WorkspaceModel& wsm) { return !workspaceHasTask(wsm, nextTasks); });
   }
 
   if (!m_groupByWorkspace) {
     nextWorkspaces.clear();
-    std::stable_sort(nextTasks.begin(), nextTasks.end(), [](const TaskModel& a, const TaskModel& b) {
+    std::ranges::stable_sort(nextTasks, [](const TaskModel& a, const TaskModel& b) {
       if (a.workspaceOrder != b.workspaceOrder) {
         return a.workspaceOrder < b.workspaceOrder;
       }
@@ -2107,7 +2089,7 @@ void TaskbarWidget::activateAdjacentTask(int direction) {
   }
 
   const size_t activeTaskIndex =
-      std::find_if(m_tasks.begin(), m_tasks.end(), [](const TaskModel& t) { return t.active; }) - m_tasks.begin();
+      std::ranges::find_if(m_tasks, [](const TaskModel& t) { return t.active; }) - m_tasks.begin();
   if (activeTaskIndex >= m_tasks.size()) {
     return;
   }

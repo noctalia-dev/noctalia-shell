@@ -146,9 +146,6 @@ namespace settings {
                 .flexGrow = 1.0f,
                 .onActivated =
                     [this](const SearchPickerOption& option) {
-                      if (option.value.empty()) {
-                        return;
-                      }
                       if (m_onSelect) {
                         m_onSelect(option.value);
                       }

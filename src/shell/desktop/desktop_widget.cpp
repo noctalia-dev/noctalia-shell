@@ -9,11 +9,25 @@
 #include <string>
 
 namespace {
-  // Bounds on the content-fit factor so a tiny or huge box never produces unreadable or
-  // absurdly large content.
   constexpr float kMinContentFit = 0.05f;
   constexpr float kMaxContentFit = 20.0f;
 } // namespace
+
+float DesktopWidget::boxInnerWidth() const noexcept {
+  if (m_boxWidth <= 0.0f) {
+    return 0.0f;
+  }
+  const float pad = m_bgEnabled ? std::round(m_bgPadding * m_baseScale) : 0.0f;
+  return std::max(1.0f, m_boxWidth - 2.0f * pad);
+}
+
+float DesktopWidget::boxInnerHeight() const noexcept {
+  if (m_boxHeight <= 0.0f) {
+    return 0.0f;
+  }
+  const float pad = m_bgEnabled ? std::round(m_bgPadding * m_baseScale) : 0.0f;
+  return std::max(1.0f, m_boxHeight - 2.0f * pad);
+}
 
 void DesktopWidget::layout(Renderer& renderer) {
   UiPhaseScope layoutPhase(UiPhase::Layout);

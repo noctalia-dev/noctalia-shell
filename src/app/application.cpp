@@ -82,9 +82,7 @@ namespace {
   }
 
   bool widgetListHasLockKeys(const std::vector<std::string>& widgets, const Config& config) {
-    return std::any_of(widgets.begin(), widgets.end(), [&config](const std::string& name) {
-      return widgetIsLockKeys(name, config);
-    });
+    return std::ranges::any_of(widgets, [&config](const std::string& name) { return widgetIsLockKeys(name, config); });
   }
 
   std::string_view powerProfileOriginName(PowerProfilesChangeOrigin origin) {
@@ -155,13 +153,13 @@ namespace {
     if (bar.enabled) {
       return true;
     }
-    return std::any_of(bar.monitorOverrides.begin(), bar.monitorOverrides.end(), [](const BarMonitorOverride& ovr) {
+    return std::ranges::any_of(bar.monitorOverrides, [](const BarMonitorOverride& ovr) {
       return ovr.enabled.value_or(false);
     });
   }
 
   bool configHasLockKeysWidget(const Config& config) {
-    return std::any_of(config.bars.begin(), config.bars.end(), [&config](const BarConfig& bar) {
+    return std::ranges::any_of(config.bars, [&config](const BarConfig& bar) {
       return barMayRender(bar)
           && (widgetListHasLockKeys(bar.startWidgets, config)
               || widgetListHasLockKeys(bar.centerWidgets, config)
@@ -645,7 +643,6 @@ void Application::initServices() {
     m_lockscreenWidgetsController.onOutputChange();
     m_screenCorners.onOutputChange();
     m_lockScreen.onOutputChange();
-    resumeShellRenderingIfUnlocked();
     m_idleGraceOverlay.onOutputChange();
     m_idleInhibitor.onOutputChange();
     m_overviewLauncherCapture.onOutputChange();
@@ -1375,10 +1372,6 @@ void Application::initUi() {
   });
   m_lockScreen.setSessionHooks(
       [this]() {
-        m_bar.pauseUnderSessionLock();
-        m_dock.pauseUnderSessionLock();
-        m_desktopWidgetsController.pauseUnderSessionLock();
-        m_wallpaper.pauseRendering();
         m_lockscreenWidgetsController.onLockStateChanged();
         m_hookManager.fire(HookKind::SessionLocked);
 #ifdef NOCTALIA_HAVE_LIVEPAPER
@@ -1391,10 +1384,6 @@ void Application::initUi() {
 #endif
       },
       [this]() {
-        m_wallpaper.resumeRendering();
-        m_desktopWidgetsController.resumeAfterSessionLock();
-        m_dock.resumeAfterSessionLock();
-        m_bar.resumeAfterSessionLock();
         m_lockscreenWidgetsController.onLockStateChanged();
         m_hookManager.fire(HookKind::SessionUnlocked);
         if (m_logindService != nullptr) {
@@ -1547,9 +1536,7 @@ void Application::initUi() {
   });
   m_settingsWindow.setConnectCalendarAccount([this](std::string accountId, std::string activationToken) {
     const auto& accounts = m_configService.config().calendar.accounts;
-    const auto it = std::find_if(accounts.begin(), accounts.end(), [&](const CalendarConfig::Account& account) {
-      return account.id == accountId;
-    });
+    const auto it = std::ranges::find(accounts, accountId, &CalendarConfig::Account::id);
     if (it == accounts.end()) {
       return;
     }
@@ -1921,9 +1908,7 @@ void Application::initUi() {
       if (m_pipewirePcmTap != nullptr) {
         m_pipewirePcmTap->handleAudioStateChanged();
       }
-      if (!m_lockScreen.isActive()) {
-        m_bar.refresh();
-      }
+      m_bar.refresh();
       if (shouldRefreshControlCenter()) {
         m_panelManager.refresh();
       }
@@ -2326,16 +2311,6 @@ bool Application::runUserCommandBlocking(const std::string& command) {
     return false;
   }
   return true;
-}
-
-void Application::resumeShellRenderingIfUnlocked() {
-  if (m_lockScreen.isActive()) {
-    return;
-  }
-  m_wallpaper.resumeRendering();
-  m_desktopWidgetsController.resumeAfterSessionLock();
-  m_dock.resumeAfterSessionLock();
-  m_bar.resumeAfterSessionLock();
 }
 
 bool Application::runIdleAction(const IdleActionRequest& action) {

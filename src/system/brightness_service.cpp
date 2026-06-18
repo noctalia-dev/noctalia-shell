@@ -792,23 +792,13 @@ struct BrightnessService::Impl {
         }
       }
     }
-    internals.erase(
-        std::remove_if(
-            internals.begin(), internals.end(),
-            [](const DisplayInternal& display) { return display.backend == RuntimeBackend::Backlight; }
-        ),
-        internals.end()
-    );
+    std::erase_if(internals, [](const DisplayInternal& display) {
+      return display.backend == RuntimeBackend::Backlight;
+    });
   }
 
   void removeDdcDisplays() {
-    internals.erase(
-        std::remove_if(
-            internals.begin(), internals.end(),
-            [](const DisplayInternal& display) { return display.backend == RuntimeBackend::Ddcutil; }
-        ),
-        internals.end()
-    );
+    std::erase_if(internals, [](const DisplayInternal& display) { return display.backend == RuntimeBackend::Ddcutil; });
     {
       std::scoped_lock lock(workerMutex);
       pendingWrites.clear();
@@ -951,10 +941,9 @@ struct BrightnessService::Impl {
         continue;
       }
 
-      const bool hasDisplay =
-          std::any_of(internals.begin(), internals.end(), [&output](const DisplayInternal& display) {
-            return display.connectorName == output.connectorName;
-          });
+      const bool hasDisplay = std::ranges::any_of(internals, [&output](const DisplayInternal& display) {
+        return display.connectorName == output.connectorName;
+      });
       if (hasDisplay) {
         continue;
       }
@@ -1255,13 +1244,7 @@ struct BrightnessService::Impl {
   bool applyDetectCompletion(const WorkerCompletion& completion) {
     const auto oldPublic = publicDisplays;
 
-    internals.erase(
-        std::remove_if(
-            internals.begin(), internals.end(),
-            [](const DisplayInternal& display) { return display.backend == RuntimeBackend::Ddcutil; }
-        ),
-        internals.end()
-    );
+    std::erase_if(internals, [](const DisplayInternal& display) { return display.backend == RuntimeBackend::Ddcutil; });
 
     for (const auto& candidate : completion.candidates) {
       const WaylandOutput* output = findOutputByConnector(wayland, candidate.connectorName);
@@ -1277,10 +1260,9 @@ struct BrightnessService::Impl {
         continue;
       }
 
-      const bool hasBacklight =
-          std::any_of(internals.begin(), internals.end(), [&candidate](const DisplayInternal& display) {
-            return display.backend == RuntimeBackend::Backlight && display.connectorName == candidate.connectorName;
-          });
+      const bool hasBacklight = std::ranges::any_of(internals, [&candidate](const DisplayInternal& display) {
+        return display.backend == RuntimeBackend::Backlight && display.connectorName == candidate.connectorName;
+      });
       if (hasBacklight && preference != BrightnessBackendPreference::Ddcutil) {
         continue;
       }
@@ -1444,10 +1426,9 @@ const BrightnessDisplay* BrightnessService::findByOutput(wl_output* output) cons
 }
 
 bool BrightnessService::available() const noexcept {
-  return std::any_of(
-      m_impl->publicDisplays.begin(), m_impl->publicDisplays.end(),
-      [](const BrightnessDisplay& display) { return display.controllable; }
-  );
+  return std::ranges::any_of(m_impl->publicDisplays, [](const BrightnessDisplay& display) {
+    return display.controllable;
+  });
 }
 
 void BrightnessService::setBrightness(const std::string& displayId, float value) {
@@ -1468,7 +1449,7 @@ void BrightnessService::registerIpc(IpcService& ipc, std::function<void()> onBat
     }
 
     auto appendUnique = [&ids](const std::string& id) {
-      if (std::find(ids.begin(), ids.end(), id) == ids.end()) {
+      if (!std::ranges::contains(ids, id)) {
         ids.push_back(id);
       }
     };

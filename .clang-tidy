@@ -1,11 +1,13 @@
 Checks: >-
   -clang-diagnostic-*,
   modernize-avoid-c-style-cast,
+  modernize-loop-convert,
   modernize-make-unique,
   modernize-min-max-use-initializer-list,
   modernize-pass-by-value,
   modernize-raw-string-literal,
   modernize-use-emplace,
+  modernize-use-ranges,
   modernize-use-scoped-lock,
   modernize-use-starts-ends-with,
   modernize-use-std-numbers,

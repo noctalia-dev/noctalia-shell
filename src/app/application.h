@@ -151,7 +151,6 @@ private:
   bool runUserCommand(const std::string& command);
   bool runUserCommandBlocking(const std::string& command);
   bool runIdleAction(const IdleActionRequest& action);
-  void resumeShellRenderingIfUnlocked();
   void onIconThemeChanged();
   void onGraphicsReset(RenderGraphicsResetStatus status);
   void requestAllSurfacesRedraw();

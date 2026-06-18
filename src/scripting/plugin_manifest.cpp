@@ -66,6 +66,9 @@ namespace scripting {
       if (type == "double" || type == "number" || type == "float") {
         return ManifestFieldType::Double;
       }
+      if (type == "string_list") {
+        return ManifestFieldType::StringList;
+      }
       if (type == "select" || type == "enum") {
         return ManifestFieldType::Select;
       }
@@ -121,29 +124,47 @@ namespace scripting {
           out.numberDefault = node.value<double>().value_or(0.0);
         }
         break;
+      case ManifestFieldType::StringList:
+        if (const auto* values = node.as_array()) {
+          for (const auto& valueNode : *values) {
+            if (auto value = valueNode.value<std::string>()) {
+              out.stringListDefault.push_back(*value);
+            }
+          }
+        }
+        break;
       default:
         out.stringDefault = node.value<std::string>().value_or(std::string{});
         break;
       }
     }
 
-    void parseFieldOptions(const toml::table& field, ManifestField& out) {
+    bool parseFieldOptions(const toml::table& field, ManifestField& out, std::string& error) {
       const auto* options = field["options"].as_array();
       if (options == nullptr) {
-        return;
+        return true;
       }
       for (const auto& node : *options) {
         if (const auto* optTable = node.as_table()) {
           ManifestSelectOption opt;
           opt.value = tableString(*optTable, "value");
-          opt.label = tableString(*optTable, "label", opt.value);
+          opt.label = tableString(*optTable, "label");
+          opt.labelKey = tableString(*optTable, "label_key");
+          if (!opt.label.empty() && !opt.labelKey.empty()) {
+            error = "setting '" + out.key + "' option '" + opt.value + "' declares both label and label_key";
+            return false;
+          }
+          if (opt.label.empty() && opt.labelKey.empty()) {
+            opt.label = opt.value;
+          }
           if (!opt.value.empty()) {
             out.options.push_back(std::move(opt));
           }
         } else if (auto value = node.value<std::string>()) {
-          out.options.push_back(ManifestSelectOption{.value = *value, .label = *value});
+          out.options.push_back(ManifestSelectOption{.value = *value, .label = *value, .labelKey = {}});
         }
       }
+      return true;
     }
 
     void parseFieldExtensions(const toml::table& field, ManifestField& out) {
@@ -179,15 +200,25 @@ namespace scripting {
       }
     }
 
-    ManifestField parseField(const toml::table& field) {
+    std::optional<ManifestField> parseField(const toml::table& field, std::string& error) {
       ManifestField out;
       out.key = tableString(field, "key");
       if (out.key.empty()) {
         return out;
       }
       out.type = parseFieldType(tableString(field, "type", "string"));
-      out.label = tableString(field, "label", out.key);
+      out.label = tableString(field, "label");
+      out.labelKey = tableString(field, "label_key");
+      if (!out.label.empty() && !out.labelKey.empty()) {
+        error = "setting '" + out.key + "' declares both label and label_key";
+        return std::nullopt;
+      }
       out.description = tableString(field, "description");
+      out.descriptionKey = tableString(field, "description_key");
+      if (!out.description.empty() && !out.descriptionKey.empty()) {
+        error = "setting '" + out.key + "' declares both description and description_key";
+        return std::nullopt;
+      }
       out.advanced = tableBool(field, "advanced", false);
       out.minValue = tableNumber(field, "min");
       out.maxValue = tableNumber(field, "max");
@@ -195,17 +226,21 @@ namespace scripting {
         out.step = *step;
       }
       parseFieldDefault(field, out);
-      parseFieldOptions(field, out);
+      if (!parseFieldOptions(field, out, error)) {
+        return std::nullopt;
+      }
       parseFieldExtensions(field, out);
       parseFieldVisibility(field, out);
       return out;
     }
 
-    void
-    parseEntries(const toml::table& root, PluginEntryKind kind, std::string_view tableName, PluginManifest& manifest) {
+    bool parseEntries(
+        const toml::table& root, PluginEntryKind kind, std::string_view tableName, PluginManifest& manifest,
+        std::string& error
+    ) {
       const auto* entries = root[tableName].as_array();
       if (entries == nullptr) {
-        return;
+        return true;
       }
       for (const auto& node : *entries) {
         const auto* entryTable = node.as_table();
@@ -222,9 +257,12 @@ namespace scripting {
         if (const auto* settings = (*entryTable)["setting"].as_array()) {
           for (const auto& settingNode : *settings) {
             if (const auto* settingTable = settingNode.as_table()) {
-              ManifestField field = parseField(*settingTable);
-              if (!field.key.empty()) {
-                entry.settings.push_back(std::move(field));
+              auto field = parseField(*settingTable, error);
+              if (!field.has_value()) {
+                return false;
+              }
+              if (!field->key.empty()) {
+                entry.settings.push_back(std::move(*field));
               }
             }
           }
@@ -250,6 +288,7 @@ namespace scripting {
         }
         manifest.entries.push_back(std::move(entry));
       }
+      return true;
     }
 
   } // namespace
@@ -262,14 +301,15 @@ namespace scripting {
       return WidgetSettingValue{static_cast<std::int64_t>(numberDefault)};
     case ManifestFieldType::Double:
       return WidgetSettingValue{numberDefault};
+    case ManifestFieldType::StringList:
+      return WidgetSettingValue{stringListDefault};
     default:
       return WidgetSettingValue{stringDefault};
     }
   }
 
   const PluginEntry* PluginManifest::findEntry(std::string_view entryId) const {
-    const auto it =
-        std::find_if(entries.begin(), entries.end(), [entryId](const PluginEntry& e) { return e.id == entryId; });
+    const auto it = std::ranges::find(entries, entryId, &PluginEntry::id);
     return it != entries.end() ? &*it : nullptr;
   }
 
@@ -342,16 +382,22 @@ namespace scripting {
       }
     }
 
+    std::string manifestError;
     for (const auto& [kind, tableName] : kEntryKinds) {
-      parseEntries(root, kind, tableName, manifest);
+      if (!parseEntries(root, kind, tableName, manifest, manifestError)) {
+        return fail(manifestError);
+      }
     }
 
     if (const auto* settings = root["setting"].as_array()) {
       for (const auto& node : *settings) {
         if (const auto* settingTable = node.as_table()) {
-          ManifestField field = parseField(*settingTable);
-          if (!field.key.empty()) {
-            manifest.settings.push_back(std::move(field));
+          auto field = parseField(*settingTable, manifestError);
+          if (!field.has_value()) {
+            return fail(manifestError);
+          }
+          if (!field->key.empty()) {
+            manifest.settings.push_back(std::move(*field));
           }
         }
       }

@@ -176,7 +176,7 @@ namespace {
       (void)name;
       sources.push_back(entry);
     }
-    std::sort(sources.begin(), sources.end(), [](const auto& lhs, const auto& rhs) {
+    std::ranges::sort(sources, [](const auto& lhs, const auto& rhs) {
       if (lhs.wakeDispatches != rhs.wakeDispatches) {
         return lhs.wakeDispatches > rhs.wakeDispatches;
       }
@@ -215,7 +215,7 @@ namespace {
     );
 
     auto surfaces = surfaceSnapshot.surfaces;
-    std::sort(surfaces.begin(), surfaces.end(), [](const auto& lhs, const auto& rhs) {
+    std::ranges::sort(surfaces, [](const auto& lhs, const auto& rhs) {
       if (lhs.renderMs != rhs.renderMs) {
         return lhs.renderMs > rhs.renderMs;
       }
@@ -587,7 +587,7 @@ void MainLoop::run() {
       auto* source = sources[i];
       const std::vector<PollSource*> latestSources =
           m_sourcesProvider ? m_sourcesProvider() : std::vector<PollSource*>{};
-      if (std::find(latestSources.begin(), latestSources.end(), source) == latestSources.end()) {
+      if (!std::ranges::contains(latestSources, source)) {
         continue;
       }
       // Serviced now — restart its clock so the next timeout is measured fresh.

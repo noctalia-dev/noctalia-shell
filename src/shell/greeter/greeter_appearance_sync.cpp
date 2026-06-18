@@ -239,16 +239,15 @@ namespace {
 
     const int originX = ready.front()->logicalX;
     const int originY = ready.front()->logicalY;
-    const bool allShareOrigin =
-        std::all_of(ready.begin(), ready.end(), [originX, originY](const WaylandOutput* output) {
-          return output->logicalX == originX && output->logicalY == originY;
-        });
+    const bool allShareOrigin = std::ranges::all_of(ready, [originX, originY](const WaylandOutput* output) {
+      return output->logicalX == originX && output->logicalY == originY;
+    });
     if (allShareOrigin) {
       kLog.info("greeter sync: ready outputs share the same origin; skipping output layout sync");
       return std::nullopt;
     }
 
-    std::sort(ready.begin(), ready.end(), [](const WaylandOutput* lhs, const WaylandOutput* rhs) {
+    std::ranges::sort(ready, [](const WaylandOutput* lhs, const WaylandOutput* rhs) {
       if (lhs->logicalX != rhs->logicalX) {
         return lhs->logicalX < rhs->logicalX;
       }

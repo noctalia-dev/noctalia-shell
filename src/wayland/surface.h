@@ -74,9 +74,6 @@ public:
 
   [[nodiscard]] bool isRunning() const noexcept;
 
-  void pauseFrameLoop();
-  void resumeFrameLoop();
-
   void setConfigureCallback(ConfigureCallback callback);
   void setPrepareFrameCallback(PrepareFrameCallback callback);
   void setUpdateCallback(UpdateCallback callback);

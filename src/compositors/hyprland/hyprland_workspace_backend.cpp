@@ -72,7 +72,7 @@ std::vector<Workspace> HyprlandWorkspaceBackend::all() const {
     }
   }
 
-  std::sort(ordered.begin(), ordered.end(), workspaceOrderLess);
+  std::ranges::sort(ordered, workspaceOrderLess);
 
   std::vector<Workspace> result;
   result.reserve(ordered.size());
@@ -95,7 +95,7 @@ std::vector<Workspace> HyprlandWorkspaceBackend::forOutput(wl_output* output) co
     }
   }
 
-  std::sort(ordered.begin(), ordered.end(), workspaceOrderLess);
+  std::ranges::sort(ordered, workspaceOrderLess);
 
   std::vector<Workspace> result;
   result.reserve(ordered.size());
@@ -179,7 +179,7 @@ std::vector<WorkspaceWindow> HyprlandWorkspaceBackend::workspaceWindows(wl_outpu
         }
     );
   }
-  std::sort(result.begin(), result.end(), [](const WorkspaceWindow& a, const WorkspaceWindow& b) {
+  std::ranges::sort(result, [](const WorkspaceWindow& a, const WorkspaceWindow& b) {
     if (a.workspaceKey != b.workspaceKey) {
       return a.workspaceKey < b.workspaceKey;
     }
@@ -511,12 +511,7 @@ void HyprlandWorkspaceBackend::handleEvent(std::string_view event, std::string_v
     if (!id.has_value()) {
       return;
     }
-    m_workspaces.erase(
-        std::remove_if(
-            m_workspaces.begin(), m_workspaces.end(), [&](const WorkspaceState& ws) { return (ws.id == *id); }
-        ),
-        m_workspaces.end()
-    );
+    std::erase_if(m_workspaces, [&](const WorkspaceState& ws) { return (ws.id == *id); });
 
     for (auto it = m_toplevels.begin(); it != m_toplevels.end();) {
       if (it->second.workspaceId == *id) {

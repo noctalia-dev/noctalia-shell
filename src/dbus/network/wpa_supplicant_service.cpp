@@ -449,8 +449,7 @@ void WpaSupplicantService::rebuildState() {
         const bool active = (key == activeBssPath);
         const std::uint8_t pct = signalToPercent(info->signal);
 
-        auto existing =
-            std::find_if(aps.begin(), aps.end(), [&](const AccessPointInfo& a) { return a.ssid == info->ssid; });
+        auto existing = std::ranges::find(aps, info->ssid, &AccessPointInfo::ssid);
         if (existing != aps.end()) {
           existing->strength = std::max(pct, existing->strength);
           if (active)
@@ -477,7 +476,7 @@ void WpaSupplicantService::rebuildState() {
     }
   }
 
-  std::sort(aps.begin(), aps.end(), [](const AccessPointInfo& a, const AccessPointInfo& b) {
+  std::ranges::sort(aps, [](const AccessPointInfo& a, const AccessPointInfo& b) {
     if (a.active != b.active)
       return a.active > b.active;
     return a.strength > b.strength;

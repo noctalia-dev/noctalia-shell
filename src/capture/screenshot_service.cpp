@@ -274,12 +274,12 @@ namespace {
       }
     }
 
-    std::sort(knownOutputs.begin(), knownOutputs.end());
-    knownOutputs.erase(std::unique(knownOutputs.begin(), knownOutputs.end()), knownOutputs.end());
-    std::sort(matches.begin(), matches.end(), [](wl_output* a, wl_output* b) {
+    std::ranges::sort(knownOutputs);
+    knownOutputs.erase(std::ranges::unique(knownOutputs).begin(), knownOutputs.end());
+    std::ranges::sort(matches, [](wl_output* a, wl_output* b) {
       return reinterpret_cast<std::uintptr_t>(a) < reinterpret_cast<std::uintptr_t>(b);
     });
-    matches.erase(std::unique(matches.begin(), matches.end()), matches.end());
+    matches.erase(std::ranges::unique(matches).begin(), matches.end());
 
     if (matches.empty()) {
       error = "error: unknown monitor selector \"" + token + "\"";

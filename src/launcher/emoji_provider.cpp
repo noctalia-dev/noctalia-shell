@@ -135,7 +135,7 @@ std::vector<LauncherResult> EmojiProvider::query(std::string_view text) const {
     }
   }
 
-  std::sort(scored.begin(), scored.end(), [](const ScoredEntry& a, const ScoredEntry& b) { return a.score > b.score; });
+  std::ranges::sort(scored, std::ranges::greater{}, &ScoredEntry::score);
 
   std::vector<LauncherResult> results;
   for (std::size_t i = 0; i < scored.size() && i < kMaxResults; ++i) {

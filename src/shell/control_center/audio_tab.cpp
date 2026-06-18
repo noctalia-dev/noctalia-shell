@@ -283,8 +283,8 @@ namespace {
     if (s.empty()) {
       return false;
     }
-    for (std::size_t i = 0; i < s.size(); ++i) {
-      if (isDesktopTokenDelimiter(static_cast<unsigned char>(s[i]))) {
+    for (char character : s) {
+      if (isDesktopTokenDelimiter(static_cast<unsigned char>(character))) {
         return false;
       }
     }
@@ -368,7 +368,7 @@ namespace {
     if (value.empty()) {
       return;
     }
-    if (std::ranges::find(values, value) == values.end()) {
+    if (!std::ranges::contains(values, value)) {
       values.push_back(std::move(value));
     }
   }
