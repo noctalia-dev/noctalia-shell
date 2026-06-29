@@ -70,8 +70,10 @@ public:
   [[nodiscard]] float renderScale() const noexcept override { return m_renderScale; }
   [[nodiscard]] std::uint64_t textMetricsGeneration() const noexcept override { return m_textMetricsGeneration; }
 
-private:
+  // Returns false if the context could not be made current without a surface.
   bool makeCurrentNoSurface();
+
+private:
   void handleGraphicsReset(RenderGraphicsResetStatus status);
   void renderNode(
       const Node* node, const Mat3& parentTransform, float parentOpacity, float sw, float sh, float bw, float bh,
