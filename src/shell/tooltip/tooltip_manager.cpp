@@ -10,7 +10,6 @@
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "wayland/popup_surface.h"
-#include "wayland/wayland_connection.h"
 #include "xdg-shell-client-protocol.h"
 
 #include <algorithm>
@@ -71,7 +70,6 @@ namespace {
     const float valueDelta = std::min(valueNeed, remainingW);
     widths.value += valueDelta;
     remainingW -= valueDelta;
-    valueNeed -= valueDelta;
 
     if (remainingW > 0.0f && keyNeed > 0.0f) {
       widths.key += std::min(keyNeed, remainingW);
@@ -94,7 +92,7 @@ namespace {
     const float iconW = std::max(1.0f, area->width() - inset.left - inset.right);
     const float iconH = std::max(1.0f, area->height() - inset.top - inset.bottom);
 
-    const std::int32_t gap = static_cast<std::int32_t>(std::lround(Style::spaceSm));
+    const auto gap = static_cast<std::int32_t>(std::lround(Style::spaceSm));
 
     float anchorX = absX;
     float anchorY = absY;
@@ -103,7 +101,7 @@ namespace {
     std::uint32_t anchor = XDG_POSITIONER_ANCHOR_BOTTOM;
     std::uint32_t gravity = XDG_POSITIONER_GRAVITY_BOTTOM;
     std::int32_t offsetX = 0;
-    std::int32_t offsetY = static_cast<std::int32_t>(Style::spaceXs);
+    auto offsetY = static_cast<std::int32_t>(Style::spaceXs);
     std::uint32_t constraintAdjustment =
         XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_Y | XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X;
 
@@ -606,7 +604,7 @@ void TooltipManager::buildScene(const TooltipContent& content, float w, float h,
           .radius = Style::scaledRadiusMd(),
           .width = w,
           .height = h,
-          .configure = [](Box& box) { box.setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), kBorder); },
+          .configure = [](Box& box) { box.setBorder(colorSpecFromRole(ColorRole::Outline), kBorder); },
       })
   );
 
@@ -648,7 +646,8 @@ void TooltipManager::buildScene(const TooltipContent& content, float w, float h,
       auto keyLabel = ui::label({
           .text = row.key,
           .fontSize = Style::fontSizeCaption,
-          .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+          .color = colorSpecFromRole(ColorRole::Secondary),
+          .maxLines = 1,
       });
       const auto km = m_renderContext->measureText(row.key, Style::fontSizeCaption);
       if (km.width > columns.key + 0.5f) {
@@ -660,6 +659,7 @@ void TooltipManager::buildScene(const TooltipContent& content, float w, float h,
           .text = row.value,
           .fontSize = Style::fontSizeCaption,
           .color = colorSpecFromRole(ColorRole::OnSurface),
+          .maxLines = 1,
           .textAlign = TextAlign::End,
       });
       const auto vm = m_renderContext->measureText(row.value, Style::fontSizeCaption);
@@ -698,8 +698,8 @@ void TooltipManager::prepareFrame(bool /*needsUpdate*/, bool /*needsLayout*/) {
 
   m_renderContext->makeCurrent(m_surface->renderTarget());
 
-  const float w = static_cast<float>(width);
-  const float h = static_cast<float>(height);
+  const auto w = static_cast<float>(width);
+  const auto h = static_cast<float>(height);
 
   if (m_sceneRoot == nullptr) {
     UiPhaseScope layoutPhase(UiPhase::Layout);

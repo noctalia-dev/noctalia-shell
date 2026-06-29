@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config/config_types.h"
+#include "core/file_watcher.h"
 #include "core/timer_manager.h"
 #include "scripting/script_runtime.h"
 #include "shell/control_center/shortcut_registry.h"
@@ -15,8 +16,9 @@ class HttpClient;
 class ClipboardService;
 class CompositorPlatform;
 namespace scripting {
+  struct PluginRuntimeContext;
   class ScriptApiContext;
-}
+} // namespace scripting
 
 // A control-center shortcut backed by a plugin's [[shortcut]] entry. The native
 // Shortcut interface is polled, so the latest label/icon/active/enabled patch is
@@ -25,11 +27,7 @@ namespace scripting {
 // time the control center is opened.
 class PluginShortcut : public Shortcut {
 public:
-  PluginShortcut(
-      std::string entryId, std::filesystem::path sourcePath,
-      std::unordered_map<std::string, WidgetSettingValue> settings, scripting::ScriptApiContext& scriptApi,
-      HttpClient* httpClient, ClipboardService* clipboard, CompositorPlatform* platform = nullptr
-  );
+  explicit PluginShortcut(scripting::PluginRuntimeContext context);
   ~PluginShortcut() override;
 
   [[nodiscard]] std::string_view id() const override { return m_entryId; }
@@ -44,7 +42,11 @@ public:
   void onRightClick() override;
 
 private:
-  void start(std::unordered_map<std::string, WidgetSettingValue> settings);
+  void start();
+  void setupScriptWatch();
+  void teardownScriptWatch();
+  void reloadScript();
+  void resetPresentation();
   void handleResult(const scripting::ScriptResult& result);
   void armTimer();
   [[nodiscard]] scripting::ScriptSnapshot makeScriptSnapshot() const;
@@ -53,12 +55,15 @@ private:
   std::string m_entryId;
   std::filesystem::path m_sourcePath;
   std::filesystem::path m_pluginDir;
+  std::unordered_map<std::string, WidgetSettingValue> m_settings;
   scripting::ScriptApiContext& m_scriptApi;
+  FileWatcher* m_fileWatcher = nullptr;
   HttpClient* m_httpClient = nullptr;
   ClipboardService* m_clipboard = nullptr;
   CompositorPlatform* m_platform = nullptr;
   std::shared_ptr<scripting::ScriptRuntime> m_runtime;
   scripting::ScriptRuntime::SubscriberId m_subscription = 0;
+  FileWatcher::WatchId m_watchId = 0;
   std::string m_label;
   std::string m_iconOn = "circle";
   std::string m_iconOff = "circle";

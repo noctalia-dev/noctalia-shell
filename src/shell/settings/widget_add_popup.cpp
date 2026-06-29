@@ -14,7 +14,6 @@
 #include "xdg-shell-client-protocol.h"
 
 #include <algorithm>
-#include <cmath>
 #include <cstddef>
 #include <string>
 #include <string_view>
@@ -158,16 +157,12 @@ namespace settings {
 
   void WidgetAddPopup::setOnDismissed(std::function<void()> callback) { m_onDismissed = std::move(callback); }
 
-  void WidgetAddPopup::open(
-      xdg_surface* parentXdgSurface, wl_output* output, std::uint32_t serial, wl_surface* parentWlSurface,
-      std::uint32_t parentWidth, std::uint32_t parentHeight, const std::vector<std::string>& lanePath,
-      const Config& config, float scale
-  ) {
-    if (parentXdgSurface == nullptr || parentWlSurface == nullptr) {
+  void WidgetAddPopup::open(WidgetAddPopupRequest request) {
+    if (request.parent.xdgSurface == nullptr || request.parent.wlSurface == nullptr) {
       return;
     }
 
-    const auto pickerEntries = widgetPickerEntries(config);
+    const auto pickerEntries = widgetPickerEntries(request.config);
     std::vector<SearchPickerOption> normalOptions;
     std::vector<SearchPickerOption> instanceOptions;
     std::unordered_set<std::string> pluginEntries;
@@ -220,12 +215,12 @@ namespace settings {
       close();
     }
 
-    m_scale = std::max(0.1f, scale);
-    m_config = &config;
+    m_scale = std::max(0.1f, request.scale);
+    m_config = &request.config;
     m_normalOptions = std::move(normalOptions);
     m_instanceOptions = std::move(instanceOptions);
     m_pluginEntries = std::move(pluginEntries);
-    m_lanePath = lanePath;
+    m_lanePath = std::move(request.lanePath);
     m_root = nullptr;
     m_createActions = nullptr;
     m_searchPicker = nullptr;
@@ -236,12 +231,7 @@ namespace settings {
     m_createType.clear();
     m_createLabel.clear();
 
-    m_parentXdgSurface = parentXdgSurface;
-    m_parentWlSurface = parentWlSurface;
-    m_output = output;
-    m_serial = serial;
-    m_parentWidth = parentWidth;
-    m_parentHeight = parentHeight;
+    m_parent = request.parent;
 
     reopenForCurrentMode();
   }
@@ -336,7 +326,13 @@ namespace settings {
     if (m_onSelect) {
       m_onSelect(m_lanePath, id, m_createType, id, {});
     }
-    DeferredCall::callLater([this]() { close(); });
+    const std::weak_ptr<void> aliveGuard = m_aliveGuard;
+    DeferredCall::callLater([this, aliveGuard]() {
+      if (aliveGuard.expired()) {
+        return;
+      }
+      close();
+    });
   }
 
   void WidgetAddPopup::populateContent(Node* contentParent, std::uint32_t /*width*/, std::uint32_t /*height*/) {
@@ -408,7 +404,15 @@ namespace settings {
             .minHeight = Style::controlHeightSm * m_scale,
             .padding = Style::spaceXs * m_scale,
             .radius = Style::scaledRadiusMd(m_scale),
-            .onClick = [this]() { DeferredCall::callLater([this]() { close(); }); },
+            .onClick = [this]() {
+              const std::weak_ptr<void> aliveGuard = m_aliveGuard;
+              DeferredCall::callLater([this, aliveGuard]() {
+                if (aliveGuard.expired()) {
+                  return;
+                }
+                close();
+              });
+            },
         })
     );
     root->addChild(std::move(header));
@@ -439,7 +443,13 @@ namespace settings {
                     if (m_onSelect) {
                       m_onSelect(m_lanePath, option.value, option.value, instanceId, {});
                     }
-                    DeferredCall::callLater([this]() { close(); });
+                    const std::weak_ptr<void> aliveGuard = m_aliveGuard;
+                    DeferredCall::callLater([this, aliveGuard]() {
+                      if (aliveGuard.expired()) {
+                        return;
+                      }
+                      close();
+                    });
                     return;
                   }
                   if (m_instanceModeEnabled || widgetTypeRequiresNamedConfig(option.value)) {
@@ -449,9 +459,24 @@ namespace settings {
                   if (m_onSelect) {
                     m_onSelect(m_lanePath, option.value, {}, {}, {});
                   }
-                  DeferredCall::callLater([this]() { close(); });
+                  const std::weak_ptr<void> aliveGuard = m_aliveGuard;
+                  DeferredCall::callLater([this, aliveGuard]() {
+                    if (aliveGuard.expired()) {
+                      return;
+                    }
+                    close();
+                  });
                 },
-            .onCancel = [this]() { DeferredCall::callLater([this]() { close(); }); },
+            .onCancel =
+                [this]() {
+                  const std::weak_ptr<void> aliveGuard = m_aliveGuard;
+                  DeferredCall::callLater([this, aliveGuard]() {
+                    if (aliveGuard.expired()) {
+                      return;
+                    }
+                    close();
+                  });
+                },
             .configure =
                 [](SearchPicker& picker) {
                   picker.clearFill();
@@ -581,10 +606,10 @@ namespace settings {
       const float measured = titleMetrics.width + headerGap + closeBtn + rootPadding + sheetPadding;
 
       float maxWidth = kCreateMaxWidth * m_scale;
-      if (m_parentWidth > 0) {
+      if (m_parent.width > 0) {
         maxWidth = std::min(
             maxWidth,
-            std::max(kCreateMinWidth * m_scale, static_cast<float>(m_parentWidth) * m_scale - kParentMargin * m_scale)
+            std::max(kCreateMinWidth * m_scale, static_cast<float>(m_parent.width) * m_scale - kParentMargin * m_scale)
         );
       }
       contentWidth = std::clamp(measured, kCreateMinWidth * m_scale, maxWidth);
@@ -594,18 +619,18 @@ namespace settings {
   }
 
   void WidgetAddPopup::reopenForCurrentMode() {
-    if (m_parentXdgSurface == nullptr || m_parentWlSurface == nullptr) {
+    if (m_parent.xdgSurface == nullptr || m_parent.wlSurface == nullptr) {
       return;
     }
 
     const auto [panelWidth, panelHeight] = popupSize();
     const auto cfg = centeredPopupConfig(
-        m_parentWidth, m_parentHeight, static_cast<std::uint32_t>(std::max(1.0f, panelWidth)),
-        static_cast<std::uint32_t>(std::max(1.0f, panelHeight)), m_serial
+        m_parent.width, m_parent.height, static_cast<std::uint32_t>(std::max(1.0f, panelWidth)),
+        static_cast<std::uint32_t>(std::max(1.0f, panelHeight)), m_parent.serial
     );
 
     m_internalReopen = true;
-    const bool opened = openPopupAsChild(cfg, m_parentXdgSurface, m_parentWlSurface, m_output);
+    const bool opened = openPopupAsChild(cfg, m_parent);
     m_internalReopen = false;
     if (!opened) {
       close();
@@ -629,12 +654,7 @@ namespace settings {
     m_instanceOptions.clear();
     m_pluginEntries.clear();
     m_config = nullptr;
-    m_parentXdgSurface = nullptr;
-    m_parentWlSurface = nullptr;
-    m_output = nullptr;
-    m_serial = 0;
-    m_parentWidth = 0;
-    m_parentHeight = 0;
+    m_parent = {};
     m_lanePath.clear();
     m_root = nullptr;
     m_createActions = nullptr;

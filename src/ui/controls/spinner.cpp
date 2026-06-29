@@ -11,7 +11,7 @@ namespace {
 
   constexpr float kDefaultSize = 20.0f;
   constexpr float kDefaultThickness = 2.0f;
-  constexpr float kRevolutionMs = 800.0f;
+  constexpr float kRevolutionMs = 1200.0f;
   constexpr float kTwoPi = 2.0f * std::numbers::pi_v<float>;
 
 } // namespace
@@ -46,6 +46,19 @@ void Spinner::start() {
   }
   m_spinning = true;
   startLoop();
+}
+
+void Spinner::setAnimationManager(AnimationManager* mgr) {
+  Node::setAnimationManager(mgr);
+  if (mgr == nullptr) {
+    m_animId = 0; // the old manager no longer drives us; allow a restart on re-attach
+    return;
+  }
+  // start() called before attach finds no manager and bails; pick the loop back up
+  // now that one is available so a spinner built with spinning=true animates.
+  if (m_spinning && m_animId == 0) {
+    startLoop();
+  }
 }
 
 void Spinner::stop() {

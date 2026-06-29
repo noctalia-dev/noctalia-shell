@@ -553,6 +553,36 @@ namespace {
 
   constexpr Logger kLog("sysmon");
 
+  std::uint64_t readZfsEvictableArcKb() {
+    std::ifstream file{"/proc/spl/kstat/zfs/arcstats"};
+    if (!file.is_open()) {
+      return 0;
+    }
+
+    std::uint64_t arcSize = 0;
+    std::uint64_t arcMin = 0;
+    std::string line;
+    while (std::getline(file, line)) {
+      std::string key;
+      std::uint32_t type = 0;
+      std::uint64_t value = 0;
+
+      std::istringstream iss{line};
+      if (iss >> key >> type >> value) {
+        if (key == "size") {
+          arcSize = value;
+        } else if (key == "c_min") {
+          arcMin = value;
+        }
+      }
+    }
+
+    if (arcSize > arcMin) {
+      return (arcSize - arcMin) / 1024;
+    }
+    return 0;
+  }
+
 } // namespace
 
 struct SystemMonitorService::AmdRsmiReader {
@@ -1142,8 +1172,10 @@ void SystemMonitorService::samplingLoop() {
         std::scoped_lock lock{m_statsMutex};
         if (cpuTemp.has_value()) {
           m_latest.cpuTempC = cpuTemp;
+          m_latest.cpuTempAvailable = true;
         } else if (!m_latest.cpuTempC.has_value()) {
           m_latest.cpuTempC = 40.0;
+          m_latest.cpuTempAvailable = false;
         }
       }
 
@@ -1368,6 +1400,9 @@ std::optional<SystemMonitorService::MemData> SystemMonitorService::readMemoryKb(
   if (totalKb == 0 || availableKb == 0 || availableKb > totalKb) {
     return std::nullopt;
   }
+
+  std::uint64_t zfsArcKb = readZfsEvictableArcKb();
+  availableKb = std::min(availableKb + zfsArcKb, totalKb);
 
   MemData data;
   data.totalKb = totalKb;
@@ -1609,8 +1644,8 @@ std::optional<SystemMonitorService::GpuVramData> SystemMonitorService::readGpuVr
 float SystemMonitorService::readDiskUsagePercent(const std::string& path) {
   struct statvfs sv{};
   if (::statvfs(path.c_str(), &sv) == 0 && sv.f_blocks > 0) {
-    const double used = static_cast<double>(sv.f_blocks - sv.f_bfree);
-    const double total = static_cast<double>(sv.f_blocks);
+    const auto used = static_cast<double>(sv.f_blocks - sv.f_bfree);
+    const auto total = static_cast<double>(sv.f_blocks);
     return static_cast<float>(100.0 * used / total);
   }
   return 0.0f;

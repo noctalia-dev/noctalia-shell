@@ -5,13 +5,14 @@
 #include "config/config_types.h"
 #include "core/log.h"
 #include "core/process.h"
+#include "dbus/polkit/polkit_session_support.h"
 #include "ipc/ipc_service.h"
 #include "render/core/color.h"
+#include "shell/session/session_action_meta.h"
 #include "ui/palette.h"
 #include "util/string_utils.h"
 
 #include <algorithm>
-#include <cctype>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -21,6 +22,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <toml.hpp>
 #include <vector>
 
 namespace {
@@ -29,7 +31,7 @@ namespace {
 
   constexpr std::string_view kApplyHelperName = "noctalia-greeter-apply-appearance";
   constexpr std::string_view kGreeterName = "noctalia-greeter";
-  constexpr std::string_view kGreeterConfName = "greeter.conf";
+  constexpr std::string_view kGreeterTomlFileName = "greeter.toml";
   constexpr std::string_view kDefaultGreeterStateDir = "/var/lib/noctalia-greeter";
   constexpr std::string_view kGreeterStateDirEnv = "NOCTALIA_GREETER_STATE_DIR";
   constexpr std::string_view kStagedOutputLayoutFileName = "output_layout";
@@ -63,67 +65,34 @@ namespace {
     palette[std::string(key)] = formatRgbHex(color);
   }
 
-  [[nodiscard]] std::string trim(std::string_view value) {
-    std::size_t begin = 0;
-    while (begin < value.size() && std::isspace(static_cast<unsigned char>(value[begin])) != 0) {
-      ++begin;
-    }
-    std::size_t end = value.size();
-    while (end > begin && std::isspace(static_cast<unsigned char>(value[end - 1])) != 0) {
-      --end;
-    }
-    return std::string(value.substr(begin, end - begin));
-  }
-
-  [[nodiscard]] std::optional<std::string> unquoteConfValue(std::string_view raw) {
-    const std::string value = trim(raw);
-    if (value.size() >= 2) {
-      const char quote = value.front();
-      if ((quote == '"' || quote == '\'') && value.back() == quote) {
-        return value.substr(1, value.size() - 2);
-      }
-    }
-    if (!value.empty()) {
-      return value;
-    }
-    return std::nullopt;
-  }
-
-  [[nodiscard]] std::filesystem::path greeterConfPath() {
+  [[nodiscard]] std::filesystem::path greeterTomlPath() {
     const char* stateDir = std::getenv(kGreeterStateDirEnv.data());
     if (stateDir != nullptr && stateDir[0] != '\0') {
-      return std::filesystem::path(stateDir) / kGreeterConfName;
+      return std::filesystem::path(stateDir) / kGreeterTomlFileName;
     }
-    return std::filesystem::path(kDefaultGreeterStateDir) / kGreeterConfName;
+    return std::filesystem::path(kDefaultGreeterStateDir) / kGreeterTomlFileName;
   }
 
   [[nodiscard]] std::optional<std::string> readGreeterConfiguredOutput() {
-    const auto path = greeterConfPath();
-    std::ifstream in(path);
-    if (!in.is_open()) {
+    const auto path = greeterTomlPath();
+    std::error_code ec;
+    if (!std::filesystem::is_regular_file(path, ec) || ec) {
       return std::nullopt;
     }
 
-    std::string line;
-    while (std::getline(in, line)) {
-      const std::size_t hash = line.find('#');
-      if (hash != std::string::npos) {
-        line.resize(hash);
+    try {
+      const toml::table table = toml::parse_file(path.string());
+      if (const toml::table* output = table["output"].as_table()) {
+        const auto name = (*output)["name"].value<std::string>();
+        if (name.has_value() && !name->empty()) {
+          return name;
+        }
       }
-      const std::string stripped = trim(line);
-      if (stripped.empty()) {
-        continue;
-      }
-      const std::size_t eq = stripped.find('=');
-      if (eq == std::string::npos) {
-        continue;
-      }
-      if (trim(stripped.substr(0, eq)) != "output") {
-        continue;
-      }
-      return unquoteConfValue(stripped.substr(eq + 1));
+      return std::nullopt;
+    } catch (const toml::parse_error& e) {
+      kLog.warn("failed to parse {}: {}", path.string(), e.description());
+      return std::nullopt;
     }
-    return std::nullopt;
   }
 
   [[nodiscard]] std::string resolveSyncWallpaperPath(const ConfigService& configService) {
@@ -159,6 +128,47 @@ namespace {
       return {};
     }
     return staging;
+  }
+
+  void putOptionalString(nlohmann::json& object, std::string_view key, const std::optional<std::string>& value) {
+    if (!value.has_value() || value->empty()) {
+      return;
+    }
+    object[std::string(key)] = *value;
+  }
+
+  void appendSessionManifest(nlohmann::json& root, const ShellSessionConfig& session) {
+    nlohmann::json sessionJson;
+    nlohmann::json power;
+    putOptionalString(power, "suspend", session.power.suspend);
+    putOptionalString(power, "reboot", session.power.reboot);
+    putOptionalString(power, "shutdown", session.power.shutdown);
+    if (!power.empty()) {
+      sessionJson["power"] = std::move(power);
+    }
+
+    nlohmann::json actions = nlohmann::json::array();
+    const auto& source = session.actions.empty() ? defaultSessionPanelActions() : session.actions;
+    for (const SessionPanelActionConfig& row : source) {
+      if (!row.enabled || !session_action::isKnown(row.action)) {
+        continue;
+      }
+      if (row.action == "command" && (!row.command.has_value() || StringUtils::trim(*row.command).empty())) {
+        continue;
+      }
+
+      nlohmann::json item;
+      item["action"] = row.action;
+      putOptionalString(item, "command", row.command);
+      putOptionalString(item, "label", row.label);
+      putOptionalString(item, "glyph", row.glyph);
+      if (row.variant != SessionActionButtonVariant::Default) {
+        item["variant"] = std::string(enumToKey(kSessionActionButtonVariants, row.variant));
+      }
+      actions.push_back(std::move(item));
+    }
+    sessionJson["actions"] = std::move(actions);
+    root["session"] = std::move(sessionJson);
   }
 
   [[nodiscard]] bool writeManifest(
@@ -201,6 +211,7 @@ namespace {
     }
     root["wallpaper"] = std::move(wallpaper);
     root["corner_radius_scale"] = config.shell.cornerRadiusScale;
+    appendSessionManifest(root, config.shell.session);
 
     const auto manifestPath = staging / "appearance.json";
     std::ofstream out(manifestPath);
@@ -326,19 +337,55 @@ namespace {
     return installedName;
   }
 
+  [[nodiscard]] bool hasPrivilegeCommandOverride(const ShellGreeterSyncConfig& greeterSync) {
+    return !StringUtils::trim(greeterSync.privilegeCommand).empty();
+  }
+
+  [[nodiscard]] std::string privilegeCommandPrefix(const ShellGreeterSyncConfig& greeterSync) {
+    return StringUtils::trim(greeterSync.privilegeCommand);
+  }
+
+  [[nodiscard]] std::string
+  buildPrivilegedApplyCommand(std::string_view privilegePrefix, std::string_view helper, std::string_view staging) {
+    return std::string(privilegePrefix)
+        + " "
+        + StringUtils::shellQuote(helper)
+        + " "
+        + StringUtils::shellQuote(staging);
+  }
+
+  [[nodiscard]] bool launchPrivilegedApplyHelper(
+      const ShellGreeterSyncConfig& greeterSync, std::string_view helper, const std::filesystem::path& staging,
+      process::RunCallbacks callbacks
+  ) {
+    if (hasPrivilegeCommandOverride(greeterSync)) {
+      const std::string command =
+          buildPrivilegedApplyCommand(privilegeCommandPrefix(greeterSync), helper, staging.string());
+      return process::runAsync(command, std::move(callbacks));
+    }
+
+    const std::string escalator = process::resolvePrivilegeEscalator().value_or(std::string{});
+    if (escalator.empty()) {
+      return false;
+    }
+    return process::runAsync(
+        std::vector<std::string>{escalator, std::string(helper), staging.string()}, std::move(callbacks)
+    );
+  }
+
 } // namespace
 
 namespace greeter {
 
-  bool appearanceSyncAvailable() {
+  bool appearanceSyncAvailable(const ShellGreeterSyncConfig& greeterSync) noexcept {
     return programExists(kGreeterName, {"/usr/bin/noctalia-greeter", "/usr/local/bin/noctalia-greeter"})
         && !findApplyHelper().empty()
-        && process::resolvePrivilegeEscalator().has_value();
+        && (process::resolvePrivilegeEscalator().has_value() || hasPrivilegeCommandOverride(greeterSync));
   }
 
-  bool syncAppearanceToGreeterAsync(
+  GreeterSyncLaunch syncAppearanceToGreeterAsync(
       const ConfigService& configService, std::string_view resolvedThemeMode, SyncCompletion onComplete,
-      const CompositorPlatform* platform
+      const CompositorPlatform* platform, const bool logindOnSystemBus
   ) {
     const auto completion = std::make_shared<SyncCompletion>(std::move(onComplete));
     const auto finish = [completion](bool success) {
@@ -351,20 +398,22 @@ namespace greeter {
     if (helper.empty()) {
       kLog.warn("greeter sync helper is not installed");
       finish(false);
-      return false;
+      return GreeterSyncLaunch::Failed;
     }
-    const std::string escalator = process::resolvePrivilegeEscalator().value_or(std::string{});
-    if (escalator.empty()) {
+
+    const Config& config = configService.config();
+    const ShellGreeterSyncConfig& greeterSync = config.shell.greeterSync;
+    if (!hasPrivilegeCommandOverride(greeterSync) && !process::resolvePrivilegeEscalator().has_value()) {
       kLog.warn("no privilege escalator available (pkexec or run0)");
       finish(false);
-      return false;
+      return GreeterSyncLaunch::Failed;
     }
 
     const auto staging = makeStagingDirectory();
     if (staging.empty()) {
       kLog.warn("failed to create greeter sync staging directory");
       finish(false);
-      return false;
+      return GreeterSyncLaunch::Failed;
     }
 
     if (platform != nullptr) {
@@ -372,22 +421,26 @@ namespace greeter {
       if (const auto layout = buildGreeterOutputLayout(*platform)) {
         if (!stageOutputLayout(staging, *layout)) {
           finish(false);
-          return false;
+          return GreeterSyncLaunch::Failed;
         }
       }
     } else {
       kLog.info("greeter sync: no compositor platform provided; skipping output layout sync");
     }
 
-    const Config& config = configService.config();
     const std::string wallpaperPath = resolveSyncWallpaperPath(configService);
     const std::string installedWallpaperName = stageWallpaper(staging, wallpaperPath);
     if (!writeManifest(staging, config, resolvedThemeMode, wallpaperPath, installedWallpaperName)) {
       finish(false);
-      return false;
+      return GreeterSyncLaunch::Failed;
     }
 
-    const std::vector<std::string> args = {escalator, helper, staging.string()};
+    if (!hasPrivilegeCommandOverride(greeterSync)
+        && !polkit_session::likelySupportsInSessionPolkitAgent(logindOnSystemBus)) {
+      kLog.info("greeter sync: staged; skipping background privilege escalation (no session polkit)");
+      return GreeterSyncLaunch::StagedOnly;
+    }
+
     process::RunCallbacks callbacks;
     callbacks.onExit = [finish](const process::RunResult& result) {
       if (!result) {
@@ -399,32 +452,38 @@ namespace greeter {
         finish(false);
         return;
       }
-      kLog.info("synced shell appearance to greeter");
+      kLog.info("synced shell appearance and session actions to greeter");
       finish(true);
     };
-    const bool launched = process::runAsync(args, std::move(callbacks));
-    if (!launched) {
+    if (!launchPrivilegedApplyHelper(greeterSync, helper, staging, std::move(callbacks))) {
       finish(false);
-      return false;
+      return GreeterSyncLaunch::Failed;
     }
-    return true;
+    return GreeterSyncLaunch::Launched;
   }
 
   void registerIpc(
       IpcService& ipc, const ConfigService& config, std::function<std::string_view()> resolvedThemeMode,
-      const CompositorPlatform* platform
+      const CompositorPlatform* platform, std::function<bool()> logindOnSystemBus
   ) {
     ipc.registerHandler(
         "greeter-sync",
-        [&config, resolvedThemeMode = std::move(resolvedThemeMode), platform](const std::string& args) -> std::string {
+        [&config, resolvedThemeMode = std::move(resolvedThemeMode), platform,
+         logindOnSystemBus = std::move(logindOnSystemBus)](const std::string& args) -> std::string {
           if (!StringUtils::trim(args).empty()) {
             return "error: usage: greeter-sync\n";
           }
-          if (!appearanceSyncAvailable()) {
+          if (!appearanceSyncAvailable(config.config().shell.greeterSync)) {
             return "error: noctalia greeter is not installed\n";
           }
-          if (!syncAppearanceToGreeterAsync(config, resolvedThemeMode(), {}, platform)) {
+          const bool logind = logindOnSystemBus != nullptr && logindOnSystemBus();
+          const GreeterSyncLaunch launch =
+              syncAppearanceToGreeterAsync(config, resolvedThemeMode(), {}, platform, logind);
+          if (launch == GreeterSyncLaunch::Failed) {
             return "error: failed to start greeter appearance sync\n";
+          }
+          if (launch == GreeterSyncLaunch::StagedOnly) {
+            return "ok: staged (run privilege install manually)\n";
           }
           return "ok\n";
         },

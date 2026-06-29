@@ -15,6 +15,8 @@
 #include "util/file_utils.h"
 #include "util/string_utils.h"
 
+#include <algorithm>
+#include <chrono>
 #include <optional>
 #include <ranges>
 #include <system_error>
@@ -274,25 +276,6 @@ namespace scripting {
     registry.scan();
   }
 
-  std::filesystem::path PluginManager::sourceRoot(const PluginSourceConfig& source) const {
-    return sourceRootFor(source);
-  }
-
-  std::optional<PluginSourceConfig> PluginManager::findSourceOffering(std::string_view pluginId) const {
-    // Highest precedence wins: a later source overrides an earlier one for the same id,
-    // so materialize the copy that the registry will actually load (reverse config order).
-    const auto& sources = m_config.config().plugins.sources;
-    for (const auto& source : std::views::reverse(sources)) {
-      const auto catalog = discoverCatalog(source);
-      for (const auto& entry : catalog.entries) {
-        if (entry.id == pluginId) {
-          return source;
-        }
-      }
-    }
-    return std::nullopt;
-  }
-
   std::optional<PluginSourceConfig> PluginManager::findSource(std::string_view name) const {
     for (const auto& source : m_config.config().plugins.sources) {
       if (source.name == name) {
@@ -444,61 +427,130 @@ namespace scripting {
     if (!isValidPluginId(id)) {
       return {.ok = false, .error = "invalid plugin id '" + id + "' (expected author/plugin)"};
     }
-
-    // Managed source: export the plugin directory before enabling.
-    if (const auto source = findSourceOffering(id); source.has_value()) {
-      const std::filesystem::path root = sourceRoot(*source);
-      const auto subdir = pluginSubdirFromId(id);
-      if (!subdir.has_value()) {
-        return {.ok = false, .error = "invalid plugin id '" + id + "' (expected author/plugin)"};
-      }
-      std::filesystem::path manifestDir = root / *subdir;
-      std::optional<PluginManifest> materializedManifest;
-      if (source->kind == PluginSourceKind::Git) {
-        auto sourceLock = plugin_source_locks::acquire(source->name);
-        const std::filesystem::path repoRoot = plugin_paths::gitRepoRoot(*source);
-        const auto materialized = materializeGitPlugin(*source, repoRoot, "HEAD", id);
-        if (!materialized) {
-          return {.ok = false, .error = "export failed: " + materialized.error};
-        }
-        manifestDir = materialized.pluginDir;
-        materializedManifest = materialized.manifest;
-      }
-      std::string error;
-      const auto manifest = materializedManifest.has_value() ? std::move(materializedManifest)
-                                                             : parsePluginManifest(manifestDir / "plugin.toml", &error);
-      if (!manifest.has_value()) {
-        return {.ok = false, .error = error};
-      }
-      if (manifest->id != id) {
-        return {.ok = false, .error = "manifest id '" + manifest->id + "' does not match requested id"};
-      }
-      if (!noctalia::version::atLeast(noctalia::build_info::version(), manifest->minNoctalia)) {
-        return {
-            .ok = false,
-            .error = "plugin '"
-                + manifest->id
-                + "' requires noctalia >= "
-                + manifest->minNoctalia
-                + " (running "
-                + std::string(noctalia::build_info::version())
-                + ")",
-        };
-      }
-    } else if (!localPluginIds().contains(id)) {
-      // Not offered by any managed source and not present locally.
-      return {.ok = false, .error = "no plugin '" + id + "' found in any source"};
+    const auto subdir = pluginSubdirFromId(id);
+    if (!subdir.has_value()) {
+      return {.ok = false, .error = "invalid plugin id '" + id + "' (expected author/plugin)"};
     }
 
-    kLog.info("enabling plugin '{}'", id);
-    m_config.setPluginEnabled(id, true);
-    refresh();
+    // Resolving the offering source can clone a git source's catalog, and a git export
+    // lazy-fetches blobs from the blobless clone — both network-bound. Do ALL of it on a
+    // worker so the UI thread never blocks; isEnabling(id) drives the row spinner until
+    // it lands, then persist + refresh on the main thread. Path / local-dev plugins go
+    // through the same worker (fast, no network).
+    if (!m_enabling.insert(id).second) {
+      return {.ok = true, .error = {}}; // already in flight
+    }
+    if (m_onEnablingChanged) {
+      m_onEnablingChanged();
+    }
+
+    auto sources = m_config.config().plugins.sources;
+    std::thread([this, id, subdir = *subdir, sources = std::move(sources)]() mutable {
+      const auto started = std::chrono::steady_clock::now();
+      // Highest precedence wins; skip disabled sources — the registry never scans them.
+      std::optional<PluginSourceConfig> offering;
+      for (const auto& source : std::views::reverse(sources)) {
+        if (!source.enabled) {
+          continue;
+        }
+        const auto catalog = discoverCatalog(source);
+        if (std::ranges::any_of(catalog.entries, [&](const CatalogEntry& e) { return e.id == id; })) {
+          offering = source;
+          break;
+        }
+      }
+
+      bool ok = false;
+      bool incompatible = false;
+      bool timedOut = false;
+      std::string requiredNoctalia;
+      std::string error;
+
+      if (offering.has_value() && offering->kind == PluginSourceKind::Git) {
+        auto sourceLock = plugin_source_locks::acquire(offering->name);
+        auto materialized = materializeGitPlugin(*offering, plugin_paths::gitRepoRoot(*offering), "HEAD", id, true);
+        ok = materialized && materialized.manifest.id == id;
+        incompatible = materialized.incompatible;
+        timedOut = materialized.timedOut;
+        requiredNoctalia = std::move(materialized.requiredNoctalia);
+        error = std::move(materialized.error);
+      } else if (offering.has_value()) {
+        const auto manifest = parsePluginManifest(sourceRootFor(*offering) / subdir / "plugin.toml", &error);
+        if (manifest.has_value() && manifest->id != id) {
+          error = "manifest id '" + manifest->id + "' does not match requested id";
+        } else if (
+            manifest.has_value() && !noctalia::version::atLeast(noctalia::build_info::version(), manifest->minNoctalia)
+        ) {
+          incompatible = true;
+          requiredNoctalia = manifest->minNoctalia;
+        } else {
+          ok = manifest.has_value();
+        }
+      } else if (localPluginIds().contains(id)) {
+        ok = true; // implicit local dev plugin, already on disk
+      } else {
+        error = "no plugin '" + id + "' found in any source";
+      }
+
+      const double elapsedMs =
+          std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count();
+
+      DeferredCall::callLater([this, id, ok, incompatible, timedOut, elapsedMs,
+                               requiredNoctalia = std::move(requiredNoctalia), error = std::move(error)]() mutable {
+        m_enabling.erase(id);
+        if (ok) {
+          kLog.info("enabling plugin '{}' (resolved + exported in {:.0f}ms)", id, elapsedMs);
+          m_config.setPluginEnabled(id, true);
+          refresh();
+        } else if (incompatible) {
+          kLog.warn(
+              "cannot enable '{}': requires noctalia >= {} (running {})", id, requiredNoctalia,
+              noctalia::build_info::version()
+          );
+        } else if (timedOut) {
+          kLog.warn("cannot enable '{}': export timed out", id);
+        } else {
+          kLog.warn("cannot enable '{}': {}", id, error.empty() ? "export failed" : error);
+        }
+        if (m_onEnablingChanged) {
+          m_onEnablingChanged();
+        }
+      });
+    }).detach();
     return {.ok = true, .error = {}};
   }
+
+  bool PluginManager::isEnabling(std::string_view pluginId) const { return m_enabling.contains(std::string(pluginId)); }
 
   void PluginManager::disable(std::string_view pluginId) {
     kLog.info("disabling plugin '{}'", pluginId);
     m_config.setPluginEnabled(pluginId, false);
+    refresh();
+  }
+
+  void PluginManager::remove(std::string_view pluginId) {
+    const auto subdir = pluginSubdirFromId(pluginId);
+    if (!subdir.has_value()) {
+      return;
+    }
+    kLog.info("removing plugin '{}'", pluginId);
+    m_config.setPluginEnabled(pluginId, false);
+
+    const auto& plugins = m_config.config().plugins;
+    for (const auto& source : plugins.sources) {
+      if (!source.enabled || source.kind != PluginSourceKind::Git) {
+        continue;
+      }
+      const auto materializedRoot = plugin_paths::gitMaterializedRoot(source);
+      if (materializedRoot.empty()) {
+        continue;
+      }
+      const auto pluginDir = materializedRoot / *subdir;
+      if (std::filesystem::exists(pluginDir)) {
+        auto sourceLock = plugin_source_locks::acquire(source.name);
+        (void)plugin_paths::removeTreeUnder(pluginDir, materializedRoot);
+      }
+    }
     refresh();
   }
 
@@ -513,10 +565,19 @@ namespace scripting {
     // > built-in default), so the catalog shows one row per id from that same source.
     // Visit highest precedence first and keep the first seen; the GUI re-sorts anyway.
     std::unordered_set<std::string> seen;
-    const auto collect = [&](const std::string& sourceName, const CatalogResult& catalog) {
+    const auto collect = [&](const std::string& sourceName, const CatalogResult& catalog,
+                             const PluginSourceConfig& source) {
       for (const auto& entry : catalog.entries) {
         if (!seen.insert(entry.id).second) {
           continue;
+        }
+        bool onDisk = source.kind == PluginSourceKind::Path;
+        if (source.kind == PluginSourceKind::Git) {
+          const auto subdir = pluginSubdirFromId(entry.id);
+          if (subdir.has_value()) {
+            const auto root = plugin_paths::gitMaterializedRoot(source);
+            onDisk = !root.empty() && std::filesystem::exists(root / *subdir);
+          }
         }
         out.push_back(
             PluginStatus{
@@ -526,10 +587,12 @@ namespace scripting {
                 .icon = entry.icon,
                 .description = entry.description,
                 .license = entry.license,
+                .dependencies = entry.dependencies,
                 .source = sourceName,
                 .compatible = entry.compatible,
                 .deprecated = entry.deprecated,
                 .enabled = enabledSet.contains(entry.id),
+                .materialized = onDisk,
             }
         );
       }
@@ -541,14 +604,14 @@ namespace scripting {
           .name = "local",
           .location = (std::filesystem::path(data) / "plugins").string()
       };
-      collect("local", discoverCatalog(localSource));
+      collect("local", discoverCatalog(localSource), localSource);
     }
     // Reverse config order: a later user source outranks earlier ones and the defaults.
     for (const auto& source : std::views::reverse(plugins.sources)) {
       if (!source.enabled) {
         continue;
       }
-      collect(source.name, discoverCatalog(source));
+      collect(source.name, discoverCatalog(source), source);
     }
     return out;
   }

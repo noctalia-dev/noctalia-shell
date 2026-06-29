@@ -20,8 +20,9 @@ class ClipboardService;
 class Flex;
 class HttpClient;
 namespace scripting {
+  struct PluginRuntimeContext;
   class ScriptApiContext;
-}
+} // namespace scripting
 
 // A desktop widget backed by a plugin's `[[desktop_widget]]` entry. The script
 // runs off-thread on its own Luau runtime and describes its UI declaratively:
@@ -30,12 +31,7 @@ namespace scripting {
 // rotation) stay host-owned; the script only reads its declared settings.
 class PluginDesktopWidget : public DesktopWidget, public scripting::PluginIpcEndpoint {
 public:
-  PluginDesktopWidget(
-      std::string entryId, std::filesystem::path sourcePath,
-      std::unordered_map<std::string, WidgetSettingValue> settings, std::string outputName,
-      scripting::ScriptApiContext& scriptApi, FileWatcher* fileWatcher = nullptr, HttpClient* httpClient = nullptr,
-      ClipboardService* clipboard = nullptr
-  );
+  PluginDesktopWidget(scripting::PluginRuntimeContext context, std::string outputName);
   ~PluginDesktopWidget() override;
 
   void create() override;

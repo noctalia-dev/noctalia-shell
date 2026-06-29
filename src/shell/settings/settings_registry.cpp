@@ -1,5 +1,6 @@
 #include "shell/settings/settings_registry.h"
 
+#include "config/config_types.h"
 #include "config/schema/config_schema.h"
 #include "config/schema/ranges.h"
 #include "core/log.h"
@@ -30,16 +31,26 @@ namespace settings {
 
     constexpr int kBarMarginMax = 4096;
 
-    constexpr std::array<SettingsSectionDescriptor, 18> kSettingsSections{{
+    [[nodiscard]] std::vector<KeyChord>
+    effectiveKeybindItems(const std::vector<KeyChord>& configured, KeybindAction action) {
+      if (!configured.empty()) {
+        return configured;
+      }
+      return defaultKeybindSet(action);
+    }
+
+    constexpr std::array<SettingsSectionDescriptor, 20> kSettingsSections{{
         {SettingsSection::Appearance, "appearance", "adjustments-horizontal"},
         {SettingsSection::Wallpaper, "wallpaper", "paint"},
         {SettingsSection::Templates, "templates", "color-swatch"},
         {SettingsSection::Desktop, "desktop", "layout-board"},
         {SettingsSection::Dock, "dock", "layout-bottombar-inactive"},
         {SettingsSection::Panels, "panels", "layout-bottombar"},
+        {SettingsSection::ControlCenter, "control-center", "adjustments"},
         {SettingsSection::Notifications, "notifications", "bell"},
         {SettingsSection::Osd, "osd", "message-circle"},
         {SettingsSection::Shell, "shell", "app-window"},
+        {SettingsSection::Keybinds, "keybinds", "keyboard"},
         {SettingsSection::Security, "security", "shield-lock"},
         {SettingsSection::System, "system", "activity-heartbeat"},
         {SettingsSection::Services, "services", "stack-2"},
@@ -175,6 +186,7 @@ namespace settings {
            {"m3-monochrome", "theme.scheme.m3-monochrome"},
            {"vibrant", "theme.scheme.vibrant"},
            {"faithful", "theme.scheme.faithful"},
+           {"soft", "theme.scheme.soft"},
            {"dysfunctional", "theme.scheme.dysfunctional"},
            {"muted", "theme.scheme.muted"}},
           selected
@@ -936,16 +948,49 @@ namespace settings {
         },
         "floating detached panel gap offset distance bar"
     ));
+    // Floating-position select for a panel, shown only when its placement is Floating.
+    const auto panelPositionEntry = [&](SettingsSection section, std::string group, std::string_view panelKey,
+                                        std::string_view labelKey, std::string_view descKey,
+                                        const std::string& current) {
+      auto e = makeEntry(
+          section, group, tr(labelKey), tr(descKey),
+          {std::string("shell"), std::string("panel"), std::string(panelKey) + "_position"},
+          plainSelect(
+              {{"auto", "settings.options.panel-position.auto"},
+               {"center", "settings.options.screen-position.center"},
+               {"top_left", "settings.options.screen-position.top-left"},
+               {"top_center", "settings.options.screen-position.top-center"},
+               {"top_right", "settings.options.screen-position.top-right"},
+               {"center_left", "settings.options.screen-position.center-left"},
+               {"center_right", "settings.options.screen-position.center-right"},
+               {"bottom_left", "settings.options.screen-position.bottom-left"},
+               {"bottom_center", "settings.options.screen-position.bottom-center"},
+               {"bottom_right", "settings.options.screen-position.bottom-right"}},
+              current
+          ),
+          "panel position screen anchor corner edge floating bottom right"
+      );
+      e.visibleWhen = SettingVisibility{
+          {std::string("shell"), std::string("panel"), std::string(panelKey) + "_placement"}, {"floating"}
+      };
+      return e;
+    };
+
     entries.push_back(makeEntry(
-        SettingsSection::Panels, "control-center", tr("settings.schema.panels.placement-control-center.label"),
+        SettingsSection::ControlCenter, "general", tr("settings.schema.panels.placement-control-center.label"),
         tr("settings.schema.panels.placement-control-center.description"),
         {"shell", "panel", "control_center_placement"},
         asSegmented(enumSelect(kPanelPlacements, cfg.shell.panel.controlCenterPlacement)),
-        "attached floating centered bar panel position"
+        "attached floating bar panel position"
+    ));
+    entries.push_back(panelPositionEntry(
+        SettingsSection::ControlCenter, "general", "control_center",
+        "settings.schema.panels.position-control-center.label",
+        "settings.schema.panels.position-control-center.description", cfg.shell.panel.controlCenterPosition
     ));
     {
       auto e = makeEntry(
-          SettingsSection::Panels, "control-center", tr("settings.schema.panels.open-near-click-control-center.label"),
+          SettingsSection::ControlCenter, "general", tr("settings.schema.panels.open-near-click-control-center.label"),
           tr("settings.schema.panels.open-near-click-control-center.description"),
           {"shell", "panel", "open_near_click_control_center"},
           ToggleSetting{cfg.shell.panel.openNearClickControlCenter}, "open near click position anchor"
@@ -953,20 +998,30 @@ namespace settings {
       e.visibleWhen = SettingVisibility{{"shell", "panel", "control_center_placement"}, {"attached", "floating"}};
       entries.push_back(std::move(e));
     }
+    {
+      SliderSetting width =
+          sliderFor(cfg.controlCenter.width, noctalia::config::schema::kControlCenterWidthRange, true);
+      width.valueSuffix = "px";
+      entries.push_back(makeEntry(
+          SettingsSection::ControlCenter, "general", tr("settings.schema.panels.control-center-width.label"),
+          tr("settings.schema.panels.control-center-width.description"), {"control_center", "width"}, std::move(width),
+          "size dimension wide narrow"
+      ));
+    }
     entries.push_back(makeEntry(
-        SettingsSection::Panels, "control-center", tr("settings.schema.panels.control-center-sidebar.label"),
+        SettingsSection::ControlCenter, "general", tr("settings.schema.panels.control-center-sidebar.label"),
         tr("settings.schema.panels.control-center-sidebar.description"), {"control_center", "sidebar"},
         asSegmented(enumSelect(kControlCenterSidebarModes, cfg.controlCenter.sidebarMode)),
         "full compact none sidebar icons narrow hidden"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Panels, "control-center", tr("settings.schema.panels.control-center-sidebar-section.label"),
+        SettingsSection::ControlCenter, "general", tr("settings.schema.panels.control-center-sidebar-section.label"),
         tr("settings.schema.panels.control-center-sidebar-section.description"), {"control_center", "sidebar_section"},
         asSegmented(enumSelect(kControlCenterSidebarModes, cfg.controlCenter.sidebarSectionMode)),
         "full compact none sidebar icons narrow hidden tab direct widget shortcut"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Panels, "control-center", tr("settings.schema.panels.home-shortcuts.label"),
+        SettingsSection::ControlCenter, "general", tr("settings.schema.panels.home-shortcuts.label"),
         tr("settings.schema.panels.home-shortcuts.description"), {"control_center", "shortcuts"},
         ShortcutListSetting{
             .items = cfg.controlCenter.shortcuts, .suggestedOptions = controlCenterShortcutOptions(), .maxItems = 6
@@ -977,7 +1032,11 @@ namespace settings {
         SettingsSection::Panels, "launcher", tr("settings.schema.panels.placement-launcher.label"),
         tr("settings.schema.panels.placement-launcher.description"), {"shell", "panel", "launcher_placement"},
         asSegmented(enumSelect(kPanelPlacements, cfg.shell.panel.launcherPlacement)),
-        "attached floating centered bar panel position"
+        "attached floating bar panel position"
+    ));
+    entries.push_back(panelPositionEntry(
+        SettingsSection::Panels, "launcher", "launcher", "settings.schema.panels.position-launcher.label",
+        "settings.schema.panels.position-launcher.description", cfg.shell.panel.launcherPosition
     ));
     {
       auto e = makeEntry(
@@ -991,35 +1050,44 @@ namespace settings {
     }
     entries.push_back(makeEntry(
         SettingsSection::Panels, "launcher", tr("settings.schema.panels.launcher-categories.label"),
-        tr("settings.schema.panels.launcher-categories.description"), {"shell", "panel", "launcher_categories"},
-        ToggleSetting{cfg.shell.panel.launcherCategories}, "launcher categories filter"
+        tr("settings.schema.panels.launcher-categories.description"), {"shell", "launcher", "categories"},
+        ToggleSetting{cfg.shell.launcher.categories}, "launcher categories filter"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Panels, "launcher", tr("settings.schema.panels.launcher-show-icons.label"),
-        tr("settings.schema.panels.launcher-show-icons.description"), {"shell", "panel", "launcher_show_icons"},
-        ToggleSetting{cfg.shell.panel.launcherShowIcons}, "launcher app icons hide"
+        tr("settings.schema.panels.launcher-show-icons.description"), {"shell", "launcher", "show_icons"},
+        ToggleSetting{cfg.shell.launcher.showIcons}, "launcher app icons hide"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Panels, "launcher", tr("settings.schema.panels.launcher-app-grid.label"),
+        tr("settings.schema.panels.launcher-app-grid.description"), {"shell", "launcher", "app_grid"},
+        ToggleSetting{cfg.shell.launcher.appGrid}, "launcher app grid icons view"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Panels, "launcher", tr("settings.schema.panels.launcher-compact.label"),
-        tr("settings.schema.panels.launcher-compact.description"), {"shell", "panel", "launcher_compact"},
-        ToggleSetting{cfg.shell.panel.launcherCompact}, "launcher compact rows dense"
+        tr("settings.schema.panels.launcher-compact.description"), {"shell", "launcher", "compact"},
+        ToggleSetting{cfg.shell.launcher.compact}, "launcher compact rows dense"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Panels, "launcher", tr("settings.schema.panels.launcher-sort-by-usage.label"),
-        tr("settings.schema.panels.launcher-sort-by-usage.description"), {"shell", "panel", "launcher_sort_by_usage"},
-        ToggleSetting{cfg.shell.panel.launcherSortByUsage}, "launcher sort usage recently used frequency"
+        tr("settings.schema.panels.launcher-sort-by-usage.description"), {"shell", "launcher", "sort_by_usage"},
+        ToggleSetting{cfg.shell.launcher.sortByUsage}, "launcher sort usage recently used frequency"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Panels, "launcher", tr("settings.schema.panels.launcher-session-search.label"),
-        tr("settings.schema.panels.launcher-session-search.description"), {"shell", "panel", "launcher_session_search"},
-        ToggleSetting{cfg.shell.panel.launcherSessionSearch},
+        tr("settings.schema.panels.launcher-session-search.description"), {"shell", "launcher", "session_search"},
+        ToggleSetting{cfg.shell.launcher.sessionSearch},
         "launcher session search power menu lock suspend reboot shutdown logout"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Panels, "clipboard", tr("settings.schema.panels.placement-clipboard.label"),
         tr("settings.schema.panels.placement-clipboard.description"), {"shell", "panel", "clipboard_placement"},
         asSegmented(enumSelect(kPanelPlacements, cfg.shell.panel.clipboardPlacement)),
-        "attached floating centered bar panel position"
+        "attached floating bar panel position"
+    ));
+    entries.push_back(panelPositionEntry(
+        SettingsSection::Panels, "clipboard", "clipboard", "settings.schema.panels.position-clipboard.label",
+        "settings.schema.panels.position-clipboard.description", cfg.shell.panel.clipboardPosition
     ));
     {
       auto e = makeEntry(
@@ -1035,7 +1103,11 @@ namespace settings {
         SettingsSection::Panels, "wallpaper", tr("settings.schema.panels.placement-wallpaper.label"),
         tr("settings.schema.panels.placement-wallpaper.description"), {"shell", "panel", "wallpaper_placement"},
         asSegmented(enumSelect(kPanelPlacements, cfg.shell.panel.wallpaperPlacement)),
-        "attached floating centered bar panel position"
+        "attached floating bar panel position"
+    ));
+    entries.push_back(panelPositionEntry(
+        SettingsSection::Panels, "wallpaper", "wallpaper", "settings.schema.panels.position-wallpaper.label",
+        "settings.schema.panels.position-wallpaper.description", cfg.shell.panel.wallpaperPosition
     ));
     {
       auto e = makeEntry(
@@ -1051,7 +1123,11 @@ namespace settings {
         SettingsSection::Panels, "session-panel", tr("settings.schema.panels.placement-session.label"),
         tr("settings.schema.panels.placement-session.description"), {"shell", "panel", "session_placement"},
         asSegmented(enumSelect(kPanelPlacements, cfg.shell.panel.sessionPlacement)),
-        "attached floating centered bar panel power menu position"
+        "attached floating bar panel power menu position"
+    ));
+    entries.push_back(panelPositionEntry(
+        SettingsSection::Panels, "session-panel", "session", "settings.schema.panels.position-session.label",
+        "settings.schema.panels.position-session.description", cfg.shell.panel.sessionPosition
     ));
     {
       auto e = makeEntry(
@@ -1063,6 +1139,16 @@ namespace settings {
       e.visibleWhen = SettingVisibility{{"shell", "panel", "session_placement"}, {"attached", "floating"}};
       entries.push_back(std::move(e));
     }
+    entries.push_back(makeEntry(
+        SettingsSection::Panels, "polkit", tr("settings.schema.panels.placement-polkit.label"),
+        tr("settings.schema.panels.placement-polkit.description"), {"shell", "panel", "polkit_placement"},
+        asSegmented(enumSelect(kPanelPlacements, cfg.shell.panel.polkitPlacement)),
+        "attached floating bar panel polkit auth password"
+    ));
+    entries.push_back(panelPositionEntry(
+        SettingsSection::Panels, "polkit", "polkit", "settings.schema.panels.position-polkit.label",
+        "settings.schema.panels.position-polkit.description", cfg.shell.panel.polkitPosition
+    ));
     entries.push_back(makeEntry(
         SettingsSection::Power, "session-panel", tr("settings.schema.power.session-actions.label"),
         tr("settings.schema.power.session-actions.description"), {"shell", "session", "actions"},
@@ -1088,6 +1174,61 @@ namespace settings {
         "screen corners radius"
     ));
 
+    entries.push_back(makeEntry(
+        SettingsSection::Desktop, "hot-corners", tr("settings.schema.desktop.hot-corners-enabled.label"),
+        tr("settings.schema.desktop.hot-corners-enabled.description"), {"hot_corners", "enabled"},
+        ToggleSetting{cfg.hotCorners.enabled}, "hot corners trigger mouse edge screen"
+    ));
+
+    auto hotCornerActionSelect = [](const std::string& current) {
+      return plainSelect(
+          {{"none", "settings.options.hot-corners.none"},
+           {"launcher", "settings.options.hot-corners.launcher"},
+           {"control_center", "settings.options.hot-corners.control-center"},
+           {"window_switcher", "settings.options.hot-corners.window-switcher"},
+           {"command", "settings.options.hot-corners.command"}},
+          current
+      );
+    };
+
+    auto addCornerEntry = [&](const std::string& key, const std::string& labelKey, const std::string& currentAction,
+                              const std::string& currentCommand) {
+      SettingEntry e = makeEntry(
+          SettingsSection::Desktop, "hot-corners", tr(labelKey + ".label"), tr(labelKey + ".description"),
+          {"hot_corners", key, "action"}, hotCornerActionSelect(currentAction), "hot corners " + key
+      );
+      e.visibleWhen = SettingVisibility{{"hot_corners", "enabled"}, {"true"}};
+      entries.push_back(std::move(e));
+
+      SettingEntry c = makeEntry(
+          SettingsSection::Desktop, "hot-corners", tr(labelKey + "-command.label"),
+          tr(labelKey + "-command.description"), {"hot_corners", key, "command"},
+          TextSetting{.value = currentCommand, .placeholder = "Run command..."}, "hot corners command execute " + key
+      );
+      c.visibleWhen = SettingVisibility{std::vector<SettingVisibilityCondition>{
+          {{"hot_corners", "enabled"}, {"true"}},
+          {{"hot_corners", key, "action"}, {"command"}},
+      }};
+      entries.push_back(std::move(c));
+    };
+
+    addCornerEntry(
+        "top_left", "settings.schema.desktop.hot-corners-top-left", cfg.hotCorners.topLeft.action,
+        cfg.hotCorners.topLeft.command
+    );
+    addCornerEntry(
+        "top_right", "settings.schema.desktop.hot-corners-top-right", cfg.hotCorners.topRight.action,
+        cfg.hotCorners.topRight.command
+    );
+    addCornerEntry(
+        "bottom_left", "settings.schema.desktop.hot-corners-bottom-left", cfg.hotCorners.bottomLeft.action,
+        cfg.hotCorners.bottomLeft.command
+    );
+    addCornerEntry(
+        "bottom_right", "settings.schema.desktop.hot-corners-bottom-right", cfg.hotCorners.bottomRight.action,
+        cfg.hotCorners.bottomRight.command
+    );
+
     // Shell
     entries.push_back(makeEntry(
         SettingsSection::Shell, "general", tr("settings.schema.shell.avatar-path.label"),
@@ -1101,6 +1242,18 @@ namespace settings {
         "image picture"
     ));
     // Security
+    entries.push_back(makeEntry(
+        SettingsSection::Security, "privacy-security", tr("settings.schema.shell.privacy-mic-filter-regex.label"),
+        tr("settings.schema.shell.privacy-mic-filter-regex.description"), {"shell", "privacy", "mic_filter_regex"},
+        TextSetting{.value = cfg.shell.privacy.micFilterRegex, .placeholder = "", .browseFileExtensions = {}},
+        "privacy microphone mic app process regex filter ignore"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Security, "privacy-security", tr("settings.schema.shell.privacy-cam-filter-regex.label"),
+        tr("settings.schema.shell.privacy-cam-filter-regex.description"), {"shell", "privacy", "cam_filter_regex"},
+        TextSetting{.value = cfg.shell.privacy.camFilterRegex, .placeholder = "", .browseFileExtensions = {}},
+        "privacy camera webcam app process regex filter ignore"
+    ));
     entries.push_back(makeEntry(
         SettingsSection::Security, "privacy-security", tr("settings.schema.shell.offline-mode.label"),
         tr("settings.schema.shell.offline-mode.description"), {"shell", "offline_mode"},
@@ -1116,6 +1269,20 @@ namespace settings {
         tr("settings.schema.shell.polkit-agent.description"), {"shell", "polkit_agent"},
         ToggleSetting{cfg.shell.polkitAgent}, "auth password"
     ));
+    if (env.greeterSyncAvailable) {
+      entries.push_back(makeEntry(
+          SettingsSection::Security, "privacy-security",
+          tr("settings.schema.shell.greeter-sync-privilege-command.label"),
+          tr("settings.schema.shell.greeter-sync-privilege-command.description"),
+          {"shell", "greeter_sync", "privilege_command"},
+          TextSetting{
+              .value = cfg.shell.greeterSync.privilegeCommand,
+              .placeholder = "pkexec",
+              .browseFileExtensions = {},
+          },
+          "greeter sync pkexec run0 ghostty terminal sudo"
+      ));
+    }
     entries.push_back(makeEntry(
         SettingsSection::Security, "privacy-security", tr("settings.schema.shell.password-style.label"),
         tr("settings.schema.shell.password-style.description"), {"shell", "password_style"},
@@ -1352,6 +1519,11 @@ namespace settings {
         ToggleSetting{cfg.shell.screenshot.freezeScreen}, "screenshot capture freeze region region"
     ));
     entries.push_back(makeEntry(
+        SettingsSection::Shell, "screenshot", tr("settings.schema.shell.screenshot-confirm-region.label"),
+        tr("settings.schema.shell.screenshot-confirm-region.description"), {"shell", "screenshot", "confirm_region"},
+        ToggleSetting{cfg.shell.screenshot.confirmRegion}, "screenshot capture confirm region selection"
+    ));
+    entries.push_back(makeEntry(
         SettingsSection::Shell, "screenshot", tr("settings.schema.shell.screenshot-pipe-to-command.label"),
         tr("settings.schema.shell.screenshot-pipe-to-command.description"), {"shell", "screenshot", "pipe_to_command"},
         ToggleSetting{cfg.shell.screenshot.pipeToCommand}, "screenshot capture pipe command stdin"
@@ -1372,6 +1544,16 @@ namespace settings {
       entries.push_back(std::move(e));
     }
     entries.push_back(makeEntry(
+        SettingsSection::Osd, "osd", tr("settings.schema.shell.osd-orientation.label"),
+        tr("settings.schema.shell.osd-orientation.description"), {"osd", "orientation"},
+        asSegmented(plainSelect(
+            {{"horizontal", "settings.options.orientation.horizontal"},
+             {"vertical", "settings.options.orientation.vertical"}},
+            cfg.osd.orientation
+        )),
+        "hud overlay volume brightness vertical"
+    ));
+    entries.push_back(makeEntry(
         SettingsSection::Osd, "osd", tr("settings.schema.shell.osd-position.label"),
         tr("settings.schema.shell.osd-position.description"), {"osd", "position"},
         plainSelect(
@@ -1385,17 +1567,23 @@ namespace settings {
              {"center_left", "settings.options.screen-position.center-left"}},
             cfg.osd.position
         ),
-        "hud overlay volume brightness"
+        "hud overlay volume brightness horizontal text"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Osd, "osd", tr("settings.schema.shell.osd-orientation.label"),
-        tr("settings.schema.shell.osd-orientation.description"), {"osd", "orientation"},
-        asSegmented(plainSelect(
-            {{"horizontal", "settings.options.orientation.horizontal"},
-             {"vertical", "settings.options.orientation.vertical"}},
-            cfg.osd.orientation
-        )),
-        "hud overlay volume brightness vertical"
+        SettingsSection::Osd, "osd", tr("settings.schema.shell.osd-position-vertical.label"),
+        tr("settings.schema.shell.osd-position-vertical.description"), {"osd", "position_vertical"},
+        plainSelect(
+            {{"top_right", "settings.options.screen-position.top-right"},
+             {"top_left", "settings.options.screen-position.top-left"},
+             {"top_center", "settings.options.screen-position.top-center"},
+             {"bottom_right", "settings.options.screen-position.bottom-right"},
+             {"bottom_left", "settings.options.screen-position.bottom-left"},
+             {"bottom_center", "settings.options.screen-position.bottom-center"},
+             {"center_right", "settings.options.screen-position.center-right"},
+             {"center_left", "settings.options.screen-position.center-left"}},
+            cfg.osd.positionVertical
+        ),
+        "hud overlay volume brightness vertical slider"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Osd, "osd", tr("settings.schema.shell.osd-scale.label"),
@@ -1470,6 +1658,11 @@ namespace settings {
         ToggleSetting{cfg.osd.kinds.caffeine}, "hud overlay idle inhibitor"
     ));
     entries.push_back(makeEntry(
+        SettingsSection::Osd, "kinds", tr("settings.schema.shell.osd-kinds-nightlight.label"),
+        tr("settings.schema.shell.osd-kinds-nightlight.description"), {"osd", "kinds", "nightlight"},
+        ToggleSetting{cfg.osd.kinds.nightlight}, "hud overlay night light gamma"
+    ));
+    entries.push_back(makeEntry(
         SettingsSection::Osd, "kinds", tr("settings.schema.shell.osd-kinds-dnd.label"),
         tr("settings.schema.shell.osd-kinds-dnd.description"), {"osd", "kinds", "dnd"},
         ToggleSetting{cfg.osd.kinds.dnd}, "hud overlay do not disturb notifications"
@@ -1490,43 +1683,69 @@ namespace settings {
         ToggleSetting{cfg.osd.kinds.media}, "hud overlay mpris audio music"
     ));
     entries.push_back(makeEntry(
+        SettingsSection::Osd, "kinds", tr("settings.schema.shell.osd-kinds-privacy.label"),
+        tr("settings.schema.shell.osd-kinds-privacy.description"), {"osd", "kinds", "privacy"},
+        ToggleSetting{cfg.osd.kinds.privacy}, "hud overlay microphone camera screen share recording"
+    ));
+    entries.push_back(makeEntry(
         SettingsSection::Osd, "osd", tr("settings.schema.shell.osd-monitors.label"),
         tr("settings.schema.shell.osd-monitors.description"), {"osd", "monitors"},
         ListSetting{.items = cfg.osd.monitors, .suggestedOptions = env.availableOutputs},
         "monitor output display screen hud overlay"
     ));
 
-    // Keybinds (lives under Shell)
+    // Keybinds
     entries.push_back(makeEntry(
-        SettingsSection::Shell, "keybinds", tr("settings.schema.keybinds.validate.label"),
+        SettingsSection::Keybinds, "keybinds", tr("settings.schema.keybinds.validate.label"),
         tr("settings.schema.keybinds.validate.description"), {"keybinds", "validate"},
-        KeybindListSetting{.items = cfg.keybinds.validate, .maxItems = 4},
+        KeybindListSetting{
+            .items = effectiveKeybindItems(cfg.keybinds.validate, KeybindAction::Validate), .maxItems = 4
+        },
         "keybind shortcut hotkey enter accept submit confirm"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Shell, "keybinds", tr("settings.schema.keybinds.cancel.label"),
+        SettingsSection::Keybinds, "keybinds", tr("settings.schema.keybinds.cancel.label"),
         tr("settings.schema.keybinds.cancel.description"), {"keybinds", "cancel"},
-        KeybindListSetting{.items = cfg.keybinds.cancel, .maxItems = 4}, "keybind shortcut hotkey escape close dismiss"
+        KeybindListSetting{.items = effectiveKeybindItems(cfg.keybinds.cancel, KeybindAction::Cancel), .maxItems = 4},
+        "keybind shortcut hotkey escape close dismiss"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Shell, "keybinds", tr("settings.schema.keybinds.left.label"),
+        SettingsSection::Keybinds, "keybinds", tr("settings.schema.keybinds.left.label"),
         tr("settings.schema.keybinds.left.description"), {"keybinds", "left"},
-        KeybindListSetting{.items = cfg.keybinds.left, .maxItems = 4}, "keybind shortcut hotkey arrow move"
+        KeybindListSetting{.items = effectiveKeybindItems(cfg.keybinds.left, KeybindAction::Left), .maxItems = 4},
+        "keybind shortcut hotkey arrow move"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Shell, "keybinds", tr("settings.schema.keybinds.right.label"),
+        SettingsSection::Keybinds, "keybinds", tr("settings.schema.keybinds.right.label"),
         tr("settings.schema.keybinds.right.description"), {"keybinds", "right"},
-        KeybindListSetting{.items = cfg.keybinds.right, .maxItems = 4}, "keybind shortcut hotkey arrow move"
+        KeybindListSetting{.items = effectiveKeybindItems(cfg.keybinds.right, KeybindAction::Right), .maxItems = 4},
+        "keybind shortcut hotkey arrow move"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Shell, "keybinds", tr("settings.schema.keybinds.up.label"),
+        SettingsSection::Keybinds, "keybinds", tr("settings.schema.keybinds.up.label"),
         tr("settings.schema.keybinds.up.description"), {"keybinds", "up"},
-        KeybindListSetting{.items = cfg.keybinds.up, .maxItems = 4}, "keybind shortcut hotkey arrow move"
+        KeybindListSetting{.items = effectiveKeybindItems(cfg.keybinds.up, KeybindAction::Up), .maxItems = 4},
+        "keybind shortcut hotkey arrow move"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Shell, "keybinds", tr("settings.schema.keybinds.down.label"),
+        SettingsSection::Keybinds, "keybinds", tr("settings.schema.keybinds.down.label"),
         tr("settings.schema.keybinds.down.description"), {"keybinds", "down"},
-        KeybindListSetting{.items = cfg.keybinds.down, .maxItems = 4}, "keybind shortcut hotkey arrow move"
+        KeybindListSetting{.items = effectiveKeybindItems(cfg.keybinds.down, KeybindAction::Down), .maxItems = 4},
+        "keybind shortcut hotkey arrow move"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Keybinds, "keybinds", tr("settings.schema.keybinds.tab-previous.label"),
+        tr("settings.schema.keybinds.tab-previous.description"), {"keybinds", "tab_previous"},
+        KeybindListSetting{
+            .items = effectiveKeybindItems(cfg.keybinds.tabPrevious, KeybindAction::TabPrevious), .maxItems = 4
+        },
+        "keybind shortcut hotkey shift tab focus pane"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Keybinds, "keybinds", tr("settings.schema.keybinds.tab-next.label"),
+        tr("settings.schema.keybinds.tab-next.description"), {"keybinds", "tab_next"},
+        KeybindListSetting{.items = effectiveKeybindItems(cfg.keybinds.tabNext, KeybindAction::TabNext), .maxItems = 4},
+        "keybind shortcut hotkey tab focus pane"
     ));
 
     // Niri-specific integrations
@@ -1843,9 +2062,9 @@ namespace settings {
       }
       // Both sliders span the same range; the day > night invariant is enforced at commit time
       // via SliderSetting::linkedCommit, which pushes the other temperature when needed.
-      const double tempMin = static_cast<double>(NightLightConfig::kTemperatureMin);
-      const double tempMax = static_cast<double>(NightLightConfig::kTemperatureMax);
-      const double tempStep = static_cast<double>(NightLightConfig::kTemperatureGap);
+      const auto tempMin = static_cast<double>(NightLightConfig::kTemperatureMin);
+      const auto tempMax = static_cast<double>(NightLightConfig::kTemperatureMax);
+      const auto tempStep = static_cast<double>(NightLightConfig::kTemperatureGap);
 
       SliderSetting daySlider{static_cast<double>(cfg.nightlight.dayTemperature), tempMin, tempMax, tempStep, true};
       daySlider.linkedCommit = [curNight = cfg.nightlight.nightTemperature](double v) {
@@ -2191,6 +2410,16 @@ namespace settings {
           section, "general", tr("settings.schema.shared.auto-hide.label"),
           tr("settings.schema.bar.auto-hide.description"), path("auto_hide"), ToggleSetting{bar.autoHide}, "autohide"
       ));
+      const SettingVisibility autoHideOn{path("auto_hide"), {"true"}};
+      {
+        auto e = makeEntry(
+            section, "general", tr("settings.schema.bar.show-on-workspace-switch.label"),
+            tr("settings.schema.bar.show-on-workspace-switch.description"), path("show_on_workspace_switch"),
+            ToggleSetting{bar.showOnWorkspaceSwitch}, "workspace reveal peek autohide"
+        );
+        e.visibleWhen = autoHideOn;
+        entries.push_back(std::move(e));
+      }
       entries.push_back(makeEntry(
           section, "general", tr("settings.schema.shared.reserve-space.label"),
           tr("settings.schema.bar.reserve-space.description"), path("reserve_space"), ToggleSetting{bar.reserveSpace},
@@ -2222,6 +2451,11 @@ namespace settings {
           section, "layout", tr("settings.schema.shared.edge-margin.label"),
           tr("settings.schema.bar.edge-margin.description"), path("margin_edge"), barMarginStepper(bar.marginEdge),
           "gap inset"
+      ));
+      entries.push_back(makeEntry(
+          section, "layout", tr("settings.schema.shared.opposite-edge-margin.label"),
+          tr("settings.schema.bar.opposite-edge-margin.description"), path("margin_opposite_edge"),
+          barMarginStepper(bar.marginOppositeEdge), "gap inset strut"
       ));
       entries.push_back(makeEntry(
           section, "layout", tr("settings.schema.bar.content-padding.label"),
@@ -2420,6 +2654,47 @@ namespace settings {
           section, "widget-list", tr("settings.schema.bar.end-widgets.label"),
           tr("settings.schema.bar.end-widgets.description"), path("end"), ListSetting{.items = bar.endWidgets}, "right"
       ));
+      const auto deadZonePath = [&](std::string_view key) {
+        return std::vector<std::string>{"bar", bar.name, "dead_zone", std::string(key)};
+      };
+      entries.push_back(makeEntry(
+          section, "dead-zone", tr("settings.schema.bar.dead-zone-command.label"),
+          tr("settings.schema.bar.dead-zone-command.description"), deadZonePath("command"),
+          TextSetting{.value = bar.deadZone.command, .placeholder = "", .width = 320.0f, .browseFileExtensions = {}},
+          "bar empty margin click left command shell"
+      ));
+      entries.push_back(makeEntry(
+          section, "dead-zone", tr("settings.schema.bar.dead-zone-right-command.label"),
+          tr("settings.schema.bar.dead-zone-right-command.description"), deadZonePath("right_command"),
+          TextSetting{
+              .value = bar.deadZone.rightCommand, .placeholder = "", .width = 320.0f, .browseFileExtensions = {}
+          },
+          "bar empty margin click right command control center override shell"
+      ));
+      entries.push_back(makeEntry(
+          section, "dead-zone", tr("settings.schema.bar.dead-zone-middle-command.label"),
+          tr("settings.schema.bar.dead-zone-middle-command.description"), deadZonePath("middle_command"),
+          TextSetting{
+              .value = bar.deadZone.middleCommand, .placeholder = "", .width = 320.0f, .browseFileExtensions = {}
+          },
+          "bar empty margin click middle command shell"
+      ));
+      entries.push_back(makeEntry(
+          section, "dead-zone", tr("settings.schema.bar.dead-zone-scroll-up-command.label"),
+          tr("settings.schema.bar.dead-zone-scroll-up-command.description"), deadZonePath("scroll_up_command"),
+          TextSetting{
+              .value = bar.deadZone.scrollUpCommand, .placeholder = "", .width = 320.0f, .browseFileExtensions = {}
+          },
+          "bar empty margin scroll wheel up command shell"
+      ));
+      entries.push_back(makeEntry(
+          section, "dead-zone", tr("settings.schema.bar.dead-zone-scroll-down-command.label"),
+          tr("settings.schema.bar.dead-zone-scroll-down-command.description"), deadZonePath("scroll_down_command"),
+          TextSetting{
+              .value = bar.deadZone.scrollDownCommand, .placeholder = "", .width = 320.0f, .browseFileExtensions = {}
+          },
+          "bar empty margin scroll wheel down command shell"
+      ));
     }
 
     // Bar monitor overrides (all bars).
@@ -2448,6 +2723,17 @@ namespace settings {
             tr("settings.schema.bar.auto-hide.description"), monitorPath("auto_hide"),
             ToggleSetting{ovr.autoHide.value_or(bar.autoHide)}, "autohide"
         ));
+        const SettingVisibility monitorAutoHideOn{monitorPath("auto_hide"), {"true"}};
+        {
+          auto e = makeEntry(
+              section, "general", tr("settings.schema.bar.show-on-workspace-switch.label"),
+              tr("settings.schema.bar.show-on-workspace-switch.description"), monitorPath("show_on_workspace_switch"),
+              ToggleSetting{ovr.showOnWorkspaceSwitch.value_or(bar.showOnWorkspaceSwitch)},
+              "workspace reveal peek autohide"
+          );
+          e.visibleWhen = monitorAutoHideOn;
+          entries.push_back(std::move(e));
+        }
         entries.push_back(makeEntry(
             section, "general", tr("settings.schema.shared.reserve-space.label"),
             tr("settings.schema.bar.reserve-space.description"), monitorPath("reserve_space"),
@@ -2481,6 +2767,11 @@ namespace settings {
             section, "layout", tr("settings.schema.shared.edge-margin.label"),
             tr("settings.schema.bar.edge-margin.description"), monitorPath("margin_edge"),
             barMarginStepper(ovr.marginEdge.value_or(bar.marginEdge)), "gap inset"
+        ));
+        entries.push_back(makeEntry(
+            section, "layout", tr("settings.schema.shared.opposite-edge-margin.label"),
+            tr("settings.schema.bar.opposite-edge-margin.description"), monitorPath("margin_opposite_edge"),
+            barMarginStepper(ovr.marginOppositeEdge.value_or(bar.marginOppositeEdge)), "gap inset strut"
         ));
         entries.push_back(makeEntry(
             section, "layout", tr("settings.schema.bar.content-padding.label"),
@@ -2677,6 +2968,68 @@ namespace settings {
             section, "widget-list", tr("settings.schema.bar.end-widgets.label"),
             tr("settings.schema.bar.end-widgets.description"), monitorPath("end"),
             ListSetting{.items = ovr.endWidgets.value_or(bar.endWidgets)}, "right"
+        ));
+        const auto monitorDeadZonePath = [&](std::string_view key) {
+          std::vector<std::string> p = root;
+          p.emplace_back("dead_zone");
+          p.emplace_back(key);
+          return p;
+        };
+        entries.push_back(makeEntry(
+            section, "dead-zone", tr("settings.schema.bar.dead-zone-command.label"),
+            tr("settings.schema.bar.dead-zone-command.description"), monitorDeadZonePath("command"),
+            TextSetting{
+                .value = ovr.deadZone.command.value_or(""),
+                .placeholder = bar.deadZone.command,
+                .width = 320.0f,
+                .browseFileExtensions = {},
+            },
+            "bar empty margin click left command shell"
+        ));
+        entries.push_back(makeEntry(
+            section, "dead-zone", tr("settings.schema.bar.dead-zone-right-command.label"),
+            tr("settings.schema.bar.dead-zone-right-command.description"), monitorDeadZonePath("right_command"),
+            TextSetting{
+                .value = ovr.deadZone.rightCommand.value_or(""),
+                .placeholder = bar.deadZone.rightCommand,
+                .width = 320.0f,
+                .browseFileExtensions = {},
+            },
+            "bar empty margin click right command control center override shell"
+        ));
+        entries.push_back(makeEntry(
+            section, "dead-zone", tr("settings.schema.bar.dead-zone-middle-command.label"),
+            tr("settings.schema.bar.dead-zone-middle-command.description"), monitorDeadZonePath("middle_command"),
+            TextSetting{
+                .value = ovr.deadZone.middleCommand.value_or(""),
+                .placeholder = bar.deadZone.middleCommand,
+                .width = 320.0f,
+                .browseFileExtensions = {},
+            },
+            "bar empty margin click middle command shell"
+        ));
+        entries.push_back(makeEntry(
+            section, "dead-zone", tr("settings.schema.bar.dead-zone-scroll-up-command.label"),
+            tr("settings.schema.bar.dead-zone-scroll-up-command.description"), monitorDeadZonePath("scroll_up_command"),
+            TextSetting{
+                .value = ovr.deadZone.scrollUpCommand.value_or(""),
+                .placeholder = bar.deadZone.scrollUpCommand,
+                .width = 320.0f,
+                .browseFileExtensions = {},
+            },
+            "bar empty margin scroll wheel up command shell"
+        ));
+        entries.push_back(makeEntry(
+            section, "dead-zone", tr("settings.schema.bar.dead-zone-scroll-down-command.label"),
+            tr("settings.schema.bar.dead-zone-scroll-down-command.description"),
+            monitorDeadZonePath("scroll_down_command"),
+            TextSetting{
+                .value = ovr.deadZone.scrollDownCommand.value_or(""),
+                .placeholder = bar.deadZone.scrollDownCommand,
+                .width = 320.0f,
+                .browseFileExtensions = {},
+            },
+            "bar empty margin scroll wheel down command shell"
         ));
       }
     }

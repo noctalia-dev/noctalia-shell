@@ -2,7 +2,7 @@
 #include "core/deferred_call.h"
 #include "i18n/i18n.h"
 #include "render/text/font_weight_catalog.h"
-#include "shell/avatar_path.h"
+#include "shell/profile/avatar_path.h"
 #include "shell/settings/settings_window.h"
 
 #include <string>

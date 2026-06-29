@@ -278,6 +278,9 @@ namespace ui {
     if (props.glyphSize.has_value()) {
       control->setGlyphSize(*props.glyphSize);
     }
+    if (props.controlHeight.has_value()) {
+      control->setControlHeight(*props.controlHeight);
+    }
     if (props.enabled.has_value()) {
       control->setEnabled(*props.enabled);
     }
@@ -676,6 +679,9 @@ namespace ui {
     if (props.surfaceOpacity.has_value()) {
       control->setSurfaceOpacity(*props.surfaceOpacity);
     }
+    if (props.surfaceRole.has_value()) {
+      control->setSurfaceRole(*props.surfaceRole);
+    }
     if (props.equalSegmentWidths.has_value()) {
       control->setEqualSegmentWidths(*props.equalSegmentWidths);
     }
@@ -977,7 +983,7 @@ namespace ui {
       control->setScale(*props.scale);
     }
     if (props.chord.has_value()) {
-      control->setChord(*props.chord);
+      control->setChord(props.chord);
     }
     if (props.unsetPlaceholder.has_value()) {
       control->setUnsetPlaceholder(*props.unsetPlaceholder);

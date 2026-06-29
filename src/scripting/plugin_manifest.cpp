@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "core/toml.h" // IWYU pragma: keep
 #include "scripting/plugin_id.h"
+#include "scripting/plugin_panel_shell.h"
 
 #include <algorithm>
 #include <array>
@@ -98,6 +99,20 @@ namespace scripting {
       return tbl[key].value<bool>().value_or(fallback);
     }
 
+    std::vector<std::string> tableStringArray(const toml::table& tbl, std::string_view key) {
+      std::vector<std::string> out;
+      const auto* values = tbl[key].as_array();
+      if (values == nullptr) {
+        return out;
+      }
+      for (const auto& node : *values) {
+        if (auto value = node.value<std::string>()) {
+          out.push_back(*value);
+        }
+      }
+      return out;
+    }
+
     // A TOML number written as either an integer or a float.
     std::optional<double> tableNumber(const toml::table& tbl, std::string_view key) {
       const auto node = tbl[key];
@@ -105,7 +120,7 @@ namespace scripting {
         return static_cast<double>(*i);
       }
       if (auto d = node.value<double>()) {
-        return *d;
+        return d;
       }
       return std::nullopt;
     }
@@ -234,6 +249,21 @@ namespace scripting {
       return out;
     }
 
+    // Entry-level [[<entry>.setting]] is only honored for kinds that have a
+    // settings editor: bar widgets and desktop widgets edit per-instance, panels
+    // edit from the plugin page. Launcher providers, shortcuts, and services are
+    // singletons with no settings surface; use a plugin-level [[setting]] instead.
+    constexpr bool entryKindSupportsSettings(PluginEntryKind kind) {
+      switch (kind) {
+      case PluginEntryKind::Widget:
+      case PluginEntryKind::DesktopWidget:
+      case PluginEntryKind::Panel:
+        return true;
+      default:
+        return false;
+      }
+    }
+
     bool parseEntries(
         const toml::table& root, PluginEntryKind kind, std::string_view tableName, PluginManifest& manifest,
         std::string& error
@@ -255,6 +285,17 @@ namespace scripting {
           continue;
         }
         if (const auto* settings = (*entryTable)["setting"].as_array()) {
+          if (!entryKindSupportsSettings(kind)) {
+            error = "entry '"
+                + entry.id
+                + "' of kind '"
+                + std::string(tableName)
+                + "' declares [["
+                + std::string(tableName)
+                + ".setting]], but entry-level settings are only supported for widget, desktop_widget, and panel "
+                  "entries; move it to a plugin-level [[setting]]";
+            return false;
+          }
           for (const auto& settingNode : *settings) {
             if (const auto* settingTable = settingNode.as_table()) {
               auto field = parseField(*settingTable, error);
@@ -266,6 +307,20 @@ namespace scripting {
               }
             }
           }
+        }
+        if (kind == PluginEntryKind::Panel) {
+          entry.panelWidth = std::max(0.0, tableNumber(*entryTable, "width").value_or(0.0));
+          entry.panelHeight = std::max(0.0, tableNumber(*entryTable, "height").value_or(0.0));
+          if (const std::string placement = tableString(*entryTable, "placement"); !placement.empty()) {
+            entry.panelPlacementDefault = placement;
+          }
+          if (const std::string position = tableString(*entryTable, "position"); !position.empty()) {
+            entry.panelPositionDefault = position;
+          }
+          if (const auto* openNearClick = (*entryTable)["open_near_click"].as_boolean()) {
+            entry.panelOpenNearClickDefault = openNearClick->get();
+          }
+          injectStandardPanelShellSettings(entry);
         }
         if (kind == PluginEntryKind::LauncherProvider) {
           entry.launcherPrefix = tableString(*entryTable, "prefix");
@@ -374,13 +429,8 @@ namespace scripting {
     manifest.deprecated = tableBool(root, "deprecated", false);
     manifest.icon = tableString(root, "icon");
     manifest.description = tableString(root, "description");
-    if (const auto* tags = root["tags"].as_array()) {
-      for (const auto& node : *tags) {
-        if (auto value = node.value<std::string>()) {
-          manifest.tags.push_back(*value);
-        }
-      }
-    }
+    manifest.tags = tableStringArray(root, "tags");
+    manifest.dependencies = tableStringArray(root, "dependencies");
 
     std::string manifestError;
     for (const auto& [kind, tableName] : kEntryKinds) {

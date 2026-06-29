@@ -3,6 +3,7 @@
 #include "auth/pam_authenticator.h"
 #include "core/timer_manager.h"
 #include "capture/screencopy_capture.h"
+#include "core/timer_manager.h"
 
 #include <cstdint>
 #include <functional>
@@ -87,6 +88,9 @@ private:
   void syncInstances();
   void captureDesktopSnapshots();
   [[nodiscard]] bool shouldUseBlurredDesktop() const;
+  [[nodiscard]] bool allSurfacesReady() const;
+  bool tryFlushPendingAfterLocked();
+  void dispatchPendingAfterLocked();
   void applyLockscreenStyle(LockSurface& surface) const;
   void applyOutputRestriction();
   void applyWallpaperStyleToSurfaces();
@@ -103,7 +107,6 @@ private:
   void startFingerprint();
   void stopFingerprint();
   void handleFingerprintStatus(const std::string& message, bool isError);
-  [[nodiscard]] std::string passwordPamService() const;
   static void clearSensitiveString(std::string& value);
 
   // Drive live-paper redraws on the lock surfaces. Texture content is updated
@@ -141,4 +144,5 @@ private:
   std::function<void()> m_onSessionLocked;
   std::function<void()> m_onSessionUnlocked;
   std::function<void()> m_onLockEngaged;
+  Timer m_suspendTimeoutTimer;
 };

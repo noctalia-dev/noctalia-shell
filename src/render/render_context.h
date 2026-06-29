@@ -1,7 +1,5 @@
 #pragma once
 
-#include "render/backend/render_backend.h"
-#include "render/core/mat3.h"
 #include "render/core/renderer.h"
 #include "render/text/cairo_glyph_renderer.h"
 #include "render/text/cairo_text_renderer.h"
@@ -14,7 +12,10 @@
 
 class GlSharedContext;
 class Node;
+class RenderBackend;
 class RenderTarget;
+enum class RenderGraphicsResetStatus;
+struct Mat3;
 
 class RenderContext : public Renderer {
 public:
@@ -31,8 +32,9 @@ public:
   void setGraphicsResetCallback(std::function<void(RenderGraphicsResetStatus)> callback) {
     m_graphicsResetCallback = std::move(callback);
   }
-  void makeCurrent(RenderTarget& target);
-  void makeCurrentNoSurface();
+  // Returns false if the surface could not be made current (e.g. teardown);
+  // best-effort callers may ignore it, render paths must skip the frame.
+  bool makeCurrent(RenderTarget& target);
   // Sync text/glyph renderer content scale to the given target's
   // buffer-to-logical ratio. Must be called before any measureText /
   // measureGlyph performed on behalf of this target, because those
@@ -56,7 +58,7 @@ public:
   [[nodiscard]] TextMetrics measureText(
       std::string_view text, float fontSize, FontWeight fontWeight = FontWeight::Normal, float maxWidth = 0.0f,
       int maxLines = 0, TextAlign align = TextAlign::Start, std::string_view fontFamily = {},
-      TextEllipsize ellipsize = TextEllipsize::End
+      TextEllipsize ellipsize = TextEllipsize::End, bool useMarkup = false
   ) override;
   [[nodiscard]] TextMetrics measureFont(float fontSize, FontWeight fontWeight) override;
   void measureTextCursorStops(
@@ -69,6 +71,7 @@ public:
   [[nodiscard]] std::uint64_t textMetricsGeneration() const noexcept override { return m_textMetricsGeneration; }
 
 private:
+  bool makeCurrentNoSurface();
   void handleGraphicsReset(RenderGraphicsResetStatus status);
   void renderNode(
       const Node* node, const Mat3& parentTransform, float parentOpacity, float sw, float sh, float bw, float bh,

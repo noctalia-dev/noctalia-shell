@@ -22,8 +22,6 @@ namespace {
     return !workspace.occupied && !workspace.active && !workspace.urgent;
   }
 
-  constexpr float kActiveFactor = 2.2f;
-  constexpr float kInactiveFactor = 1.0f;
   constexpr float kWorkspaceGap = Style::spaceXs;
   constexpr float kWorkspacePillDefaultHeight = Style::baseGlyphSize;
   constexpr float kWorkspaceAnimDurationMs = static_cast<float>(Style::animNormal);
@@ -42,14 +40,14 @@ namespace {
   }
 } // namespace
 
-WorkspacesWidget::WorkspacesWidget(
-    CompositorPlatform& platform, wl_output* output, DisplayMode displayMode, ColorSpec focusedColor,
-    ColorSpec occupiedColor, ColorSpec emptyColor, std::size_t maxLabelChars, bool labelsOnlyWhenOccupied,
-    bool hideWhenEmpty, float pillScale, bool minimal
-)
-    : m_platform(platform), m_output(output), m_displayMode(displayMode), m_maxLabelChars(maxLabelChars),
-      m_labelsOnlyWhenOccupied(labelsOnlyWhenOccupied), m_hideWhenEmpty(hideWhenEmpty), m_pillScale(pillScale),
-      m_minimal(minimal), m_focusedColor(focusedColor), m_occupiedColor(occupiedColor), m_emptyColor(emptyColor) {}
+WorkspacesWidget::WorkspacesWidget(CompositorPlatform& platform, wl_output* output, Options options)
+    : m_platform(platform), m_output(output), m_displayMode(options.displayMode),
+      m_maxLabelChars(options.maxLabelChars), m_labelsOnlyWhenOccupied(options.labelsOnlyWhenOccupied),
+      m_hideWhenEmpty(options.hideWhenEmpty), m_pillScale(options.pillScale),
+      m_activePillSize(std::clamp(options.activePillSize, 0.25f, 8.0f)),
+      m_inactivePillSize(std::clamp(options.inactivePillSize, 0.25f, 8.0f)), m_minimal(options.minimal),
+      m_focusedOutputOnly(options.focusedOutputOnly), m_focusedColor(options.focusedColor),
+      m_occupiedColor(options.occupiedColor), m_emptyColor(options.emptyColor) {}
 
 WorkspacesWidget::DisplayMode WorkspacesWidget::effectiveDisplayMode() const noexcept {
   if (m_minimal && m_displayMode == DisplayMode::None) {
@@ -161,6 +159,13 @@ void WorkspacesWidget::doUpdate(Renderer& renderer) {
   }
 
   if (!structuralChange && !activeChange) {
+    if (m_focusedOutputOnly) {
+      const bool isFocused = isFocusedOutput();
+      if (isFocused != m_wasFocusedOutput) {
+        m_wasFocusedOutput = isFocused;
+        retarget(renderer);
+      }
+    }
     return;
   }
 
@@ -192,6 +197,7 @@ void WorkspacesWidget::doUpdate(Renderer& renderer) {
 
 void WorkspacesWidget::rebuild(Renderer& renderer) {
   uiAssertNotRendering("WorkspacesWidget::rebuild");
+  m_activeUsesFocusedColor = !m_focusedOutputOnly || isFocusedOutput();
   cancelAnimation();
   while (!m_container->children().empty()) {
     m_container->removeChild(m_container->children().back().get());
@@ -210,10 +216,8 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     labels.push_back(workspaceLabel(workspaces[i], i));
   }
 
-  // Measure text and compute per-slot widths (v4-style: proportional to char count).
-  // Width = max(baseSize * factor, textWidth + padding)
-  //   factor: 2.2 for active, 1.0 for inactive
-  //   padding: baseSize * 0.6
+  // Measure text and compute per-slot widths along the bar main axis.
+  // Width = max(baseSize * pill_size, textWidth + padding); pill_size comes from active/inactive settings.
   struct SlotMetrics {
     std::string label;
     bool showLabel = false;
@@ -266,8 +270,8 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
       continue;
     }
 
-    const float minWidth = baseSize * kInactiveFactor;
-    const float minActiveWidth = baseSize * kActiveFactor;
+    const float minWidth = workspaceMainAxisMinWidth(baseSize, false);
+    const float minActiveWidth = workspaceMainAxisMinWidth(baseSize, true);
 
     if (!slot.showLabel) {
       slot.inactiveWidth = minWidth;
@@ -460,8 +464,8 @@ void WorkspacesWidget::recalculateItemMetrics(Renderer& renderer, std::size_t in
       item.activeWidth = item.inactiveWidth;
     }
   } else {
-    const float minWidth = baseSize * kInactiveFactor;
-    const float minActiveWidth = baseSize * kActiveFactor;
+    const float minWidth = workspaceMainAxisMinWidth(baseSize, false);
+    const float minActiveWidth = workspaceMainAxisMinWidth(baseSize, true);
     if (!item.showLabel) {
       item.inactiveWidth = minWidth;
       item.activeWidth = minActiveWidth;
@@ -491,6 +495,7 @@ void WorkspacesWidget::updateAllItemMetrics(Renderer& renderer) {
 }
 
 void WorkspacesWidget::retarget(Renderer& renderer) {
+  m_activeUsesFocusedColor = !m_focusedOutputOnly || isFocusedOutput();
   for (std::size_t i = 0; i < m_items.size(); ++i) {
     auto& it = m_items[i];
     const auto& ws = m_cachedState[i];
@@ -614,6 +619,10 @@ float WorkspacesWidget::workspacePillRadius(float width, float height) const noe
   return resolvedBarCapsuleRadius(width, height);
 }
 
+float WorkspacesWidget::workspaceMainAxisMinWidth(float baseSize, bool active) const noexcept {
+  return baseSize * (active ? m_activePillSize : m_inactivePillSize);
+}
+
 WorkspacesWidget::~WorkspacesWidget() { cancelAnimation(); }
 
 std::optional<std::size_t> WorkspacesWidget::activeWorkspaceIndex() const {
@@ -699,9 +708,14 @@ std::optional<std::size_t> WorkspacesWidget::numericWorkspaceId(const Workspace&
   return std::nullopt;
 }
 
+bool WorkspacesWidget::isFocusedOutput() const { return m_platform.preferredInteractiveOutput() == m_output; }
+
 ColorSpec WorkspacesWidget::workspaceFillColor(const Workspace& workspace) const {
   if (workspace.active) {
-    return m_focusedColor;
+    if (m_activeUsesFocusedColor) {
+      return m_focusedColor;
+    }
+    return m_occupiedColor;
   }
   if (workspace.urgent) {
     return colorSpecFromRole(ColorRole::Error);
@@ -722,7 +736,10 @@ ColorSpec WorkspacesWidget::workspaceTextColor(const Workspace& workspace) const
     return readableColorForFill(workspaceFillColor(workspace));
   }
   if (workspace.active) {
-    return m_focusedColor;
+    if (m_activeUsesFocusedColor) {
+      return m_focusedColor;
+    }
+    return m_occupiedColor;
   }
   if (workspace.occupied) {
     return m_occupiedColor;

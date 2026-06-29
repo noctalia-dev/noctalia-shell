@@ -3,6 +3,7 @@
 #include "config/config_types.h"
 #include "i18n/i18n.h"
 #include "scripting/plugin_i18n.h"
+#include "scripting/plugin_panel_shell.h"
 #include "scripting/plugin_registry.h"
 #include "shell/settings/settings_control_factory.h"
 #include "shell/settings/settings_registry.h"
@@ -11,6 +12,7 @@
 #include "ui/controls/flex.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
 #include <cmath>
@@ -193,10 +195,27 @@ namespace settings {
       if (!plugin.description.empty()) {
         info->addChild(makeLabel(plugin.description, Style::fontSizeCaption * scale, ColorRole::OnSurfaceVariant));
       }
+      if (!plugin.dependencies.empty()) {
+        info->addChild(makeLabel(
+            i18n::tr("settings.plugins.plugins.requires", "dependencies", StringUtils::join(plugin.dependencies, ", ")),
+            Style::fontSizeCaption * scale, ColorRole::Secondary
+        ));
+      }
       r->addChild(std::move(info));
 
       const auto* manifest = scripting::PluginRegistry::instance().findManifest(plugin.id);
-      if (enabled && manifest != nullptr && !manifest->settings.empty() && ctx.onConfigure) {
+      const bool hasSettings = [&]() {
+        if (manifest == nullptr) {
+          return false;
+        }
+        if (!manifest->settings.empty()) {
+          return true;
+        }
+        return std::ranges::any_of(manifest->entries, [](const scripting::PluginEntry& entry) {
+          return entry.kind == scripting::PluginEntryKind::Panel && !entry.settings.empty();
+        });
+      }();
+      if (enabled && manifest != nullptr && hasSettings && ctx.onConfigure) {
         r->addChild(
             ui::button({
                 .glyph = "settings",
@@ -212,18 +231,49 @@ namespace settings {
         );
       }
 
-      r->addChild(
-          ui::toggle({
-              .checked = enabled,
-              .enabled = enabled || plugin.compatible,
-              .scale = scale,
-              .onChange = [cb = ctx.setEnabled, id = plugin.id](bool on) {
-                if (cb) {
-                  cb(id, on);
-                }
-              },
-          })
-      );
+      const bool removable = ctx.onRemove
+          && plugin.source != "local"
+          && !std::ranges::any_of(ctx.sources, [&](const PluginSourceConfig& s) {
+                               return s.name == plugin.source && s.kind == PluginSourceKind::Path;
+                             });
+      if (removable) {
+        r->addChild(
+            ui::button({
+                .glyph = "trash",
+                .glyphSize = Style::fontSizeBody * scale,
+                .variant = ButtonVariant::Ghost,
+                .tooltip = i18n::tr("settings.plugins.plugins.remove"),
+                .onClick = [cb = ctx.onRemove, id = plugin.id]() {
+                  if (cb) {
+                    cb(id);
+                  }
+                },
+            })
+        );
+      }
+
+      const bool busy = ctx.isEnabling && ctx.isEnabling(plugin.id);
+      if (busy) {
+        r->addChild(
+            ui::spinner({
+                .spinnerSize = Style::controlHeightSm * scale * 0.7f,
+                .spinning = true,
+            })
+        );
+      } else {
+        r->addChild(
+            ui::toggle({
+                .checked = enabled,
+                .enabled = enabled || plugin.compatible,
+                .scale = scale,
+                .onChange = [cb = ctx.setEnabled, id = plugin.id](bool on) {
+                  if (cb) {
+                    cb(id, on);
+                  }
+                },
+            })
+        );
+      }
       return row;
     }
 
@@ -357,6 +407,7 @@ namespace settings {
           );
         }
         SelectSetting selectSetting{std::move(options), valueAsString(value)};
+        selectSetting.segmented = spec.segmented;
         if (const auto* defaultString = std::get_if<std::string>(&spec.schema.defaultValue)) {
           selectSetting.clearOnEmpty = defaultString->empty();
         }
@@ -390,7 +441,31 @@ namespace settings {
     if (const auto pluginDir = scripting::PluginRegistry::instance().findPluginDir(pluginId)) {
       translations.load(*pluginDir);
     }
-    const auto specs = settings::manifestSettingSpecs(manifest.settings, &translations);
+    std::vector<WidgetSettingSpec> specs = settings::manifestSettingSpecs(manifest.settings, &translations);
+    for (const auto& entry : manifest.entries) {
+      if (entry.kind != scripting::PluginEntryKind::Panel) {
+        continue;
+      }
+      for (const auto& shellSpec : settings::pluginPanelShellSettingSpecs(entry)) {
+        if (std::ranges::any_of(specs, [&](const WidgetSettingSpec& existing) {
+              return existing.schema.key == shellSpec.schema.key;
+            })) {
+          continue;
+        }
+        specs.push_back(shellSpec);
+      }
+      for (const auto& panelSpec : settings::manifestSettingSpecs(entry.settings, &translations)) {
+        if (scripting::isPanelShellSettingKey(entry.id, panelSpec.schema.key)) {
+          continue;
+        }
+        if (std::ranges::any_of(specs, [&](const WidgetSettingSpec& existing) {
+              return existing.schema.key == panelSpec.schema.key;
+            })) {
+          continue;
+        }
+        specs.push_back(panelSpec);
+      }
+    }
     bool rendered = false;
     for (const auto& spec : specs) {
       if (spec.advanced && !showAdvanced) {
@@ -482,19 +557,44 @@ namespace settings {
       section->addChild(makeLabel(
           i18n::tr("settings.plugins.sources.empty"), Style::fontSizeCaption * scale, ColorRole::OnSurfaceVariant
       ));
+    } else if (ctx.sources.size() > 1) {
+      section->addChild(makeLabel(
+          i18n::tr("settings.plugins.sources.precedence-hint"), Style::fontSizeCaption * scale,
+          ColorRole::OnSurfaceVariant
+      ));
     }
-    std::vector<PluginSourceConfig> sources = ctx.sources;
-    std::ranges::stable_sort(sources, [](const auto& a, const auto& b) { return pluginSourceLess(a.name, b.name); });
-    for (const auto& source : sources) {
+    // Render in config order so the list mirrors the file. Precedence is last-wins
+    // (the same cascade as the rest of the config), so a source lower in the list
+    // overrides the ones above it for a shared plugin id.
+    for (const auto& source : ctx.sources) {
       section->addChild(sourceRow(source, ctx, scale));
     }
 
     section->addChild(ui::separator({.spacing = Style::spaceSm * scale}));
 
     // ── Plugins ──────────────────────────────────────────────────────────
-    section->addChild(makeLabel(
+    auto pluginsHeader = ui::row({.align = FlexAlign::Center, .gap = Style::spaceSm * scale, .fillWidth = true});
+    pluginsHeader->addChild(makeLabel(
         i18n::tr("settings.plugins.plugins.title"), Style::fontSizeBody * scale, ColorRole::Secondary, FontWeight::Bold
     ));
+    pluginsHeader->addChild(ui::spacer());
+    if (ctx.openStore) {
+      pluginsHeader->addChild(
+          ui::button({
+              .text = i18n::tr("settings.plugins.browse-store"),
+              .glyph = "search",
+              .fontSize = Style::fontSizeCaption * scale,
+              .glyphSize = Style::fontSizeBody * scale,
+              .variant = ButtonVariant::Primary,
+              .onClick = [cb = ctx.openStore]() {
+                if (cb) {
+                  cb();
+                }
+              },
+          })
+      );
+    }
+    section->addChild(std::move(pluginsHeader));
     if (ctx.pluginsLoading) {
       section->addChild(makeLabel(
           ctx.plugins.empty() ? i18n::tr("settings.plugins.plugins.loading")
@@ -506,7 +606,13 @@ namespace settings {
           i18n::tr("settings.plugins.plugins.empty"), Style::fontSizeCaption * scale, ColorRole::OnSurfaceVariant
       ));
     }
-    std::vector<scripting::PluginStatus> plugins = ctx.plugins;
+    std::vector<scripting::PluginStatus> plugins;
+    plugins.reserve(ctx.plugins.size());
+    for (const auto& plugin : ctx.plugins) {
+      if (plugin.materialized || plugin.enabled) {
+        plugins.push_back(plugin);
+      }
+    }
     std::ranges::sort(plugins, [&](const auto& a, const auto& b) {
       const std::string_view aName = pluginDisplayName(a);
       const std::string_view bName = pluginDisplayName(b);

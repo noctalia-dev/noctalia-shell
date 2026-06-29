@@ -9,11 +9,11 @@
 #include "dbus/power/power_profiles_service.h"
 #include "i18n/i18n.h"
 #include "idle/idle_inhibitor.h"
-#include "ipc/ipc_service.h"
 #include "notification/notification_manager.h"
 #include "pipewire/pipewire_service.h"
 #include "scripting/plugin_manifest.h"
 #include "scripting/plugin_registry.h"
+#include "scripting/plugin_runtime_context.h"
 #include "shell/bar/widgets/keyboard_layout_widget.h"
 #include "shell/control_center/plugin_shortcut.h"
 #include "shell/control_center/shortcut_services.h"
@@ -358,15 +358,17 @@ namespace {
     bool active() const override {
       return m_svc != nullptr && !m_svc->activeProfile().empty() && m_svc->activeProfile() != "balanced";
     }
-    void onClick() override {
-      if (m_svc == nullptr) {
-        return;
-      }
-      (void)m_svc->cycleActiveProfile();
-    }
-    void onRightClick() override { openTab("system"); }
+    void onClick() override { cycle(1); }
+    void onRightClick() override { cycle(-1); }
+    void onScroll(int direction) override { cycle(direction); }
 
   private:
+    void cycle(int direction) {
+      if (m_svc != nullptr) {
+        (void)m_svc->cycleActiveProfile(direction);
+      }
+    }
+
     PowerProfilesService* m_svc;
   };
 
@@ -553,9 +555,16 @@ std::unique_ptr<Shortcut> ShortcutRegistry::create(std::string_view type, const 
       }
     }
     scripting::mergePluginSettings(*entry->manifest, *overrides, seeded);
-    return std::make_unique<PluginShortcut>(
-        entry->fullId(), entry->sourcePath, std::move(seeded), *s.scriptApi, s.httpClient, s.clipboard, s.platform
-    );
+    return std::make_unique<PluginShortcut>(scripting::PluginRuntimeContext{
+        .entryId = entry->fullId(),
+        .sourcePath = entry->sourcePath,
+        .settings = std::move(seeded),
+        .scriptApi = *s.scriptApi,
+        .fileWatcher = s.fileWatcher,
+        .httpClient = s.httpClient,
+        .clipboard = s.clipboard,
+        .platform = s.platform,
+    });
   }
   if (type == "wifi")
     return std::make_unique<WifiShortcut>(s.network);

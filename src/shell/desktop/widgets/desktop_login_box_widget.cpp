@@ -7,7 +7,6 @@
 #include "ui/palette.h"
 #include "ui/style.h"
 
-#include <algorithm>
 #include <memory>
 
 namespace {
@@ -86,7 +85,7 @@ void DesktopLoginBoxWidget::doLayout(Renderer& renderer) {
     m_panel->setStyle(
         RoundedRectStyle{
             .fill = resolveColorSpec(style.panelFill),
-            .border = colorForRole(ColorRole::Outline, 0.95f),
+            .border = colorForRole(ColorRole::Outline),
             .fillMode = FillMode::Solid,
             .radius = Style::scaledRadius(style.panelRadius),
             .softness = 1.0f,
@@ -101,7 +100,7 @@ void DesktopLoginBoxWidget::doLayout(Renderer& renderer) {
     m_passwordGhost->setStyle(
         RoundedRectStyle{
             .fill = colorForRole(ColorRole::Surface, style.inputOpacity),
-            .border = colorForRole(ColorRole::Outline, 0.85f),
+            .border = colorForRole(ColorRole::Outline),
             .fillMode = FillMode::Solid,
             .radius = Style::scaledRadius(style.inputRadius),
             .borderWidth = Style::borderWidth,

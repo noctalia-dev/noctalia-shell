@@ -22,7 +22,6 @@
 #include <cmath>
 #include <memory>
 #include <string_view>
-#include <wayland-client.h>
 
 namespace {
 
@@ -346,8 +345,8 @@ void LockSurface::onPointerEvent(const PointerEvent& event) {
     break;
   case PointerEvent::Type::Button: {
     const bool pressed = event.state == WL_POINTER_BUTTON_STATE_PRESSED;
-    const float x = static_cast<float>(event.sx);
-    const float y = static_cast<float>(event.sy);
+    const auto x = static_cast<float>(event.sx);
+    const auto y = static_cast<float>(event.sy);
     if (m_locked && pressed && passwordFieldContainsPoint(x, y)) {
       focusPasswordField();
     }
@@ -406,6 +405,9 @@ void LockSurface::handleConfigure(
     std::uint32_t height
 ) {
   auto* self = static_cast<LockSurface*>(data);
+  if (self->width() != width || self->height() != height) {
+    self->m_firstFrameRendered = false;
+  }
   ext_session_lock_surface_v1_ack_configure(lockSurface, serial);
   self->Surface::onConfigure(width, height);
 }
@@ -439,8 +441,8 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
     return;
   }
 
-  const float sw = static_cast<float>(width);
-  const float sh = static_cast<float>(height);
+  const auto sw = static_cast<float>(width);
+  const auto sh = static_cast<float>(height);
 
   if (m_blackout) {
     m_root.setSize(sw, sh);
@@ -562,7 +564,7 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
   m_loginPanel->setStyle(
       RoundedRectStyle{
           .fill = resolveColorSpec(loginStyle.panelFill),
-          .border = colorForRole(ColorRole::Outline, 0.95f),
+          .border = colorForRole(ColorRole::Outline),
           .fillMode = FillMode::Solid,
           .radius = Style::scaledRadius(loginStyle.panelRadius),
           .softness = 1.0f,
@@ -860,4 +862,14 @@ void LockSurface::onGpuResourcesInvalidated() {
   m_captureDirty = true;
   m_wallpaperDirty = true;
   requestLayout();
+}
+
+void LockSurface::render() {
+  Surface::render();
+  if (!m_firstFrameRendered) {
+    m_firstFrameRendered = true;
+    if (m_renderCallback) {
+      m_renderCallback();
+    }
+  }
 }

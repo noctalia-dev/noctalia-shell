@@ -1,4 +1,4 @@
-#include "shell/avatar_path.h"
+#include "shell/profile/avatar_path.h"
 
 #include "config/config_service.h"
 #include "config/config_types.h"
@@ -40,12 +40,11 @@ namespace {
   [[nodiscard]] std::optional<std::filesystem::path> prepareAvatarForAccounts(
       const std::filesystem::path& sourcePath, AvatarPrepareError& errorOut, std::string* logDetail
   ) {
-    std::string loadError;
-    const auto loaded = loadImageFile(sourcePath.string(), kAccountsAvatarMaxSize, &loadError, true);
-    if (!loaded.has_value()) {
+    const auto loaded = loadImageFile(sourcePath.string(), kAccountsAvatarMaxSize, true);
+    if (!loaded) {
       errorOut = AvatarPrepareError::LoadFailed;
       if (logDetail != nullptr) {
-        *logDetail = loadError.empty() ? "failed to load avatar image" : loadError;
+        *logDetail = loaded.error();
       }
       return std::nullopt;
     }
@@ -120,19 +119,19 @@ namespace {
 namespace shell {
 
   std::string resolvedAvatarPath(const AccountsService* accounts, const Config& config) {
+    if (!config.shell.avatarPath.empty()) {
+      return config.shell.avatarPath;
+    }
     if (accounts != nullptr) {
       const std::string& iconFile = accounts->iconFile();
       if (!iconFile.empty()) {
         return iconFile;
       }
     }
-    return config.shell.avatarPath;
+    return {};
   }
 
   std::string avatarDisplayPath(const AccountsService* accounts, const Config& config) {
-    if (!config.shell.avatarPath.empty()) {
-      return config.shell.avatarPath;
-    }
     return resolvedAvatarPath(accounts, config);
   }
 
@@ -165,8 +164,7 @@ namespace shell {
       }
       accountsPath = prepared->string();
       if (!accounts->setIconFile(accountsPath)) {
-        kLog.warn("AccountsService SetIconFile failed for '{}'", accountsPath);
-        return {.error = AvatarApplyError::AccountsFailed};
+        kLog.warn("AccountsService SetIconFile failed for '{}', falling back to config override", accountsPath);
       }
     }
 

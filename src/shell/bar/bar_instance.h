@@ -59,7 +59,6 @@ struct BarInstance {
   Node* shadowRightClip = nullptr;
   Box* shadowLeft = nullptr;
   Box* shadowRight = nullptr;
-  Box* attachedPanelResizeTestRect = nullptr;
   Node* contentClip = nullptr;
   Node* startSlot = nullptr;
   Node* centerSlot = nullptr;
@@ -77,6 +76,4 @@ struct BarInstance {
 
   Signal<>::ScopedConnection paletteConn;
   std::optional<AttachedPanelGeometry> attachedPanelGeometry;
-  bool attachedPanelResizeTestOpen = false;
-  std::uint32_t attachedPanelResizeTestExtent = 0;
 };

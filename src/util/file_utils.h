@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cctype>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
@@ -32,6 +33,59 @@ namespace FileUtils {
   [[nodiscard]] inline std::string expandUserPathString(const std::string& path) {
     return expandUserPath(path).string();
   }
+
+  // Expands $NAME and ${NAME} environment-variable references. NAME matches
+  // [A-Za-z_][A-Za-z0-9_]*; undefined variables expand to the empty string. A
+  // lone '$' or '$' followed by a non-name character is left verbatim. This is a
+  // deliberate, minimal substitution — never wordexp()/shell expansion, which
+  // would run command substitution on config input.
+  [[nodiscard]] inline std::string expandEnvVars(std::string_view in) {
+    std::string out;
+    out.reserve(in.size());
+    const auto isNameStart = [](char c) { return (std::isalpha(static_cast<unsigned char>(c)) != 0) || c == '_'; };
+    const auto isNameChar = [](char c) { return (std::isalnum(static_cast<unsigned char>(c)) != 0) || c == '_'; };
+
+    for (std::size_t i = 0; i < in.size();) {
+      if (in[i] != '$') {
+        out.push_back(in[i]);
+        ++i;
+        continue;
+      }
+      // in[i] == '$'
+      if (i + 1 < in.size() && in[i + 1] == '{') {
+        const std::size_t close = in.find('}', i + 2);
+        if (close != std::string_view::npos) {
+          const std::string name(in.substr(i + 2, close - (i + 2)));
+          if (const char* val = std::getenv(name.c_str()); val != nullptr) {
+            out.append(val);
+          }
+          i = close + 1;
+          continue;
+        }
+        // No closing brace — emit '$' verbatim and continue.
+        out.push_back('$');
+        ++i;
+        continue;
+      }
+      if (i + 1 < in.size() && isNameStart(in[i + 1])) {
+        std::size_t j = i + 1;
+        while (j < in.size() && isNameChar(in[j])) {
+          ++j;
+        }
+        const std::string name(in.substr(i + 1, j - (i + 1)));
+        if (const char* val = std::getenv(name.c_str()); val != nullptr) {
+          out.append(val);
+        }
+        i = j;
+        continue;
+      }
+      // Lone '$' — leave verbatim.
+      out.push_back('$');
+      ++i;
+    }
+    return out;
+  }
+
 
   [[nodiscard]] inline bool
   containsPath(const std::vector<std::filesystem::path>& paths, const std::filesystem::path& path) {

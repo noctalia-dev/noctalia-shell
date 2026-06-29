@@ -517,8 +517,7 @@
   },
   "time": {
     "duration": {
-      "less-than-minute": "<1x",
-      "minutes": "{minutes}x"
+      "less-than-minute": "<1x"
     },
     "file": {
       "unknown": "Nenas"

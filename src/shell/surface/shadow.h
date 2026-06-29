@@ -1,6 +1,6 @@
 #pragma once
 
-#include "config/config_service.h"
+#include "config/config_types.h"
 #include "render/core/render_styles.h"
 
 #include <cstdint>
@@ -19,7 +19,7 @@ namespace shell::surface_shadow {
   struct Shape {
     CornerShapes corners{};
     RectInsets logicalInset{};
-    Radii radius{};
+    Radii radius;
   };
 
   [[nodiscard]] bool enabled(bool componentShadow, const ShellConfig::ShadowConfig& shadow) noexcept;

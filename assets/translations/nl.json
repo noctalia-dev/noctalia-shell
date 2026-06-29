@@ -7,7 +7,9 @@
       "not-centered": "Centreer je vinger op de sensor en probeer opniew",
       "present": "Vingerafdruk aan het lezen...",
       "ready": "Plaats je vinger op de sensor",
+      "remove-and-retry": "Haal je vinger weg en probeer opnieuw",
       "retry": "Scan uw vingerafdruk nogmaals",
+      "swipe-too-short": "De veegbeweging was te kort, probeer opnieuw",
       "too-many-attempts": "Vingerafdruk uitgeschakeld (te veel pogingen)"
     },
     "pam": {
@@ -34,6 +36,12 @@
       "active-window": {
         "no-active-window": "Geen actief venster"
       },
+      "bluetooth": {
+        "connected": "Verbonden"
+      },
+      "brightness": {
+        "brightness": "Helderheid"
+      },
       "lock-keys": {
         "caps": "Caps",
         "caps-short": "C",
@@ -47,11 +55,54 @@
         "playing": "Afspelen"
       },
       "network": {
-        "wired": "Bedraad"
+        "active": "Actief",
+        "connected": "Verbonden",
+        "connecting": "Verbinden",
+        "download": "Download",
+        "interface": "Interface",
+        "ip": "IP",
+        "network": "Netwerk",
+        "networks": "Netwerken",
+        "networks-count": "{count} netwerk",
+        "networks-count-plural": "{count} netwerken",
+        "no": "Nee",
+        "not-connected": "Niet verbonden",
+        "off": "Uit",
+        "on": "Aan",
+        "scanning": "Scannen",
+        "signal": "Signaal",
+        "upload": "Upload",
+        "vpn": "VPN",
+        "wifi": "WiFi",
+        "wired": "Bedraad",
+        "yes": "Ja"
+      },
+      "privacy": {
+        "camera": "Camera",
+        "microphone": "Microfoon",
+        "screen-sharing": "Scherm Delen"
       },
       "scripted": {
         "reload-failed": "Script herladen mislukt",
         "reloaded": "Script herladen"
+      },
+      "sysmon": {
+        "cpu": "CPU",
+        "cpu-temp": "CPU Temp",
+        "disk": "Schijf",
+        "download": "Download",
+        "gpu-temp": "GPU Temp",
+        "gpu-usage": "GPU Gebruik",
+        "gpu-vram": "GPU VRAM",
+        "ram": "RAM",
+        "swap": "Swap",
+        "system": "Systeem",
+        "upload": "Upload"
+      },
+      "volume": {
+        "device": "Apparaat",
+        "mic": "Mic",
+        "volume": "Volume"
       },
       "weather": {
         "default": "Weer",
@@ -111,7 +162,9 @@
   "control-center": {
     "audio": {
       "application-volumes": "Applicatievolumes",
-      "input-volume": "Invoervolume",
+      "choose-effects-profile": "Kies een profiel",
+      "effects-profile": "Effecten",
+      "input-device-prefix": "Invoer:",
       "no-application-audio": "Geen applicatiegeluid",
       "no-application-audio-body": "Er zijn momenteel geen applicatie-afspeelbronnen beschikbaar.",
       "no-input-devices": "Geen invoerapparaten",
@@ -120,7 +173,7 @@
       "no-output-devices": "Geen uitvoerapparaten",
       "no-output-devices-body": "Er zijn momenteel geen afspeelapparaten beschikbaar.",
       "no-output-selected": "Geen uitvoerapparaat geselecteerd",
-      "output-volume": "Uitvoervolume",
+      "output-device-prefix": "Uitvoer:",
       "unavailable-body": "Pipewire is niet actief.",
       "unavailable-title": "Geluid niet beschikbaar"
     },
@@ -164,6 +217,7 @@
       "unknown-resolution": "Onbekende resolutie"
     },
     "home": {
+      "avatar-error-title": "Avatar niet bijgewerkt",
       "media": {
         "idle": "Inactief",
         "no-active-player": "Geen actieve speler",
@@ -179,7 +233,6 @@
       "unknown": "onbekend",
       "uptime": "Uptime - {uptime}",
       "weather": {
-        "configure-location": "Voeg [weather].address toe of zet auto_locate aan.",
         "data-unavailable": "Weergegevens niet beschikbaar.",
         "disabled": "Weer is uitgeschakeld in de configuratie.",
         "fetching": "Weersvoorspelling ophalen..."
@@ -209,6 +262,8 @@
       "wired-connection": "Bekabelde verbinding"
     },
     "notifications": {
+      "dnd-off": "Schakel Niet Storen Uit",
+      "dnd-on": "Schakel Niet Storen Aan",
       "empty-body": "Recente meldingen worden hier getoond.",
       "empty-title": "Geen meldingen",
       "filter": {
@@ -220,6 +275,17 @@
       "filter-empty-body": "Geen meldingen komen overeen met dit filter.",
       "filter-empty-title": "Niets hier",
       "untitled": "Naamloze melding"
+    },
+    "power": {
+      "battery": "Batterij",
+      "design-capacity": "Van de ontwerpcapaciteit",
+      "health": "Batterijconditie",
+      "performance-inhibited": "Prestaties niet beschikbaar",
+      "peripherals": "Aangesloten apparaten",
+      "power-profile": "Energieprofiel",
+      "time-to-empty": "{time} over",
+      "time-to-full": "{time} tot opgeladen",
+      "unknown-device": "Onbekend apparaat"
     },
     "screen-time": {
       "disabled": "Schermtijdregistratie staat uit. Schakel dit in bij Instellingen om het gebruik per app vast te leggen.",
@@ -255,7 +321,7 @@
         "scheduled-day": "Gepland",
         "scheduled-night": "Actief"
       },
-      "notification": "DND",
+      "notification": "Niet Storen",
       "power-profile": "Energie",
       "screen-time": "Schermtijd",
       "session": "Sessie",
@@ -293,12 +359,12 @@
       "media": "Media",
       "network": "Netwerk",
       "notifications": "Meldingen",
+      "power": "Energie",
       "screen-time": "Schermtijd",
       "system": "Systeem",
       "weather": "Weer"
     },
     "weather": {
-      "configure-location": "Voeg [weather].address toe of zet auto_locate aan.",
       "data-unavailable": "Weergegevens niet beschikbaar",
       "details": {
         "elevation": "Hoogte",
@@ -325,7 +391,10 @@
     "editor": {
       "actions": {
         "add": "Toevoegen",
+        "clone": "Dupliceren (Ctrl+C, Ctrl+V om te kopiëren/plakken)",
         "done": "Gereed",
+        "flip-horizontal": "Horizontaal spiegelen",
+        "flip-vertical": "Verticaal spiegelen",
         "hide": "Verberg",
         "settings": "Instellingen",
         "show": "Toon",
@@ -347,6 +416,7 @@
         "bands": "Banden",
         "bar-width": "Balkbreedte",
         "bloom-intensity": "Bloom",
+        "center-text": "Tekst Centreren",
         "centered": "Gecentreerd",
         "change-image": "Wijzigen…",
         "circle": "Cirkel",
@@ -357,18 +427,23 @@
         "color-1": "Kleur Een",
         "color-2": "Kleur Twee",
         "color2": "Kleur 2",
+        "command": "Commando",
         "custom-color": "Aangepast…",
         "description": "Beschrijving",
+        "display-graph": "Grafiek",
         "fade-when-idle": "Vervagen bij inactiviteit",
         "font-family": "Lettertype",
         "font-family-default": "Systeemstandaard",
         "format": "Indeling",
+        "glyph": "Glyph",
         "hide-when-no-media": "Verbergen wanneer er geen media is",
         "horizontal": "Horizontaal",
         "image-path": "Afbeelding",
         "inner-diameter": "Binnendiameter",
         "input-opacity": "Transparantie van invoer",
         "input-radius": "Radius van invoer",
+        "interface": "Interface",
+        "label": "Label",
         "layout": "Indeling",
         "mirrored": "Gespiegeld",
         "opacity": "Transparantie",
@@ -395,6 +470,8 @@
         "stat-swap-pct": "Swap %",
         "stat2": "Statistiek 2",
         "title": "Titel",
+        "variant": "Stijl",
+        "variant-default": "Standaard",
         "vertical": "Verticaal",
         "visualization-mode": "Modus",
         "visualization-mode-all": "Alle",
@@ -413,6 +490,7 @@
       "title": "Bureaubladwidgets",
       "types": {
         "audio-visualizer": "Audiovisualisatie",
+        "button": "Knop",
         "clock": "Klok",
         "fancy-audio-visualizer": "Geavanceerde audiovisualisatie",
         "label": "Label",
@@ -562,6 +640,7 @@
       "keybind-invalid-printable": "Drukbare toetsen (letters, cijfers, symbolen) vereisen een modificatietoets zoals Ctrl of Alt.",
       "keybind-invalid-super": "De Super-/Windows-toets kan niet worden gebruikt in shell-sneltoetsen.",
       "keybind-invalid-title": "Sneltoets niet toegestaan",
+      "launcher-usage-reset": "Launcher",
       "lockscreen-widgets-editor": "Widget-editor voor vergrendelscherm",
       "lockscreen-widgets-editor-blocked-locked": "Ontgrendel de sessie voordat je de widgets van het vergrendelscherm bewerkt.",
       "lockscreen-widgets-editor-enabled": "Widget-editor voor vergrendelscherm staat aan. Rangschik de widgets op de voorvertoning-overlay en vergrendel vervolgens de sessie om de indeling te controleren.",
@@ -581,8 +660,8 @@
       "on": "Caffeïne aan"
     },
     "dnd": {
-      "off": "Niet storen uit",
-      "on": "Niet storen aan"
+      "off": "Niet Storen Uit",
+      "on": "Niet Storen Aan"
     },
     "lock-keys": {
       "caps-off": "Caps Lock uit",
@@ -608,11 +687,14 @@
         "plugged-in": "Ingestoken"
       },
       "tooltip": {
+        "device": "Batterij",
+        "device-numbered": "Batterij {index}",
         "health": "Gezondheid",
         "rate": "Vermogen",
         "status": "Status",
         "time-left": "Tijd resterend",
-        "time-to-full": "Tijd tot vol"
+        "time-to-full": "Tijd tot vol",
+        "unknown-device": "Onbekend Apparaat"
       }
     },
     "profiles": {
@@ -644,6 +726,7 @@
       "advanced": "Geavanceerd",
       "inherited": "Overgenomen",
       "monitor": "Monitor",
+      "official": "Officieel",
       "override": "Overschrijven"
     },
     "calendar-accounts": {
@@ -946,6 +1029,17 @@
         "wallpaper": "Achtergrond"
       }
     },
+    "notifications": {
+      "filter": {
+        "flag": {
+          "history": "geschiedenis",
+          "sound": "geluid"
+        },
+        "play-sound": "Speel geluid",
+        "summary": "{match} · {flags}",
+        "summary-blocked": "{match} · geblokeerd"
+      }
+    },
     "options": {
       "clipboard": {
         "auto-paste": {
@@ -1013,7 +1107,6 @@
       "shell": {
         "panel-placement": {
           "attached": "Vastgemaakt",
-          "centered": "Gecentreerd",
           "floating": "Zwevend"
         },
         "panel-transparency": {
@@ -1634,6 +1727,9 @@
           "description": "Schakel de ingebouwde meldingsdaemon in",
           "label": "Meldingsdaemon"
         },
+        "filters": {
+          "label": "Notificatie Filters"
+        },
         "layer": {
           "description": "Gebruik Overlay om meldings-toasts boven schermvullende apps te tonen.",
           "label": "Wayland-laag"
@@ -1696,6 +1792,9 @@
           "description": "Gebruik kleinere iconen en compactere resultaatrijen",
           "label": "Compacte rijen"
         },
+        "launcher-reset-usage": {
+          "button": "Resetten"
+        },
         "launcher-session-search": {
           "description": "Neem sessieacties (vergrendelen, in de wacht zetten, opnieuw opstarten, afsluiten, uitloggen) op in algemene zoekopdrachten in het startmenu, en niet alleen achter het voorvoegsel /session",
           "label": "Sessiezoekfunctie inschakelen"
@@ -1703,6 +1802,9 @@
         "launcher-show-icons": {
           "description": "Toon app iconen in de resultaten van Launcher",
           "label": "App-iconen tonen"
+        },
+        "launcher-sort-by-usage": {
+          "label": "Sorteer op Gebruik"
         },
         "open-near-click-clipboard": {
           "description": "Positioneer het klembordpaneel dicht bij de klik op de balk in plaats van het langs de balk te centreren",
@@ -2027,7 +2129,7 @@
         },
         "osd-kinds-dnd": {
           "description": "Toon een OSD-pop-up wanneer Niet storen wordt in-/uitgeschakeld",
-          "label": "Niet storen"
+          "label": "Niet Storen"
         },
         "osd-kinds-keyboard-layout": {
           "description": "Toon een OSD-pop-up wanneer de toetsenbordindeling verandert",
@@ -2036,6 +2138,9 @@
         "osd-kinds-lock-keys": {
           "description": "Toon OSD-pop-ups bij wijzigingen van Caps Lock, Num Lock en Scroll Lock",
           "label": "Vergrendeltoetsen"
+        },
+        "osd-kinds-media": {
+          "label": "Speelt nu af"
         },
         "osd-kinds-power-profile": {
           "description": "Toon een OSD-pop-up wanneer het energieprofiel verandert",
@@ -2092,6 +2197,10 @@
         "screen-time-enabled": {
           "description": "Registreer het gebruik per app en toon dit in het controlecentrum",
           "label": "Schermtijd"
+        },
+        "screen-time-reset": {
+          "button": "Resetten",
+          "label": "Reset Schermtijd Data"
         },
         "screenshot-copy-to-clipboard": {
           "description": "Plaats de gemaakte PNG-afbeelding op het klembord",
@@ -2322,6 +2431,9 @@
         "workspace-label-inside": "Binnen de pill"
       },
       "settings": {
+        "active-color": {
+          "label": "Actieve Kleur"
+        },
         "active-opacity": {
           "description": "Transparantie van het icoon voor het actieve (gefocuste) venster.",
           "label": "Actieve icoontransparantie"
@@ -2526,6 +2638,9 @@
         "inactive-opacity": {
           "description": "Transparantie van iconen voor inactieve (niet-gefocuste) vensters.",
           "label": "Inactieve icoontransparantie"
+        },
+        "interface": {
+          "label": "Interface"
         },
         "label": {
           "description": "Optionele statische tekst weergegeven op deze knop",
@@ -2743,6 +2858,7 @@
         "nightlight": "Nachtlicht",
         "notifications": "Meldingen",
         "power-profile": "Energieprofiel",
+        "privacy": "Privacy Indicator",
         "screenshot": "Schermafbeelding",
         "scripted": "Gescripteerd",
         "session": "Sessie",
@@ -2811,10 +2927,7 @@
   },
   "time": {
     "duration": {
-      "days-hours-minutes": "{days}d {hours}u {minutes}m",
-      "hours-minutes": "{hours}u {minutes}m",
-      "less-than-minute": "<1m",
-      "minutes": "{minutes}m"
+      "less-than-minute": "<1m"
     },
     "file": {
       "unknown": "Onbekend"

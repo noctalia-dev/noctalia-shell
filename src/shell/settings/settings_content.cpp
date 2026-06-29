@@ -1,47 +1,36 @@
 #include "shell/settings/settings_content.h"
 
+#include "config/config_service.h"
 #include "config/config_types.h"
 #include "i18n/i18n.h"
 #include "notification/notification_filter.h"
-#include "render/core/color.h"
 #include "shell/settings/bar_widget_editor.h"
-#include "shell/settings/color_spec_picker.h"
 #include "shell/settings/settings_content_common.h"
 #include "shell/settings/settings_control_factory.h"
 #include "ui/builders.h"
-#include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
-#include "ui/controls/glyph.h"
 #include "ui/controls/input.h"
 #include "ui/controls/keybind_recorder.h"
 #include "ui/controls/label.h"
 #include "ui/controls/list_editor.h"
 #include "ui/controls/segmented.h"
 #include "ui/controls/select.h"
-#include "ui/controls/separator.h"
-#include "ui/controls/slider.h"
 #include "ui/controls/toggle.h"
 #include "ui/dialogs/file_dialog.h"
 #include "ui/dialogs/glyph_picker_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
-#include "util/string_utils.h"
 
 #include <algorithm>
-#include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <filesystem>
-#include <format>
 #include <functional>
-#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <type_traits>
-#include <unordered_set>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -133,6 +122,7 @@ namespace settings {
         .makeStringMapBlock = [&factory](
                                   Flex& section, const SettingEntry& entry, const StringMapSetting& map
                               ) { factory.makeStringMapBlock(section, entry, map); },
+        .supportsTaskbarWorkspaceGrouping = ctx.supportsTaskbarWorkspaceGrouping,
     };
   }
 
@@ -501,8 +491,8 @@ namespace settings {
                       .bg = colorSpecFromRole(
                           active ? ColorRole::Primary : ColorRole::SurfaceVariant, active ? 1.0f : 0.45f
                       ),
-                      .border =
-                          colorSpecFromRole(active ? ColorRole::Primary : ColorRole::Outline, active ? 0.9f : 0.45f),
+                      .border = active ? colorSpecFromRole(ColorRole::Primary, 0.9f)
+                                       : colorSpecFromRole(ColorRole::Outline, Style::disabledOutlineAlpha),
                       .label = colorSpecFromRole(active ? ColorRole::OnPrimary : ColorRole::OnSurface),
                   },
               .hover =
@@ -520,7 +510,7 @@ namespace settings {
               .disabled =
                   Button::ButtonStateColors{
                       .bg = colorSpecFromRole(ColorRole::SurfaceVariant, 0.35f),
-                      .border = colorSpecFromRole(ColorRole::Outline, 0.35f),
+                      .border = colorSpecFromRole(ColorRole::Outline, Style::disabledOutlineAlpha),
                       .label = colorSpecFromRole(ColorRole::OnSurfaceVariant),
                   },
               .selected = std::nullopt,
@@ -662,9 +652,35 @@ namespace settings {
                                           const KeybindListSetting& keybinds) {
       const bool overridden = (ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(entry.path));
 
-      auto block = makeCollectionBlock(entry, overridden, true, true, true, true);
+      auto block = makeCollectionBlock(entry, false, true, true, true, true, true);
+      block->setClipChildren(true);
+      block->setMinWidth(0.0f);
+      block->setGap(Style::spaceXs * scale);
 
-      auto list = ui::column({.align = FlexAlign::Stretch, .gap = Style::spaceXs * scale});
+      auto list = ui::column({
+          .align = FlexAlign::Stretch,
+          .gap = Style::spaceXs * scale,
+          .fillWidth = true,
+          .clipChildren = true,
+      });
+
+      const auto configureGridRecorder = [](KeybindRecorder& recorder) {
+        recorder.setMinWidth(0.0f);
+        recorder.setFillWidth(true);
+        recorder.setClipChildren(true);
+      };
+
+      const auto keybindTabFocusKey = [&entry](std::string_view suffix) {
+        std::string key;
+        for (std::size_t i = 0; i < entry.path.size(); ++i) {
+          if (i > 0) {
+            key += '.';
+          }
+          key += entry.path[i];
+        }
+        key += suffix;
+        return key;
+      };
 
       // An empty list clears the override so defaults take effect again; never persist as "disabled".
       // If no GUI override exists, request a rebuild so the UI snaps back to the underlying default.
@@ -685,19 +701,26 @@ namespace settings {
       };
 
       for (std::size_t i = 0; i < keybinds.items.size(); ++i) {
-        auto row = ui::row({.align = FlexAlign::Center, .gap = Style::spaceXs * scale});
+        auto row = ui::row({
+            .align = FlexAlign::Center,
+            .gap = Style::spaceXs * scale,
+            .fillWidth = true,
+        });
 
         auto recorder = ui::keybindRecorder({
             .chord = keybinds.items[i],
             .scale = scale,
             .unsetPlaceholder = i18n::tr("settings.controls.keybind.unset-placeholder"),
             .recordingPlaceholder = i18n::tr("settings.controls.keybind.recording-placeholder"),
-            .onCommit = [commitItems, items = keybinds.items, i](KeyChord chord) mutable {
-              if (i < items.size()) {
-                items[i] = chord;
-                commitItems(std::move(items));
-              }
-            },
+            .flexGrow = 1.0f,
+            .onCommit =
+                [commitItems, items = keybinds.items, i](KeyChord chord) mutable {
+                  if (i < items.size()) {
+                    items[i] = chord;
+                    commitItems(std::move(items));
+                  }
+                },
+            .configure = configureGridRecorder,
         });
         row->addChild(std::move(recorder));
 
@@ -707,6 +730,8 @@ namespace settings {
             .variant = ButtonVariant::Ghost,
             .minWidth = Style::controlHeightSm * scale,
             .minHeight = Style::controlHeightSm * scale,
+            .maxWidth = Style::controlHeightSm * scale,
+            .maxHeight = Style::controlHeightSm * scale,
             .padding = Style::spaceXs * scale,
             .radius = Style::scaledRadiusSm(scale),
             .onClick = [commitItems, items = keybinds.items, i]() mutable {
@@ -725,25 +750,40 @@ namespace settings {
       const bool canAdd = (keybinds.maxItems == 0 || keybinds.items.size() < keybinds.maxItems);
       if (canAdd) {
         // Trailing recorder is UI-only; it only joins the persisted list once a chord is recorded.
-        auto addRow = ui::row({.align = FlexAlign::Center, .gap = Style::spaceXs * scale});
+        auto addRow = ui::row({
+            .align = FlexAlign::Center,
+            .gap = Style::spaceXs * scale,
+            .fillWidth = true,
+        });
 
         auto addRecorder = ui::keybindRecorder({
             .scale = scale,
             .unsetPlaceholder = i18n::tr("settings.controls.keybind.add"),
             .recordingPlaceholder = i18n::tr("settings.controls.keybind.recording-placeholder"),
-            .onCommit = [commitItems, items = keybinds.items](KeyChord chord) mutable {
-              items.push_back(chord);
-              commitItems(std::move(items));
-            },
+            .flexGrow = 1.0f,
+            .onCommit =
+                [commitItems, items = keybinds.items](KeyChord chord) mutable {
+                  items.push_back(chord);
+                  commitItems(std::move(items));
+                },
+            .configure =
+                [configureGridRecorder, focusKey = keybindTabFocusKey(".add")](KeybindRecorder& recorder) {
+                  configureGridRecorder(recorder);
+                  recorder.setTabFocusKey(focusKey);
+                },
         });
         addRow->addChild(std::move(addRecorder));
+        // Reserve the remove-button column so the add recorder lines up with the recorded ones.
+        addRow->addChild(ui::row({.width = Style::controlHeightSm * scale}));
 
         list->addChild(std::move(addRow));
       }
 
-      // Push the recorder to the bottom of the block so inputs line up across the stretched row.
-      block->addChild(ui::spacer());
       block->addChild(std::move(list));
+
+      if (overridden) {
+        block->addChild(factory.makeOverrideResetActions(entry.path));
+      }
 
       section.addChild(std::move(block));
     };
@@ -901,10 +941,14 @@ namespace settings {
         auto enabledToggle = ui::toggle({
             .checked = (*state)[idx].enabled,
             .scale = scale,
-            .onChange = [state, rowIndex = idx, commit](bool v) {
-              (*state)[rowIndex].enabled = v;
-              commit();
-            },
+            .onChange =
+                [state, rowIndex = idx, commit](bool v) {
+                  (*state)[rowIndex].enabled = v;
+                  commit();
+                },
+            .configure = [idx](
+                             Toggle& toggle
+                         ) { toggle.setTabFocusKey("settings.session-actions." + std::to_string(idx) + ".enabled"); },
         });
         row->addChild(std::move(enabledToggle));
 
@@ -924,8 +968,8 @@ namespace settings {
           .onClick = [state, commit]() {
             state->push_back(
                 SessionPanelActionConfig{
-                    "command", true, "notify-send 'Noctalia' 'Custom session entry'", std::nullopt, std::nullopt,
-                    SessionActionButtonVariant::Default, std::nullopt
+                    .action = "command",
+                    .command = "notify-send 'Noctalia' 'Custom session entry'",
                 }
             );
             commit();
@@ -1027,10 +1071,14 @@ namespace settings {
         auto enabledToggle = ui::toggle({
             .checked = (*state)[idx].enabled,
             .scale = scale,
-            .onChange = [state, rowIndex = idx, commit](bool v) {
-              (*state)[rowIndex].enabled = v;
-              commit();
-            },
+            .onChange =
+                [state, rowIndex = idx, commit](bool v) {
+                  (*state)[rowIndex].enabled = v;
+                  commit();
+                },
+            .configure = [idx](
+                             Toggle& toggle
+                         ) { toggle.setTabFocusKey("settings.idle.behavior." + std::to_string(idx) + ".enabled"); },
         });
         row->addChild(std::move(enabledToggle));
 
@@ -1107,10 +1155,15 @@ namespace settings {
         auto enabledToggle = ui::toggle({
             .checked = (*state)[idx].enabled,
             .scale = scale,
-            .onChange = [state, rowIndex = idx, commit](bool v) {
-              (*state)[rowIndex].enabled = v;
-              commit();
-            },
+            .onChange =
+                [state, rowIndex = idx, commit](bool v) {
+                  (*state)[rowIndex].enabled = v;
+                  commit();
+                },
+            .configure =
+                [idx](Toggle& toggle) {
+                  toggle.setTabFocusKey("settings.notifications.filter." + std::to_string(idx) + ".enabled");
+                },
         });
         row->addChild(std::move(enabledToggle));
 
@@ -1221,8 +1274,7 @@ namespace settings {
     std::string activeSectionKey;
     std::string activeGroupKey;
     Flex* activeSection = nullptr;
-    // Row-major grid state for keybind entries (see KeybindListSetting dispatch below).
-    constexpr std::size_t kKeybindsPerRow = 3;
+    constexpr std::size_t kKeybindsPerRow = 2;
     Flex* activeKeybindRow = nullptr;
     std::size_t activeKeybindRowCount = 0;
     std::size_t visibleEntries = 0;
@@ -1332,8 +1384,7 @@ namespace settings {
             addIdleLiveStatusPanel(*activeSection, ctx, scale);
           }
         }
-        const bool isKeybindEntry = std::holds_alternative<KeybindListSetting>(entry.control);
-        if (!isKeybindEntry) {
+        if (!std::holds_alternative<KeybindListSetting>(entry.control)) {
           activeKeybindRow = nullptr;
           activeKeybindRowCount = 0;
         }
@@ -1347,10 +1398,8 @@ namespace settings {
           makeShortcutListBlock(*activeSection, entry, *shortcuts);
         } else if (const auto* keybindList = std::get_if<KeybindListSetting>(&entry.control)) {
           if (activeKeybindRow == nullptr || activeKeybindRowCount >= kKeybindsPerRow) {
-            // Stretch so every block in the row shares the tallest block's height; each block then
-            // bottom-anchors its recorder, keeping inputs aligned regardless of description length.
             auto row = ui::row({
-                .align = FlexAlign::Stretch,
+                .align = FlexAlign::Start,
                 .gap = Style::spaceMd * scale,
                 .fillWidth = true,
             });
@@ -1378,6 +1427,13 @@ namespace settings {
       }
     }
 
+    if (activeKeybindRow != nullptr && activeKeybindRowCount > 0 && activeKeybindRowCount < kKeybindsPerRow) {
+      while (activeKeybindRowCount < kKeybindsPerRow) {
+        activeKeybindRow->addChild(ui::row({.fillWidth = true, .flexGrow = 1.0f}));
+        ++activeKeybindRowCount;
+      }
+    }
+
     // The Plugins section has no registry entries — it renders fully custom
     // content (addSettingsPlugins), so suppress the "no settings found" state.
     if (visibleEntries == 0 && ctx.selectedSection != "plugins") {
@@ -1388,7 +1444,7 @@ namespace settings {
            .padding = (Style::spaceLg * 2.0f) * scale,
            .fill = colorSpecFromRole(ColorRole::SurfaceVariant, 0.24f),
            .radius = Style::scaledRadiusMd(scale),
-           .border = colorSpecFromRole(ColorRole::Outline, 0.28f),
+           .border = colorSpecFromRole(ColorRole::Outline),
            .minWidth = 360.0f * scale,
            .minHeight = 160.0f * scale,
            .fillWidth = true,

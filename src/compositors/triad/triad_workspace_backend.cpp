@@ -276,6 +276,7 @@ std::vector<WorkspaceWindow> TriadWorkspaceBackend::workspaceWindows(const std::
             .title = window.title,
             .x = window.x,
             .y = window.y,
+            .outputName = {},
         }
     );
   }

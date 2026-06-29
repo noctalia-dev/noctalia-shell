@@ -95,9 +95,7 @@ namespace StringUtils {
 
   [[nodiscard]] inline std::string toLower(std::string_view s) {
     std::string out(s);
-    std::transform(out.begin(), out.end(), out.begin(), [](unsigned char c) {
-      return static_cast<char>(std::tolower(c));
-    });
+    std::ranges::transform(out, out.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     return out;
   }
 
@@ -133,8 +131,44 @@ namespace StringUtils {
     return encoded;
   }
 
+  [[nodiscard]] inline std::string urlDecode(std::string_view text) {
+    auto hexValue = [](unsigned char ch) -> int {
+      if (ch >= '0' && ch <= '9') {
+        return ch - '0';
+      }
+      if (ch >= 'A' && ch <= 'F') {
+        return ch - 'A' + 10;
+      }
+      if (ch >= 'a' && ch <= 'f') {
+        return ch - 'a' + 10;
+      }
+      return -1;
+    };
+
+    std::string decoded;
+    decoded.reserve(text.size());
+    for (std::size_t i = 0; i < text.size(); ++i) {
+      const char ch = text[i];
+      if (ch == '%' && i + 2 < text.size()) {
+        const int hi = hexValue(static_cast<unsigned char>(text[i + 1]));
+        const int lo = hexValue(static_cast<unsigned char>(text[i + 2]));
+        if (hi >= 0 && lo >= 0) {
+          decoded.push_back(static_cast<char>((hi << 4) | lo));
+          i += 2;
+          continue;
+        }
+      }
+      if (ch == '+') {
+        decoded.push_back(' ');
+        continue;
+      }
+      decoded.push_back(ch);
+    }
+    return decoded;
+  }
+
   inline void toLowerInPlace(std::string& s) {
-    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    std::ranges::transform(s, s.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
   }
 
   [[nodiscard]] inline bool containsInsensitive(std::string_view haystack, std::string_view needle) {
@@ -145,7 +179,7 @@ namespace StringUtils {
     std::string rhs(needle);
     toLowerInPlace(lhs);
     toLowerInPlace(rhs);
-    return lhs.find(rhs) != std::string::npos;
+    return lhs.contains(rhs);
   }
 
   [[nodiscard]] inline std::string trimLeadingBlankLines(std::string_view text) {
@@ -161,7 +195,7 @@ namespace StringUtils {
       }
       const std::string_view line = text.substr(start, lineEnd - start);
       const bool blankLine =
-          line.empty() || std::all_of(line.begin(), line.end(), [](unsigned char ch) { return std::isspace(ch) != 0; });
+          line.empty() || std::ranges::all_of(line, [](unsigned char ch) { return std::isspace(ch) != 0; });
       if (!blankLine) {
         break;
       }
@@ -292,19 +326,19 @@ namespace StringUtils {
 
       if (s[i] == '&') {
         std::string_view rest = s.substr(i);
-        if (rest.substr(0, 4) == "&lt;") {
+        if (rest.starts_with("&lt;")) {
           out += '<';
           i += 4;
-        } else if (rest.substr(0, 4) == "&gt;") {
+        } else if (rest.starts_with("&gt;")) {
           out += '>';
           i += 4;
-        } else if (rest.substr(0, 5) == "&amp;") {
+        } else if (rest.starts_with("&amp;")) {
           out += '&';
           i += 5;
-        } else if (rest.substr(0, 6) == "&quot;") {
+        } else if (rest.starts_with("&quot;")) {
           out += '"';
           i += 6;
-        } else if (rest.substr(0, 6) == "&apos;") {
+        } else if (rest.starts_with("&apos;")) {
           out += '\'';
           i += 6;
         } else {
@@ -386,8 +420,7 @@ namespace StringUtils {
   }
 
   [[nodiscard]] inline bool isBlank(std::string_view text) {
-    return text.empty()
-        || std::all_of(text.begin(), text.end(), [](unsigned char ch) { return std::isspace(ch) != 0; });
+    return text.empty() || std::ranges::all_of(text, [](unsigned char ch) { return std::isspace(ch) != 0; });
   }
 
   [[nodiscard]] inline std::string shellQuote(std::string_view text) {

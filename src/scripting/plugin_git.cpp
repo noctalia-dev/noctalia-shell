@@ -1,9 +1,11 @@
 #include "scripting/plugin_git.h"
 
+#include "core/log.h"
 #include "core/process.h"
 
 #include <chrono>
 #include <cstdlib>
+#include <string>
 #include <system_error>
 #include <utility>
 #include <vector>
@@ -12,6 +14,11 @@ namespace scripting::plugin_git {
 
   namespace {
     using namespace std::chrono_literals;
+
+    constexpr Logger kLog("plugins.git");
+    // Git ops slower than this are logged at info so plugin-export stalls surface without
+    // enabling debug; everything else is debug-only.
+    constexpr double kSlowGitMs = 1000.0;
 
     // Hard backstop that kills a wedged git subprocess (e.g. a connect/DNS hang behind a
     // proxy). Network ops also abort early via http.lowSpeed* below; local ops are quick.
@@ -41,6 +48,15 @@ namespace scripting::plugin_git {
     GitResult
     run(std::vector<std::string> args, std::chrono::milliseconds timeout, std::size_t cap,
         std::vector<process::EnvOverride> extraEnv = {}) {
+      // The caller's command, before the injected -c hardening flags, for timing logs.
+      std::string desc;
+      for (const auto& arg : args) {
+        if (!desc.empty()) {
+          desc += ' ';
+        }
+        desc += arg;
+      }
+
       if (!args.empty() && args.front() == "git") {
         // Abort an HTTP transfer stalled below ~1 KB/s for 20s (a half-up proxy / wedged
         // tunnel) instead of waiting out the hard timeout. Ignored by non-HTTP transports.
@@ -55,7 +71,16 @@ namespace scripting::plugin_git {
       options.maxOutputBytes = cap;
       options.env = nonInteractiveGitEnv();
       options.env.insert(options.env.end(), extraEnv.begin(), extraEnv.end());
+
+      const auto start = std::chrono::steady_clock::now();
       const auto r = process::runSync(args, std::move(options));
+      const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
+      if (ms >= kSlowGitMs) {
+        kLog.info("{} took {:.0f}ms (exit {})", desc, ms, r.exitCode);
+      } else {
+        kLog.debug("{} took {:.0f}ms (exit {})", desc, ms, r.exitCode);
+      }
+
       return GitResult{
           .ok = static_cast<bool>(r),
           .exitCode = r.exitCode,

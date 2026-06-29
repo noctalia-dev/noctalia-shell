@@ -3,7 +3,6 @@
 #include "config/config_types.h"
 #include "i18n/i18n.h"
 #include "pipewire/pipewire_service.h"
-#include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "system/easyeffects_service.h"
@@ -35,10 +34,10 @@ namespace {
 
 VolumeWidget::VolumeWidget(
     PipeWireService* audio, EasyEffectsService* easyEffects, const Config* config, wl_output* /*output*/,
-    bool showLabel, VolumeWidgetTarget target, int scrollStepPercent
+    bool showLabel, VolumeWidgetTarget target, int scrollStepPercent, ColorSpec muteColor
 )
     : m_audio(audio), m_easyEffects(easyEffects), m_config(config), m_showLabel(showLabel),
-      m_scrollStep(static_cast<float>(scrollStepPercent) / 100.0f), m_target(target) {}
+      m_scrollStep(static_cast<float>(scrollStepPercent) / 100.0f), m_target(target), m_muteColor(muteColor) {}
 
 void VolumeWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -161,10 +160,7 @@ void VolumeWidget::syncState(Renderer& renderer) {
 
   m_glyph->setGlyph(volumeGlyphName(volume, muted, m_target));
   m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
-  m_glyph->setColor(
-      muted ? colorSpecFromRole(ColorRole::OnSurfaceVariant)
-            : widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface))
-  );
+  m_glyph->setColor(muted ? m_muteColor : widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
 
   m_label->setVisible(m_showLabel);
@@ -172,10 +168,7 @@ void VolumeWidget::syncState(Renderer& renderer) {
     int pct = static_cast<int>(std::round(volume * 100.0f));
     m_label->setFontSize((m_isVertical ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
     m_label->setText(m_isVertical ? std::to_string(pct) : std::to_string(pct) + "%");
-    m_label->setColor(
-        muted ? colorSpecFromRole(ColorRole::OnSurfaceVariant)
-              : widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
-    );
+    m_label->setColor(muted ? m_muteColor : widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
     m_label->measure(renderer);
   }
 
@@ -184,9 +177,12 @@ void VolumeWidget::syncState(Renderer& renderer) {
     if (node != nullptr) {
       int pct = static_cast<int>(std::round(volume * 100.0f));
       std::vector<TooltipRow> rows;
-      rows.push_back({m_target == VolumeWidgetTarget::Input ? "Mic" : "Volume", std::to_string(pct) + "%"});
+      rows.push_back(
+          {i18n::tr(m_target == VolumeWidgetTarget::Input ? "bar.widgets.volume.mic" : "bar.widgets.volume.volume"),
+           std::to_string(pct) + "%"}
+      );
       if (!node->description.empty()) {
-        rows.push_back({"Device", node->description});
+        rows.push_back({i18n::tr("bar.widgets.volume.device"), node->description});
       }
       if (!effectsProfile.empty()) {
         rows.push_back({i18n::tr("control-center.audio.effects-profile"), effectsProfile});

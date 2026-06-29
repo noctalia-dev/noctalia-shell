@@ -211,6 +211,7 @@ std::vector<WorkspaceWindow> MangoWorkspaceBackend::workspaceWindows(wl_output* 
               .title = client.title,
               .x = client.x,
               .y = client.y,
+              .outputName = {},
           }
       );
     }

@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <print>
 #include <string>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -34,7 +35,7 @@ int IpcClient::send(const std::string& command) {
 
   const int fd = ::socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
   if (fd < 0) {
-    std::fprintf(stderr, "error: socket() failed: %s\n", std::strerror(errno));
+    std::println(stderr, "error: socket() failed: {}", std::strerror(errno));
     return 1;
   }
 
@@ -47,14 +48,14 @@ int IpcClient::send(const std::string& command) {
   sockaddr_un addr{};
   addr.sun_family = AF_UNIX;
   if (path.size() >= sizeof(addr.sun_path)) {
-    std::fprintf(stderr, "error: socket path too long\n");
+    std::println(stderr, "error: socket path too long");
     ::close(fd);
     return 1;
   }
   std::memcpy(addr.sun_path, path.c_str(), path.size() + 1);
 
   if (::connect(fd, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr)) < 0) {
-    std::fprintf(stderr, "error: noctalia is not running\n");
+    std::println(stderr, "error: noctalia is not running");
     ::close(fd);
     return 1;
   }
@@ -68,15 +69,20 @@ int IpcClient::send(const std::string& command) {
     line += kCallerCwdSeparator;
   }
   line += command;
-  line += '\n';
-  const auto written = ::write(fd, line.data(), line.size());
-  if (written < 0) {
-    std::fprintf(stderr, "error: write() failed: %s\n", std::strerror(errno));
-    ::close(fd);
-    return 1;
+
+  std::size_t sent = 0;
+  while (sent < line.size()) {
+    const auto written = ::write(fd, line.data() + sent, line.size() - sent);
+    if (written < 0) {
+      std::println(stderr, "error: write() failed: {}", std::strerror(errno));
+      ::close(fd);
+      return 1;
+    }
+    sent += static_cast<std::size_t>(written);
   }
-  if (static_cast<std::size_t>(written) != line.size()) {
-    std::fprintf(stderr, "error: short write to IPC socket\n");
+
+  if (::shutdown(fd, SHUT_WR) < 0) {
+    std::println(stderr, "error: shutdown() failed: {}", std::strerror(errno));
     ::close(fd);
     return 1;
   }

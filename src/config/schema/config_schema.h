@@ -1,6 +1,5 @@
 #pragma once
 
-#include "config/config_types.h"
 #include "config/schema/field.h"
 
 // Per-section field schemas: the single source of truth for reading, writing,
@@ -24,6 +23,7 @@ namespace noctalia::config::schema {
   const Schema<BatteryConfig>& batterySchema();
   const Schema<ControlCenterConfig>& controlCenterSchema();
   const Schema<PluginsConfig>& pluginsSchema();
+  const Schema<HotCornersConfig>& hotCornersSchema();
   const Schema<CalendarConfig>& calendarSchema();
   const Schema<KeybindsConfig>& keybindsSchema();
   const Schema<HooksConfig>& hooksSchema();

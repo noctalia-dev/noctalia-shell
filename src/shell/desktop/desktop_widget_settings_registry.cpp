@@ -17,6 +17,7 @@ namespace desktop_settings {
     using settings::WidgetSettingSelectOption;
     using settings::WidgetSettingSpec;
     using settings::WidgetSettingVisibility;
+    using settings::WidgetSettingVisibilityCondition;
 
     const std::vector<DesktopWidgetTypeSpec> kDesktopWidgetTypeSpecs = {
         {.type = "audio_visualizer", .labelKey = "desktop-widgets.editor.types.audio-visualizer"},
@@ -166,7 +167,7 @@ namespace desktop_settings {
   std::vector<WidgetSettingSpec> commonDesktopWidgetSettingSpecs(std::string_view type) {
     if (type == "login_box") {
       auto bgColor = colorSpec("background_color", "surface_variant");
-      auto bgRadius = doubleSpec("background_radius", 12.0, 0.0, 32.0, 1.0);
+      auto bgRadius = intSpec("background_radius", 12.0, 0.0, 32.0, 1.0);
       auto bgOpacity = doubleSpec("background_opacity", 0.88, 0.0, 1.0, 0.01);
       return {
           std::move(bgColor),
@@ -185,10 +186,10 @@ namespace desktop_settings {
     auto bgColor = colorSpec("background_color", "surface");
     bgColor.visibleWhen = backgroundOn;
 
-    auto bgRadius = doubleSpec("background_radius", 12.0, 0.0, 32.0, 1.0);
+    auto bgRadius = intSpec("background_radius", 12.0, 0.0, 32.0, 1.0);
     bgRadius.visibleWhen = backgroundOn;
 
-    auto bgPadding = doubleSpec("background_padding", 10.0, 0.0, 32.0, 1.0);
+    auto bgPadding = intSpec("background_padding", 10.0, 0.0, 32.0, 1.0);
     bgPadding.visibleWhen = backgroundOn;
 
     auto bgOpacity = doubleSpec("background_opacity", 0.8, 0.0, 1.0, 0.01);
@@ -246,13 +247,15 @@ namespace desktop_settings {
       add(std::move(centerText));
       add(colorSpec("color", "on_surface"));
       add(fontFamilySpec());
-      add(boolSpec("shadow", true));
+      // Shadow is a text shadow on the digital label; analog mode has no shadow.
+      auto shadow = boolSpec("shadow", true);
+      shadow.visibleWhen = digitalOnly;
+      add(std::move(shadow));
       auto circle = boolSpec("circle", true);
       circle.visibleWhen = analogOnly;
       add(std::move(circle));
     } else if (type == "audio_visualizer") {
-      add(doubleSpec("aspect_ratio", 2.5, 0.5, 6.0, 0.1));
-      add(doubleSpec("bands", 32.0, 4.0, 128.0, 4.0));
+      add(intSpec("bands", 32, 4.0, 128.0, 4.0));
       add(boolSpec("mirrored", true));
       add(boolSpec("centered", true));
       add(boolSpec("show_when_idle", true));
@@ -313,6 +316,7 @@ namespace desktop_settings {
       add(stringSpec("title", "Title"));
       add(stringSpec("description"));
       add(colorSpec("color", "on_surface"));
+      add(doubleSpec("opacity", 1.0, 0.0, 1.0, 0.01));
       add(fontFamilySpec());
       add(boolSpec("shadow", true));
     } else if (type == "button") {
@@ -333,23 +337,65 @@ namespace desktop_settings {
       add(colorSpec("hover_background", "hover"));
       add(fontFamilySpec());
     } else if (type == "sysmon") {
+      const std::vector<WidgetSettingSelectOption> sysmonDisplay = {
+          {"graph", "desktop-widgets.editor.settings.display-graph"},
+          {"gauge", "desktop-widgets.editor.settings.display-gauge"},
+      };
+      const WidgetSettingVisibility graphOnly{"display", {"graph"}};
+      const WidgetSettingVisibility gaugeOnly{"display", {"gauge"}};
+
       add(selectSpec("stat", "cpu_usage", sysmonStats));
-      add(selectSpec("stat2", "", sysmonStatsWithNone));
+      {
+        auto stat2 = selectSpec("stat2", "", sysmonStatsWithNone);
+        stat2.visibleWhen = graphOnly;
+        add(std::move(stat2));
+      }
       {
         auto interface = stringSpec("interface");
         interface.visibleWhen =
             WidgetSettingVisibility{{{"stat", {"net_rx", "net_tx"}}, {"stat2", {"net_rx", "net_tx"}}}};
         add(std::move(interface));
       }
+      add(segmentedSpec("display", "graph", sysmonDisplay));
+      {
+        auto gaugeLayout = segmentedSpec(
+            "gauge_layout", "horizontal",
+            {
+                {"horizontal", "desktop-widgets.editor.settings.horizontal"},
+                {"vertical", "desktop-widgets.editor.settings.vertical"},
+            }
+        );
+        gaugeLayout.visibleWhen = gaugeOnly;
+        add(std::move(gaugeLayout));
+      }
       add(colorSpec("color", "primary"));
-      add(colorSpec("color2", "secondary"));
+      {
+        auto color2 = colorSpec("color2", "secondary");
+        color2.visibleWhen = graphOnly;
+        add(std::move(color2));
+      }
+      {
+        auto highlight = colorSpec("highlight_color", "error");
+        highlight.visibleWhen = gaugeOnly;
+        add(std::move(highlight));
+      }
       add(fontFamilySpec());
       add(boolSpec("show_label", true));
+      {
+        auto minW = intSpec("label_min_width", 0, 0.0, 200.0, 1.0);
+        WidgetSettingVisibility showLabelGauge;
+        showLabelGauge.all = {
+            WidgetSettingVisibilityCondition{"display", {"gauge"}},
+            WidgetSettingVisibilityCondition{"show_label", {"true"}},
+        };
+        minW.visibleWhen = showLabelGauge;
+        add(std::move(minW));
+      }
       add(boolSpec("shadow", true));
     } else if (type == "login_box") {
       add(boolSpec("show_login_button", true));
       add(doubleSpec("input_opacity", 1.0, 0.0, 1.0, 0.01));
-      add(doubleSpec("input_radius", 6.0, 0.0, 32.0, 1.0));
+      add(intSpec("input_radius", 6.0, 0.0, 32.0, 1.0));
     }
 
     return specs;

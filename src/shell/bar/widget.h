@@ -1,9 +1,10 @@
 #pragma once
 
-#include "config/config_service.h"
+#include "config/config_types.h"
 #include "core/ui_phase.h"
 #include "render/core/renderer.h"
 #include "render/scene/node.h"
+#include "ui/palette.h"
 
 #include <functional>
 #include <memory>
@@ -14,7 +15,6 @@
 
 class AnimationManager;
 class Box;
-class Renderer;
 struct PointerEvent;
 
 class Widget {
@@ -47,6 +47,8 @@ public:
   [[nodiscard]] virtual bool reservesMiddleClick() const noexcept { return false; }
 
   [[nodiscard]] virtual bool noGapAroundMe() const noexcept { return false; }
+  // Layout-only bar widgets (spacers): clicks pass through to bar dead-zone handlers.
+  [[nodiscard]] virtual bool isBarClickThrough() const noexcept { return false; }
 
   [[nodiscard]] Node* root() const noexcept { return m_root ? m_root.get() : m_rootPtr; }
   [[nodiscard]] float width() const noexcept;

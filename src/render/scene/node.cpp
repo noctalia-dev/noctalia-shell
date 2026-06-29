@@ -301,6 +301,8 @@ void Node::setZIndex(std::int32_t zIndex) {
   markPaintDirty();
 }
 
+void Node::setExcludeSubtreeFromTabOrder(bool exclude) noexcept { m_excludeSubtreeFromTabOrder = exclude; }
+
 void Node::setAnimationManager(AnimationManager* mgr) {
   m_animationManager = mgr;
   for (auto& child : m_children) {

@@ -1,6 +1,7 @@
 #include "shell/lockscreen/lockscreen_login_box.h"
 
 #include "shell/desktop/desktop_widget_layout.h"
+#include "shell/desktop/desktop_widget_settings_registry.h"
 #include "ui/style.h"
 
 #include <algorithm>
@@ -256,7 +257,7 @@ namespace lockscreen_login_box {
     }
 
     for (const auto& output : wayland.outputs()) {
-      if (!output.done || output.output == nullptr) {
+      if (!output.done || output.output == nullptr || !output.hasUsableGeometry()) {
         continue;
       }
       const std::string outputKey = desktop_widgets::outputKey(output);

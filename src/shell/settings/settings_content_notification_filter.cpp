@@ -7,10 +7,8 @@
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/input.h"
-#include "ui/controls/toggle.h"
 #include "ui/palette.h"
 #include "ui/style.h"
-#include "util/string_utils.h"
 
 #include <algorithm>
 #include <functional>
@@ -155,6 +153,13 @@ namespace settings {
         *flagsBlock, scale, i18n::tr("settings.notifications.filter.play-sound"), row.playSound,
         [&row, persist](bool value) {
           row.playSound = value;
+          persist();
+        }
+    );
+    addToggleRow(
+        *flagsBlock, scale, i18n::tr("settings.notifications.filter.allow-permanent"), row.allowPermanent,
+        [&row, persist](bool value) {
+          row.allowPermanent = value;
           persist();
         }
     );

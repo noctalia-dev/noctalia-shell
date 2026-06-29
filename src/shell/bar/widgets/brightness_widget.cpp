@@ -1,6 +1,6 @@
 #include "shell/bar/widgets/brightness_widget.h"
 
-#include "render/core/renderer.h"
+#include "i18n/i18n.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "system/brightness_service.h"
@@ -153,9 +153,9 @@ void BrightnessWidget::syncState(Renderer& renderer) {
   if (rootNode != nullptr) {
     int pct = static_cast<int>(std::round(brightness * 100.0f));
     std::vector<TooltipRow> rows;
-    rows.push_back({"Brightness", std::to_string(pct) + "%"});
+    rows.push_back({i18n::tr("bar.widgets.brightness.brightness"), std::to_string(pct) + "%"});
     if (!display->label.empty()) {
-      rows.push_back({"Display", display->label});
+      rows.push_back({i18n::tr("bar.widgets.brightness.display"), display->label});
     }
     static_cast<InputArea*>(rootNode)->setTooltip(std::move(rows));
   }

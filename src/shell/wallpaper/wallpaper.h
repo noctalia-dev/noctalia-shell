@@ -2,13 +2,13 @@
 
 #include "core/timer_manager.h"
 #include "config/config_types.h"
-#include "shell/wallpaper/wallpaper_instance.h"
 #include "ui/signal.h"
 
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 class ConfigService;
@@ -18,9 +18,17 @@ class RenderContext;
 class SharedTextureCache;
 class VisualizerService;
 class WaylandConnection;
+enum class WallpaperTransitionDirection;
+struct TextureHandle;
+struct WallpaperInstance;
 struct PointerEvent;
 struct WaylandOutput;
 struct wl_surface;
+
+struct WallpaperChange {
+  std::string path;
+  std::string connector;
+};
 
 class Wallpaper {
 public:
@@ -37,10 +45,18 @@ public:
 
 
   void onOutputChange();
-  void onStateChange();
+  // Mark an output as driven by an external wallpaper source (e.g. an mpvpaper plugin):
+  // its Background surface is torn down so the external surface shows through. Runtime-only
+  // (not persisted) — it clears on restart and is re-asserted by the owner.
+  void setOutputExternallyManaged(const std::string& connector, bool managed);
+  [[nodiscard]] std::vector<WallpaperChange> onStateChange();
   void onSecondTick();
   void onGpuResourcesInvalidated();
   void registerIpc(IpcService& ipc);
+  // Apply and persist a wallpaper image. nullopt connector targets all connected
+  // outputs plus the default. Returns false if the path does not exist or the
+  // connector is unknown. Shared by the wallpaper-set IPC handler and plugin scripts.
+  bool applyWallpaperImage(const std::optional<std::string>& connector, const std::string& path);
   void setAutomationGate(std::function<bool()> gate);
   [[nodiscard]] bool ownsSurface(wl_surface* surface) const noexcept;
   bool onPointerEvent(const PointerEvent& event);
@@ -54,6 +70,16 @@ public:
   [[nodiscard]] Signal<>& changed() noexcept { return m_changed; }
 
 private:
+  enum class TransitionRedirect {
+    Unrelated,
+    AlreadyTargeting,
+    Redirected,
+  };
+
+  [[nodiscard]] bool isConnectorKnown(std::string_view connector) const;
+  // Persist a resolved image path to a single connector, or to every connected
+  // output plus the default when no connector is given.
+  void applyResolvedWallpaper(const std::optional<std::string>& connector, const std::string& resolvedPath);
   void reload();
   void syncInstances();
   void applyStartupAutomation(std::int64_t secondStamp);
@@ -65,7 +91,13 @@ private:
   [[nodiscard]] TextureHandle acquireTexture(const std::string& path);
   void releaseTexture(TextureHandle& handle, const std::string& path);
   void loadWallpaper(WallpaperInstance& instance, const std::string& path);
+  TransitionRedirect redirectActiveTransition(WallpaperInstance& instance, const std::string& path);
   void startTransition(WallpaperInstance& instance);
+  void startTransitionAnimation(WallpaperInstance& instance, float fromTime, WallpaperTransitionDirection direction);
+  void finishTransition(WallpaperInstance& instance);
+  void promotePendingWallpaper(WallpaperInstance& instance);
+  void discardPendingWallpaper(WallpaperInstance& instance);
+  void runQueuedWallpaper(WallpaperInstance& instance);
   void updateRendererState(WallpaperInstance& instance);
   void releaseInstanceTextures(WallpaperInstance& inst);
 
@@ -93,4 +125,5 @@ private:
 
   Timer m_visualizerTimer;
   int m_visualizerTickFps = 0; // last fps we scheduled for
+  std::unordered_set<std::string> m_externallyManagedOutputs;
 };

@@ -1,27 +1,28 @@
 #pragma once
 
-#include "config/config_service.h"
-#include "shell/desktop/desktop_widget_factory.h"
+#include "config/config_types.h"
+#include "shell/desktop/desktop_widget_services.h"
 #include "ui/dialogs/layer_popup_host.h"
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 
-class BackgroundWidgetsEditor;
+class DesktopWidgetsEditor;
 class DesktopWidgetsHost;
-class HttpClient;
 class LockscreenWidgetsController;
 class IpcService;
-class MprisService;
-class PipeWireSpectrum;
 class RenderContext;
-class SystemMonitorService;
 class WaylandConnection;
-class WeatherService;
 struct KeyboardEvent;
 struct PointerEvent;
 
 using DesktopWidgetsSnapshot = DesktopWidgetsConfig;
+
+struct DesktopWidgetsControllerServices {
+  DesktopWidgetServices widgets;
+  LockscreenWidgetsController* lockscreenWidgets = nullptr;
+};
 
 class DesktopWidgetsController {
 public:
@@ -31,22 +32,19 @@ public:
   DesktopWidgetsController(const DesktopWidgetsController&) = delete;
   DesktopWidgetsController& operator=(const DesktopWidgetsController&) = delete;
 
-  void initialize(
-      WaylandConnection& wayland, ConfigService* config, PipeWireSpectrum* pipewireSpectrum,
-      const WeatherService* weather, RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient,
-      SystemMonitorService* sysmon, LockscreenWidgetsController* lockscreenWidgets,
-      DesktopWidgetScriptDeps scriptDeps = {}
-  );
+  void initialize(const DesktopWidgetsControllerServices& services);
 
   void registerIpc(IpcService& ipc);
   void onOutputChange();
   void onSecondTick();
+  void requestUpdate();
   void requestLayout();
   void requestRedraw();
 
   void enterEdit();
   void exitEdit();
   void toggleEdit();
+  void setOnEnterEditCallback(std::function<void()> callback);
 
   /// Hides on-screen desktop widgets while another overlay editor (e.g. lockscreen layout) is active.
   void suppressDisplay();
@@ -89,6 +87,7 @@ private:
   RuntimeVisibility m_runtimeVisibility = RuntimeVisibility::FollowConfig;
   // Last-seen saved desktop_widgets.enabled; an explicit transition clears the runtime override.
   bool m_lastEnabled = false;
+  std::function<void()> m_onEnterEdit;
   std::unique_ptr<DesktopWidgetsHost> m_host;
-  std::unique_ptr<BackgroundWidgetsEditor> m_editor;
+  std::unique_ptr<DesktopWidgetsEditor> m_editor;
 };

@@ -22,7 +22,7 @@ struct SystemStats {
     double txBytesPerSec{0.0};
   };
 
-  std::chrono::steady_clock::time_point sampledAt{};
+  std::chrono::steady_clock::time_point sampledAt;
   double cpuUsagePercent{0.0};
   double ramUsagePercent{0.0};
   std::uint64_t ramUsedMb{0};
@@ -30,6 +30,7 @@ struct SystemStats {
   std::uint64_t swapUsedMb{0};
   std::uint64_t swapTotalMb{0};
   std::optional<double> cpuTempC;
+  bool cpuTempAvailable{false};
   std::optional<double> gpuTempC;
   std::optional<double> gpuUsagePercent;
   std::optional<std::uint64_t> gpuVramUsedBytes;

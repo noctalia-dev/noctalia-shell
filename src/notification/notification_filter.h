@@ -19,6 +19,7 @@ struct ResolvedNotificationFilter {
   bool showToast = true;
   bool saveHistory = true;
   bool playSound = true;
+  bool allowPermanent = true;
   /// Empty = all urgencies allowed for this filter.
   std::unordered_set<Urgency> allowedUrgencies;
   bool matched = false;

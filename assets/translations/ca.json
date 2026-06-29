@@ -51,6 +51,11 @@
       "network": {
         "wired": "Amb cable"
       },
+      "privacy": {
+        "camera": "Càmera",
+        "microphone": "Micròfon",
+        "screen-sharing": "Compartir pantalla"
+      },
       "scripted": {
         "reload-failed": "Ha fallat la recàrrega de l'script",
         "reloaded": "Script recarregat"
@@ -114,8 +119,7 @@
     "audio": {
       "application-volumes": "Volum d'aplicacions",
       "choose-effects-profile": "Tria un perfil",
-      "effects-profile": "Efectes:",
-      "input-volume": "Volum d'entrada",
+      "effects-profile": "Efectes",
       "no-application-audio": "Sense àudio d'aplicacions",
       "no-application-audio-body": "No hi ha cap flux de reproducció d'aplicació disponible.",
       "no-input-devices": "No hi ha dispositius d'entrada",
@@ -124,7 +128,6 @@
       "no-output-devices": "No hi ha dispositius de sortida",
       "no-output-devices-body": "No hi ha cap dispositiu de sortida d'àudio disponible.",
       "no-output-selected": "No s'ha seleccionat cap dispositiu de sortida",
-      "output-volume": "Volum de sortida",
       "unavailable-body": "El PipeWire no està actiu.",
       "unavailable-title": "Àudio no disponible"
     },
@@ -184,7 +187,6 @@
       "unknown": "Desconegut",
       "uptime": "Temps actiu - {uptime}",
       "weather": {
-        "configure-location": "Afegeix [weather].address o activa auto_locate.",
         "data-unavailable": "Dades meteorològiques no disponibles.",
         "disabled": "El temps està desactivat a la configuració.",
         "fetching": "S'està obtenint la previsió..."
@@ -303,7 +305,6 @@
       "weather": "Temps"
     },
     "weather": {
-      "configure-location": "Configura [weather].address o activa auto_locate",
       "data-unavailable": "Dades meteorològiques no disponibles",
       "details": {
         "elevation": "Elevació",
@@ -355,6 +356,7 @@
         "bands": "Bandes",
         "bar-width": "Amplada de la barra",
         "bloom-intensity": "Bloom",
+        "center-text": "Centrar text",
         "centered": "Centrat",
         "change-image": "Canvia…",
         "circle": "Cercle",
@@ -365,6 +367,7 @@
         "color-1": "Color u",
         "color-2": "Color dos",
         "color2": "Color 2",
+        "command": "Ordre",
         "custom-color": "Personalitzat…",
         "description": "Descripció",
         "fade-when-idle": "Atenua quan està inactiu",
@@ -372,13 +375,17 @@
         "font-family-default": "Per defecte del sistema",
         "forecast-days": "Dies de previsió",
         "format": "Format",
+        "glyph": "Glif",
         "hide-when-no-media": "Amaga sense multimèdia",
         "horizontal": "Horitzontal",
+        "hover-background": "Fons en passar el ratolí",
+        "hover-foreground": "Primer pla en passar el ratolí",
         "image-path": "Imatge",
         "inner-diameter": "Diàmetre interior",
         "input-opacity": "Opacitat d'entrada",
         "input-radius": "Radi d'entrada",
         "interface": "Interfície",
+        "label": "Etiqueta",
         "layout": "Disposició",
         "mirrored": "Mirall",
         "opacity": "Opacitat",
@@ -406,6 +413,13 @@
         "stat-swap-pct": "Swap %",
         "stat2": "Estadística 2",
         "title": "Títol",
+        "variant": "Estil",
+        "variant-default": "Per defecte",
+        "variant-destructive": "Destructiu",
+        "variant-ghost": "Ghost",
+        "variant-outline": "Outline",
+        "variant-primary": "Primari",
+        "variant-secondary": "Secundari",
         "vertical": "Vertical",
         "visualization-mode": "Mode",
         "visualization-mode-all": "Tot",
@@ -424,6 +438,7 @@
       "title": "Widgets d'escriptori",
       "types": {
         "audio-visualizer": "Visualitzador d'àudio",
+        "button": "Botó",
         "clock": "Rellotge",
         "fancy-audio-visualizer": "Visualitzador d'àudio avançat",
         "label": "Etiqueta",
@@ -1060,7 +1075,6 @@
       "shell": {
         "panel-placement": {
           "attached": "Adjunt",
-          "centered": "Centrat",
           "floating": "Flotant"
         },
         "panel-transparency": {
@@ -1751,6 +1765,10 @@
           "description": "En obrir una pestanya específica (volum, multimèdia, etc.)",
           "label": "Barra lateral en obrir una pestanya"
         },
+        "floating-offset": {
+          "description": "Espai en píxels entre un panell flotant o desacoblat i la vora de la barra",
+          "label": "Marge flotant"
+        },
         "home-shortcuts": {
           "description": "Tria fins a sis botons de drecera per a la pestanya d'inici",
           "label": "Dreceres d'inici"
@@ -2411,6 +2429,10 @@
         "workspace-label-inside": "Dins de la pastilla"
       },
       "settings": {
+        "active-color": {
+          "description": "Color utilitzat per als indicadors de privadesa actius; també s'admeten colors hex fixos",
+          "label": "Color actiu"
+        },
         "active-opacity": {
           "description": "Opacitat de la icona de la finestra activa (enfocada).",
           "label": "Opacitat d'icona activa"
@@ -2430,6 +2452,10 @@
         "bands": {
           "description": "Nombre de bandes del visualitzador",
           "label": "Bandes"
+        },
+        "cam-filter-regex": {
+          "description": "Expressió regular per als noms de procés de càmera a ignorar",
+          "label": "Regex de filtre de càmera"
         },
         "capsule": {
           "description": "Dibuixa una càpsula darrere d'aquest widget",
@@ -2545,7 +2571,8 @@
         },
         "glyph": {
           "description": "Nom del glif de la icona",
-          "label": "Glif"
+          "label": "Glif",
+          "sysmon-description": "Glif d'icona personalitzat. Deixa buit per utilitzar la icona de l'estadística seleccionada."
         },
         "group-by-workspace": {
           "description": "Agrupa les icones de la barra de tasques en càpsules d'espai de treball quan hi ha dades del compositor",
@@ -2566,6 +2593,10 @@
         "hide-empty-workspaces": {
           "description": "En agrupar per espai de treball, omet les càpsules que no tenen finestres en execució a la llista de la barra de tasques.",
           "label": "Amaga espais de treball buits"
+        },
+        "hide-inactive": {
+          "description": "Amaga les icones de privadesa inactives i amaga el widget quan no hi ha res actiu",
+          "label": "Amaga inactiu"
         },
         "hide-when-empty": {
           "description": "Amaga les pastilles d'espai de treball quan no hi ha finestres obertes",
@@ -2616,6 +2647,14 @@
           "description": "Mida de la icona en píxels",
           "label": "Mida d'icona"
         },
+        "icon-spacing": {
+          "description": "Espaiat entre les icones d'indicador de privadesa en píxels",
+          "label": "Espaiat entre icones"
+        },
+        "inactive-color": {
+          "description": "Color utilitzat per als indicadors de privadesa inactius; també s'admeten colors hex fixos",
+          "label": "Color inactiu"
+        },
         "inactive-opacity": {
           "description": "Opacitat de les icones de les finestres inactives (no enfocades).",
           "label": "Opacitat d'icona inactiva"
@@ -2653,6 +2692,10 @@
         "max-length": {
           "description": "Longitud màxima del widget en píxels",
           "label": "Longitud màxima"
+        },
+        "mic-filter-regex": {
+          "description": "Expressió regular per als noms d'aplicació de micròfon a ignorar",
+          "label": "Regex de filtre de micròfon"
         },
         "middle-command": {
           "description": "Ordre de shell executada en fer clic del mig en aquest botó. Quan està configurat, el clic del mig obre aquesta ordre en lloc de la configuració del widget.",
@@ -2840,6 +2883,7 @@
         "nightlight": "Night Light",
         "notifications": "Notificacions",
         "power-profile": "Perfil d'energia",
+        "privacy": "Indicador de privacitat",
         "screenshot": "Captura de pantalla",
         "scripted": "Amb script",
         "session": "Sessió",
@@ -2908,10 +2952,7 @@
   },
   "time": {
     "duration": {
-      "days-hours-minutes": "{days}d {hours}h {minutes}m",
-      "hours-minutes": "{hours}h {minutes}m",
-      "less-than-minute": "<1m",
-      "minutes": "{minutes}m"
+      "less-than-minute": "<1m"
     },
     "file": {
       "unknown": "Desconegut"

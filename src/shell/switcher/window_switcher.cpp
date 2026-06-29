@@ -5,7 +5,6 @@
 #include "compositors/hyprland/hyprland_window_id.h"
 #include "config/config_service.h"
 #include "core/deferred_call.h"
-#include "core/key_chord.h"
 #include "core/key_modifiers.h"
 #include "core/key_symbols.h"
 #include "core/keybind_matcher.h"
@@ -156,21 +155,6 @@ namespace {
     return nullptr;
   }
 
-  [[nodiscard]] std::optional<std::string>
-  windowIdForToplevel(const CompositorPlatform& platform, const ToplevelInfo& info) {
-    if (info.handle != nullptr) {
-      if (const auto id = platform.compositorWindowIdForToplevel(info.handle); id.has_value() && !id->empty()) {
-        return id;
-      }
-    }
-    if (info.extHandle != nullptr) {
-      if (const auto id = platform.compositorWindowIdForExtToplevel(info.extHandle); id.has_value() && !id->empty()) {
-        return id;
-      }
-    }
-    return std::nullopt;
-  }
-
   [[nodiscard]] std::uintptr_t wlrHandleForToplevel(const ToplevelInfo& info) noexcept {
     if (info.handle != nullptr) {
       return reinterpret_cast<std::uintptr_t>(info.handle);
@@ -246,7 +230,7 @@ namespace {
     const std::string idLower = StringUtils::toLower(appId);
     for (const auto& info : platform.windowsForApp(idLower, idLower)) {
       if (!windowId.empty()) {
-        if (const auto mapped = windowIdForToplevel(platform, info); mapped.has_value()
+        if (const auto mapped = platform.compositorWindowIdForToplevelInfo(info); mapped.has_value()
             && (compositors::isHyprland() ? compositors::hyprland::windowIdsEqual(*mapped, windowId)
                                           : *mapped == windowId)) {
           return wlrHandleForToplevel(info);
@@ -264,7 +248,7 @@ namespace {
       const ToplevelInfo& info
   ) {
     WindowSwitcherEntry entry;
-    if (const auto windowId = windowIdForToplevel(platform, info); windowId.has_value()) {
+    if (const auto windowId = platform.compositorWindowIdForToplevelInfo(info); windowId.has_value()) {
       entry.windowId = *windowId;
     } else if (info.handle != nullptr) {
       entry.windowId = "toplevel:" + std::to_string(reinterpret_cast<std::uintptr_t>(info.handle));
@@ -316,7 +300,7 @@ namespace {
           continue;
         }
 
-        const auto mappedId = windowIdForToplevel(platform, info);
+        const auto mappedId = platform.compositorWindowIdForToplevelInfo(info);
         if (!mappedId.has_value() || mappedId->empty()) {
           continue;
         }
@@ -392,7 +376,8 @@ namespace {
       }
       WindowSwitcherCandidate candidate;
       candidate.entry = makeEntryFromToplevel(platform, iconResolver, iconSize, info.appId, info);
-      if (const auto mappedId = windowIdForToplevel(platform, info); mappedId.has_value() && !mappedId->empty()) {
+      if (const auto mappedId = platform.compositorWindowIdForToplevelInfo(info);
+          mappedId.has_value() && !mappedId->empty()) {
         candidate.entry.windowId = *mappedId;
       }
       candidate.toplevelOrder = info.order;
@@ -778,10 +763,16 @@ bool WindowSwitcher::matchesTrigger(const KeyboardEvent& event) const noexcept {
   if (!event.pressed || event.preedit) {
     return false;
   }
-  if (!KeySymbol::isTab(event.sym)) {
+  if (m_config == nullptr) {
     return false;
   }
-  return (event.modifiers & KeyMod::Alt) != 0 && (event.modifiers & KeyMod::Super) == 0;
+  if ((event.modifiers & KeyMod::Alt) == 0 || (event.modifiers & KeyMod::Super) != 0) {
+    return false;
+  }
+
+  const std::uint32_t normalizedModifiers = event.modifiers & ~(KeyMod::Alt | KeyMod::Super);
+  return m_config->matchesKeybind(KeybindAction::TabNext, event.sym, normalizedModifiers)
+      || m_config->matchesKeybind(KeybindAction::TabPrevious, event.sym, normalizedModifiers);
 }
 
 bool WindowSwitcher::isAltRelease(const KeyboardEvent& event) const noexcept {
@@ -827,8 +818,21 @@ bool WindowSwitcher::onKeyboardEvent(const KeyboardEvent& event) {
     return true;
   }
 
-  if (KeySymbol::isTab(event.sym)) {
-    cycleSelection((event.modifiers & KeyMod::Shift) != 0 ? -1 : 1);
+  const std::uint32_t normalizedModifiers = event.modifiers & ~(KeyMod::Alt | KeyMod::Super);
+  const bool tabPrevious = (m_config != nullptr)
+      ? m_config->matchesKeybind(KeybindAction::TabPrevious, event.sym, normalizedModifiers)
+      : KeybindMatcher::matches(KeybindAction::TabPrevious, event.sym, event.modifiers);
+  const bool tabNext = (m_config != nullptr)
+      ? m_config->matchesKeybind(KeybindAction::TabNext, event.sym, normalizedModifiers)
+      : KeybindMatcher::matches(KeybindAction::TabNext, event.sym, event.modifiers);
+
+  if (tabPrevious) {
+    cycleSelection(-1);
+    return true;
+  }
+
+  if (tabNext) {
+    cycleSelection(1);
     return true;
   }
 
@@ -919,7 +923,7 @@ void WindowSwitcher::ensureSurface() {
     return;
   }
   const auto* output = findOutput(*m_wayland, m_output);
-  if (output == nullptr || output->logicalWidth <= 0 || output->logicalHeight <= 0) {
+  if (output == nullptr || !output->hasUsableGeometry()) {
     return;
   }
 
@@ -941,8 +945,8 @@ void WindowSwitcher::ensureSurface() {
       .height = 0,
       .exclusiveZone = -1,
       .keyboard = LayerShellKeyboard::Exclusive,
-      .defaultWidth = static_cast<std::uint32_t>(output->logicalWidth),
-      .defaultHeight = static_cast<std::uint32_t>(output->logicalHeight),
+      .defaultWidth = static_cast<std::uint32_t>(output->effectiveLogicalWidth()),
+      .defaultHeight = static_cast<std::uint32_t>(output->effectiveLogicalHeight()),
   };
 
   inst->surface = std::make_unique<LayerSurface>(*m_wayland, std::move(config));
@@ -1033,8 +1037,8 @@ void WindowSwitcher::positionGrid(Instance& instance, float screenW, float scree
 void WindowSwitcher::buildScene(Instance& instance, std::uint32_t width, std::uint32_t height) {
   UiPhaseScope layoutPhase(UiPhase::Layout);
 
-  const float w = static_cast<float>(width);
-  const float h = static_cast<float>(height);
+  const auto w = static_cast<float>(width);
+  const auto h = static_cast<float>(height);
   const float scale = instance.uiLayoutScale;
 
   instance.sceneRoot = std::make_unique<Node>();

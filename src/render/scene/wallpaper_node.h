@@ -27,6 +27,7 @@ public:
   [[nodiscard]] WallpaperFillMode fillMode() const noexcept { return m_fillMode; }
   [[nodiscard]] const Color& fillColor() const noexcept { return m_fillColor; }
   [[nodiscard]] const TransitionParams& transitionParams() const noexcept { return m_params; }
+  [[nodiscard]] const WallpaperSpanParams& spanParams() const noexcept { return m_span; }
 
   // Optional EGLImage (as an opaque void* = EGLImageKHR) backing the live-paper
   // source. The visualizer renders into a texture in a *separate* GL context;
@@ -119,6 +120,14 @@ public:
     markPaintDirty();
   }
 
+  void setSpan(const WallpaperSpanParams& span) {
+    if (m_span == span) {
+      return;
+    }
+    m_span = span;
+    markPaintDirty();
+  }
+
 private:
   WallpaperSourceKind m_sourceKind1 = WallpaperSourceKind::Image;
   WallpaperSourceKind m_sourceKind2 = WallpaperSourceKind::Image;
@@ -136,4 +145,5 @@ private:
   Color m_fillColor = rgba(0.0f, 0.0f, 0.0f, 1.0f);
   TransitionParams m_params;
   void* m_liveImage = nullptr; // EGLImageKHR for the live-paper visualizer source
+  WallpaperSpanParams m_span;
 };

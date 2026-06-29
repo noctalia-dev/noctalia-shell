@@ -49,28 +49,21 @@ TextureHandle GlesTextureManager::decodeEncodedRaster(
     return {};
   }
 
-  std::string errorMessage;
-  if (auto decoded = decodeRasterImage(data, size, &errorMessage)) {
+  if (auto decoded = decodeRasterImage(data, size)) {
     return uploadRgba(decoded->pixels.data(), decoded->width, decoded->height, mipmap);
+  } else if (debugPath != nullptr) {
+    kLog.warn("failed to decode image: {} ({})", ImageSourceLog::describe(*debugPath), decoded.error());
   }
 
-  if (debugPath != nullptr) {
-    kLog.warn("failed to decode image: {} ({})", ImageSourceLog::describe(*debugPath), errorMessage);
-  }
   return {};
 }
 
 GlesTextureManager::~GlesTextureManager() { cleanup(); }
 
 TextureHandle GlesTextureManager::loadFromFile(const std::string& path, int targetSize, bool mipmap) {
-  std::string errorMessage;
-  auto loaded = loadImageFile(path, targetSize, &errorMessage);
-  if (!loaded.has_value()) {
-    if (!errorMessage.empty()) {
-      kLog.warn("failed to load image: {} ({})", ImageSourceLog::describe(path), errorMessage);
-    } else {
-      kLog.warn("failed to load image: {}", ImageSourceLog::describe(path));
-    }
+  auto loaded = loadImageFile(path, targetSize);
+  if (!loaded) {
+    kLog.warn("failed to load image: {} ({})", ImageSourceLog::describe(path), loaded.error());
     return {};
   }
 
@@ -112,8 +105,8 @@ TextureHandle GlesTextureManager::loadFromRaw(
   }
 
   const std::size_t channels = (format == PixmapFormat::RGB || format == PixmapFormat::BGR) ? 3U : 4U;
-  const std::size_t widthSize = static_cast<std::size_t>(width);
-  const std::size_t heightSize = static_cast<std::size_t>(height);
+  const auto widthSize = static_cast<std::size_t>(width);
+  const auto heightSize = static_cast<std::size_t>(height);
   const std::size_t minStride = widthSize * channels;
   const std::size_t actualStride = stride > 0 ? static_cast<std::size_t>(stride) : minStride;
   if (actualStride < minStride) {

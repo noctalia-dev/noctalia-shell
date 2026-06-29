@@ -21,7 +21,6 @@
 #include <pipewire/keys.h>
 #include <pipewire/pipewire.h>
 #include <ranges>
-#include <spa/param/audio/format-utils.h>
 #include <spa/param/param.h>
 #include <spa/param/props.h>
 #include <spa/param/route.h>
@@ -39,6 +38,9 @@ namespace {
 
   constexpr float kDefaultVolumeStep = 0.05f;
   constexpr auto kVolumeApplyMinInterval = std::chrono::milliseconds(25);
+  constexpr auto kVolumeWriteGuardDuration = std::chrono::milliseconds(400);
+  constexpr auto kMuteWriteGuardDuration = std::chrono::milliseconds(1200);
+  constexpr float kVolumeWriteGuardEpsilon = 0.02f;
 
   // Registry events.
   void onRegistryGlobal(
@@ -419,6 +421,51 @@ namespace {
     } else if (p.hasSoft) {
       nd.volume = p.softVol;
     }
+  }
+
+  [[nodiscard]] float resolvedVolume(const ParsedPropsVolumes& p) {
+    if (p.hasChannel) {
+      return p.channelVol;
+    }
+    if (p.hasScalar) {
+      return p.scalarVol;
+    }
+    if (p.hasSoft) {
+      return p.softVol;
+    }
+    return -1.0f;
+  }
+
+  [[nodiscard]] bool shouldRejectVolumeWrite(const PipeWireService::NodeData& nd, float candidateVol) {
+    if (nd.lastWrittenVolume < 0.0f) {
+      return false;
+    }
+    const auto now = std::chrono::steady_clock::now();
+    if (now >= nd.volumeWriteGuardUntil) {
+      return false;
+    }
+    return std::abs(candidateVol - nd.lastWrittenVolume) > kVolumeWriteGuardEpsilon;
+  }
+
+  void confirmVolumeWrite(PipeWireService::NodeData& nd, float candidateVol) {
+    if (nd.lastWrittenVolume < 0.0f) {
+      return;
+    }
+    if (std::abs(candidateVol - nd.lastWrittenVolume) <= kVolumeWriteGuardEpsilon) {
+      nd.volumeWriteGuardUntil = {};
+    }
+  }
+
+  bool mergeIncomingVolumes(PipeWireService::NodeData& nd, const ParsedPropsVolumes& p) {
+    const float candidate = resolvedVolume(p);
+    if (candidate >= 0.0f && shouldRejectVolumeWrite(nd, candidate)) {
+      return false;
+    }
+    mergeParsedVolumesIntoNode(nd, p);
+    if (candidate >= 0.0f) {
+      confirmVolumeWrite(nd, candidate);
+    }
+    return true;
   }
 
   // Device ParamRoute updates are per-direction; applying every route's volume to all nodes on the same
@@ -1244,7 +1291,7 @@ void PipeWireService::onNodeParam(
         basis.channelCount = nd.channelCount;
         ParsedPropsVolumes fromRoute{};
         parsePropsObjectVolumeFields(routeProps, basis, &fromRoute);
-        mergeParsedVolumesIntoNode(nd, fromRoute);
+        mergeIncomingVolumes(nd, fromRoute);
       }
       recomputeEffectiveMute(nd);
       rebuildState();
@@ -1271,20 +1318,19 @@ void PipeWireService::onNodeParam(
     }
   }
 
-  float candidateVol = -1.0f;
-  if (parsed.hasChannel) {
-    candidateVol = parsed.channelVol;
-  } else if (parsed.hasScalar) {
-    candidateVol = parsed.scalarVol;
-  } else if (parsed.hasSoft) {
-    candidateVol = parsed.softVol;
-  }
-  const bool isAudioDeviceNode = nd.mediaClass == "Audio/Sink" || nd.mediaClass == "Audio/Source";
-  const bool rejectStaleFullScaleProps =
-      isAudioDeviceNode && candidateVol >= 0.0f && candidateVol >= 0.99f && nd.volume < 0.93f;
-
-  if (!rejectStaleFullScaleProps) {
-    mergeParsedVolumesIntoNode(nd, parsed);
+  float candidateVol = resolvedVolume(parsed);
+  if (candidateVol >= 0.0f) {
+    if (!nd.applicationBinary.empty()) {
+      const auto prefIt = m_userAppVolumes.find(nd.applicationBinary);
+      if (prefIt != m_userAppVolumes.end() && std::abs(candidateVol - prefIt->second) > kVolumeWriteGuardEpsilon) {
+        nd.volume = prefIt->second;
+        setNodeVolume(nd.id, prefIt->second);
+      } else {
+        mergeIncomingVolumes(nd, parsed);
+      }
+    } else {
+      mergeIncomingVolumes(nd, parsed);
+    }
   }
 
   recomputeEffectiveMute(nd);
@@ -1405,7 +1451,7 @@ void PipeWireService::onDeviceParam(
       if (node != nullptr
           && node->deviceId == id
           && routeVolumeDirectionMatchesNode(node->mediaClass, routeDirection)) {
-        mergeParsedVolumesIntoNode(*node, fromRoute);
+        mergeIncomingVolumes(*node, fromRoute);
       }
     }
   }
@@ -1473,7 +1519,7 @@ void PipeWireService::refreshNodeIdentity(NodeData& nd) {
     idSuffix.reserve(renameTo.size());
     bool prevDash = false;
     for (const char ch : renameTo) {
-      const unsigned char u = static_cast<unsigned char>(ch);
+      const auto u = static_cast<unsigned char>(ch);
       const bool alphanumeric = (u >= 'a' && u <= 'z') || (u >= 'A' && u <= 'Z') || (u >= '0' && u <= '9');
       if (alphanumeric) {
         idSuffix.push_back(static_cast<char>(std::tolower(u)));
@@ -1627,7 +1673,51 @@ void PipeWireService::recomputeEffectiveMute(NodeData& nd) {
   }
 
   const bool deviceRouteMuted = deviceRoute != nullptr && deviceRoute->muted;
-  nd.muted = nd.swMute || routeMuted || deviceRouteMuted;
+  const bool backendMuted = nd.swMute || routeMuted || deviceRouteMuted;
+  if (nd.pendingMute.has_value() && std::chrono::steady_clock::now() >= nd.muteWriteGuardUntil) {
+    nd.pendingMute.reset();
+    nd.muteWriteGuardUntil = {};
+  }
+  nd.muted = nd.pendingMute.value_or(backendMuted);
+}
+
+void PipeWireService::scheduleMuteWriteGuard() {
+  std::optional<std::chrono::steady_clock::time_point> nextExpiry;
+  for (const auto& node : std::views::values(m_nodes)) {
+    if (node == nullptr || !node->pendingMute.has_value()) {
+      continue;
+    }
+    if (!nextExpiry.has_value() || node->muteWriteGuardUntil < *nextExpiry) {
+      nextExpiry = node->muteWriteGuardUntil;
+    }
+  }
+
+  if (!nextExpiry.has_value()) {
+    m_muteWriteGuardTimer.stop();
+    return;
+  }
+
+  const auto now = std::chrono::steady_clock::now();
+  const auto delay = *nextExpiry > now ? std::chrono::ceil<std::chrono::milliseconds>(*nextExpiry - now)
+                                       : std::chrono::milliseconds(0);
+  m_muteWriteGuardTimer.start(delay, [this]() { expireMuteWriteGuards(); });
+}
+
+void PipeWireService::expireMuteWriteGuards() {
+  bool changed = false;
+  for (auto& node : std::views::values(m_nodes)) {
+    if (node == nullptr || !node->pendingMute.has_value()) {
+      continue;
+    }
+    const bool before = node->muted;
+    recomputeEffectiveMute(*node);
+    changed = changed || before != node->muted;
+  }
+
+  if (changed) {
+    rebuildState();
+  }
+  scheduleMuteWriteGuard();
 }
 
 void PipeWireService::applyVolumePropsFromDict(NodeData& nd, const spa_dict* props, bool applyMixerFieldsFromDict) {
@@ -1636,11 +1726,27 @@ void PipeWireService::applyVolumePropsFromDict(NodeData& nd, const spa_dict* pro
   }
 
   if (applyMixerFieldsFromDict) {
+    float candidate = -1.0f;
     if (const auto maybeChannelmixVolume = parseFloat(dictGet(props, "channelmix.volume"));
         maybeChannelmixVolume.has_value()) {
-      nd.volume = std::clamp(*maybeChannelmixVolume, 0.0f, 1.5f);
+      candidate = std::clamp(*maybeChannelmixVolume, 0.0f, 1.5f);
     } else if (const auto maybeVolume = parseFloat(dictGet(props, "volume")); maybeVolume.has_value()) {
-      nd.volume = std::clamp(*maybeVolume, 0.0f, 1.5f);
+      candidate = std::clamp(*maybeVolume, 0.0f, 1.5f);
+    }
+
+    if (!nd.applicationBinary.empty()) {
+      const auto prefIt = m_userAppVolumes.find(nd.applicationBinary);
+      if (prefIt != m_userAppVolumes.end()
+          && candidate >= 0.0f
+          && std::abs(candidate - prefIt->second) > kVolumeWriteGuardEpsilon) {
+        setNodeVolume(nd.id, prefIt->second);
+        candidate = prefIt->second;
+      }
+    }
+
+    if (candidate >= 0.0f && !shouldRejectVolumeWrite(nd, candidate)) {
+      nd.volume = candidate;
+      confirmVolumeWrite(nd, candidate);
     }
 
     if (const auto maybeChannelmixMuted = parseBool(dictGet(props, "channelmix.mute"));
@@ -1700,6 +1806,11 @@ void PipeWireService::flushPendingNodeVolumes() {
   }
 }
 
+void PipeWireService::noteVolumeWritten(NodeData& nd, float volume) {
+  nd.lastWrittenVolume = volume;
+  nd.volumeWriteGuardUntil = std::chrono::steady_clock::now() + kVolumeWriteGuardDuration;
+}
+
 bool PipeWireService::applyNodeVolumeImmediate(std::uint32_t id, float volume) {
   auto it = m_nodes.find(id);
   if (it == m_nodes.end()) {
@@ -1712,6 +1823,7 @@ bool PipeWireService::applyNodeVolumeImmediate(std::uint32_t id, float volume) {
   }
 
   volume = std::clamp(volume, 0.0f, 1.5f);
+  noteVolumeWritten(nd, volume);
 
   // Keep WirePlumber policy in sync without blocking the main loop.
   // `runAsync` is fire-and-forget, so rapid wheel/slider updates remain responsive.
@@ -1764,8 +1876,14 @@ void PipeWireService::setNodeVolume(std::uint32_t id, float volume) {
     return;
   }
 
-  m_pendingNodeVolumes[id] = std::clamp(volume, 0.0f, 1.5f);
+  const float clamped = std::clamp(volume, 0.0f, 1.5f);
+  m_pendingNodeVolumes[id] = clamped;
   scheduleVolumeFlush();
+
+  const std::string& appBinary = it->second->applicationBinary;
+  if (!appBinary.empty()) {
+    m_userAppVolumes[appBinary] = clamped;
+  }
 }
 
 void PipeWireService::setNodeMuted(std::uint32_t id, bool muted) {
@@ -1785,8 +1903,10 @@ void PipeWireService::setNodeMuted(std::uint32_t id, bool muted) {
     const bool launched = process::runAsync({"wpctl", "set-mute", std::to_string(id), muted ? "1" : "0"});
     if (launched) {
       const bool before = nd.muted;
-      nd.swMute = muted;
+      nd.pendingMute = muted;
+      nd.muteWriteGuardUntil = std::chrono::steady_clock::now() + kMuteWriteGuardDuration;
       recomputeEffectiveMute(nd);
+      scheduleMuteWriteGuard();
       if (before != nd.muted) {
         if (id == m_state.defaultSinkId && m_state.defaultSinkId != 0) {
           emitVolumePreview(false, id, nd.volume);
@@ -1838,6 +1958,8 @@ void PipeWireService::setNodeMuted(std::uint32_t id, bool muted) {
   pw_node_set_param(nd.proxy, SPA_PARAM_Props, 0, pod);
 
   const bool before = nd.muted;
+  nd.pendingMute.reset();
+  nd.muteWriteGuardUntil = {};
   nd.swMute = muted;
   if (nd.hasRoute && nd.routeIndex >= 0) {
     nd.nodeRouteMute = muted;

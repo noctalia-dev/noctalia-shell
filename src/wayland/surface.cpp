@@ -15,12 +15,13 @@
 #include <cmath>
 #include <cstdlib>
 #include <format>
+#include <limits>
 #include <ranges>
+#include <string>
 #include <string_view>
 #include <typeinfo>
 #include <unordered_map>
 #include <utility>
-#include <wayland-client.h>
 
 namespace {
 
@@ -78,6 +79,99 @@ namespace {
   bool idleProfileEnabled() {
     static const bool enabled = SysUtils::isEnvFlagOn("NOCTALIA_IDLE_PROFILE");
     return enabled;
+  }
+
+  bool blurTraceEnabled() {
+    static const bool enabled = SysUtils::isEnvFlagOn("NOCTALIA_BLUR_TRACE");
+    return enabled;
+  }
+
+  std::string_view surfaceTraceName(const Surface& surface) {
+    const auto& name = surface.debugName();
+    if (name.empty()) {
+      return "surface";
+    }
+    return name;
+  }
+
+  InputRect boundsForRects(const std::vector<InputRect>& rects) {
+    if (rects.empty()) {
+      return {};
+    }
+
+    int minX = rects.front().x;
+    int minY = rects.front().y;
+    int maxX = rects.front().x + rects.front().width;
+    int maxY = rects.front().y + rects.front().height;
+    for (const auto& rect : rects) {
+      minX = std::min(minX, rect.x);
+      minY = std::min(minY, rect.y);
+      maxX = std::max(maxX, rect.x + rect.width);
+      maxY = std::max(maxY, rect.y + rect.height);
+    }
+
+    return InputRect{minX, minY, maxX - minX, maxY - minY};
+  }
+
+  std::string rectListPreview(const std::vector<InputRect>& rects) {
+    if (rects.empty()) {
+      return "[]";
+    }
+
+    constexpr std::size_t kPreviewCount = 6;
+    const std::size_t previewCount = std::min(kPreviewCount, rects.size());
+    std::string out = "[";
+    for (std::size_t i = 0; i < previewCount; ++i) {
+      const auto& rect = rects[i];
+      if (i > 0) {
+        out += " ";
+      }
+      out += std::format("{}:{}+{}x{}", rect.x, rect.y, rect.width, rect.height);
+    }
+    if (rects.size() > previewCount) {
+      out += std::format(" +{}", rects.size() - previewCount);
+    }
+    out += "]";
+    return out;
+  }
+
+  void traceSurfaceEvent(const Surface& surface, std::string_view event) {
+    if (!blurTraceEnabled()) {
+      return;
+    }
+
+    kLog.debug(
+        "blur-trace {} name={} self={} wl={} phase={} running={} logical={}x{} buffer={}x{} scale={:.3f}", event,
+        surfaceTraceName(surface), static_cast<const void*>(&surface), static_cast<const void*>(surface.wlSurface()),
+        uiPhaseName(currentUiPhase()), surface.isRunning(), surface.width(), surface.height(),
+        surface.bufferWidthFor(surface.width()), surface.bufferHeightFor(surface.height()),
+        surface.effectiveBufferScale()
+    );
+  }
+
+  void traceBlurRegionEvent(const Surface& surface, std::string_view event, const std::vector<InputRect>& rects) {
+    if (!blurTraceEnabled()) {
+      return;
+    }
+
+    const InputRect bounds = boundsForRects(rects);
+    const int right = bounds.x + bounds.width;
+    const int bottom = bounds.y + bounds.height;
+    const bool fullSurface = !rects.empty()
+        && surface.width() > 0
+        && surface.height() > 0
+        && bounds.x <= 0
+        && bounds.y <= 0
+        && right >= static_cast<int>(surface.width())
+        && bottom >= static_cast<int>(surface.height());
+    kLog.debug(
+        "blur-trace {} name={} self={} wl={} phase={} logical={}x{} scale={:.3f} rects={} bounds={}:{}+{}x{} "
+        "full_surface={} sample={}",
+        event, surfaceTraceName(surface), static_cast<const void*>(&surface),
+        static_cast<const void*>(surface.wlSurface()), uiPhaseName(currentUiPhase()), surface.width(), surface.height(),
+        surface.effectiveBufferScale(), rects.size(), bounds.x, bounds.y, bounds.width, bounds.height, fullSurface,
+        rectListPreview(rects)
+    );
   }
 
   struct SurfaceProfileState {
@@ -225,6 +319,8 @@ Surface::~Surface() {
 
 bool Surface::isRunning() const noexcept { return m_running; }
 
+void Surface::setDebugName(std::string name) { m_debugName = std::move(name); }
+
 float Surface::effectiveBufferScale() const noexcept {
   if (m_fractionalScale != nullptr && m_viewport != nullptr) {
     if (m_fractionalScaleNumerator > 0) {
@@ -260,7 +356,17 @@ void Surface::handleFrameDone(void* data, wl_callback* callback, std::uint32_t c
   }
   self->m_lastFrameAt = now;
 
-  self->queueFrameWork(true, deltaMs);
+  const bool activeAnimations = self->m_animationManager != nullptr && self->m_animationManager->hasActive();
+  const bool runFrameTick = self->m_frameCallbackShouldTick || self->m_frameTickPending || activeAnimations;
+  self->m_frameCallbackShouldTick = false;
+
+  const bool invalidated =
+      self->m_sceneRoot != nullptr && (self->m_sceneRoot->paintDirty() || self->m_sceneRoot->layoutDirty());
+  const bool hasPendingWork =
+      runFrameTick || self->m_updateRequested || self->m_layoutRequested || self->m_redrawRequested || invalidated;
+  if (hasPendingWork) {
+    self->queueFrameWork(runFrameTick, deltaMs);
+  }
 }
 
 void Surface::onSurfaceOutputEnter(wl_surface* surface, wl_output* output) {
@@ -298,6 +404,7 @@ bool Surface::createWlSurface() {
   if (m_surface == nullptr) {
     return false;
   }
+  traceSurfaceEvent(*this, "create-wl-surface");
   wl_surface_add_listener(m_surface, &kSurfaceListener, this);
 
   initializeSurfaceScaleProtocol();
@@ -312,6 +419,7 @@ void Surface::onConfigure(std::uint32_t width, std::uint32_t height) {
   m_width = width;
   m_height = height;
   m_configured = true;
+  traceSurfaceEvent(*this, "configure");
 
   const float resizeMs = elapsedMs([this] {
     applySurfaceScaleState();
@@ -415,7 +523,14 @@ void Surface::applySurfaceScaleState() {
   if (m_fractionalScale != nullptr && m_viewport != nullptr) {
     wl_surface_set_buffer_scale(m_surface, 1);
     if (m_width > 0 && m_height > 0) {
-      wp_viewport_set_destination(m_viewport, static_cast<std::int32_t>(m_width), static_cast<std::int32_t>(m_height));
+      constexpr auto kMaxViewportExtent = static_cast<std::uint32_t>(std::numeric_limits<std::int32_t>::max());
+      if (m_width > kMaxViewportExtent || m_height > kMaxViewportExtent) {
+        kLog.warn("skipping viewport destination with out-of-range size {}x{}", m_width, m_height);
+      } else {
+        wp_viewport_set_destination(
+            m_viewport, static_cast<std::int32_t>(m_width), static_cast<std::int32_t>(m_height)
+        );
+      }
     }
     return;
   }
@@ -491,32 +606,50 @@ void Surface::setInputRegion(const std::vector<InputRect>& rects) {
   wl_region_destroy(region);
 }
 
-void Surface::setBlurRegion(const std::vector<InputRect>& rects) {
-  if (m_surface == nullptr || !m_connection.hasBackgroundEffectBlur()) {
-    return;
+bool Surface::prepareBlurEffect() {
+  if (m_surface == nullptr) {
+    traceSurfaceEvent(*this, "blur-effect-skip-no-surface");
+    return false;
+  }
+  if (!m_connection.hasBackgroundEffectBlur()) {
+    traceSurfaceEvent(*this, "blur-effect-skip-no-protocol");
+    return false;
+  }
+  if (m_backgroundEffect != nullptr) {
+    return true;
   }
 
+  auto* manager = m_connection.backgroundEffectManager();
+  if (manager == nullptr) {
+    traceSurfaceEvent(*this, "blur-effect-skip-no-manager");
+    return false;
+  }
+  m_backgroundEffect = ext_background_effect_manager_v1_get_background_effect(manager, m_surface);
   if (m_backgroundEffect == nullptr) {
-    auto* manager = m_connection.backgroundEffectManager();
-    if (manager == nullptr) {
-      return;
-    }
-    m_backgroundEffect = ext_background_effect_manager_v1_get_background_effect(manager, m_surface);
-    if (m_backgroundEffect == nullptr) {
-      return;
-    }
+    traceSurfaceEvent(*this, "blur-effect-skip-create-failed");
+    return false;
+  }
+  traceSurfaceEvent(*this, "blur-effect-create");
+  return true;
+}
+
+void Surface::setBlurRegion(const std::vector<InputRect>& rects) {
+  if (!prepareBlurEffect()) {
+    return;
   }
 
   wl_region* region = nullptr;
   if (!rects.empty()) {
     region = wl_compositor_create_region(m_connection.compositor());
     if (region == nullptr) {
+      traceSurfaceEvent(*this, "blur-set-skip-region-failed");
       return;
     }
     for (const auto& r : rects) {
       wl_region_add(region, r.x, r.y, r.width, r.height);
     }
   }
+  traceBlurRegionEvent(*this, rects.empty() ? "blur-set-empty" : "blur-set", rects);
   ext_background_effect_surface_v1_set_blur_region(m_backgroundEffect, region);
   if (region != nullptr) {
     wl_region_destroy(region);
@@ -567,7 +700,7 @@ std::vector<InputRect> Surface::tessellateRoundedRect(
   for (int row = 0; row < topBand; row += stripPx) {
     const int rowH = std::min(stripPx, topBand - row);
     // Use the strip's bottom edge for the inset sample so the polygon stays inside the curve.
-    const float sample = static_cast<float>(row + rowH);
+    const auto sample = static_cast<float>(row + rowH);
     const float leftInset = inset(tl, sample);
     const float rightInset = inset(tr, sample);
     const int rx = x + static_cast<int>(std::ceil(leftInset));
@@ -587,7 +720,7 @@ std::vector<InputRect> Surface::tessellateRoundedRect(
     const int rowFromTop = row;
     const int rowH = std::min(stripPx, bottomBand - rowFromTop);
     // Sample at the strip's top edge (distance from bottom edge of the rect).
-    const float sample = static_cast<float>(bottomBand - rowFromTop);
+    const auto sample = static_cast<float>(bottomBand - rowFromTop);
     const float leftInset = inset(bl, sample);
     const float rightInset = inset(br, sample);
     const int rx = x + static_cast<int>(std::ceil(leftInset));
@@ -622,8 +755,8 @@ std::vector<InputRect> Surface::tessellateShape(
   const int visualW = w + static_cast<int>(std::lround(insetL)) + static_cast<int>(std::lround(insetR));
   const int visualH = h + static_cast<int>(std::lround(insetT)) + static_cast<int>(std::lround(insetB));
 
-  const float W = static_cast<float>(visualW);
-  const float H = static_cast<float>(visualH);
+  const auto W = static_cast<float>(visualW);
+  const auto H = static_cast<float>(visualH);
   const float bodyMinX = std::clamp(insetL, 0.0f, W);
   const float bodyMaxX = std::clamp(W - insetR, bodyMinX, W);
   const float bodyMinY = std::clamp(insetT, 0.0f, H);
@@ -774,10 +907,165 @@ std::vector<InputRect> Surface::tessellateShape(
   return out;
 }
 
+std::vector<InputRect> Surface::tessellateRotatedRoundedRect(
+    float centerX, float centerY, float width, float height, float radius, float rotationRad, int stripPx
+) {
+  constexpr float kRotationEpsilon = 0.001f;
+  if (std::abs(rotationRad) < kRotationEpsilon) {
+    const int ix = static_cast<int>(std::lround(centerX - width * 0.5f));
+    const int iy = static_cast<int>(std::lround(centerY - height * 0.5f));
+    const int iw = static_cast<int>(std::lround(width));
+    const int ih = static_cast<int>(std::lround(height));
+    return tessellateRoundedRect(ix, iy, iw, ih, radius, stripPx);
+  }
+
+  const float cosA = std::cos(rotationRad);
+  const float sinA = std::sin(rotationRad);
+  const float halfW = width * 0.5f;
+  const float halfH = height * 0.5f;
+  const float r = std::clamp(radius, 0.0f, std::min(halfW, halfH));
+
+  const float aabbH = std::abs(width * sinA) + std::abs(height * cosA);
+  const int aabbIH = static_cast<int>(std::ceil(aabbH));
+  const float aabbTop = centerY - aabbH * 0.5f;
+
+  stripPx = std::max(stripPx, 1);
+
+  // Corner inset in local space: how far the rounded corner narrows the rect
+  // at a given distance from the edge.
+  const auto cornerInset = [](float cr, float distFromEdge) -> float {
+    if (cr <= 0.0f || distFromEdge >= cr) {
+      return 0.0f;
+    }
+    const float dy = cr - distFromEdge;
+    return cr - std::sqrt(std::max(0.0f, cr * cr - dy * dy));
+  };
+
+  // For a given local-space Y (origin at rect center), compute the left and
+  // right X extents of the rounded rect.
+  const auto localExtents = [&](float ly) -> std::pair<float, float> {
+    if (ly < -halfH || ly > halfH) {
+      return {0.0f, 0.0f};
+    }
+    float left = -halfW;
+    float right = halfW;
+    const float distFromTop = ly + halfH;
+    const float distFromBottom = halfH - ly;
+    if (distFromTop < r) {
+      const float inset = cornerInset(r, distFromTop);
+      left += inset;
+      right -= inset;
+    }
+    if (distFromBottom < r) {
+      const float inset = cornerInset(r, distFromBottom);
+      left += inset;
+      right -= inset;
+    }
+    if (left >= right) {
+      return {0.0f, 0.0f};
+    }
+    return {left, right};
+  };
+
+  std::vector<InputRect> out;
+  out.reserve(static_cast<std::size_t>(aabbIH / stripPx + 2));
+
+  for (int row = 0; row < aabbIH; row += stripPx) {
+    const int rowH = std::min(stripPx, aabbIH - row);
+    float globalMinX = std::numeric_limits<float>::max();
+    float globalMaxX = std::numeric_limits<float>::lowest();
+    bool anyHit = false;
+
+    // Sample the strip at its top and bottom edges for a conservative bound.
+    for (int edge = 0; edge <= 1; ++edge) {
+      const float surfaceY = aabbTop + static_cast<float>(row + edge * rowH);
+      const float dy = surfaceY - centerY;
+
+      // Scan across the local-Y axis to find what range of local rows this
+      // surface-Y touches. A horizontal surface-space line at surfaceY, when
+      // inverse-rotated, becomes a line in local space. We need the min/max
+      // surface-X of the rounded rect along that line.
+      //
+      // A point (lx, ly) in local space maps to surface-X = cx + lx*cos - ly*sin.
+      // The surface scanline surfaceY corresponds to all (lx, ly) satisfying
+      // cy + lx*sin + ly*cos = surfaceY, i.e. lx*sin + ly*cos = dy.
+      // For each local ly: lx_on_line = (dy - ly*cos) / sin  (when sin != 0).
+      // But lx must also be within the rounded rect's horizontal extent at ly.
+      // The leftmost and rightmost surface-X values across all valid (lx,ly) give
+      // the strip bounds.
+      //
+      // Sample the local-Y range that can produce this surface-Y.
+      constexpr int kSamples = 32;
+      for (int s = 0; s <= kSamples; ++s) {
+        const float t = static_cast<float>(s) / static_cast<float>(kSamples);
+        const float ly = -halfH + (2.0f * halfH) * t;
+        const auto [localLeft, localRight] = localExtents(ly);
+        if (localLeft >= localRight) {
+          continue;
+        }
+        // lx_on_line = (dy - ly*cos) / sin, but we need the intersection of
+        // the horizontal surface-Y line with the row ly in local space projected
+        // onto the surface X axis. Surface X = cx + lx*cos - ly*sin.
+        // Constraint: lx*sin + ly*cos = dy  =>  lx = (dy - ly*cos) / sin.
+        // But when sin ≈ 0, surface-Y ≈ cy + ly*cos, so only ly ≈ dy/cos is
+        // valid, and surface-X = cx + lx*cos for any lx in the local extent.
+        float sxLeft, sxRight;
+        if (std::abs(sinA) > 1e-6f) {
+          const float lxOnLine = (dy - ly * cosA) / sinA;
+          if (lxOnLine < localLeft - 0.5f || lxOnLine > localRight + 0.5f) {
+            continue;
+          }
+          const float clampedLx = std::clamp(lxOnLine, localLeft, localRight);
+          const float sx = centerX + clampedLx * cosA - ly * sinA;
+          sxLeft = sx;
+          sxRight = sx;
+        } else {
+          if (std::abs(ly * cosA - dy) > 1.0f) {
+            continue;
+          }
+          sxLeft = centerX + localLeft * cosA - ly * sinA;
+          sxRight = centerX + localRight * cosA - ly * sinA;
+          if (sxLeft > sxRight) {
+            std::swap(sxLeft, sxRight);
+          }
+        }
+        globalMinX = std::min(globalMinX, sxLeft);
+        globalMaxX = std::max(globalMaxX, sxRight);
+        anyHit = true;
+      }
+    }
+
+    if (!anyHit || globalMinX >= globalMaxX) {
+      continue;
+    }
+
+    const int rx = static_cast<int>(std::floor(globalMinX));
+    const int rRight = static_cast<int>(std::ceil(globalMaxX));
+    const int rw = rRight - rx;
+    const int ry = static_cast<int>(std::lround(aabbTop)) + row;
+    if (rw <= 0) {
+      continue;
+    }
+
+    if (!out.empty()) {
+      auto& prev = out.back();
+      if (prev.x == rx && prev.width == rw && prev.y + prev.height == ry) {
+        prev.height += rowH;
+        continue;
+      }
+    }
+    out.push_back({rx, ry, rw, rowH});
+  }
+
+  return out;
+}
+
 void Surface::clearBlurRegion() {
   if (m_backgroundEffect == nullptr) {
+    traceSurfaceEvent(*this, "blur-clear-no-effect");
     return;
   }
+  traceSurfaceEvent(*this, "blur-clear-destroy");
   ext_background_effect_surface_v1_destroy(m_backgroundEffect);
   m_backgroundEffect = nullptr;
 }
@@ -803,6 +1091,9 @@ void Surface::requestLayout() {
 
 void Surface::requestRedraw() {
   recordSurfaceProfileEvent(*this, SurfaceProfileEvent::RequestRedraw);
+  if (m_frameTickCallback != nullptr) {
+    m_nextFrameCallbackShouldTick = true;
+  }
   m_redrawRequested = true;
   kickFrameLoop();
 }
@@ -845,7 +1136,9 @@ void Surface::render() {
   }
 
   requestFrame();
+  traceSurfaceEvent(*this, "render-begin");
   const float renderMs = elapsedMs([this] { m_renderContext->renderScene(m_renderTarget, m_sceneRoot); });
+  traceSurfaceEvent(*this, "render-end");
   recordSurfaceProfileEvent(*this, SurfaceProfileEvent::Render, renderMs);
   logSlowSurfaceOperation(
       renderMs, "surface render took {:.1f}ms ({}x{} logical, {}x{} buffer)", renderMs, m_width, m_height,
@@ -860,8 +1153,14 @@ void Surface::render() {
 
 void Surface::requestFrame() {
   if (m_frameCallback != nullptr) {
+    m_frameCallbackShouldTick = m_frameCallbackShouldTick || m_nextFrameCallbackShouldTick;
+    m_nextFrameCallbackShouldTick = false;
     return;
   }
+
+  const bool activeAnimations = m_animationManager != nullptr && m_animationManager->hasActive();
+  m_frameCallbackShouldTick = m_nextFrameCallbackShouldTick || activeAnimations;
+  m_nextFrameCallbackShouldTick = false;
 
   m_frameCallback = wl_surface_frame(m_surface);
   if (m_frameCallback != nullptr) {
@@ -1001,7 +1300,10 @@ void Surface::processQueuedFrameWork() {
       );
     }
 
-    if (m_frameTickCallback) {
+    // Frame-tick callbacks make the surface's render target current and do GL
+    // work. Skip them until the target is ready; on wlroots compositors the
+    // surface can be configured a frame before its EGL surface exists.
+    if (m_frameTickCallback && ensureRenderTargetReady()) {
       const float callbackMs = elapsedMs([this, deltaMs] { m_frameTickCallback(deltaMs); });
       recordSurfaceProfileEvent(*this, SurfaceProfileEvent::FrameTick, callbackMs);
       logSlowSurfaceOperation(
@@ -1028,6 +1330,9 @@ void Surface::processQueuedFrameWork() {
 void Surface::queueRenderIfNeeded() {
   const bool invalidated = m_sceneRoot != nullptr && (m_sceneRoot->paintDirty() || m_sceneRoot->layoutDirty());
   const bool animating = m_animationManager != nullptr && m_animationManager->hasActive();
+  if (animating) {
+    m_nextFrameCallbackShouldTick = true;
+  }
   if (m_redrawRequested || invalidated || animating) {
     queueRender();
   }

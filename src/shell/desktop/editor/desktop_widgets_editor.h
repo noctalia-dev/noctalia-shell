@@ -5,8 +5,7 @@
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
 #include "shell/desktop/desktop_widget_factory.h"
-#include "shell/desktop/desktop_widget_settings_registry.h"
-#include "shell/widgets_editor/background_widgets_editor_config.h"
+#include "shell/desktop/editor/desktop_widgets_editor_types.h"
 #include "ui/controls/select_dropdown_popup.h"
 #include "ui/dialogs/layer_popup_host.h"
 #include "wayland/layer_surface.h"
@@ -20,39 +19,28 @@
 #include <vector>
 
 class Box;
-class Button;
 class ConfigService;
-class HttpClient;
 class SharedTextureCache;
 class WallpaperNode;
 class InputArea;
-class MprisService;
-class PipeWireSpectrum;
 class RenderContext;
-class Select;
-class SystemMonitorService;
 class WaylandConnection;
-class WeatherService;
 struct KeyboardEvent;
 struct PointerEvent;
 struct WaylandOutput;
 struct wl_output;
 struct wl_surface;
 
-class BackgroundWidgetsEditor {
+class DesktopWidgetsEditor {
 public:
-  explicit BackgroundWidgetsEditor(BackgroundWidgetsEditorProfile profile);
+  explicit DesktopWidgetsEditor(DesktopWidgetsEditorProfile profile);
 
-  void initialize(
-      WaylandConnection& wayland, ConfigService* config, PipeWireSpectrum* pipewireSpectrum,
-      const WeatherService* weather, RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient,
-      SystemMonitorService* sysmon, SharedTextureCache* textureCache = nullptr, DesktopWidgetScriptDeps scriptDeps = {}
-  );
+  void initialize(const DesktopWidgetServices& services);
   void setExitRequestedCallback(std::function<void()> callback);
 
-  void open(const WidgetsEditorSnapshot& snapshot);
-  [[nodiscard]] const WidgetsEditorSnapshot& snapshot() const noexcept { return m_snapshot; }
-  [[nodiscard]] WidgetsEditorSnapshot close();
+  void open(const DesktopWidgetsEditorSnapshot& snapshot);
+  [[nodiscard]] const DesktopWidgetsEditorSnapshot& snapshot() const noexcept { return m_snapshot; }
+  [[nodiscard]] DesktopWidgetsEditorSnapshot close();
   [[nodiscard]] bool isOpen() const noexcept;
 
   bool onPointerEvent(const PointerEvent& event);
@@ -61,6 +49,7 @@ public:
   [[nodiscard]] std::optional<LayerPopupParentContext> fallbackPopupParentContext() const;
   void onOutputChange();
   void onSecondTick();
+  void requestUpdate();
   void requestLayout();
   void requestRedraw();
 
@@ -162,6 +151,9 @@ private:
   void updateWallpaperPreview(OverlaySurface& surface);
   void applyViewState(EditorWidgetView& view, const DesktopWidgetState& state, bool refreshContent);
   void updateViewTransforms(const std::string* relayoutWidgetId = nullptr);
+  // Live resize preview: grow the box (handles/outline) and scale the content on the GPU instead
+  // of re-laying out the dragged widget every pointer move. finishDrag() does the crisp re-fit.
+  void applyScaleDragPreview(const DesktopWidgetState& state);
   void updateSelectionVisuals(OverlaySurface& surface);
   void addWidget(const std::string& outputName, const std::string& type);
   void removeSelectedWidget();
@@ -208,7 +200,7 @@ private:
   void setSingleSelection(const std::string& id);
   void handleWidgetPress(const std::string& id);
 
-  BackgroundWidgetsEditorProfile m_profile;
+  DesktopWidgetsEditorProfile m_profile;
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
   RenderContext* m_renderContext = nullptr;
@@ -216,7 +208,7 @@ private:
   std::unique_ptr<DesktopWidgetFactory> m_factory;
   std::string m_addWidgetType = "clock";
   std::function<void()> m_exitRequestedCallback;
-  WidgetsEditorSnapshot m_snapshot;
+  DesktopWidgetsEditorSnapshot m_snapshot;
   std::vector<std::unique_ptr<OverlaySurface>> m_surfaces;
   std::string m_selectedWidgetId;
   std::unordered_set<std::string> m_selectedWidgetIds;

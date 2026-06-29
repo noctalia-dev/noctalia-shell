@@ -137,6 +137,7 @@ ResolvedNotificationFilter resolveNotificationFilter(
         .showToast = filter.showToast,
         .saveHistory = filter.saveHistory,
         .playSound = filter.playSound,
+        .allowPermanent = filter.allowPermanent,
         .allowedUrgencies = normalizeAllowedUrgencies(filter.allowedUrgencies),
         .matched = true,
     };

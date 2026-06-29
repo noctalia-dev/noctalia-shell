@@ -9,6 +9,7 @@
       "ready": "Situa tu dedo en el lector",
       "remove-and-retry": "Retira tu dedo y prueba de nuevo",
       "retry": "Por favor lee tu huella de nuevo",
+      "swipe-too-short": "El deslizamiento fue demasiado corto, inténtalo de nuevo",
       "too-many-attempts": "Lector de huellas deshabilitado (demasiados intentos)"
     },
     "pam": {
@@ -34,6 +35,9 @@
     "widgets": {
       "active-window": {
         "no-active-window": "No hay ventanas activas"
+      },
+      "bluetooth": {
+        "connected": "Conectado"
       },
       "lock-keys": {
         "caps": "Mayús",
@@ -118,8 +122,7 @@
     "audio": {
       "application-volumes": "Volumen de aplicaciones",
       "choose-effects-profile": "Selecciona un perfil",
-      "effects-profile": "Efectos:",
-      "input-volume": "Volumen de entrada",
+      "effects-profile": "Efectos",
       "no-application-audio": "Sin aplicacion de audio",
       "no-application-audio-body": "No hay ninguna aplicación reproduciendo audio en este momento.",
       "no-input-devices": "No hay dispositivos de entrada",
@@ -128,7 +131,6 @@
       "no-output-devices": "No hay dispositivos de salida",
       "no-output-devices-body": "No hay ningún dispositivo de salida de audio disponible en este momento.",
       "no-output-selected": "No se ha seleccionado ningún dispositivo de salida",
-      "output-volume": "Volumen de salida",
       "unavailable-body": "PipeWire no está activado.",
       "unavailable-title": "Sonido no está disponible"
     },
@@ -163,7 +165,8 @@
     "calendar": {
       "all-day": "Todo el día",
       "events": "Eventos",
-      "no-events": "No hay eventos."
+      "no-events": "No hay eventos.",
+      "today": "Hoy"
     },
     "display": {
       "disabled": "Desabilitado",
@@ -185,8 +188,8 @@
       },
       "select-avatar": "Selecciona Avatar",
       "unknown": "Desconocido",
+      "uptime": "Tiempo de actividad",
       "weather": {
-        "configure-location": "Añade [weather].address o habilita auto_locate",
         "data-unavailable": "Datos meteorológicos no disponibles",
         "disabled": "Pronóstico desabilitado en la configuracion.",
         "fetching": "Cargando previsión..."
@@ -305,7 +308,6 @@
       "weather": "Pronóstico"
     },
     "weather": {
-      "configure-location": "Configura [weather].adress o habilita auto_locate",
       "data-unavailable": "Datos meteorológicos no disponibles",
       "details": {
         "elevation": "Elevacion",
@@ -334,12 +336,17 @@
         "add": "Añadir",
         "clone": "Duplicar )Ctrl+C, Ctrl+V para copiar/pegar)",
         "done": "Hecho",
+        "flip-horizontal": "Girar horizontalmente",
+        "flip-vertical": "Girar verticalmente",
         "hide": "Ocultar",
         "settings": "Configuraciones",
         "show": "Mostrar",
         "stack-back": "Apilar detras",
         "stack-front": "Apilar al frente",
         "trash": "Borrar"
+      },
+      "dialogs": {
+        "select-sticker-image": "Seleccionar imagen de la pegatina"
       },
       "settings": {
         "aspect-ratio": "Relación de aspecto",
@@ -349,8 +356,10 @@
         "background-padding": "Relleno",
         "background-radius": "Radio",
         "background-section": "Fondo",
+        "bands": "Grupos",
         "bar-width": "Ancho de la barra",
         "bloom-intensity": "Bloom",
+        "center-text": "Centrar texto",
         "centered": "Centrado",
         "change-image": "Cambiar...",
         "circle": "Circulo",
@@ -361,6 +370,7 @@
         "color-1": "Color Uno",
         "color-2": "Color Dos",
         "color2": "Color 2",
+        "command": "Comando",
         "custom-color": "Personalizado",
         "description": "Descripción",
         "fade-when-idle": "Atenuar cuando esté inactivo",
@@ -368,12 +378,23 @@
         "font-family-default": "Fuente del sistema por defecto",
         "forecast-days": "Días de previsión",
         "format": "Formato",
+        "glyph": "Glifo",
+        "hide-when-no-media": "Ocultar cuando no haya contenido multimedia",
         "horizontal": "Horizontal",
+        "hover-background": "Fondo al pasar el cursor",
+        "hover-foreground": "Al pasar el cursor por encima del primer plano",
         "image-path": "Imagen",
         "inner-diameter": "Diametro interior",
+        "input-opacity": "Opacidad de entrada",
+        "input-radius": "Radio de entrada",
+        "interface": "Interfaz",
+        "label": "Etiqueta",
+        "layout": "Diseño",
+        "mirrored": "Reflejado",
         "opacity": "Opacidad",
         "primary-color": "Color Primario",
         "reset-defaults": "Resetear a valores por defecto",
+        "ring-opacity": "Opacidad del anillo",
         "rotation-speed": "Velocidad de rotación",
         "secondary-color": "Color Secundario",
         "sensitivity": "Sensibilidad",
@@ -395,6 +416,11 @@
         "stat-swap-pct": "Swap %",
         "stat2": "Estadística 2",
         "title": "Título",
+        "variant": "Estilo",
+        "variant-default": "Por defecto",
+        "variant-destructive": "Destructivo",
+        "variant-primary": "Primario",
+        "variant-secondary": "Secundario",
         "vertical": "Vertical",
         "visualization-mode": "Modo",
         "visualization-mode-all": "Todo",
@@ -413,9 +439,11 @@
       "title": "Widgets de Escritorio",
       "types": {
         "audio-visualizer": "Visualizador de Audio",
+        "button": "Botón",
         "clock": "Reloj",
         "fancy-audio-visualizer": "Visualizador de audio Fancy",
         "label": "Etiqueta",
+        "login-box": "Cuadro de inicio de sesión",
         "media-player": "Reproductor Multimedia",
         "system-monitor": "Monitor de sistema",
         "weather": "Pronóstico"
@@ -490,6 +518,7 @@
         "title": "Emoji"
       },
       "session": {
+        "action-subtitle": "Ejecutar acción de sesión",
         "command-subtitle": "Ejecuta comando de configuración",
         "title": "Sesión"
       },
@@ -504,6 +533,7 @@
   },
   "location": {
     "errors": {
+      "address-lookup-failed": "Error al buscar la dirección",
       "ip-geolocation-failed": "Geolocalización de IP fallida",
       "parse-geocode": "No se pudo procesar el código de geolocalización",
       "parse-ip-geolocation": "No se pudo procesar la respuesta de geolocalización"
@@ -540,6 +570,7 @@
       "battery-low-body": "{device}: {percent}% restante",
       "battery-low-title": "Batería baja",
       "calendar": "Calendario",
+      "calendar-google-connect-browser-failed": "No se ha podido iniciar ningún programa para abrir la página de autorización de Google. Comprueba tu navegador predeterminado o la configuración de xdg-open.",
       "calendar-google-connect-failed-title": "Conexion fallida con Calendario Google",
       "calendar-google-connect-start-failed": "No se pudo empezar la autorización con Google. Revise su conexión al internet",
       "dbus-disabled": "Notificaciones DBus deshabilitada",
@@ -1121,9 +1152,6 @@
     }
   },
   "time": {
-    "duration": {
-      "minutes": "{minutes}m"
-    },
     "file": {
       "unknown": "Desconocido"
     },

@@ -1,5 +1,7 @@
 #include "shell/settings/bar_widget_editor.h"
 
+#include "config/config_service.h"
+#include "config/config_types.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "i18n/i18n.h"
 #include "render/scene/node.h"
@@ -729,6 +731,7 @@ namespace settings {
       }
 
       std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> batch;
+      batch.reserve(laneEdits.size());
       for (const auto& edit : laneEdits) {
         batch.emplace_back(zones[edit.first].lanePath, edit.second);
       }
@@ -780,7 +783,7 @@ namespace settings {
       if (on) {
         card->setBorder(colorSpecFromRole(ColorRole::Primary), Style::borderWidth * 2.0f);
       } else {
-        card->setBorder(colorSpecFromRole(ColorRole::Outline, 0.22f), Style::borderWidth);
+        card->setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth);
       }
     }
 
@@ -1315,7 +1318,9 @@ namespace settings {
 
       const auto widgetIt = ctx.config.widgets.find(widgetName);
       const WidgetConfig* widgetConfig = widgetIt != ctx.config.widgets.end() ? &widgetIt->second : nullptr;
-      auto specs = widgetSettingSpecs(widgetType, widgetConfig, ctx.config.shell.fontFamily);
+      auto specs = widgetSettingSpecs(
+          widgetType, widgetConfig, ctx.config.shell.fontFamily, ctx.supportsTaskbarWorkspaceGrouping
+      );
       if (specs.empty()) {
         return;
       }
@@ -1689,7 +1694,7 @@ namespace settings {
           );
           hint->setFlexGrow(1.0f);
           groupRow->addChild(std::move(hint));
-          const std::string editGroupId = capsuleGroup;
+          const std::string& editGroupId = capsuleGroup;
           groupRow->addChild(
               ui::button({
                   .text = i18n::tr("settings.entities.widget.group.edit"),
@@ -2546,10 +2551,10 @@ namespace settings {
               if (dragState->highlightZoneIndex != *targetZone || dragState->highlightItemIndex != hoveredIdx) {
                 clearHighlight();
                 setCardCombineHighlight(*zones, *targetZone, hoveredIdx, true);
-                dragState->highlightZoneIndex = *targetZone;
+                dragState->highlightZoneIndex = targetZone;
                 dragState->highlightItemIndex = hoveredIdx;
               }
-              dragState->combineZoneIndex = *targetZone;
+              dragState->combineZoneIndex = targetZone;
               dragState->combineItemIndex = hoveredIdx;
               dragState->targetZoneIndex = std::nullopt;
               dragState->targetInsertionIndex = std::nullopt;
@@ -2570,7 +2575,7 @@ namespace settings {
           hideDropIndicators(*zones);
           return;
         }
-        dragState->targetZoneIndex = *targetZone;
+        dragState->targetZoneIndex = targetZone;
         dragState->targetInsertionIndex = insertion;
         hideDropIndicators(*zones);
         updateDropIndicator(*zone.indicator, *zone.container, *zone.itemNodes, insertion, scale);
@@ -2590,8 +2595,8 @@ namespace settings {
           .paddingH = Style::spaceXs * ctx.scale,
           .fill = colorSpecFromRole(ColorRole::Surface, 0.72f),
           .radius = Style::scaledRadiusSm(ctx.scale),
-          .border = isSelected ? colorSpecFromRole(ColorRole::Primary) : colorSpecFromRole(ColorRole::Outline, 0.22f),
-          .borderWidth = isSelected ? Style::borderWidth * 1.5f : Style::borderWidth,
+          .border = isSelected ? colorSpecFromRole(ColorRole::Primary) : clearColorSpec(),
+          .borderWidth = Style::borderWidth,
       });
       auto* cardPtr = card.get();
 
@@ -2689,7 +2694,7 @@ namespace settings {
           .padding = Style::spaceSm * ctx.scale,
           .fill = colorSpecFromRole(ColorRole::SurfaceVariant, 0.45f),
           .radius = Style::scaledRadiusMd(ctx.scale),
-          .border = colorSpecFromRole(ColorRole::Outline, 0.5f),
+          .border = colorSpecFromRole(ColorRole::Outline),
           .minWidth = 160.0f * ctx.scale,
           .flexGrow = 1.0f,
       });
@@ -2768,8 +2773,8 @@ namespace settings {
       }
       laneHeader->addChild(ui::spacer());
       if (inherited) {
-        auto items = laneItems;
-        auto path = lanePath;
+        const auto& items = laneItems;
+        const auto& path = lanePath;
         laneHeader->addChild(
             ui::button({
                 .text = i18n::tr("settings.entities.widget.lanes.customize"),
@@ -2877,7 +2882,7 @@ namespace settings {
                   .width = Style::fontSizeCaption * ctx.scale,
                   .height = Style::fontSizeCaption * ctx.scale,
                   .configure = [](Box& box) {
-                    box.setBorder(colorSpecFromRole(ColorRole::Outline, 0.6f), Style::borderWidth);
+                    box.setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth);
                   },
               })
           );
@@ -3078,7 +3083,7 @@ namespace settings {
                     .paddingH = Style::spaceSm * ctx.scale,
                     .fill = colorSpecFromRole(ColorRole::SurfaceVariant, 0.25f),
                     .radius = Style::scaledRadiusSm(ctx.scale),
-                    .border = colorSpecFromRole(ColorRole::Outline, 0.18f),
+                    .border = colorSpecFromRole(ColorRole::Outline),
                 },
                 makeLabel(
                     i18n::tr("settings.entities.widget.lanes.empty"), Style::fontSizeCaption * ctx.scale,
@@ -3103,7 +3108,7 @@ namespace settings {
                 .minHeight = Style::controlHeightSm * ctx.scale,
                 .paddingV = Style::spaceXs * ctx.scale,
                 .paddingH = Style::spaceSm * ctx.scale,
-                .radius = Style::scaledRadiusSm(ctx.scale),
+                .radius = Style::scaledRadiusMd(ctx.scale),
                 .onClick = [&editingWidgetName = ctx.editingWidgetName, &renamingWidgetName = ctx.renamingWidgetName,
                             &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
                             &pendingDeleteWidgetSettingPath = ctx.pendingDeleteWidgetSettingPath,

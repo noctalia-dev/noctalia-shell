@@ -68,11 +68,9 @@ namespace {
 
 } // namespace
 
-DesktopWeatherWidget::DesktopWeatherWidget(
-    const WeatherService* weather, ColorSpec color, bool shadow, bool showForecast, int forecastDays
-)
-    : m_weather(weather), m_color(color), m_shadow(shadow), m_showForecast(showForecast),
-      m_forecastDays(std::clamp(forecastDays, 1, static_cast<int>(kMaxForecastRows))) {}
+DesktopWeatherWidget::DesktopWeatherWidget(const WeatherService* weather, Options options)
+    : m_weather(weather), m_color(options.color), m_shadow(options.shadow), m_showForecast(options.showForecast),
+      m_forecastDays(std::clamp(options.forecastDays, 1, static_cast<int>(kMaxForecastRows))) {}
 
 void DesktopWeatherWidget::create() {
   auto rootNode = std::make_unique<Node>();

@@ -17,7 +17,16 @@ public:
     Analog,
   };
 
-  DesktopClockWidget(Style style, std::string format, ColorSpec color, bool shadow, bool circle, bool centerText);
+  struct Options {
+    Style style = Style::Digital;
+    std::string format;
+    ColorSpec color = colorSpecFromRole(ColorRole::OnSurface);
+    bool shadow = true;
+    bool showCircle = true;
+    bool centerText = false;
+  };
+
+  explicit DesktopClockWidget(Options options);
 
   void create() override;
   [[nodiscard]] bool wantsSecondTicks() const override;

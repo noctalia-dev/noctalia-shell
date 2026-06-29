@@ -3,6 +3,7 @@
 #include "core/log.h"
 
 #include <algorithm>
+#include <cerrno>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -16,7 +17,7 @@
 namespace {
 
   constexpr Logger kLog("ipc");
-  constexpr int kMaxLineBytes = 512;
+  constexpr std::size_t kMaxCommandBytes = 64 * 1024;
   constexpr int kRecvTimeoutMs = 100;
   constexpr char kCallerCwdSeparator = '\x1e';
 
@@ -147,32 +148,62 @@ void IpcService::handleConnection(int connFd) {
   tv.tv_usec = kRecvTimeoutMs * 1000;
   ::setsockopt(connFd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
-  // Read up to kMaxLineBytes or until '\n'
-  char buf[kMaxLineBytes];
-  int total = 0;
-  while (total < kMaxLineBytes - 1) {
-    const auto n = ::read(connFd, buf + total, 1);
-    if (n <= 0) {
+  // Read until the client closes its write side. Newlines are valid command
+  // payload, so they cannot be used as the frame delimiter.
+  std::string command;
+  char buf[4096];
+  bool reachedEof = false;
+  while (command.size() < kMaxCommandBytes) {
+    const std::size_t limit = std::min(sizeof(buf), kMaxCommandBytes - command.size());
+    const auto n = ::read(connFd, buf, limit);
+    if (n > 0) {
+      command.append(buf, static_cast<std::size_t>(n));
+      continue;
+    }
+    if (n == 0) {
+      reachedEof = true;
       break;
     }
-    if (buf[total] == '\n') {
+    if (errno == EINTR) {
+      continue;
+    }
+    if (errno == EAGAIN || errno == EWOULDBLOCK) {
       break;
     }
-    ++total;
-  }
-  buf[total] = '\0';
-
-  // Trim trailing '\r' for clients that send CRLF
-  if (total > 0 && buf[total - 1] == '\r') {
-    buf[--total] = '\0';
+    kLog.warn("IPC read failed: {}", std::strerror(errno));
+    break;
   }
 
-  if (total == 0) {
+  if (command.size() >= kMaxCommandBytes && !reachedEof) {
+    const std::string response = "error: IPC command too large\n";
+    std::size_t sent = 0;
+    while (sent < response.size()) {
+      const auto n = ::send(connFd, response.data() + sent, response.size() - sent, MSG_NOSIGNAL);
+      if (n <= 0) {
+        break;
+      }
+      sent += static_cast<std::size_t>(n);
+    }
+    return;
+  }
+
+  // Legacy external clients may still send one newline-terminated command and
+  // keep the socket open while waiting for the response.
+  if (!reachedEof) {
+    if (const auto newline = command.find('\n'); newline != std::string::npos) {
+      command.resize(newline);
+    }
+    if (!command.empty() && command.back() == '\r') {
+      command.pop_back();
+    }
+  }
+
+  if (command.empty()) {
     // Client closed the connection without sending anything (e.g. a liveness probe).
     return;
   }
 
-  const std::string response = execute(std::string(buf, static_cast<std::size_t>(total)));
+  const std::string response = execute(command);
   std::size_t sent = 0;
   while (sent < response.size()) {
     const auto n = ::send(connFd, response.data() + sent, response.size() - sent, MSG_NOSIGNAL);

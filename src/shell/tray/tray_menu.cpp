@@ -13,7 +13,6 @@
 #include "ui/controls/scroll_view.h"
 #include "ui/popup_chrome.h"
 #include "ui/style.h"
-#include "wayland/layer_surface.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
 #include "xdg-shell-client-protocol.h"
@@ -1078,8 +1077,8 @@ void TrayMenu::openSubmenuAtLevel(std::size_t levelIndex, std::int32_t parentEnt
   );
 
   const auto* wlOutput = m_wayland->findOutputByWl(parentMenu->output);
-  const std::int32_t outputWidth = (wlOutput != nullptr && wlOutput->logicalWidth > 0)
-      ? wlOutput->logicalWidth
+  const std::int32_t outputWidth = (wlOutput != nullptr && wlOutput->effectiveLogicalWidth() > 0)
+      ? wlOutput->effectiveLogicalWidth()
       : static_cast<std::int32_t>(chrome.surfaceWidth);
 
   bool isRight = (parentMenu->submenuDirection == ContextSubmenuDirection::Right);

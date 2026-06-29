@@ -3,6 +3,7 @@
 #include "compositors/compositor_detect.h"
 #include "config/atomic_file.h"
 #include "config/config_export.h"
+#include "config/config_merge.h"
 #include "config/schema/config_schema.h"
 #include "config/schema/engine.h"
 #include "config/widget_config.h"
@@ -12,7 +13,6 @@
 #include "core/scoped_timer.h"
 #include "ipc/ipc_service.h"
 #include "notification/notification_manager.h"
-#include "render/core/renderer.h"
 #include "shell/desktop/desktop_widget_settings_registry.h"
 #include "shell/settings/widget_settings_registry.h"
 #include "system/distro_info.h"
@@ -49,7 +49,7 @@ namespace {
       if (!std::isfinite(*v)) {
         return std::nullopt;
       }
-      return *v;
+      return v;
     }
     if (auto v = node.value<int64_t>()) {
       return static_cast<double>(*v);
@@ -261,6 +261,10 @@ namespace {
       return keybinds.up;
     case KeybindAction::Down:
       return keybinds.down;
+    case KeybindAction::TabNext:
+      return keybinds.tabNext;
+    case KeybindAction::TabPrevious:
+      return keybinds.tabPrevious;
     }
     return keybinds.validate;
   }
@@ -376,21 +380,14 @@ namespace {
 
   std::optional<toml::table>
   mergeUserConfigSources(std::string_view configDir, std::string_view settingsPath, std::string* error) {
-    toml::table merged;
-
-    for (const auto& path : sortedConfigTomlFiles(configDir)) {
-      try {
-        auto table = toml::parse_file(path.string());
-        ConfigService::deepMerge(merged, table);
-      } catch (const toml::parse_error& e) {
-        if (error != nullptr) {
-          *error = parseErrorMessage(path, e);
-          return std::nullopt;
-        }
-        kLog.warn(
-            "skipping parse error in merged user config export {}: {}", path.filename().string(), e.description()
-        );
+    auto mergeResult = noctalia::config::mergeConfigWithIncludes(configDir);
+    toml::table merged = std::move(mergeResult.merged);
+    if (!mergeResult.firstError.empty()) {
+      if (error != nullptr) {
+        *error = mergeResult.firstError;
+        return std::nullopt;
       }
+      kLog.warn("skipping config error in merged user config export: {}", mergeResult.firstError);
     }
 
     if (!settingsPath.empty() && std::filesystem::exists(std::filesystem::path(std::string(settingsPath)))) {
@@ -462,6 +459,9 @@ ConfigService::~ConfigService() {
         inotify_rm_watch(m_inotifyFd, wd);
       }
     }
+    for (const int wd : m_includeDirWds) {
+      inotify_rm_watch(m_inotifyFd, wd);
+    }
     ::close(m_inotifyFd);
   }
 }
@@ -526,6 +526,7 @@ void ConfigService::fireReloadCallbacks() {
     add(m_lastChange.bars, "bars");
     add(m_lastChange.widgets, "widgets");
     add(m_lastChange.desktopWidgets, "desktopWidgets");
+    add(m_lastChange.hotCorners, "hotCorners");
     add(m_lastChange.lockscreenWidgets, "lockscreenWidgets");
     add(m_lastChange.wallpaper, "wallpaper");
     add(m_lastChange.backdrop, "backdrop");
@@ -776,6 +777,11 @@ void ConfigService::checkReload() {
             }
           }
         }
+
+        // Any *.toml change in a watched [include] directory is a config change.
+        if (m_includeDirWds.contains(event->wd) && name.size() >= 5 && name.substr(name.size() - 5) == ".toml") {
+          configChanged = true;
+        }
       }
       offset += sizeof(inotify_event) + event->len;
     }
@@ -830,6 +836,8 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.enabled = *ovr.enabled;
     if (ovr.autoHide)
       resolved.autoHide = *ovr.autoHide;
+    if (ovr.showOnWorkspaceSwitch)
+      resolved.showOnWorkspaceSwitch = *ovr.showOnWorkspaceSwitch;
     if (ovr.reserveSpace)
       resolved.reserveSpace = *ovr.reserveSpace;
     if (ovr.layer)
@@ -861,6 +869,8 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.marginEnds = *ovr.marginEnds;
     if (ovr.marginEdge)
       resolved.marginEdge = *ovr.marginEdge;
+    if (ovr.marginOppositeEdge)
+      resolved.marginOppositeEdge = *ovr.marginOppositeEdge;
     if (ovr.padding)
       resolved.padding = *ovr.padding;
     if (ovr.widgetSpacing)
@@ -911,6 +921,21 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
     }
     if (ovr.widgetCapsuleOpacity) {
       resolved.widgetCapsuleOpacity = std::clamp(static_cast<float>(*ovr.widgetCapsuleOpacity), 0.0f, 1.0f);
+    }
+    if (ovr.deadZone.command) {
+      resolved.deadZone.command = *ovr.deadZone.command;
+    }
+    if (ovr.deadZone.rightCommand) {
+      resolved.deadZone.rightCommand = *ovr.deadZone.rightCommand;
+    }
+    if (ovr.deadZone.middleCommand) {
+      resolved.deadZone.middleCommand = *ovr.deadZone.middleCommand;
+    }
+    if (ovr.deadZone.scrollUpCommand) {
+      resolved.deadZone.scrollUpCommand = *ovr.deadZone.scrollUpCommand;
+    }
+    if (ovr.deadZone.scrollDownCommand) {
+      resolved.deadZone.scrollDownCommand = *ovr.deadZone.scrollDownCommand;
     }
     break; // first match wins
   }
@@ -999,6 +1024,75 @@ void ConfigService::setupWatch() {
       }
     }
   }
+
+  // The ctor's first loadAll() ran before this fd existed, so establish the
+  // initial [include] directory watches now.
+  refreshIncludeWatches();
+}
+
+void ConfigService::refreshIncludeWatches() {
+  if (m_inotifyFd < 0) {
+    return;
+  }
+
+  const auto canonical = [](const std::filesystem::path& p) {
+    std::error_code ec;
+    const auto c = std::filesystem::weakly_canonical(p, ec);
+    return (ec ? p.lexically_normal() : c).string();
+  };
+
+  // Desired = parent dir of every loaded file + every directory named in an
+  // [include].files list, minus dirs already covered by the primary watches.
+  std::unordered_set<std::string> desired;
+  for (const auto& file : m_includeLoadedFiles) {
+    auto dir = canonical(file.parent_path());
+    if (!dir.empty()) {
+      desired.insert(std::move(dir));
+    }
+  }
+  for (const auto& dir : m_includeDirs) {
+    auto canon = canonical(dir);
+    if (!canon.empty()) {
+      desired.insert(std::move(canon));
+    }
+  }
+  if (!m_configDir.empty()) {
+    desired.erase(canonical(std::filesystem::path(m_configDir)));
+  }
+  if (!m_overridesPath.empty()) {
+    desired.erase(canonical(std::filesystem::path(m_overridesPath).parent_path()));
+  }
+
+  // Drop watches no longer wanted.
+  for (auto it = m_includeDirWatches.begin(); it != m_includeDirWatches.end();) {
+    if (!desired.contains(it->first)) {
+      inotify_rm_watch(m_inotifyFd, it->second);
+      m_includeDirWds.erase(it->second);
+      it = m_includeDirWatches.erase(it);
+    } else {
+      ++it;
+    }
+  }
+
+  // Add newly wanted watches.
+  for (const auto& dir : desired) {
+    if (m_includeDirWatches.contains(dir)) {
+      continue;
+    }
+    const int wd = inotify_add_watch(m_inotifyFd, dir.c_str(), IN_MODIFY | IN_CLOSE_WRITE | IN_CREATE | IN_MOVED_TO);
+    if (wd < 0) {
+      continue;
+    }
+    // inotify_add_watch is idempotent per inode: if this dir is already watched by
+    // the config/overrides/symlink-target watches, the existing wd comes back. Do
+    // not record it (and never remove it) — its original owner manages its lifetime.
+    if (wd == m_configWatchWd || wd == m_overridesWatchWd || m_symlinkDirWds.contains(wd)) {
+      continue;
+    }
+    m_includeDirWatches.emplace(dir, wd);
+    m_includeDirWds.insert(wd);
+    kLog.debug("watching include directory {}", dir);
+  }
 }
 
 void ConfigService::loadOverridesFromFile() {
@@ -1075,29 +1169,11 @@ void ConfigService::loadAll() {
   Config nextConfig;
   noctalia::config::seedBuiltinWidgets(nextConfig);
 
-  const auto files = sortedConfigTomlFiles(m_configDir);
-
-  toml::table merged;
-  std::string firstError;
-
-  for (const auto& path : files) {
-    try {
-      auto tbl = toml::parse_file(path.string());
-      deepMerge(merged, tbl);
-      kLog.info("loaded {}", path.string());
-    } catch (const toml::parse_error& e) {
-      const auto& src = e.source();
-      kLog.warn(
-          "parse error in {} at line {}, column {}: {}", path.filename().string(), src.begin.line, src.begin.column,
-          e.description()
-      );
-      if (firstError.empty()) {
-        firstError = std::format(
-            "{} line {}, column {}: {}", path.filename().string(), src.begin.line, src.begin.column, e.description()
-        );
-      }
-    }
-  }
+  auto mergeResult = noctalia::config::mergeConfigWithIncludes(m_configDir);
+  toml::table merged = std::move(mergeResult.merged);
+  std::string firstError = std::move(mergeResult.firstError);
+  m_includeLoadedFiles = std::move(mergeResult.loadedFiles);
+  m_includeDirs = std::move(mergeResult.includeDirs);
 
   decltype(m_configFileBarNames) configFileBarNames;
   decltype(m_configFileMonitorOverrideNames) configFileMonitorOverrideNames;
@@ -1139,7 +1215,7 @@ void ConfigService::loadAll() {
   // Apply the app-writable overrides overlay last — sidecar wins.
   deepMerge(merged, m_overridesTable);
 
-  if (files.empty() && m_overridesTable.empty()) {
+  if (m_includeLoadedFiles.empty() && m_overridesTable.empty()) {
     kLog.info("no config files found, using defaults");
     m_lastChange = ConfigChangeSet{};
     m_config = makeDefaultConfig();
@@ -1150,6 +1226,7 @@ void ConfigService::loadAll() {
     m_lastWallpaperPath.clear();
     m_monitorWallpaperPaths.clear();
     setConfigParseError(m_overridesParseError);
+    refreshIncludeWatches();
     return;
   }
 
@@ -1186,6 +1263,10 @@ void ConfigService::loadAll() {
       : !m_overridesParseError.empty()               ? m_overridesParseError
                                                      : semanticError;
   setConfigParseError(parseError);
+
+  // Included files may live in subdirectories or absolute paths outside the config
+  // dir, and the include set can change on every reload — reconcile their watches.
+  refreshIncludeWatches();
 }
 
 void ConfigService::parseConfigTable(
@@ -1470,6 +1551,11 @@ void ConfigService::parseConfigTable(
     parseWidgetsPlacementSection(
         *lockscreenWidgetsTbl, lockscreenWidgets.grid, lockscreenWidgets.widgets, "lockscreen_widgets"
     );
+  }
+
+  // Parse [hot_corners]
+  if (auto* hotCornersTbl = tbl["hot_corners"].as_table()) {
+    schema::readInto(*hotCornersTbl, config.hotCorners, schema::hotCornersSchema(), "hot_corners", schemaDiag);
   }
 
   // Parse [weather]

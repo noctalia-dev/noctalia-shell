@@ -4,14 +4,16 @@
 #include "render/animation/animation_manager.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
+#include "scripting/plugin_file_cache.h"
 #include "scripting/plugin_manager.h"
 #include "shell/settings/config_export_dialog_popup.h"
 #include "shell/settings/search_picker_popup.h"
 #include "shell/settings/settings_control_factory.h"
-#include "shell/settings/settings_editor_sheet_popup.h"
 #include "shell/settings/settings_registry.h"
+#include "shell/settings/settings_sheet_popup.h"
 #include "shell/settings/widget_add_popup.h"
 #include "ui/controls/context_menu_popup.h"
+#include "ui/controls/roving_list_nav.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/select_dropdown_popup.h"
 #include "ui/dialogs/layer_popup_host.h"
@@ -29,9 +31,11 @@ class Box;
 class Button;
 class AccountsService;
 class ConfigService;
+class CompositorPlatform;
 class DependencyService;
 class Flex;
 class IdleManager;
+class Input;
 class Label;
 class RenderContext;
 class UPowerService;
@@ -43,7 +47,6 @@ struct wl_surface;
 
 namespace settings {
   struct SettingsContentContext;
-  class SettingsControlFactory;
 } // namespace settings
 
 // Standalone xdg-toplevel settings UI (same binary as the shell; shares RenderContext).
@@ -53,10 +56,10 @@ public:
 
   void initialize(
       WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext, DependencyService* dependencies,
-      UPowerService* upower, IdleManager* idleManager, AccountsService* accounts = nullptr
+      UPowerService* upower, IdleManager* idleManager, CompositorPlatform* platform, AccountsService* accounts = nullptr
   );
 
-  void open();
+  void open(std::string context = "");
   void openToBarWidget(std::string barName, std::string widgetName);
   void close();
   [[nodiscard]] bool isOpen() const noexcept { return m_surface != nullptr && m_surface->isRunning(); }
@@ -121,17 +124,15 @@ private:
   void refreshPluginListIfNeeded();
   void maybeOpenPendingWidgetInspector();
   void applyPendingContentScrollTarget(float margin);
+  void scrollFocusedAreaIntoView(class InputArea* area);
+  void scrollSidebarNodeIntoView(const Node* node);
   void clearStatusMessage();
   void clearTransientSettingsState();
   void openActionsMenu();
   void openConfigExportDialog();
   void openBarWidgetAddPopup(const std::vector<std::string>& lanePath);
-  // Parameters are taken by value: opening the popup closes the editor sheet, which can own the control
-  // whose callback forwarded these arguments, so copies must outlive that destruction.
-  void openSearchPickerPopup(
-      std::string title, std::vector<settings::SelectOption> options, std::string selectedValue,
-      std::string placeholder, std::string emptyText, std::vector<std::string> settingPath
-  );
+  // Request is taken by value because opening the popup can close the sheet that owns the forwarding control.
+  void openSearchPickerPopup(settings::SearchPickerOpenRequest request);
   void openSessionActionEntryEditor(std::size_t index);
   void syncSessionActionInlineSummary(std::size_t index, const SessionPanelActionConfig& row);
   void openIdleBehaviorEntryEditor(std::size_t index);
@@ -143,6 +144,7 @@ private:
   void openCapsuleGroupEditor(std::vector<std::string> laneListPath, std::string groupId);
   void openPluginSourceCreateEditor(std::optional<PluginSourceConfig> existing = std::nullopt);
   void openPluginSettingsEditor(std::string pluginId);
+  void openPluginStore();
   void openBarWidgetEditorSheet(
       std::string title, std::function<void(Flex&)> populate, std::function<void()> removeAction = nullptr
   );
@@ -172,6 +174,7 @@ private:
   void dismissOpenSelectDropdown();
 
   WaylandConnection* m_wayland = nullptr;
+  CompositorPlatform* m_platform = nullptr;
   IdleManager* m_idleManager = nullptr;
   ConfigService* m_config = nullptr;
   scripting::PluginManager* m_pluginManager = nullptr;
@@ -180,6 +183,7 @@ private:
   bool m_pluginListDirty = true;
   bool m_pluginListRefreshInFlight = false;
   std::uint64_t m_pluginListRefreshGeneration = 0;
+  scripting::PluginFileCache m_pluginFileCache;
   RenderContext* m_renderContext = nullptr;
   DependencyService* m_dependencies = nullptr;
   UPowerService* m_upower = nullptr;
@@ -198,11 +202,13 @@ private:
   Button* m_actionsMenuButton = nullptr;
   Flex* m_contentContainer = nullptr;
   ScrollView* m_contentScrollView = nullptr;
+  ScrollView* m_sidebarScrollView = nullptr;
+  RovingListNavHost* m_sidebarNav = nullptr;
   std::unique_ptr<ContextMenuPopup> m_actionsMenuPopup;
   std::unique_ptr<settings::WidgetAddPopup> m_widgetAddPopup;
   std::unique_ptr<settings::ConfigExportDialogPopup> m_configExportDialogPopup;
   std::unique_ptr<settings::SearchPickerPopup> m_searchPickerPopup;
-  std::unique_ptr<settings::SettingsEditorSheetPopup> m_editorSheetPopup;
+  std::unique_ptr<settings::SettingsSheetPopup> m_editorSheetPopup;
   std::unique_ptr<settings::SettingsControlFactory> m_editorSheetFactory;
   std::vector<std::string> m_editorSheetListPath;
   InputDispatcher m_inputDispatcher;
@@ -218,6 +224,7 @@ private:
   bool m_rebuildRequested = false;
   bool m_contentRebuildRequested = false;
   bool m_focusSearchOnRebuild = false;
+  Input* m_settingsSearchInput = nullptr;
   bool m_scrollToPendingContentTarget = false;
   Node* m_pendingContentScrollTarget = nullptr;
   std::string m_searchQuery;

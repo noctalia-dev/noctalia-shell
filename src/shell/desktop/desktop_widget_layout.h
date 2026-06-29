@@ -28,7 +28,7 @@ namespace desktop_widgets {
       return nullptr;
     }
     for (const auto& output : wayland.outputs()) {
-      if (!output.done || output.output == nullptr) {
+      if (!output.done || output.output == nullptr || !output.hasUsableGeometry()) {
         continue;
       }
       if (outputKey(output) == key) {
@@ -43,7 +43,7 @@ namespace desktop_widgets {
     const auto& outputs = wayland.outputs();
     const WaylandOutput* primary = nullptr;
     for (const auto& output : outputs) {
-      if (!output.done || output.output == nullptr) {
+      if (!output.done || output.output == nullptr || !output.hasUsableGeometry()) {
         continue;
       }
       if (primary == nullptr) {
@@ -67,17 +67,11 @@ namespace desktop_widgets {
   }
 
   inline float outputLogicalWidth(const WaylandOutput& output) {
-    if (output.logicalWidth > 0) {
-      return static_cast<float>(output.logicalWidth);
-    }
-    return static_cast<float>(std::max(1, output.width / std::max(1, output.scale)));
+    return static_cast<float>(std::max(1, output.effectiveLogicalWidth()));
   }
 
   inline float outputLogicalHeight(const WaylandOutput& output) {
-    if (output.logicalHeight > 0) {
-      return static_cast<float>(output.logicalHeight);
-    }
-    return static_cast<float>(std::max(1, output.height / std::max(1, output.scale)));
+    return static_cast<float>(std::max(1, output.effectiveLogicalHeight()));
   }
 
   // Single source of truth for desktop widget coordinate clamping. Edit mode, default mode, and

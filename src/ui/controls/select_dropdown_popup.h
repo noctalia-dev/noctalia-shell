@@ -55,12 +55,13 @@ private:
   };
 
   void buildScene(const DropdownRequest& request);
-  void handleKey(std::uint32_t sym, std::uint32_t utf32, bool pressed);
+  void handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed);
   void invalidateScene();
   void scrollBy(float delta);
   void setScrollOffset(float offset);
   void applyScrollOffset();
   void clampScrollOffset();
+  void ensureHoveredIndexVisible();
   void applyHoverVisuals();
   void selectAndClose(std::size_t index);
   [[nodiscard]] bool mapPointerEvent(const PointerEvent& event, float& localX, float& localY) const noexcept;
@@ -68,6 +69,11 @@ private:
   void syncPointerStateFromCurrentPosition();
   [[nodiscard]] bool ownsSurface(wl_surface* surface) const noexcept;
   [[nodiscard]] bool containsPopupContent(float localX, float localY) const noexcept;
+
+  // Guard token for deferred callbacks that run on the next main-loop tick.
+  // Callbacks capture a weak_ptr so they can detect destruction without
+  // relying on a raw this pointer staying valid.
+  std::shared_ptr<void> m_aliveGuard = std::make_shared<int>(0);
 
   WaylandConnection& m_wayland;
   RenderContext& m_renderContext;

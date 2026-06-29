@@ -1,6 +1,6 @@
 #pragma once
 
-#include "config/config_service.h"
+#include "config/config_types.h"
 
 #include <chrono>
 #include <cstdint>
@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+class ConfigService;
 class HttpClient;
 
 // Coordinates resolved from IP geolocation or a geocoded address.
@@ -85,5 +86,5 @@ private:
   RequestKind m_requestKind = RequestKind::None;
   std::uint64_t m_requestSerial = 0;
   bool m_refreshQueued = false;
-  std::chrono::system_clock::time_point m_nextRefreshAt{};
+  std::chrono::system_clock::time_point m_nextRefreshAt;
 };

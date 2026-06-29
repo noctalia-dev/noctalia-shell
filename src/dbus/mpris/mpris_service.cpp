@@ -494,7 +494,6 @@ void MprisService::applyPositionSample(const std::string& busName, int64_t rawPo
       && offsetUs > 0
       && rawPositionUs + kStaleRebaseClearSlackUs < offsetUs) {
     offsetIt->second = 0;
-    offsetUs = 0;
     normalizedUs = rawPositionUs;
   }
 
@@ -557,7 +556,6 @@ void MprisService::applyPositionSample(const std::string& busName, int64_t rawPo
       } else if (pausedJumpUs < kPauseRecoveryMinJumpUs) {
         return;
       } else {
-        playerIt->second.playbackStatus = "Playing";
         m_recentNoSignalPauseAt.erase(pauseIt);
       }
     } else if (!recentLocalSeek && pausedJumpUs < kPausedSameTrackPositionJumpToleranceUs) {
@@ -692,7 +690,8 @@ void MprisService::registerIpc(IpcService& ipc) {
       [this](const std::string& args) -> std::string {
         const auto parts = noctalia::ipc::splitWords(args);
         if (parts.size() != 1) {
-          return "error: media requires exactly one action <next|previous|toggle|stop>\n";
+          return "error: media requires exactly one action "
+                 "<next|previous|toggle|play|stop|next-player|previous-player>\n";
         }
 
         const std::string& action = parts[0];
@@ -705,13 +704,22 @@ void MprisService::registerIpc(IpcService& ipc) {
         if (action == "toggle" || action == "playPause" || action == "play-pause") {
           return playPauseActive() ? "ok\n" : "error: no active player or PlayPause unsupported\n";
         }
+        if (action == "play") {
+          return playActive() ? "ok\n" : "error: no active player or Play unsupported\n";
+        }
         if (action == "stop") {
-          return stopActive() ? "ok\n" : "error: no active player or Stop unsupported\n";
+          return stopActive() ? "ok\n" : "error: no active player or Pause/Stop unsupported\n";
+        }
+        if (action == "next-player") {
+          return cycleActivePlayer(1) ? "ok\n" : "error: no media players available\n";
+        }
+        if (action == "previous-player") {
+          return cycleActivePlayer(-1) ? "ok\n" : "error: no media players available\n";
         }
 
-        return "error: invalid media action (use next, previous, toggle, stop)\n";
+        return "error: invalid media action (use next, previous, toggle, play, stop, next-player, previous-player)\n";
       },
-      "media <next|previous|toggle|stop>", "Control active media playback"
+      "media <next|previous|toggle|play|stop|next-player|previous-player>", "Control active media playback"
   );
 }
 
@@ -768,8 +776,18 @@ bool MprisService::playPause(const std::string& busName) {
   if (!canInvoke(it->second, "PlayPause")) {
     return false;
   }
-  m_stoppedPlayers.erase(busName);
   return callPlayerMethod(busName, "PlayPause");
+}
+
+bool MprisService::play(const std::string& busName) {
+  const auto it = m_players.find(busName);
+  if (it == m_players.end()) {
+    return false;
+  }
+  if (!canInvoke(it->second, "Play")) {
+    return false;
+  }
+  return callPlayerMethod(busName, "Play");
 }
 
 bool MprisService::stop(const std::string& busName) {
@@ -777,13 +795,25 @@ bool MprisService::stop(const std::string& busName) {
   if (it == m_players.end()) {
     return false;
   }
+
+  if (it->second.playbackStatus != "Playing") {
+    return true;
+  }
+
+  if (it->second.canPause) {
+    if (!callPlayerMethod(busName, "Pause")) {
+      return false;
+    }
+    return true;
+  }
+
   if (!canInvoke(it->second, "Stop")) {
     return false;
   }
   if (!callPlayerMethod(busName, "Stop")) {
     return false;
   }
-  dismissPlayer(busName);
+
   return true;
 }
 
@@ -815,6 +845,14 @@ bool MprisService::playPauseActive() {
     return false;
   }
   return playPause(*active);
+}
+
+bool MprisService::playActive() {
+  const auto active = chooseActivePlayer();
+  if (!active.has_value()) {
+    return false;
+  }
+  return play(*active);
 }
 
 bool MprisService::stopActive() {
@@ -1604,7 +1642,6 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
             seekCommandIt != m_lastSeekCommandAt.end() && now - seekCommandIt->second <= kSeekPauseGraceWindow;
         const std::int64_t pausedJumpUs = std::llabs(normalizedUs - previousPosUs);
         if (recoveringRecentPause && !recentLocalSeek && pausedJumpUs >= kPauseRecoveryMinJumpUs) {
-          playerIt->second.playbackStatus = "Playing";
           m_recentNoSignalPauseAt.erase(pauseIt);
         }
       }
@@ -1690,14 +1727,14 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
                     }
                   }
 
-                  // For a player we've never seen before, avoid creating a root-only placeholder
-                  // entry when the player interface is unavailable. Let recovery rediscover it once
-                  // we can read actual playback/metadata state.
-                  if (playerFailed && !m_players.contains(busName)) {
+                  if (playerFailed) {
                     if (rootFailed) {
                       kLog.warn("player hydration failed (both interfaces) name={}", busName);
                     } else {
                       kLog.warn("player hydration failed (player interface) name={}", busName);
+                    }
+                    if (m_players.contains(busName)) {
+                      removePlayerCacheEntry(busName);
                     }
                     scheduleRecoveryDiscovery();
                     return;
@@ -1715,7 +1752,7 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
 
                   const MprisPlayerInfo info =
                       readPlayerInfoFromProperties(busName, effectiveRootProps, effectivePlayerProps);
-                  if (!playerFailed && !hasStrongNowPlayingMetadata(info)) {
+                  if (!hasStrongNowPlayingMetadata(info)) {
                     removePlayerCacheEntry(busName);
                     return;
                   }
@@ -1742,17 +1779,44 @@ void MprisService::applyPlayerSnapshot(
   }
   const auto previousActive = activePlayer();
   const auto now = std::chrono::steady_clock::now();
+  bool clearedPinnedPlayerPreference = false;
+  const auto existing = m_players.find(busName);
+  const bool becamePlaying =
+      info.playbackStatus == "Playing" && (existing == m_players.end() || existing->second.playbackStatus != "Playing");
+  const bool transitionedFromPlaying =
+      info.playbackStatus != "Playing" && existing != m_players.end() && existing->second.playbackStatus == "Playing";
+  const auto hasOtherPlayingPlayer = [this, &busName]() {
+    for (const auto& [otherBusName, player] : m_players) {
+      if (otherBusName != busName && !isBlacklisted(player) && player.playbackStatus == "Playing") {
+        return true;
+      }
+    }
+    return false;
+  };
 
   if (info.playbackStatus == "Playing") {
-    m_stoppedPlayers.erase(busName);
+    if (becamePlaying && m_pinnedPlayerPreference.has_value() && *m_pinnedPlayerPreference != busName) {
+      const auto pinnedIt = m_players.find(*m_pinnedPlayerPreference);
+      if (pinnedIt != m_players.end() && pinnedIt->second.playbackStatus != "Playing") {
+        m_pinnedPlayerPreference.reset();
+        clearedPinnedPlayerPreference = true;
+      }
+    }
+    if (becamePlaying) {
+      m_lastActivePlayer = busName;
+      m_lastPlayingUpdate[busName] = now;
+    }
+  } else if (transitionedFromPlaying) {
     m_lastActivePlayer = busName;
-    m_lastPlayingUpdate[busName] = now;
+    if (m_pinnedPlayerPreference.has_value() && *m_pinnedPlayerPreference == busName && hasOtherPlayingPlayer()) {
+      m_pinnedPlayerPreference.reset();
+      clearedPinnedPlayerPreference = true;
+    }
   }
   if (hasStrongNowPlayingMetadata(info)) {
     m_lastStrongMetadataUpdate[busName] = now;
   }
 
-  const auto existing = m_players.find(busName);
   if (existing == m_players.end()) {
     MprisPlayerInfo initial = info;
     if (!hadPositionSignal) {
@@ -1983,7 +2047,7 @@ void MprisService::applyPlayerSnapshot(
     }
 
     syncSignals(previousActive);
-    if (significantChanged && m_changeCallback) {
+    if ((significantChanged || clearedPinnedPlayerPreference) && m_changeCallback) {
       m_changeCallback();
     }
   }
@@ -2032,7 +2096,6 @@ void MprisService::clearPlayerState(const std::string& busName) {
   if (m_lastActivePlayer == busName) {
     m_lastActivePlayer.clear();
   }
-  m_stoppedPlayers.erase(busName);
 }
 
 void MprisService::removePlayer(const std::string& busName) {
@@ -2056,20 +2119,18 @@ void MprisService::removePlayer(const std::string& busName) {
 }
 
 std::optional<std::string> MprisService::chooseActivePlayer() const {
-  const auto isDismissed = [this](const std::string& busName) { return m_stoppedPlayers.contains(busName); };
-
   if (m_pinnedPlayerPreference.has_value()) {
     const auto it = m_players.find(*m_pinnedPlayerPreference);
-    if (it != m_players.end() && !isBlacklisted(it->second) && !isDismissed(*m_pinnedPlayerPreference)) {
+    if (it != m_players.end() && !isBlacklisted(it->second)) {
       // kLog.debug("choose active player source=pinned name={}", *m_pinnedPlayerPreference);
-      return *m_pinnedPlayerPreference;
+      return m_pinnedPlayerPreference;
     }
   }
 
   std::optional<std::string> mostRecentPlaying;
   std::chrono::steady_clock::time_point mostRecentPlayingAt{};
   for (const auto& [busName, player] : m_players) {
-    if (isBlacklisted(player) || isDismissed(busName) || player.playbackStatus != "Playing") {
+    if (isBlacklisted(player) || player.playbackStatus != "Playing") {
       continue;
     }
     const auto playingIt = m_lastPlayingUpdate.find(busName);
@@ -2087,10 +2148,7 @@ std::optional<std::string> MprisService::chooseActivePlayer() const {
 
   for (const auto& busName : m_preferredPlayers) {
     const auto it = m_players.find(busName);
-    if (it != m_players.end()
-        && !isBlacklisted(it->second)
-        && !isDismissed(busName)
-        && it->second.playbackStatus == "Playing") {
+    if (it != m_players.end() && !isBlacklisted(it->second) && it->second.playbackStatus == "Playing") {
       // kLog.debug("choose active player source=preferred_playing name={}", busName);
       return busName;
     }
@@ -2098,7 +2156,7 @@ std::optional<std::string> MprisService::chooseActivePlayer() const {
 
   for (const auto& busName : m_preferredPlayers) {
     const auto it = m_players.find(busName);
-    if (it != m_players.end() && !isBlacklisted(it->second) && !isDismissed(busName)) {
+    if (it != m_players.end() && !isBlacklisted(it->second)) {
       // kLog.debug("choose active player source=preferred_any name={}", busName);
       return busName;
     }
@@ -2106,14 +2164,14 @@ std::optional<std::string> MprisService::chooseActivePlayer() const {
 
   if (!m_lastActivePlayer.empty()) {
     const auto it = m_players.find(m_lastActivePlayer);
-    if (it != m_players.end() && !isBlacklisted(it->second) && !isDismissed(m_lastActivePlayer)) {
+    if (it != m_players.end() && !isBlacklisted(it->second)) {
       // kLog.debug("choose active player source=last_active name={}", m_lastActivePlayer);
       return m_lastActivePlayer;
     }
   }
 
   for (const auto& [busName, player] : m_players) {
-    if (!isBlacklisted(player) && !isDismissed(busName)) {
+    if (!isBlacklisted(player)) {
       // kLog.debug("choose active player source=first_cached name={}", busName);
       return busName;
     }
@@ -2121,6 +2179,27 @@ std::optional<std::string> MprisService::chooseActivePlayer() const {
 
   // kLog.debug("choose active player source=none");
   return std::nullopt;
+}
+
+bool MprisService::cycleActivePlayer(int direction) {
+  const std::vector<MprisPlayerInfo> players = listPlayers();
+  if (players.empty()) {
+    return false;
+  }
+
+  const auto active = chooseActivePlayer();
+  std::size_t targetIndex = direction >= 0 ? 0 : players.size() - 1;
+  if (active.has_value()) {
+    for (std::size_t i = 0; i < players.size(); ++i) {
+      if (players[i].busName != *active) {
+        continue;
+      }
+      targetIndex = direction >= 0 ? (i + 1) % players.size() : (i + players.size() - 1) % players.size();
+      break;
+    }
+  }
+
+  return setPinnedPlayerPreference(players[targetIndex].busName);
 }
 
 bool MprisService::isBlacklisted(const MprisPlayerInfo& player) const {
@@ -2165,6 +2244,9 @@ bool MprisService::callPlayerMethod(const std::string& busName, const char* meth
 
 bool MprisService::canInvoke(const MprisPlayerInfo& player, const char* methodName) const {
   const std::string_view method{methodName};
+  if (method == "Play") {
+    return player.canPlay;
+  }
   if (method == "PlayPause" || method == "Stop") {
     return player.canPlay || player.canPause;
   }
@@ -2175,27 +2257,6 @@ bool MprisService::canInvoke(const MprisPlayerInfo& player, const char* methodNa
     return player.canGoPrevious;
   }
   return false;
-}
-
-void MprisService::dismissPlayer(const std::string& busName) {
-  if (busName.empty()) {
-    return;
-  }
-
-  const auto previousActive = chooseActivePlayer();
-  m_stoppedPlayers.insert(busName);
-  if (m_lastActivePlayer == busName) {
-    m_lastActivePlayer.clear();
-  }
-
-  if (!previousActive.has_value() || *previousActive != busName) {
-    return;
-  }
-
-  emitActivePlayerChanged();
-  if (m_changeCallback) {
-    m_changeCallback();
-  }
 }
 
 bool MprisService::onPlayPausePlayer(const std::string& busName) {

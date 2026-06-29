@@ -1,4 +1,5 @@
 #include "config/atomic_file.h"
+#include "config/config_merge.h"
 #include "config/config_service.h"
 #include "config/widget_config.h"
 #include "core/key_chord.h"
@@ -163,6 +164,9 @@ namespace {
     if (ovr.autoHide) {
       resolved.autoHide = *ovr.autoHide;
     }
+    if (ovr.showOnWorkspaceSwitch) {
+      resolved.showOnWorkspaceSwitch = *ovr.showOnWorkspaceSwitch;
+    }
     if (ovr.reserveSpace) {
       resolved.reserveSpace = *ovr.reserveSpace;
     }
@@ -202,6 +206,9 @@ namespace {
     }
     if (ovr.marginEdge) {
       resolved.marginEdge = *ovr.marginEdge;
+    }
+    if (ovr.marginOppositeEdge) {
+      resolved.marginOppositeEdge = *ovr.marginOppositeEdge;
     }
     if (ovr.padding) {
       resolved.padding = *ovr.padding;
@@ -267,6 +274,21 @@ namespace {
     if (ovr.widgetCapsuleOpacity) {
       resolved.widgetCapsuleOpacity = std::clamp(static_cast<float>(*ovr.widgetCapsuleOpacity), 0.0f, 1.0f);
     }
+    if (ovr.deadZone.command) {
+      resolved.deadZone.command = *ovr.deadZone.command;
+    }
+    if (ovr.deadZone.rightCommand) {
+      resolved.deadZone.rightCommand = *ovr.deadZone.rightCommand;
+    }
+    if (ovr.deadZone.middleCommand) {
+      resolved.deadZone.middleCommand = *ovr.deadZone.middleCommand;
+    }
+    if (ovr.deadZone.scrollUpCommand) {
+      resolved.deadZone.scrollUpCommand = *ovr.deadZone.scrollUpCommand;
+    }
+    if (ovr.deadZone.scrollDownCommand) {
+      resolved.deadZone.scrollDownCommand = *ovr.deadZone.scrollDownCommand;
+    }
     return resolved;
   }
 
@@ -322,6 +344,7 @@ namespace {
     return vectorEqual(a.bars, b.bars, barConfigEqual)
         && widgetMapEqual(a.widgets, b.widgets)
         && desktopWidgetsConfigEqual(a.desktopWidgets, b.desktopWidgets)
+        && a.hotCorners == b.hotCorners
         && lockscreenWidgetsConfigEqual(a.lockscreenWidgets, b.lockscreenWidgets)
         && a.wallpaper == b.wallpaper
         && a.backdrop == b.backdrop
@@ -443,6 +466,7 @@ namespace {
               if (item.shortcut.has_value()) {
                 row.insert_or_assign("shortcut", keyChordToString(*item.shortcut));
               }
+              row.insert_or_assign("countdown_seconds", item.countdownSeconds);
               array.push_back(std::move(row));
             }
             table.insert_or_assign(key, std::move(array));
@@ -485,7 +509,7 @@ namespace {
               }
               toml::table row;
               row.insert_or_assign("enabled", item.enabled);
-              row.insert_or_assign("timeout", static_cast<std::int64_t>(item.timeoutSeconds));
+              row.insert_or_assign("timeout", item.timeoutSeconds);
               if (!item.action.empty()) {
                 row.insert_or_assign("action", item.action);
               }
@@ -522,6 +546,7 @@ namespace {
               row.insert_or_assign("show_toast", item.showToast);
               row.insert_or_assign("save_history", item.saveHistory);
               row.insert_or_assign("play_sound", item.playSound);
+              row.insert_or_assign("allow_permanent", item.allowPermanent);
               if (!item.allowedUrgencies.empty()) {
                 toml::array urgencies;
                 for (const auto& urgency : item.allowedUrgencies) {
@@ -648,24 +673,6 @@ namespace {
     return key == "start" || key == "center" || key == "end";
   }
 
-  std::vector<std::filesystem::path> sortedConfigTomlFiles(std::string_view configDir) {
-    std::vector<std::filesystem::path> files;
-    if (configDir.empty()) {
-      return files;
-    }
-
-    std::error_code ec;
-    if (!std::filesystem::is_directory(configDir, ec) || ec) {
-      return files;
-    }
-    for (const auto& entry : std::filesystem::directory_iterator(configDir, ec)) {
-      if (entry.is_regular_file() && entry.path().extension() == ".toml") {
-        files.push_back(entry.path());
-      }
-    }
-    std::ranges::sort(files);
-    return files;
-  }
 } // namespace
 
 ConfigChangeSet computeConfigChangeSet(const Config& prev, const Config& next) {
@@ -695,6 +702,7 @@ ConfigChangeSet computeConfigChangeSet(const Config& prev, const Config& next) {
       .theme = !(prev.theme == next.theme),
       .controlCenter = !(prev.controlCenter == next.controlCenter),
       .plugins = !pluginsConfigEqual(prev.plugins, next.plugins),
+      .hotCorners = !(prev.hotCorners == next.hotCorners),
   };
 }
 
@@ -775,13 +783,22 @@ void ConfigService::addPluginSource(const PluginSourceConfig& source) {
   }
 
   if (!sourceWritten) {
-    // A source name is an identity, not a duplicate key — replace any existing entry.
-    for (auto it = arr->begin(); it != arr->end();) {
+    // A source name is an identity, not a duplicate key. Replace any existing entry
+    // in place — source order is precedence, so toggling enabled must not move the
+    // source to the end. Append only when the name isn't present yet.
+    bool replaced = false;
+    for (auto it = arr->begin(); it != arr->end(); ++it) {
       const auto* tbl = it->as_table();
       const auto name = tbl != nullptr ? (*tbl)["name"].value<std::string>() : std::nullopt;
-      it = (name && *name == source.name) ? arr->erase(it) : it + 1;
+      if (name && *name == source.name) {
+        arr->replace(it, sourceTable(source));
+        replaced = true;
+        break;
+      }
     }
-    arr->push_back(sourceTable(source));
+    if (!replaced) {
+      arr->push_back(sourceTable(source));
+    }
   }
 
   if (!writeOverridesToFile()) {
@@ -1063,21 +1080,14 @@ std::optional<Config> ConfigService::configForOverrides(const toml::table& overr
   Config parsed;
   noctalia::config::seedBuiltinWidgets(parsed);
 
-  const auto files = sortedConfigTomlFiles(m_configDir);
-  toml::table merged;
-  for (const auto& path : files) {
-    try {
-      auto tbl = toml::parse_file(path.string());
-      deepMerge(merged, tbl);
-    } catch (const toml::parse_error& e) {
-      kLog.warn(
-          "skipping parse error in effective override comparison {}: {}", path.filename().string(), e.description()
-      );
-    }
+  auto mergeResult = noctalia::config::mergeConfigWithIncludes(m_configDir);
+  toml::table merged = std::move(mergeResult.merged);
+  if (!mergeResult.firstError.empty()) {
+    kLog.warn("skipping config error in effective override comparison: {}", mergeResult.firstError);
   }
 
   deepMerge(merged, overrides);
-  if (files.empty() && overrides.empty()) {
+  if (mergeResult.loadedFiles.empty() && overrides.empty()) {
     parsed.idle.behaviors = defaultIdleBehaviors();
     parsed.bars.push_back(BarConfig{});
     parsed.controlCenter.shortcuts = defaultControlCenterShortcuts();
@@ -1442,6 +1452,10 @@ bool ConfigService::setOverrides(std::vector<std::pair<std::vector<std::string>,
     }
   }
 
+  if (next == m_overridesTable) {
+    return true;
+  }
+
   toml::table previous = std::move(m_overridesTable);
   m_overridesTable = std::move(next);
   if (!writeOverridesToFile()) {
@@ -1697,7 +1711,7 @@ void ConfigService::extractWallpaperFromTable(const toml::table& table) {
       }
       if (auto sourceKey = (*favTbl)["palette_source"].value<std::string>()) {
         if (auto parsed = enumFromKey(kPaletteSources, *sourceKey)) {
-          favorite.paletteSource = *parsed;
+          favorite.paletteSource = parsed;
         }
       }
       if (auto v = (*favTbl)["builtin_palette"].value<std::string>()) {

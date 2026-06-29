@@ -65,6 +65,7 @@ int main() {
   if (defaults.has_value()) {
     ok = expectEq(defaults->license, "MIT", "license should default to MIT") && ok;
     ok = expect(!defaults->deprecated, "deprecated should default to false") && ok;
+    ok = expect(defaults->dependencies.empty(), "dependencies should default to empty") && ok;
   }
 
   const auto explicitManifestPath = root / "explicit/plugin.toml";
@@ -75,6 +76,7 @@ int main() {
            "min_noctalia = \"5.0.0\"\n"
            "license = \"Apache-2.0\"\n"
            "deprecated = true\n"
+           "dependencies = [\"grim\", \"slurp\"]\n"
        )
       && ok;
 
@@ -84,6 +86,11 @@ int main() {
   if (explicitManifest.has_value()) {
     ok = expectEq(explicitManifest->license, "Apache-2.0", "license should parse explicit value") && ok;
     ok = expect(explicitManifest->deprecated, "deprecated should parse explicit value") && ok;
+    ok = expect(explicitManifest->dependencies.size() == 2, "dependencies should parse explicit values") && ok;
+    if (explicitManifest->dependencies.size() == 2) {
+      ok = expectEq(explicitManifest->dependencies[0], "grim", "first dependency") && ok;
+      ok = expectEq(explicitManifest->dependencies[1], "slurp", "second dependency") && ok;
+    }
   }
 
   const auto translatedSettingsManifestPath = root / "translated-settings/plugin.toml";
@@ -230,6 +237,35 @@ int main() {
       ok = expectEq(entry.launcherCategories.front().glyph, "world", "category glyph should parse") && ok;
     }
   }
+
+  // Entry-level settings on a launcher provider (a singleton with no settings UI)
+  // are rejected — authors must use a plugin-level [[setting]] instead.
+  const auto launcherSettingManifestPath = root / "launcher-setting/plugin.toml";
+  ok = writeText(
+           launcherSettingManifestPath,
+           "id = \"me/launcher-setting\"\n"
+           "name = \"Launcher Setting\"\n"
+           "min_noctalia = \"5.0.0\"\n"
+           "[[launcher_provider]]\n"
+           "id = \"translate\"\n"
+           "entry = \"translate.luau\"\n"
+           "[[launcher_provider.setting]]\n"
+           "key = \"target_lang\"\n"
+           "type = \"string\"\n"
+           "default = \"en\"\n"
+       )
+      && ok;
+  error.clear();
+  const auto launcherSettingManifest = scripting::parsePluginManifest(launcherSettingManifestPath, &error);
+  ok = expect(!launcherSettingManifest.has_value(), "launcher-provider entry setting should be rejected") && ok;
+  ok = expectEq(
+           error,
+           "entry 'translate' of kind 'launcher_provider' declares [[launcher_provider.setting]], but entry-level "
+           "settings are only supported for widget, desktop_widget, and panel entries; move it to a plugin-level "
+           "[[setting]]",
+           "launcher-provider entry setting error message"
+       )
+      && ok;
 
   const auto listManifestPath = root / "string-list/plugin.toml";
   ok = writeText(

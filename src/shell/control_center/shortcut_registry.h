@@ -22,6 +22,8 @@ public:
 
   virtual void onClick() {}
   virtual void onRightClick() {}
+  /// direction >= 0 scrolls forward (e.g. toward performance), direction < 0 backward.
+  virtual void onScroll(int /*direction*/) {}
 
   [[nodiscard]] std::string_view currentIcon() const { return active() ? iconOn() : iconOff(); }
 };

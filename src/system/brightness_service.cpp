@@ -1,7 +1,7 @@
 #include "system/brightness_service.h"
 
 #include "compositors/compositor_platform.h"
-#include "config/config_service.h"
+#include "config/config_types.h"
 #include "core/log.h"
 #include "core/process.h"
 #include "dbus/system_bus.h"
@@ -512,7 +512,6 @@ namespace {
         result.timedOut = true;
         ::kill(pid, SIGKILL);
         ::waitpid(pid, &status, 0);
-        childExited = true;
         break;
       }
 

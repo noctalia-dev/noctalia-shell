@@ -29,12 +29,20 @@
   "bar": {
     "screenshot": {
       "choose-display": "Scegli monitor",
+      "confirm-region": "Invio o Spazio per catturare · Esc per annullare · Trascina per riselezionare",
       "fullscreen": "Schermo intero",
       "region": "Seleziona area"
     },
     "widgets": {
       "active-window": {
         "no-active-window": "Nessuna finestra attiva"
+      },
+      "bluetooth": {
+        "connected": "Connesso"
+      },
+      "brightness": {
+        "brightness": "Luminosità",
+        "display": "Schermo"
       },
       "lock-keys": {
         "caps": "Caps",
@@ -49,7 +57,27 @@
         "playing": "In riproduzione"
       },
       "network": {
-        "wired": "Rete cablata"
+        "active": "Attiva",
+        "connected": "Connesso",
+        "connecting": "Connessione in corso",
+        "download": "Download",
+        "interface": "Interfaccia",
+        "ip": "IP",
+        "network": "Rete",
+        "networks": "Reti",
+        "networks-count": "{count} rete",
+        "networks-count-plural": "{count} reti",
+        "no": "No",
+        "not-connected": "Non connesso",
+        "off": "Off",
+        "on": "On",
+        "scanning": "Scansione",
+        "signal": "Segnale",
+        "upload": "Upload",
+        "vpn": "VPN",
+        "wifi": "Wi-Fi",
+        "wired": "Rete cablata",
+        "yes": "Si"
       },
       "privacy": {
         "camera": "Camera",
@@ -59,6 +87,24 @@
       "scripted": {
         "reload-failed": "Ricaricamento dello script non riuscito",
         "reloaded": "Script ricaricato"
+      },
+      "sysmon": {
+        "cpu": "CPU",
+        "cpu-temp": "Temperatura CPU",
+        "disk": "Disco",
+        "download": "Download",
+        "gpu-temp": "Temperatura GPU",
+        "gpu-usage": "Utilizzo GPU",
+        "gpu-vram": "VRAM GPU",
+        "ram": "RAM",
+        "swap": "Swap",
+        "system": "Sistema",
+        "upload": "Upload"
+      },
+      "volume": {
+        "device": "Dispositivo",
+        "mic": "Mic",
+        "volume": "Volume"
       },
       "weather": {
         "default": "Meteo",
@@ -119,8 +165,8 @@
     "audio": {
       "application-volumes": "Volume applicazioni",
       "choose-effects-profile": "Scegli un profilo",
-      "effects-profile": "Effetti:",
-      "input-volume": "Volume ingresso",
+      "effects-profile": "Effetti",
+      "input-device-prefix": "Input:",
       "no-application-audio": "Nessun audio applicazione",
       "no-application-audio-body": "Nessun flusso di riproduzione applicazione disponibile al momento.",
       "no-input-devices": "Nessun dispositivo di ingresso",
@@ -129,7 +175,7 @@
       "no-output-devices": "Nessun dispositivo di uscita",
       "no-output-devices-body": "Nessuna uscita di riproduzione disponibile al momento.",
       "no-output-selected": "Nessun dispositivo di uscita selezionato",
-      "output-volume": "Volume uscita",
+      "output-device-prefix": "Output:",
       "unavailable-body": "PipeWire non è attivo.",
       "unavailable-title": "Audio non disponibile"
     },
@@ -187,9 +233,8 @@
       },
       "select-avatar": "Seleziona avatar",
       "unknown": "sconosciuto",
-      "uptime": "Tempo attivo - {uptime}",
+      "uptime": "Tempo di attività - {uptime}",
       "weather": {
-        "configure-location": "Aggiungi [weather].address o abilita auto_locate.",
         "data-unavailable": "Dati meteo non disponibili.",
         "disabled": "Il meteo è disabilitato nella configurazione.",
         "fetching": "Recupero previsioni meteo..."
@@ -219,6 +264,9 @@
       "wired-connection": "Connessione cablata"
     },
     "notifications": {
+      "clear-all": "Cancella tutte le notifiche",
+      "dnd-off": "Disattiva DND",
+      "dnd-on": "Attiva DND",
       "empty-body": "Le notifiche recenti verranno mostrate qui.",
       "empty-title": "Nessuna notifica",
       "filter": {
@@ -230,6 +278,17 @@
       "filter-empty-body": "Nessuna notifica corrisponde a questo filtro.",
       "filter-empty-title": "Nulla qui",
       "untitled": "Notifica senza titolo"
+    },
+    "power": {
+      "battery": "Batteria",
+      "design-capacity": "della capacità originale",
+      "health": "Stato batteria",
+      "performance-inhibited": "Performance non disponibile",
+      "peripherals": "Dispositivi connessi",
+      "power-profile": "Profilo energetico",
+      "time-to-empty": "{time} rimanente",
+      "time-to-full": "{time} al completamento",
+      "unknown-device": "Dispositivo sconosciuto"
     },
     "screen-time": {
       "disabled": "Monitoraggio del tempo di utilizzo disattivato. Abilitalo nelle Impostazioni per registrare l'uso per app.",
@@ -265,7 +324,7 @@
         "scheduled-day": "Programmato",
         "scheduled-night": "In esecuzione"
       },
-      "notification": "Non disturbare",
+      "notification": "DND",
       "power-profile": "Energia",
       "screen-time": "Screen time",
       "session": "Sessione",
@@ -303,12 +362,12 @@
       "media": "Media",
       "network": "Rete",
       "notifications": "Notifiche",
+      "power": "Energia",
       "screen-time": "Tempo schermo",
       "system": "Sistema",
       "weather": "Meteo"
     },
     "weather": {
-      "configure-location": "Imposta [weather].address o abilita auto_locate",
       "data-unavailable": "Dati meteo non disponibili",
       "details": {
         "elevation": "Altitudine",
@@ -327,6 +386,8 @@
         "temperature": "10 / 4C"
       },
       "location-unavailable": "Posizione non disponibile",
+      "no-location-body": "Aggiungi il tuo indirizzo o attiva la localizzazione automatica nelle impostazioni di posizione.",
+      "no-location-title": "Location non configurata",
       "refreshing": "Aggiornamento meteo...",
       "waiting": "In attesa dei dati meteo"
     }
@@ -360,6 +421,7 @@
         "bands": "Bande",
         "bar-width": "Larghezza barra",
         "bloom-intensity": "Bagliore",
+        "center-text": "Testo centrato",
         "centered": "Centrato",
         "change-image": "Cambia...",
         "circle": "Cerchio",
@@ -367,23 +429,34 @@
         "clock-style-analog": "Analogico",
         "clock-style-digital": "Digitale",
         "color": "Colore",
-        "color-1": "Colore uno",
-        "color-2": "Colore due",
+        "color-1": "Colore 1",
+        "color-2": "Colore 2",
         "color2": "Colore 2",
+        "command": "Comando",
         "custom-color": "Personalizzato...",
         "description": "Descrizione",
+        "display": "Schermo",
+        "display-gauge": "Gauge",
+        "display-graph": "Grafico",
         "fade-when-idle": "Dissolvi quando inattivo",
         "font-family": "Carattere",
         "font-family-default": "Predefinito di sistema",
-        "forecast-days": "Previsioni giornaliere",
+        "forecast-days": "Numero di giorni",
         "format": "Formato",
+        "gauge-layout": "Layout Gauge",
+        "glyph": "Glifo",
         "hide-when-no-media": "Nascondi senza media",
+        "highlight-color": "Colore evidenziato",
         "horizontal": "Orizzontale",
+        "hover-background": "Sfondo al passaggio del mouse",
+        "hover-foreground": "Primo piano al passaggio mouse",
         "image-path": "Immagine",
         "inner-diameter": "Diametro interno",
         "input-opacity": "Opacità input",
         "input-radius": "Raggio input",
         "interface": "Interfaccia",
+        "label": "Etichetta",
+        "label-min-width": "Larghezza minima etichetta",
         "layout": "Layout",
         "mirrored": "Specchiato",
         "opacity": "Opacità",
@@ -411,6 +484,13 @@
         "stat-swap-pct": "Swap %",
         "stat2": "Statistica 2",
         "title": "Titolo",
+        "variant": "Stile",
+        "variant-default": "Default",
+        "variant-destructive": "Distruttivo",
+        "variant-ghost": "Trasparente",
+        "variant-outline": "Sottolinea",
+        "variant-primary": "Colore primario",
+        "variant-secondary": "Colore secondario",
         "vertical": "Verticale",
         "visualization-mode": "Modalità",
         "visualization-mode-all": "Tutto",
@@ -429,6 +509,7 @@
       "title": "Widget desktop",
       "types": {
         "audio-visualizer": "Visualizzatore audio",
+        "button": "Pulsante",
         "clock": "Orologio",
         "fancy-audio-visualizer": "Visualizzatore audio avanzato",
         "label": "Etichetta",
@@ -556,6 +637,8 @@
     },
     "internal": {
       "battery": "Batteria",
+      "battery-critical-body": "{device}: {percent}% - il tuo sistema presto si spegnerà",
+      "battery-critical-title": "Batteria quasi scarica",
       "battery-device": "Dispositivo batteria",
       "battery-low-body": "{device}: {percent}% rimanente",
       "battery-low-title": "Batteria scarica",
@@ -573,7 +656,12 @@
       "desktop-widgets-editor": "Editor widget",
       "desktop-widgets-editor-enabled": "L'editor dei widget desktop è attivo. Passa a uno spazio di lavoro vuoto per visualizzarlo.",
       "greeter-sync": "Noctalia Greeter",
+      "greeter-sync-pending": "Attesa dell'approvazione dell'amministratore per salvare sul greeter.",
+      "greeter-sync-pending-console": "Attesa dell'approvazione dell'amministratore. Approva il prompt polkit in Noctalia, su un TTY o una console, oppure esegui pkexec manualmente.",
+      "greeter-sync-pending-manual": "I file vengono messi in ambiente stage. Esegui in un terminale: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". Oppure imposta shell.greeter_sync.privilege_command (ad esempio ghostty -e pkexec) e sincronizza di nuovo.",
       "greeter-sync-success": "Aspetto sincronizzato. Le modifiche si applicano alla prossima schermata di accesso.",
+      "greeter-sync-timeout": "La sincronizzazione del greeter è ancora in attesa dell'approvazione dell'amministratore. Controlla un TTY o una console per un prompt polkit, abilita l'agente polkit nelle impostazioni di sicurezza o esegui pkexec manualmente.",
+      "greeter-sync-timeout-manual": "La sincronizzazione del greeter necessita ancora dell'approvazione dell'amministratore. Esegui in un terminale: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "keybind-app": "Noctalia",
       "keybind-invalid-modifier": "Questa scorciatoia accetta un singolo tasto senza modificatori.",
       "keybind-invalid-printable": "I tasti stampabili (lettere, numeri, simboli) richiedono un modificatore come Ctrl o Alt.",
@@ -585,6 +673,8 @@
       "lockscreen-widgets-editor-blocked-locked": "Sblocca la sessione prima di modificare i widget del blocco schermo.",
       "lockscreen-widgets-editor-enabled": "L'editor dei widget del blocco schermo è attivo. Disponi i widget nell'anteprima, poi blocca la sessione per verificare il layout.",
       "mpris-disabled": "MPRIS disabilitato",
+      "polkit-agent": "Polkit Agent",
+      "polkit-no-session": "L'agente Polkit necessita di logind, elogind o XDG_SESSION_ID. Nelle configurazioni seatd-only non è possibile registrarsi per i prompt grafici. Utilizza il terminale pkexec per la sincronizzazione del greeter o installa elogind per l'autenticazione in sessione.",
       "screen-time-reset": "Tempo schermo",
       "screen-time-reset-success": "Cronologia utilizzo cancellata.",
       "session-bus-unavailable": "Bus di sessione non disponibile",
@@ -602,8 +692,8 @@
       "on": "Modalità Caffeine attivata"
     },
     "dnd": {
-      "off": "Non disturbare disattivato",
-      "on": "Non disturbare attivato"
+      "off": "DND disattivato",
+      "on": "DND attivato"
     },
     "effects": {
       "input": "Effetti input",
@@ -616,6 +706,20 @@
       "num-on": "Num Lock attivato",
       "scroll-off": "Scroll Lock disattivato",
       "scroll-on": "Scroll Lock attivato"
+    },
+    "nightlight": {
+      "forced": "Sempre attivo",
+      "off": "Modalità notte spenta",
+      "running": "In esecuzione",
+      "scheduled": "Programmato"
+    },
+    "privacy": {
+      "camera-off": "Cam stoppata",
+      "camera-on": "Cam attiva",
+      "mic-off": "Microfono spento",
+      "mic-on": "Microfono attivo",
+      "screen-off": "Condivisone schermo disattivato",
+      "screen-on": "Condivisone schermo attiva"
     },
     "wifi": {
       "off": "Wi-Fi disattivato",
@@ -633,11 +737,14 @@
         "plugged-in": "Collegata"
       },
       "tooltip": {
+        "device": "Batteria",
+        "device-numbered": "Batteria {index}",
         "health": "Salute",
         "rate": "Velocità",
         "status": "Stato",
         "time-left": "Tempo rimanente",
-        "time-to-full": "Tempo rimanente alla carica completa"
+        "time-to-full": "Tempo rimanente alla carica completa",
+        "unknown-device": "Dispositivo sconosciuto"
       }
     },
     "profiles": {
@@ -667,6 +774,7 @@
     },
     "badges": {
       "advanced": "Avanzato",
+      "community": "Community",
       "inherited": "Ereditato",
       "monitor": "Monitor",
       "official": "Ufficiale",
@@ -847,6 +955,8 @@
       "reset-page": "Ripristino di alcune impostazioni non riuscito.",
       "support-report": "Salvataggio report di supporto non riuscito.",
       "sync-greeter": "Impossibile sincronizzare l'aspetto con Noctalia Greeter.",
+      "sync-greeter-timeout": "La sincronizzazione del greeter è ancora in attesa dell'approvazione dell'amministratore. Controlla un TTY o una console per un prompt polkit, abilita l'agente polkit nelle impostazioni di sicurezza o esegui pkexec manualmente.",
+      "sync-greeter-timeout-manual": "La sincronizzazione del greeter necessita ancora dell'approvazione dell'amministratore. Esegui in un terminale: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "widget": {
         "rename": "Impossibile rinominare il widget con nome."
       },
@@ -905,6 +1015,7 @@
         "clipboard": "Appunti",
         "community": "Community",
         "control-center": "Centro di controllo",
+        "dead-zone": "Zona morta",
         "directories": "Directory",
         "effects": "Effetti",
         "filtering": "Filtri",
@@ -913,6 +1024,7 @@
         "general": "Generale",
         "grouping": "Raggruppamento",
         "home": "Home",
+        "hot-corners": "Angoli attivi",
         "idle": "Inattività",
         "interface": "Interfaccia",
         "keybinds": "Scorciatoie",
@@ -934,6 +1046,7 @@
         "osd": "OSD",
         "overview": "Panoramica",
         "pinned-apps": "App fissate",
+        "polkit": "Polkit",
         "power": "Energia",
         "privacy-security": "Privacy e sicurezza",
         "profile": "Profilo",
@@ -957,9 +1070,11 @@
         "appearance": "Aspetto",
         "backdrop": "Sfondo pannelli",
         "bar": "Barra",
+        "control-center": "Centro di controllo",
         "desktop": "Desktop",
         "dock": "Dock",
         "hooks": "Hook",
+        "keybinds": "Scorciatoie",
         "location": "Posizione",
         "niri": "Niri",
         "notifications": "Notifiche",
@@ -980,9 +1095,11 @@
       "filter": {
         "add": "Aggiungi filtro",
         "add-title": "Aggiunta filtro notifiche",
+        "allow-permanent": "Permetti permanente",
         "allowed-urgencies-label": "Livelli priorità consentiti",
         "flag": {
           "history": "cronologia",
+          "permanent": "permanente",
           "sound": "suono",
           "toast": "toast"
         },
@@ -1039,6 +1156,13 @@
         "ultra-heavy": "Ultrapesante",
         "ultra-light": "Ultraleggero"
       },
+      "hot-corners": {
+        "command": "Esegui comando",
+        "control-center": "Control Center",
+        "launcher": "Launcher",
+        "none": "Nessuno",
+        "window-switcher": "Switcher finestre"
+      },
       "layer": {
         "overlay": "Sovrapposto",
         "top": "In alto"
@@ -1052,10 +1176,14 @@
         "horizontal": "Orizzontale",
         "vertical": "Verticale"
       },
+      "panel-position": {
+        "auto": "Segui la barra"
+      },
       "screen-position": {
         "bottom-center": "Basso centro",
         "bottom-left": "Basso sinistra",
         "bottom-right": "Basso destra",
+        "center": "Centra",
         "center-left": "Centro sinistra",
         "center-right": "Centro destra",
         "top-center": "Alto centro",
@@ -1065,7 +1193,6 @@
       "shell": {
         "panel-placement": {
           "attached": "Attaccato",
-          "centered": "Centrato",
           "floating": "Flottante"
         },
         "panel-transparency": {
@@ -1111,6 +1238,7 @@
           "crop": "Ritaglia",
           "fit": "Adatta",
           "repeat": "Ripeti",
+          "span": "Distribuisci",
           "stretch": "Allunga"
         },
         "order": {
@@ -1134,12 +1262,29 @@
       }
     },
     "plugins": {
+      "browse-store": "Sfoglia plugin",
+      "panels": {
+        "open-near-click": {
+          "description": "Apri il pannello vicino al widget della barra che lo ha attivato",
+          "label": "Apri vicino al click"
+        },
+        "placement": {
+          "description": "Attacca il pannello alla barra o posizionalo vicino al bordo della barra",
+          "label": "Posizione"
+        },
+        "position": {
+          "description": "Posizione dello schermo quando il pannello è mobile",
+          "label": "Posizione"
+        }
+      },
       "plugins": {
         "configure": "Configura",
         "deprecated": "deprecato",
         "empty": "Nessun plugin trovato. Aggiungi una sorgente o controlla la rete",
         "loading": "Caricamento plugin...",
         "refreshing": "Aggiornamento plugin...",
+        "remove": "Rimuovi plugin",
+        "requires": "Richiede: {dependencies}",
         "requires-newer-noctalia": "Richiede Noctalia aggiornato",
         "title": "Elenco plugin"
       },
@@ -1167,11 +1312,23 @@
         "location-placeholder-path": "~/dev/noctalia-plugins",
         "name-label": "ID sorgente",
         "name-placeholder": "miei-plugin",
+        "precedence-hint": "Sorgenti inferiori prevalgono su quelle in alto se offrono lo stesso plugin.",
         "remove": "Rimuovi sorgente",
         "save": "Salva",
         "title": "Sorgenti",
         "update": "Aggiorna",
         "update-on-startup": "Aggiorna all'avvio"
+      },
+      "store": {
+        "add": "Aggiungi a Noctalia",
+        "category-all": "Tutti",
+        "empty": "Nessun plugin trovato",
+        "incompatible": "Incompatibile",
+        "loading": "Caricamento catalogo...",
+        "no-readme": "Nessuna descrizione disponibile.",
+        "results-count": "{count} plugin",
+        "search-placeholder": "Ricerca plugin...",
+        "title": "Plugin Store"
       }
     },
     "schema": {
@@ -1332,6 +1489,26 @@
         "corner-top-right": {
           "description": "Raggio angolo in alto a destra della barra"
         },
+        "dead-zone-command": {
+          "description": "Comando della shell da eseguire quando si fa clic con il pulsante sinistro sul margine della barra all'esterno delle sezioni del widget",
+          "label": "Click sinistro"
+        },
+        "dead-zone-middle-command": {
+          "description": "Comando della shell da eseguire quando si fa clic con il pulsante centrale sul margine della barra all'esterno delle sezioni del widget",
+          "label": "Click centrale"
+        },
+        "dead-zone-right-command": {
+          "description": "Comando da eseguire quando si fa clic con il pulsante destro; lasciare vuoto per aprire il centro di controllo",
+          "label": "Click destro"
+        },
+        "dead-zone-scroll-down-command": {
+          "description": "Comando da eseguire quando si scrolla in basso",
+          "label": "Scroll in basso"
+        },
+        "dead-zone-scroll-up-command": {
+          "description": "Comando da eseguire quando si scrolla in alto",
+          "label": "Scroll in alto"
+        },
         "edge-margin": {
           "description": "Distanza dal bordo schermo più vicino; valori positivi staccano la barra dal bordo"
         },
@@ -1357,6 +1534,9 @@
           "description": "Usa Sovrapposto per mostrare la barra sopra le app a schermo intero. I pannelli attaccati seguono la barra.",
           "label": "Layer Wayland"
         },
+        "opposite-edge-margin": {
+          "description": "Spazio extra riservato sul lato interno della barra, lontano dal bordo dello schermo; utilizzare quando le finestre ingrandite ignorano gli struts"
+        },
         "panel-overlap": {
           "description": "Pixel con cui un pannello attaccato si sovrappone al bordo della barra per nascondere il punto di contatto (regola se vedi una linea o uno spazio)",
           "label": "Sovrapposizione pannello"
@@ -1369,6 +1549,10 @@
         },
         "shadow": {
           "description": "Proietta l'ombra globale della superficie dalla barra"
+        },
+        "show-on-workspace-switch": {
+          "description": "Mostra brevemente la barra quando l'area di lavoro attiva cambia",
+          "label": "Mostra al cambio area di lavoro"
         },
         "start-widgets": {
           "description": "Widget sul lato iniziale (sinistra/alto) della barra",
@@ -1396,6 +1580,42 @@
         }
       },
       "desktop": {
+        "hot-corners-bottom-left": {
+          "description": "Azione quando il puntatore tocca l'angolo inferiore sinistro",
+          "label": "Angolo inferiore sinistro"
+        },
+        "hot-corners-bottom-left-command": {
+          "description": "Comando shell da eseguire quando si tocca l'angolo inferiore sinistro",
+          "label": "Comando"
+        },
+        "hot-corners-bottom-right": {
+          "description": "Azione quando il puntatore tocca l'angolo inferiore destro",
+          "label": "Angolo inferiore destro"
+        },
+        "hot-corners-bottom-right-command": {
+          "description": "Comando shell da eseguire quando si tocca l'angolo superiore sinistro",
+          "label": "Comando"
+        },
+        "hot-corners-enabled": {
+          "description": "Attiva azioni portando il puntatore del mouse agli angoli dello schermo",
+          "label": "Angoli attivi"
+        },
+        "hot-corners-top-left": {
+          "description": "Azione quando il puntatore tocca l'angolo superiore sinistro",
+          "label": "Angolo superiore sinistro"
+        },
+        "hot-corners-top-left-command": {
+          "description": "Comando shell da eseguire quando si tocca l'angolo superiore sinistro",
+          "label": "Comando"
+        },
+        "hot-corners-top-right": {
+          "description": "Azione quando il puntatore tocca l'angolo superiore destro",
+          "label": "Angolo superiore destro"
+        },
+        "hot-corners-top-right-command": {
+          "description": "Comando shell da eseguire quando si tocca l'angolo superiore destro",
+          "label": "Comando"
+        },
         "screen-corners-enabled": {
           "description": "Arrotonda gli angoli dello schermo con un overlay nero",
           "label": "Angoli schermo"
@@ -1629,6 +1849,14 @@
           "description": "Sposta focus o selezione a destra",
           "label": "Naviga a destra"
         },
+        "tab-next": {
+          "description": "Sposta il focus sul riquadro o control group successivo",
+          "label": "Focus sul pannello successivo"
+        },
+        "tab-previous": {
+          "description": "Sposta il focus sul riquadro o control group precedente",
+          "label": "Focus sul pannello precedente"
+        },
         "up": {
           "description": "Sposta focus o selezione su di una riga",
           "label": "Naviga su"
@@ -1715,11 +1943,11 @@
           "label": "Monitor"
         },
         "offset-x": {
-          "description": "Margine orizzontale assoluto dal bordo schermo o barra",
+          "description": "Margine orizzontale assoluto da bordo schermo o barra",
           "label": "Margine orizzontale"
         },
         "offset-y": {
-          "description": "Margine verticale assoluto dal bordo schermo o barra",
+          "description": "Margine verticale assoluto da bordo schermo o barra",
           "label": "Margine verticale"
         },
         "position": {
@@ -1756,6 +1984,10 @@
           "description": "Quando si apre una scheda specifica (volume, media ecc.)",
           "label": "Barra laterale aprendo una scheda"
         },
+        "control-center-width": {
+          "description": "Larghezza del pannello del centro di controllo in pixel (le modalità compatta e senza barra laterale si riducono rispetto a questo valore)",
+          "label": "Larghezza Control Center"
+        },
         "floating-offset": {
           "description": "Spazio in pixel tra un pannello mobile o staccato e il bordo della barra",
           "label": "Offset mobile"
@@ -1763,6 +1995,10 @@
         "home-shortcuts": {
           "description": "Scegli fino a sei pulsanti scorciatoia per la scheda home",
           "label": "Scorciatoie home"
+        },
+        "launcher-app-grid": {
+          "description": "Mostra una griglia di icone delle applicazioni con le etichette sottostanti quando i risultati riguardano solo le app",
+          "label": "Vista app a griglia"
         },
         "launcher-categories": {
           "description": "Mostra filtri categoria nel launcher; mostra con F6, poi scorri con F6 e Shift+F6",
@@ -1810,7 +2046,7 @@
           "label": "Apri vicino al click"
         },
         "placement-clipboard": {
-          "description": "Scegli se gli appunti si attaccano alla barra, fluttuano vicino a essa o si aprono centrati",
+          "description": "Scegli se il pannello appunti si attacca alla barra, fluttua vicino a essa o si apre centrato",
           "label": "Posizionamento"
         },
         "placement-control-center": {
@@ -1821,6 +2057,10 @@
           "description": "Scegli se il launcher si attacca alla barra, fluttua vicino ad essa o si apre centrato",
           "label": "Posizionamento"
         },
+        "placement-polkit": {
+          "description": "Scegli se il prompt di polkit è attaccato alla barra o fluttua nella posizione prescelta dello schermo",
+          "label": "Posizionamento"
+        },
         "placement-session": {
           "description": "Scegli se il menu sessione si attacca alla barra, fluttua vicino ad essa o si apre centrato",
           "label": "Posizionamento"
@@ -1829,11 +2069,35 @@
           "description": "Scegli se il selettore sfondo si attacca alla barra, fluttua vicino ad essa o si apre centrato",
           "label": "Posizionamento"
         },
+        "position-clipboard": {
+          "description": "Dove il pannello appunti appare sullo schermo — Segui la barra lo mantiene vicino ad essa",
+          "label": "Posizione"
+        },
+        "position-control-center": {
+          "description": "Dove il centro di controllo appare sullo schermo — Segui la barra lo mantiene vicino ad essa",
+          "label": "Posizione"
+        },
+        "position-launcher": {
+          "description": "Dove il launcher appare sullo schermo — Segui la barra lo mantiene vicino ad essa",
+          "label": "Posizione"
+        },
+        "position-polkit": {
+          "description": "Dove il prompt di polkit fluttua sullo schermo — Segui la barra lo mantiene vicino ad essa",
+          "label": "Posizione"
+        },
+        "position-session": {
+          "description": "Dove il menu di sessione appare sullo schermo — Segui la barra lo mantiene vicino ad essa",
+          "label": "Posizione"
+        },
+        "position-wallpaper": {
+          "description": "Dove il selettore dello sfondo appare sullo schermo — Segui la barra lo mantiene vicino ad essa",
+          "label": "Posizione"
+        },
         "shadow": {
           "description": "Proietta l'ombra globale della superficie dalle superfici pannello"
         },
         "transparency-mode": {
-          "description": "Stile vetro del pannello, incluse opacità dei pannelli flottanti/centrati e traslucenza delle schede",
+          "description": "Stile vetro del pannello, incluse opacità dei pannelli flottanti e traslucenza delle schede",
           "label": "Trasparenza"
         }
       },
@@ -1888,7 +2152,7 @@
           "placeholder": "Città, Paese"
         },
         "location-auto-locate": {
-          "description": "Rileva automaticamente la tua posizione dall'indirizzo IP",
+          "description": "Rileva automaticamente la tua posizione in base al tuo indirizzo IP",
           "label": "Localizzazione automatica (IP)"
         },
         "longitude": {
@@ -2035,6 +2299,9 @@
         "main-axis-padding": {
           "label": "Spaziatura asse principale"
         },
+        "opposite-edge-margin": {
+          "label": "Margine bordo opposto"
+        },
         "position": {
           "label": "Posizione"
         },
@@ -2082,6 +2349,10 @@
           "description": "Formato data predefinito per la shell UI senza impostazione propria",
           "label": "Formato data"
         },
+        "greeter-sync-privilege-command": {
+          "description": "Sostituisci pkexec/run0 per la sincronizzazione del greeter. Il percorso dell'helper e la directory di staging vengono aggiunti automaticamente. Esempio: ghostty -e pkexec",
+          "label": "Comando privilegiato per il sync del greeter"
+        },
         "launch-apps-as-systemd-services": {
           "description": "Avvia le applicazioni in servizi systemd separati così non condividono il cgroup di Noctalia",
           "label": "Avvia app come servizi systemd"
@@ -2115,8 +2386,8 @@
           "label": "Modalità Caffeine"
         },
         "osd-kinds-dnd": {
-          "description": "Mostra un popup OSD quando Non disturbare viene attivato/disattivato",
-          "label": "Non disturbare"
+          "description": "Mostra un popup OSD quando la modalità DND viene attivata/disattivata",
+          "label": "DND"
         },
         "osd-kinds-keyboard-layout": {
           "description": "Mostra un popup OSD quando cambia il layout della tastiera",
@@ -2130,9 +2401,17 @@
           "description": "Mostra un popup OSD quando inizia una nuova traccia",
           "label": "In riproduzione"
         },
+        "osd-kinds-nightlight": {
+          "description": "Mostra un popup OSD quando viene attivata la modalità notte",
+          "label": "Modalità notte"
+        },
         "osd-kinds-power-profile": {
           "description": "Mostra un popup OSD quando cambia il profilo energetico",
           "label": "Profilo energetico"
+        },
+        "osd-kinds-privacy": {
+          "description": "Mostra un popup OSD quando vengono attivati il microfono, la fotocamera o la condivisione dello schermo",
+          "label": "Privacy"
         },
         "osd-kinds-volume": {
           "description": "Mostra popup OSD quando cambia il volume; usa le impostazioni avanzate per controllare uscita e ingresso separatamente",
@@ -2155,20 +2434,24 @@
           "label": "Monitor"
         },
         "osd-offset-x": {
-          "description": "Margine orizzontale assoluto dal bordo schermo",
+          "description": "Margine orizzontale assoluto da bordo schermo",
           "label": "Margine orizzontale"
         },
         "osd-offset-y": {
-          "description": "Margine verticale assoluto dal bordo schermo",
+          "description": "Margine verticale assoluto da bordo schermo",
           "label": "Margine verticale"
         },
         "osd-orientation": {
-          "description": "Direzione layout per popup OSD",
+          "description": "Direzione layout dei popup OSD",
           "label": "Orientamento"
         },
         "osd-position": {
           "description": "Posizione dei popup OSD sullo schermo",
           "label": "Posizione schermo"
+        },
+        "osd-position-vertical": {
+          "description": "Posizione nello schermo quando lo slider è verticale",
+          "label": "Posizione verticale"
         },
         "osd-scale": {
           "description": "Scala i popup OSD rispetto alla scala UI della shell (1.0 mantiene la dimensione predefinita)",
@@ -2182,14 +2465,26 @@
           "description": "Abilita l'agente di autenticazione integrato",
           "label": "Agente Polkit"
         },
+        "privacy-cam-filter-regex": {
+          "description": "Regex per le app della fotocamera da ignorare negli indicatori di privacy e OSD",
+          "label": "Filtro Regex camera"
+        },
+        "privacy-mic-filter-regex": {
+          "description": "Regex per le app del microfono da ignorare negli indicatori di privacy e OSD",
+          "label": "Filtro Regex microfono"
+        },
         "screen-time-enabled": {
-          "description": "Monitora l'uso per app e mostralo nel Centro di controllo",
+          "description": "Monitora l'uso per app e lo mostra nel centro di controllo",
           "label": "Tempo schermo"
         },
         "screen-time-reset": {
           "button": "Reset",
           "description": "Cancella la cronologia di utilizzo in primo piano per app",
           "label": "Ripristina i dati del tempo schermo"
+        },
+        "screenshot-confirm-region": {
+          "description": "Dopo aver selezionato un'area, mantieni aperta l'overlay finché non confermi con Invio o Spazio",
+          "label": "Conferma area selezionata"
         },
         "screenshot-copy-to-clipboard": {
           "description": "Copia il PNG catturato negli appunti",
@@ -2353,8 +2648,10 @@
       "add": "Aggiungi azione",
       "clear-glyph": "Cancella",
       "command-label": "Comando shell",
-      "command-placeholder": "Comando bash opzionale, lascia vuoto per comportamento integrato",
+      "command-placeholder": "Comando bash opzionale, lascia vuoto per comportamento di default",
       "command-required-placeholder": "Comando shell da eseguire",
+      "countdown-seconds-description": "Attendi questi secondi prima di eseguire. Seleziona di nuovo per confermare immediatamente. 0 esegue subito.",
+      "countdown-seconds-label": "Conto alla rovescia (secondi)",
       "glyph-label": "Glifo",
       "glyph-picker-title": "Glifo azione",
       "kind-section-label": "Comportamento",
@@ -2366,8 +2663,8 @@
         "destructive": "Distruttivo",
         "ghost": "Fantasma",
         "outline": "Contorno",
-        "primary": "Primario",
-        "secondary": "Secondario"
+        "primary": "Colore primario",
+        "secondary": "Colore secondario"
       },
       "variant-label": "Stile pulsante"
     },
@@ -2427,6 +2724,11 @@
         "active-opacity": {
           "description": "Opacità dell'icona per la finestra attiva (con focus).",
           "label": "Opacità icona attiva"
+        },
+        "active-pill-size": {
+          "description": "Lunghezza minima della pillola dell'area di lavoro attiva lungo la barra, come multiplo dello spessore",
+          "label": "Dimensione pillola attiva",
+          "workspaces-description": "Lunghezza minima della pillola dell'area di lavoro attiva lungo la barra, come multiplo dello spessore; le etichette possono espandersi oltre"
         },
         "album-art-only": {
           "description": "Mostra solo il cerchio della copertina dell'album senza il titolo della traccia",
@@ -2488,11 +2790,11 @@
         },
         "color-1": {
           "description": "Primo colore sfumato nel visualizzatore",
-          "label": "Colore uno"
+          "label": "Colore 1"
         },
         "color-2": {
           "description": "Secondo colore sfumato nel visualizzatore",
-          "label": "Colore due"
+          "label": "Colore 2"
         },
         "command": {
           "description": "Comando shell eseguito al click sinistro su questo pulsante",
@@ -2650,6 +2952,11 @@
           "description": "Opacità delle icone per finestre inattive (senza focus).",
           "label": "Opacità icona inattiva"
         },
+        "inactive-pill-size": {
+          "description": "Lunghezza minima della pillola dell'area di lavoro inattiva lungo la barra, come multiplo dello spessore",
+          "label": "Dimensione pillola inattiva",
+          "workspaces-description": "Lunghezza minima della pillola dell'area di lavoro inattiva lungo la barra, come multiplo dello spessore; le etichette potrebbero espandersi oltre questo limite"
+        },
         "interface": {
           "description": "Interfaccia di rete da monitorare; lasciare vuoto per riportare il totale su tutte le interfacce",
           "label": "Interfaccia"
@@ -2704,6 +3011,10 @@
         "mirrored": {
           "description": "Specchia il visualizzatore dal centro",
           "label": "Specchiato"
+        },
+        "mute-color": {
+          "description": "Colore usato per l'icona e l'etichetta quando in muto; sono supportati anche i codici colore in formato esadecimale",
+          "label": "Colore muto"
         },
         "occupied-color": {
           "description": "Ruolo colore usato per workspace occupati; sono supportati anche codici colore in formato esadecimale",
@@ -2835,7 +3146,7 @@
           "label": "Formato verticale"
         },
         "warning-color": {
-          "description": "Colore applicato quando la carica è pari o inferiore alla soglia di avviso batteria di sistema",
+          "description": "Colore applicato quando la carica è pari o inferiore alla soglia di sistema di avviso batteria",
           "label": "Colore avviso"
         },
         "width": {
@@ -2938,15 +3249,16 @@
       "m3-rainbow": "M3 Rainbow",
       "m3-tonal-spot": "M3 Tonal Spot",
       "muted": "Tenue",
+      "soft": "Soft",
       "vibrant": "Vivace"
     }
   },
   "time": {
     "duration": {
-      "days-hours-minutes": "{days}g {hours}h {minutes}m",
-      "hours-minutes": "{hours}h {minutes}m",
+      "less-than-day": "meno di 1 giorno",
       "less-than-minute": "<1m",
-      "minutes": "{minutes}m"
+      "three-parts": "{first} {second} {third}",
+      "two-parts": "{first} {second}"
     },
     "file": {
       "unknown": "Sconosciuto"
@@ -2959,6 +3271,18 @@
       "just-now": "proprio ora",
       "minutes-ago": "{count} min fa",
       "minutes-ago-plural": "{count} min fa"
+    },
+    "units": {
+      "day": "{count} giorno",
+      "day-plural": "{count} giorni",
+      "hour": "{count} ora",
+      "hour-plural": "{count} ore",
+      "minute": "{count} minuto",
+      "minute-plural": "{count} minuti",
+      "month": "{count} mese",
+      "month-plural": "{count} mesi",
+      "year": "{count} anno",
+      "year-plural": "{count} anni"
     }
   },
   "tray": {
@@ -3021,6 +3345,7 @@
       "color-title": "Colore sfondo",
       "filter-placeholder": "Filtra...",
       "flatten": "Appiattisci",
+      "loading": "Caricamento sfondi...",
       "sort-date-asc": "Ordina per data (prima i più vecchi)",
       "sort-date-desc": "Ordina per data (prima i più recenti)",
       "sort-name-asc": "Ordina per nome (A-Z)",

@@ -164,14 +164,14 @@ namespace shell::dock {
     const DockEdge edge = cfg.position;
     const bool vertical = isVerticalEdge(edge);
     const auto sb = shell::surface_shadow::bleed(cfg.shadow, shadow);
-    const float bleedL = static_cast<float>(sb.left);
-    const float bleedR = static_cast<float>(sb.right);
-    const float bleedU = static_cast<float>(sb.up);
-    const float bleedD = static_cast<float>(sb.down);
-    const float mEdge = static_cast<float>(cfg.marginEdge);
+    const auto bleedL = static_cast<float>(sb.left);
+    const auto bleedR = static_cast<float>(sb.right);
+    const auto bleedU = static_cast<float>(sb.up);
+    const auto bleedD = static_cast<float>(sb.down);
+    const auto mEdge = static_cast<float>(cfg.marginEdge);
     const bool isBottom = edge == DockEdge::Bottom;
     const bool isRight = edge == DockEdge::Right;
-    const float panelThickness = static_cast<float>(dockThickness(cfg));
+    const auto panelThickness = static_cast<float>(dockThickness(cfg));
 
     if (!vertical) {
       float y = isBottom ? surfaceH - std::min(mEdge, bleedD) - panelThickness : std::min(mEdge, bleedU);
@@ -241,13 +241,16 @@ namespace shell::dock {
   computeInputRegion(const DockConfig& cfg, const DockPanelGeometry& panel, int surfaceW, int surfaceH, bool hidden) {
     if (hidden) {
       const DockEdge edge = cfg.position;
-      if (!isVerticalEdge(edge)) {
+      if (edge == DockEdge::Bottom) {
         return {InputRect{0, surfaceH - kAutoHideTriggerPx, surfaceW, kAutoHideTriggerPx}};
       }
       if (edge == DockEdge::Left) {
+        return {InputRect{0, 0, kAutoHideTriggerPx, surfaceH}};
+      }
+      if (edge == DockEdge::Right) {
         return {InputRect{surfaceW - kAutoHideTriggerPx, 0, kAutoHideTriggerPx, surfaceH}};
       }
-      return {InputRect{0, 0, kAutoHideTriggerPx, surfaceH}};
+      return {InputRect{0, 0, surfaceW, kAutoHideTriggerPx}};
     }
 
     return {InputRect{

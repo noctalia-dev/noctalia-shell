@@ -1,6 +1,8 @@
 #include "shell/wallpaper/panel/wallpaper_tile.h"
 
+#include "config/config_types.h"
 #include "cursor-shape-v1-client-protocol.h"
+#include "render/animation/animation_manager.h"
 #include "render/core/renderer.h"
 #include "render/core/thumbnail_service.h"
 #include "ui/builders.h"
@@ -32,6 +34,16 @@ namespace {
   }
 
   [[nodiscard]] float starShadowOffset(float contentScale) { return std::max(0.5f, 1.0f * contentScale); }
+
+  [[nodiscard]] float activeThumbScale(bool selected, bool current, bool hovered) {
+    if (selected || current) {
+      return 1.04f;
+    }
+    if (hovered) {
+      return 1.025f;
+    }
+    return 1.0f;
+  }
 
   void applyStarGlyphStyle(Glyph* glyph, const ColorSpec& fill, float contentScale) {
     if (glyph == nullptr) {
@@ -174,7 +186,10 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
   setCellSize(cellWidth, cellHeight);
 }
 
-WallpaperTile::~WallpaperTile() { releaseThumbnail(); }
+WallpaperTile::~WallpaperTile() {
+  cancelThumbScaleAnimation();
+  releaseThumbnail();
+}
 
 void WallpaperTile::setThumbnailService(ThumbnailService* service) {
   if (m_thumbnails == service) {
@@ -515,6 +530,48 @@ void WallpaperTile::setStarHovered(bool hovered) {
   applyStarVisualState();
 }
 
+void WallpaperTile::applyThumbScale(float scale) {
+  m_thumbScale = scale;
+  if (m_thumbHost != nullptr) {
+    m_thumbHost->setScale(scale);
+  }
+}
+
+void WallpaperTile::animateThumbScale(float targetScale) {
+  if (std::abs(m_thumbScaleTarget - targetScale) <= 0.001f) {
+    return;
+  }
+
+  m_thumbScaleTarget = targetScale;
+  if (m_thumbHost == nullptr) {
+    m_thumbScale = targetScale;
+    return;
+  }
+
+  if (m_thumbScaleAnimId != 0 && animationManager() != nullptr) {
+    animationManager()->cancel(m_thumbScaleAnimId);
+    m_thumbScaleAnimId = 0;
+  }
+
+  if (std::abs(m_thumbScale - targetScale) <= 0.001f || animationManager() == nullptr) {
+    applyThumbScale(targetScale);
+    return;
+  }
+
+  m_thumbScaleAnimId = animationManager()->animate(
+      m_thumbScale, targetScale, Style::animFast, Easing::EaseOutCubic, [this](float value) { applyThumbScale(value); },
+      [this]() { m_thumbScaleAnimId = 0; }, this
+  );
+  markPaintDirty();
+}
+
+void WallpaperTile::cancelThumbScaleAnimation() {
+  if (m_thumbScaleAnimId != 0 && animationManager() != nullptr) {
+    animationManager()->cancel(m_thumbScaleAnimId);
+  }
+  m_thumbScaleAnimId = 0;
+}
+
 void WallpaperTile::applyStarVisualState() {
   if (m_starGlyph == nullptr) {
     return;
@@ -539,9 +596,15 @@ void WallpaperTile::applyVisualState() {
   }
   const bool active = m_selected || m_hoveredVisual || m_current;
   setOpacity(m_missingFile ? 0.45f : 1.0f);
+  setZIndex((m_selected || m_current) ? 2 : (m_hoveredVisual ? 1 : 0));
+  animateThumbScale(activeThumbScale(m_selected, m_current, m_hoveredVisual));
   m_thumb->setTint(active ? rgba(1.0f, 1.0f, 1.0f, 1.0f) : rgba(0.5f, 0.5f, 0.5f, 1.0f));
 
-  const float outlineWidth = Style::borderWidth * 3.0f;
+  auto outlineWidth = Style::borderWidth;
+  if (m_selected || m_current || m_hoveredVisual) {
+    outlineWidth = Style::emphasizedBorderWidth;
+  }
+
   ColorSpec borderColor = m_selected ? colorSpecFromRole(ColorRole::Primary)
       : m_current                    ? colorSpecFromRole(ColorRole::Secondary)
       : m_hoveredVisual              ? colorSpecFromRole(ColorRole::Hover)

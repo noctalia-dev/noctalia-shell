@@ -9,6 +9,7 @@
 #include <fstream>
 #include <string_view>
 #include <sys/inotify.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <unordered_map>
 #include <unordered_set>
@@ -352,6 +353,12 @@ namespace {
 
     int watchFd() const noexcept { return m_inotifyFd; }
 
+    void checkSourcesChanged() {
+      if (computeSourceSignature() != m_sourceSignature) {
+        m_dirty = true;
+      }
+    }
+
     void checkReload() {
       if (m_inotifyFd < 0) {
         return;
@@ -370,8 +377,9 @@ namespace {
           auto* event = reinterpret_cast<inotify_event*>(buf + offset);
           if ((event->mask & IN_IGNORED) != 0) {
             m_watches.erase(event->wd);
+          } else {
+            changed = true;
           }
-          changed = true;
           offset += sizeof(inotify_event) + event->len;
         }
       }
@@ -380,8 +388,6 @@ namespace {
         m_dirty = true;
       }
     }
-
-    void requestRescan() noexcept { m_dirty = true; }
 
   private:
     void setupWatchFd() {
@@ -398,8 +404,40 @@ namespace {
 
       m_entries = scanDesktopEntries();
       rebuildWatches();
+      m_sourceSignature = computeSourceSignature();
       m_dirty = false;
       ++m_version;
+    }
+
+    // Signature of the resolved application source directories: canonical path
+    // plus device/inode/mtime. The canonical path and inode change when a Nix
+    // profile generation is swapped; the directory mtime changes when entries
+    // are added or removed in place.
+    std::string computeSourceSignature() const {
+      std::string sig;
+      for (const auto& dataDir : xdgDataDirs()) {
+        const fs::path appDir = fs::path(dataDir) / "applications";
+        std::error_code ec;
+        const fs::path resolved = fs::weakly_canonical(appDir, ec);
+        const std::string path = ec ? appDir.string() : resolved.string();
+
+        sig += path;
+        struct ::stat st{};
+        if (::stat(path.c_str(), &st) == 0) {
+          sig += ':';
+          sig += std::to_string(static_cast<unsigned long long>(st.st_dev));
+          sig += ':';
+          sig += std::to_string(static_cast<unsigned long long>(st.st_ino));
+          sig += ':';
+          sig += std::to_string(static_cast<long long>(st.st_mtim.tv_sec));
+          sig += ':';
+          sig += std::to_string(static_cast<long long>(st.st_mtim.tv_nsec));
+        } else {
+          sig += ":missing";
+        }
+        sig += '\n';
+      }
+      return sig;
     }
 
     void clearWatches() {
@@ -471,6 +509,7 @@ namespace {
     bool m_dirty = true;
     std::unordered_map<int, std::string> m_watches;
     std::unordered_set<std::string> m_watchedPaths;
+    std::string m_sourceSignature;
   };
 
   DesktopEntryCache& cache() {
@@ -526,4 +565,4 @@ int desktopEntryWatchFd() noexcept { return cache().watchFd(); }
 
 void checkDesktopEntryReload() { cache().checkReload(); }
 
-void requestDesktopEntryRescan() noexcept { cache().requestRescan(); }
+void refreshDesktopEntriesIfSourcesChanged() { cache().checkSourcesChanged(); }

@@ -78,7 +78,7 @@ struct RoundedRectStyle {
   std::array<GradientStop, 4> gradientStops{};
   CornerShapes corners{};
   RectInsets logicalInset{};
-  Radii radius{};
+  Radii radius;
   float softness = 1.0f;
   bool noAa = false;
   bool invertFill = false;
@@ -93,7 +93,7 @@ struct RoundedRectStyle {
   float shadowExclusionHeight = 0.0f;
   CornerShapes shadowExclusionCorners{};
   RectInsets shadowExclusionLogicalInset{};
-  Radii shadowExclusionRadius{};
+  Radii shadowExclusionRadius;
 };
 
 constexpr bool operator==(const RoundedRectStyle& lhs, const RoundedRectStyle& rhs) noexcept {
@@ -125,6 +125,12 @@ constexpr bool operator==(const RoundedRectStyle& lhs, const RoundedRectStyle& r
 struct SpinnerStyle {
   Color color{};
   float thickness = 2.0f;
+};
+
+struct CountdownRingStyle {
+  Color color{};
+  float thickness = 6.0f;
+  float progress = 1.0f;
 };
 
 enum class ScreenCornerPosition : std::uint8_t {

@@ -11,6 +11,7 @@
 #include "cpp/scheme/scheme_rainbow.h"
 #include "cpp/scheme/scheme_tonal_spot.h"
 #include "theme/color.h"
+#include "theme/palette.h"
 #include "util/file_utils.h"
 #include "util/string_utils.h"
 
@@ -671,7 +672,7 @@ namespace noctalia::theme {
         size_t lastEnd = 0;
         for (auto it = std::sregex_iterator(input.begin(), input.end(), kBlockRegex); it != std::sregex_iterator();
              ++it) {
-          size_t start = static_cast<size_t>(it->position());
+          auto start = static_cast<size_t>(it->position());
           size_t end = start + static_cast<size_t>(it->length());
           size_t lineStart = input.rfind('\n', start);
           lineStart = (lineStart == std::string::npos) ? 0 : (lineStart + 1);

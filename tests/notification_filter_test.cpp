@@ -129,6 +129,22 @@ int main() {
   ok &= check(lowOnlyFilter.matched && urgencyIsAllowed(lowOnlyFilter.allowedUrgencies, Urgency::Low), "filter low allowed");
   ok &= check(!urgencyIsAllowed(lowOnlyFilter.allowedUrgencies, Urgency::Normal), "filter normal blocked");
 
+  const auto noPermanent = resolveNotificationFilter(
+      {NotificationFilterConfig{
+          .name = "browser",
+          .enabled = true,
+          .match = "browser",
+          .allowPermanent = false,
+      }},
+      NotificationFilterFields{
+          .appName = "Browser",
+          .category = std::nullopt,
+          .desktopEntry = std::nullopt,
+      }
+  );
+  ok &= check(noPermanent.matched && !noPermanent.allowPermanent, "filter disallows permanent");
+  ok &= check(resolveNotificationFilter({}, NotificationFilterFields{.appName = "Browser"}).allowPermanent, "default allows permanent");
+
   const auto music = resolveNotificationFilter(
       filters,
       NotificationFilterFields{

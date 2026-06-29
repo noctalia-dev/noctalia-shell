@@ -14,9 +14,14 @@ class WeatherService;
 
 class DesktopWeatherWidget : public DesktopWidget {
 public:
-  DesktopWeatherWidget(
-      const WeatherService* weather, ColorSpec color, bool shadow, bool showForecast = false, int forecastDays = 3
-  );
+  struct Options {
+    ColorSpec color = colorSpecFromRole(ColorRole::OnSurface);
+    bool shadow = true;
+    bool showForecast = false;
+    int forecastDays = 3;
+  };
+
+  DesktopWeatherWidget(const WeatherService* weather, Options options);
 
   void create() override;
   bool applySetting(

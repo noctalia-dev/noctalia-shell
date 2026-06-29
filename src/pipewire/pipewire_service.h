@@ -13,13 +13,10 @@
 
 struct pw_context;
 struct pw_core;
-struct pw_client;
-struct pw_device;
 struct pw_loop;
 struct pw_registry;
 struct spa_hook;
 struct spa_dict;
-
 class ConfigService;
 class IpcService;
 
@@ -152,8 +149,10 @@ public:
     // Software / node-route mute from PipeWire props (SPA_PARAM_Props, node routes).
     bool swMute = false;
     bool nodeRouteMute = false;
-    // Effective mute for UI (includes device-route mute, e.g. USB mic hardware switch).
+    // Effective mute for UI (includes device-route mute and short-lived local writes).
     bool muted = false;
+    std::optional<bool> pendingMute;
+    std::chrono::steady_clock::time_point muteWriteGuardUntil;
     std::uint32_t channelCount = 0;
     std::uint32_t deviceId = 0;
     bool hasRoute = false;
@@ -161,6 +160,8 @@ public:
     std::int32_t routeDevice = -1;
     std::uint32_t routeDirection = 0;
     std::vector<DeviceRouteData> routes;
+    float lastWrittenVolume = -1.0f;
+    std::chrono::steady_clock::time_point volumeWriteGuardUntil;
     struct pw_node* proxy = nullptr;
     spa_hook* listener = nullptr;
   };
@@ -207,6 +208,8 @@ private:
   void refreshNodeIdentity(NodeData& nd);
   void applyVolumePropsFromDict(NodeData& nd, const spa_dict* props, bool applyMixerFieldsFromDict = true);
   void recomputeEffectiveMute(NodeData& nd);
+  void scheduleMuteWriteGuard();
+  void expireMuteWriteGuards();
   void setNodeVolume(std::uint32_t id, float volume);
   void setNodeMuted(std::uint32_t id, bool muted);
   void setDefaultNode(std::uint32_t id, const char* key);
@@ -214,10 +217,13 @@ private:
   void scheduleVolumeFlush();
   void flushPendingNodeVolumes();
   [[nodiscard]] bool applyNodeVolumeImmediate(std::uint32_t id, float volume);
+  void noteVolumeWritten(NodeData& nd, float volume);
 
   Timer m_volumeThrottleTimer;
+  Timer m_muteWriteGuardTimer;
   std::unordered_map<std::uint32_t, float> m_pendingNodeVolumes;
-  std::chrono::steady_clock::time_point m_lastVolumeFlushAt{};
+  std::unordered_map<std::string, float> m_userAppVolumes;
+  std::chrono::steady_clock::time_point m_lastVolumeFlushAt;
   bool m_lastVolumeFlushValid = false;
 
   pw_loop* m_loop = nullptr;

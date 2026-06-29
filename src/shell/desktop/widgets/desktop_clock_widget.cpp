@@ -1,6 +1,5 @@
 #include "shell/desktop/widgets/desktop_clock_widget.h"
 
-#include "core/ui_phase.h"
 #include "render/core/color.h"
 #include "render/core/renderer.h"
 #include "render/scene/node.h"
@@ -15,6 +14,7 @@
 #include <ctime>
 #include <memory>
 #include <numbers>
+#include <utility>
 
 namespace {
 
@@ -184,11 +184,10 @@ DesktopClockWidget::Style DesktopClockWidget::styleFromSetting(std::string_view 
   return Style::Digital;
 }
 
-DesktopClockWidget::DesktopClockWidget(
-    Style style, std::string format, ColorSpec color, bool shadow, bool circle, bool centerText
-)
-    : m_style(style), m_format(std::move(format)), m_color(color), m_shadow(shadow), m_showCircle(circle),
-      m_centerText(centerText), m_showsSeconds(m_style == Style::Analog || formatShowsSeconds(m_format)) {}
+DesktopClockWidget::DesktopClockWidget(Options options)
+    : m_style(options.style), m_format(std::move(options.format)), m_color(options.color), m_shadow(options.shadow),
+      m_showCircle(options.showCircle), m_centerText(options.centerText),
+      m_showsSeconds(m_style == Style::Analog || formatShowsSeconds(m_format)) {}
 
 void DesktopClockWidget::create() {
   auto rootNode = std::make_unique<Node>();
@@ -301,15 +300,6 @@ void DesktopClockWidget::syncAnalogColors() {
 
   RoundedRectStyle faceStyle = m_face->style();
   faceStyle.border = handColor;
-  faceStyle.outerShadow = m_shadow && m_showCircle;
-  if (m_shadow && m_showCircle) {
-    const float offset = kShadowOffset * scale;
-    faceStyle.shadowCutoutOffsetX = offset;
-    faceStyle.shadowCutoutOffsetY = offset;
-  } else {
-    faceStyle.shadowCutoutOffsetX = 0.0f;
-    faceStyle.shadowCutoutOffsetY = 0.0f;
-  }
   m_face->setStyle(faceStyle);
   layoutAnalogFace(*m_face, metrics, handColor);
 
@@ -343,17 +333,6 @@ void DesktopClockWidget::layoutAnalog(Renderer& /*renderer*/, float size) {
   const Color handColor = resolvedColor(m_color);
 
   layoutAnalogFace(*m_face, metrics, handColor);
-  RoundedRectStyle faceStyle = m_face->style();
-  faceStyle.outerShadow = m_shadow && m_showCircle;
-  if (m_shadow && m_showCircle) {
-    const float offset = kShadowOffset * scale;
-    faceStyle.shadowCutoutOffsetX = offset;
-    faceStyle.shadowCutoutOffsetY = offset;
-  } else {
-    faceStyle.shadowCutoutOffsetX = 0.0f;
-    faceStyle.shadowCutoutOffsetY = 0.0f;
-  }
-  m_face->setStyle(faceStyle);
 
   if (m_hourPivot != nullptr) {
     m_hourPivot->setPosition(metrics.center, metrics.center);
@@ -594,11 +573,12 @@ void DesktopClockWidget::updateStableDigitalWidth(Renderer& renderer, const std:
     m_digitOffsetX = offset;
     m_label->setMinWidth(m_stableWidth);
     m_label->setMaxWidth(m_stableWidth);
-    // Re-arm layout only when the change surfaces outside layout (a non-digit field like
-    // the date/AM-PM rolling over on the Update tick). During layout() the new width/offset
-    // already apply in this same pass, and its two box-fit passes (base then fitted scale)
-    // each measure a different width — re-arming here would loop forever.
-    if (currentUiPhase() != UiPhase::Layout) {
+    // Re-arm layout only when the change surfaces outside layout (a non-digit field like the
+    // date/AM-PM rolling over on the Update tick). During layout() the new width/offset already
+    // apply in this same pass, and its two box-fit passes (base then fitted scale) each measure a
+    // different width — re-arming here would loop forever. The nested update() inside doLayout opens
+    // an Update phase scope, so guard on isLayingOut() rather than the phase.
+    if (!isLayingOut()) {
       requestLayout();
     }
   }

@@ -1,5 +1,6 @@
 #include "ui/controls/input.h"
 
+#include "core/key_chord.h"
 #include "core/key_modifiers.h"
 #include "core/key_symbols.h"
 #include "core/text_clipboard.h"
@@ -66,7 +67,7 @@ namespace {
       return false;
     }
 
-    const unsigned char lead = static_cast<unsigned char>(text[bytePos]);
+    const auto lead = static_cast<unsigned char>(text[bytePos]);
     if ((lead & 0x80U) != 0) {
       return true;
     }
@@ -918,13 +919,16 @@ void Input::doLayout(Renderer& renderer) {
 void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool preedit) {
   clampEditState();
 
-  if (m_onKeyEvent && m_onKeyEvent(sym, modifiers)) {
-    return;
-  }
-
   const bool validateMatch = g_validateKeyMatcher && g_validateKeyMatcher(sym, modifiers);
   const bool shift = (modifiers & KeyMod::Shift) != 0;
   const bool ctrl = (modifiers & KeyMod::Ctrl) != 0;
+  const bool plainPrintableText = isPlainPrintableKey(utf32, modifiers, preedit);
+
+  // A printable key that doubles as a keybind chord (Space is bound to Validate)
+  // is text while the field is focused, not an activation to hand to the panel.
+  if (m_onKeyEvent && !(plainPrintableText && validateMatch) && m_onKeyEvent(sym, modifiers)) {
+    return;
+  }
   const bool undoShortcut = ctrl && !shift && (sym == 'z' || sym == 'Z');
   const bool redoShortcut = (ctrl && (sym == 'y' || sym == 'Y')) || (ctrl && shift && (sym == 'z' || sym == 'Z'));
   const bool clearShortcut = ctrl && !shift && (sym == 'u' || sym == 'U');
@@ -1084,7 +1088,7 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     if (!shift) {
       m_selectionAnchor = m_cursorPos;
     }
-  } else if (validateMatch) {
+  } else if (validateMatch && !plainPrintableText) {
     if (m_onSubmit) {
       m_onSubmit(m_value);
     }
@@ -1095,7 +1099,6 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     }
     if (hasSelection()) {
       deleteSelection();
-      changed = true;
     }
     const auto bytes = utf32ToUtf8(utf32);
     m_value.insert(m_cursorPos, bytes);
@@ -1205,7 +1208,7 @@ void Input::applyVisualState() {
                                : resolved(ColorRole::SurfaceVariant, m_surfaceOpacity);
     const Color border = m_invalid
         ? resolved(ColorRole::Error)
-        : (focused ? resolved(ColorRole::Primary)
+        : (focused ? resolveColorSpec(focusRingColorSpec())
                    : (inputHovered ? resolved(ColorRole::Hover) : resolved(ColorRole::Outline)));
 
     m_background->setStyle(
@@ -1215,7 +1218,7 @@ void Input::applyVisualState() {
             .fillMode = FillMode::Solid,
             .radius = Style::scaledRadius(m_frameRadius, chromeScale),
             .softness = 1.0f,
-            .borderWidth = Style::borderWidth,
+            .borderWidth = focused ? Style::focusRingWidth : Style::borderWidth,
         }
     );
   } else if (m_background != nullptr) {

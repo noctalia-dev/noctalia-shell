@@ -4,11 +4,11 @@
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
 #include "shell/desktop/desktop_widget_settings_registry.h"
+#include "shell/desktop/editor/desktop_widgets_editor.h"
 #include "shell/lockscreen/lockscreen_login_box.h"
 #include "shell/settings/color_spec_picker.h"
 #include "shell/settings/settings_content_common.h"
 #include "shell/settings/widget_settings_registry.h"
-#include "shell/widgets_editor/background_widgets_editor.h"
 #include "ui/builders.h"
 #include "ui/controls/input.h"
 #include "ui/controls/slider.h"
@@ -193,7 +193,7 @@ namespace {
   }
 
   std::unique_ptr<Flex> makeSliderControl(
-      double value, double minVal, double maxVal, double step, bool integerValue, BackgroundWidgetsEditor* editor,
+      double value, double minVal, double maxVal, double step, bool integerValue, DesktopWidgetsEditor* editor,
       const std::string& key
   ) {
     Input* valueInputPtr = nullptr;
@@ -264,8 +264,7 @@ namespace {
   }
 
   std::unique_ptr<Flex> makeToggleRow(
-      std::string_view labelText, const std::string& key, bool fallback, const Settings& s,
-      BackgroundWidgetsEditor* editor
+      std::string_view labelText, const std::string& key, bool fallback, const Settings& s, DesktopWidgetsEditor* editor
   ) {
     return makeRow(
         labelText,
@@ -278,7 +277,7 @@ namespace {
 
   std::unique_ptr<Flex> makeSliderRow(
       std::string_view labelText, const std::string& key, double fallback, double minVal, double maxVal, double step,
-      const Settings& s, BackgroundWidgetsEditor* editor
+      const Settings& s, DesktopWidgetsEditor* editor
   ) {
     return makeRow(labelText, makeSliderControl(getDouble(s, key, fallback), minVal, maxVal, step, false, editor, key));
   }
@@ -287,7 +286,7 @@ namespace {
   // schema's Int type (plugin manifest int settings).
   std::unique_ptr<Flex> makeIntSliderRow(
       std::string_view labelText, const std::string& key, double fallback, double minVal, double maxVal, double step,
-      const Settings& s, BackgroundWidgetsEditor* editor
+      const Settings& s, DesktopWidgetsEditor* editor
   ) {
     return makeRow(
         labelText,
@@ -297,7 +296,7 @@ namespace {
 
   std::unique_ptr<Flex> makeStepperRow(
       std::string_view labelText, const std::string& key, int fallback, int minVal, int maxVal, int step,
-      const std::optional<std::string>& valueSuffix, const Settings& s, BackgroundWidgetsEditor* editor
+      const std::optional<std::string>& valueSuffix, const Settings& s, DesktopWidgetsEditor* editor
   ) {
     const int currentValue =
         std::clamp(static_cast<int>(std::llround(getDouble(s, key, static_cast<double>(fallback)))), minVal, maxVal);
@@ -319,7 +318,7 @@ namespace {
 
   std::unique_ptr<Flex> makeColorSpecRow(
       std::string_view labelText, const std::string& key, std::string fallbackValue, const Settings& s,
-      BackgroundWidgetsEditor* editor
+      DesktopWidgetsEditor* editor
   ) {
     settings::ColorSpecSelectOptions options{
         .roles = {},
@@ -339,7 +338,7 @@ namespace {
   }
 
   std::unique_ptr<Flex> makeGlyphRow(
-      std::string_view labelText, const std::string& key, const std::string& value, BackgroundWidgetsEditor* editor
+      std::string_view labelText, const std::string& key, const std::string& value, DesktopWidgetsEditor* editor
   ) {
     auto input = ui::input({
         .value = value,
@@ -381,7 +380,7 @@ namespace {
 
   std::unique_ptr<Flex> makeInputRow(
       std::string_view labelText, const std::string& key, const std::string& value, const std::string& placeholder,
-      BackgroundWidgetsEditor* editor
+      DesktopWidgetsEditor* editor
   ) {
     return makeRow(
         labelText,
@@ -396,7 +395,7 @@ namespace {
   }
 
   std::unique_ptr<Flex>
-  makeFilePickerRow(std::string_view labelText, const std::string& key, BackgroundWidgetsEditor* editor) {
+  makeFilePickerRow(std::string_view labelText, const std::string& key, DesktopWidgetsEditor* editor) {
     return makeRow(
         labelText,
         ui::button({
@@ -421,7 +420,7 @@ namespace {
   std::unique_ptr<Flex> makeSelectRow(
       std::string_view labelText, const std::string& key,
       const std::vector<settings::WidgetSettingSelectOption>& options, const std::string& currentValue,
-      bool literalLabels, BackgroundWidgetsEditor* editor
+      bool literalLabels, DesktopWidgetsEditor* editor
   ) {
     std::vector<std::string> labels;
     std::vector<std::string> values;
@@ -456,7 +455,7 @@ namespace {
   std::unique_ptr<Flex> makeSegmentedRow(
       std::string_view labelText, const std::string& key,
       const std::vector<settings::WidgetSettingSelectOption>& options, const std::string& currentValue,
-      BackgroundWidgetsEditor* editor
+      DesktopWidgetsEditor* editor
   ) {
     std::vector<std::string> values;
     values.reserve(options.size());
@@ -489,7 +488,7 @@ namespace {
 
   void addSpecSettings(
       Flex& content, const std::vector<settings::WidgetSettingSpec>& specs, const Settings& s,
-      BackgroundWidgetsEditor* editor
+      DesktopWidgetsEditor* editor
   ) {
     for (const auto& spec : specs) {
       if (!isSpecVisible(spec, s, specs)) {
@@ -601,7 +600,7 @@ namespace {
     );
   }
 
-  std::unique_ptr<Flex> makeResetDefaultsRow(BackgroundWidgetsEditor* editor, std::function<void()> onReset) {
+  std::unique_ptr<Flex> makeResetDefaultsRow(DesktopWidgetsEditor* editor, std::function<void()> onReset) {
     return ui::row(
         {
             .justify = FlexJustify::End,
@@ -622,7 +621,7 @@ namespace {
 
   void addSettingsSection(
       Flex& content, const std::vector<settings::WidgetSettingSpec>& specs, const Settings& s,
-      BackgroundWidgetsEditor* editor, std::string_view labelKey, bool separator
+      DesktopWidgetsEditor* editor, std::string_view labelKey, bool separator
   ) {
     if (!hasVisibleSpecs(specs, s)) {
       return;
@@ -632,14 +631,14 @@ namespace {
     addSpecSettings(content, specs, s, editor);
   }
 
-  void addBackgroundSection(Flex& content, const Settings& s, BackgroundWidgetsEditor* editor, std::string_view type) {
+  void addBackgroundSection(Flex& content, const Settings& s, DesktopWidgetsEditor* editor, std::string_view type) {
     const auto specs = desktop_settings::commonDesktopWidgetSettingSpecs(type);
     addSettingsSection(content, specs, s, editor, "desktop-widgets.editor.settings.background-section", true);
   }
 
 } // namespace
 
-void BackgroundWidgetsEditor::applySettingChange(const std::string& key, WidgetSettingValue value) {
+void DesktopWidgetsEditor::applySettingChange(const std::string& key, WidgetSettingValue value) {
   deferEditorMutation([this, key, value = std::move(value)]() {
     auto* state = findWidgetState(m_selectedWidgetId);
     if (state == nullptr) {
@@ -664,10 +663,6 @@ void BackgroundWidgetsEditor::applySettingChange(const std::string& key, WidgetS
     const bool rebuildInspector = settingChangeAffectsInspectorVisibility(state->type, key) || key == "background";
 
     if (view.widget != nullptr && view.widget->applySetting(key, value, state->settings, *m_renderContext)) {
-      if (state->type == "button" && (key == "label" || key == "glyph")) {
-        state->boxWidth = 0.0f;
-        state->boxHeight = 0.0f;
-      }
       applyViewState(view, *state, true);
       updateSelectionVisuals(*surface);
       if (rebuildInspector) {
@@ -740,7 +735,7 @@ void BackgroundWidgetsEditor::applySettingChange(const std::string& key, WidgetS
   });
 }
 
-void BackgroundWidgetsEditor::resetSelectedWidgetSettings() {
+void DesktopWidgetsEditor::resetSelectedWidgetSettings() {
   deferEditorMutation([this]() {
     auto* state = findWidgetState(m_selectedWidgetId);
     if (state == nullptr) {
@@ -755,7 +750,7 @@ void BackgroundWidgetsEditor::resetSelectedWidgetSettings() {
   });
 }
 
-void BackgroundWidgetsEditor::buildInspector(
+void DesktopWidgetsEditor::buildInspector(
     OverlaySurface& surface, Node& root, const DesktopWidgetState& selectedState
 ) {
   auto handleArea = std::make_unique<InputArea>();
@@ -856,11 +851,10 @@ void BackgroundWidgetsEditor::buildInspector(
           ui::button({
               .glyph = "close",
               .glyphSize = 12.0f,
+              .controlHeight = kInspectorCloseSize,
               .variant = ButtonVariant::Ghost,
               .minWidth = kInspectorCloseSize,
-              .minHeight = kInspectorCloseSize,
               .maxWidth = kInspectorCloseSize,
-              .maxHeight = kInspectorCloseSize,
               .padding = 2.0f,
               .radius = Style::scaledRadiusSm(),
               .width = kInspectorCloseSize,

@@ -2,8 +2,10 @@
 
 #include "ui/controls/search_picker.h"
 #include "ui/dialogs/dialog_popup_host.h"
+#include "ui/popup_parent.h"
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -13,11 +15,19 @@ class RenderContext;
 class WaylandConnection;
 struct KeyboardEvent;
 struct PointerEvent;
-struct wl_output;
 struct wl_surface;
-struct xdg_surface;
 
 namespace settings {
+
+  struct SearchPickerPopupRequest {
+    XdgPopupParent parent;
+    std::string title;
+    std::vector<SearchPickerOption> options;
+    std::string selectedValue;
+    std::string placeholder;
+    std::string emptyText;
+    float scale = 1.0f;
+  };
 
   class SearchPickerPopup final : public DialogPopupHost {
   public:
@@ -31,12 +41,7 @@ namespace settings {
     void setOnSelect(SelectCallback callback);
     void setOnDismissed(std::function<void()> callback);
 
-    void open(
-        xdg_surface* parentXdgSurface, wl_output* output, std::uint32_t serial, wl_surface* parentWlSurface,
-        std::uint32_t parentWidth, std::uint32_t parentHeight, const std::string& title,
-        const std::vector<SearchPickerOption>& options, const std::string& selectedValue,
-        const std::string& placeholder, const std::string& emptyText, float scale
-    );
+    void open(SearchPickerPopupRequest request);
     void close();
 
     [[nodiscard]] bool isOpen() const noexcept;
@@ -52,6 +57,11 @@ namespace settings {
     void onSheetClose() override;
 
   private:
+    // Guard token for deferred callbacks that run on the next main-loop tick.
+    // Callbacks capture a weak_ptr so they can detect destruction without
+    // relying on a raw this pointer staying valid.
+    std::shared_ptr<void> m_aliveGuard = std::make_shared<int>(0);
+
     float m_scale = 1.0f;
     std::string m_title;
     std::vector<SearchPickerOption> m_options;

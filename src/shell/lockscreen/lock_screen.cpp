@@ -5,6 +5,7 @@
 #include "config/config_service.h"
 #include "config/config_types.h"
 #include "core/deferred_call.h"
+#include "core/key_chord.h"
 #include "core/keybind_matcher.h"
 #include "core/log.h"
 #include "ext-session-lock-v1-client-protocol.h"
@@ -20,7 +21,6 @@
 #include <algorithm>
 #include <string>
 #include <thread>
-#include <wayland-client.h>
 
 namespace {
 
@@ -154,6 +154,9 @@ bool LockScreen::lock() {
   if (m_wayland->outputs().empty()) {
     m_lockDeferred = true;
     kLog.warn("no outputs available for lock screen; lock deferred until an output is connected");
+    // No output can ever show a lock surface, so run any pending post-lock action (e.g. suspend)
+    // immediately instead of holding it until a monitor reconnects.
+    dispatchPendingAfterLocked();
     return true;
   }
 
@@ -204,6 +207,7 @@ void LockScreen::unlock() {
   }
 
   m_pendingAfterLocked = {};
+  m_suspendTimeoutTimer.stop();
   invalidatePendingAuthentication();
   stopFingerprint();
 
@@ -363,7 +367,10 @@ void LockScreen::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  if (KeybindMatcher::matches(KeybindAction::Validate, event.sym, event.modifiers)) {
+  // The password field always owns plain printable keys; Space is a Validate
+  // chord but must type a space, not submit (passwords may contain spaces).
+  if (!isPlainPrintableKey(event.utf32, event.modifiers, event.preedit)
+      && KeybindMatcher::matches(KeybindAction::Validate, event.sym, event.modifiers)) {
     tryAuthenticate();
     return;
   }
@@ -404,15 +411,34 @@ bool LockScreen::isActive() const noexcept { return m_lockPending || m_locked; }
 
 bool LockScreen::isSessionLocked() const noexcept { return m_locked; }
 
+bool LockScreen::tryFlushPendingAfterLocked() {
+  if (m_locked && m_pendingAfterLocked && allSurfacesReady()) {
+    auto pending = std::move(m_pendingAfterLocked);
+    m_pendingAfterLocked = {};
+    m_suspendTimeoutTimer.stop();
+    DeferredCall::callLater(std::move(pending));
+    return true;
+  }
+  return false;
+}
+
+void LockScreen::dispatchPendingAfterLocked() {
+  if (m_pendingAfterLocked) {
+    auto pending = std::move(m_pendingAfterLocked);
+    m_pendingAfterLocked = {};
+    m_suspendTimeoutTimer.stop();
+    DeferredCall::callLater(std::move(pending));
+  }
+}
+
 void LockScreen::runAfterSessionLocked(std::function<void()> fn) {
   if (fn == nullptr) {
     return;
   }
-  if (m_locked) {
-    DeferredCall::callLater(std::move(fn));
+  m_pendingAfterLocked = std::move(fn);
+  if (tryFlushPendingAfterLocked()) {
     return;
   }
-  m_pendingAfterLocked = std::move(fn);
   if (isActive()) {
     return;
   }
@@ -441,17 +467,25 @@ void LockScreen::handleLocked(void* data, ext_session_lock_v1* /*lock*/) {
     }
   }
   self->syncVisualizerTimer();
+
+  // Start the fallback timer (3 seconds) to trigger suspend anyway if surfaces take too long to render
+  self->m_suspendTimeoutTimer.start(std::chrono::seconds(3), [self]() {
+    if (self->m_pendingAfterLocked) {
+      kLog.warn("Lock screen surfaces took too long to render; suspending fallback triggered");
+      auto pending = std::move(self->m_pendingAfterLocked);
+      self->m_pendingAfterLocked = {};
+      DeferredCall::callLater(std::move(pending));
+    }
+  });
+
+
   self->updatePromptOnSurfaces();
   self->startFingerprint();
   kLog.info("session is locked");
   if (self->m_onSessionLocked) {
     self->m_onSessionLocked();
   }
-  if (self->m_pendingAfterLocked) {
-    auto pending = std::move(self->m_pendingAfterLocked);
-    self->m_pendingAfterLocked = {};
-    DeferredCall::callLater(std::move(pending));
-  }
+  self->tryFlushPendingAfterLocked();
 }
 
 void LockScreen::handleFinished(void* data, ext_session_lock_v1* /*lock*/) {
@@ -493,7 +527,8 @@ void LockScreen::syncInstances() {
   const auto& outputs = m_wayland->outputs();
 
   std::erase_if(m_instances, [&](Instance& instance) {
-    const bool exists = std::ranges::contains(outputs, instance.outputName, &WaylandOutput::name);
+    const auto it = std::ranges::find(outputs, instance.outputName, &WaylandOutput::name);
+    const bool exists = it != outputs.end() && it->done && it->output != nullptr && it->hasUsableGeometry();
     if (!exists && instance.surface != nullptr && instance.surface->wlSurface() == m_pointerSurface) {
       m_pointerSurface = nullptr;
     }
@@ -501,6 +536,9 @@ void LockScreen::syncInstances() {
   });
 
   for (const auto& output : outputs) {
+    if (!output.done || output.output == nullptr || !output.hasUsableGeometry()) {
+      continue;
+    }
     const bool exists = std::ranges::contains(m_instances, output.name, &Instance::outputName);
     if (!exists) {
       createInstance(output);
@@ -515,6 +553,18 @@ bool LockScreen::shouldUseBlurredDesktop() const {
       && m_configService->config().lockscreen.blurredDesktop
       && m_wayland != nullptr
       && m_wayland->hasScreencopy();
+}
+
+bool LockScreen::allSurfacesReady() const {
+  if (m_instances.empty()) {
+    return false;
+  }
+  for (const auto& instance : m_instances) {
+    if (instance.surface != nullptr && !instance.surface->firstFrameRendered()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void LockScreen::primeDesktopCaptures() {
@@ -553,7 +603,7 @@ void LockScreen::captureDesktopSnapshots() {
   }
 
   for (const auto& output : m_wayland->outputs()) {
-    if (output.output == nullptr || !isInteractiveOutput(output)) {
+    if (!output.done || output.output == nullptr || !output.hasUsableGeometry() || !isInteractiveOutput(output)) {
       continue;
     }
 
@@ -673,6 +723,7 @@ void LockScreen::createInstance(const WaylandOutput& output) {
     surface->setDesktopCapture(std::move(captureIt->second));
     m_desktopCaptures.erase(captureIt);
   }
+  surface->setRenderCallback([this]() { tryFlushPendingAfterLocked(); });
   surface->setOnLogin([this]() { tryAuthenticate(); });
   surface->setOnPasswordChanged([this](const std::string& value) { handlePasswordEdited(value); });
   surface->setPromptState(m_user, m_password, m_status, m_statusIsError, m_authenticating);
@@ -696,6 +747,7 @@ void LockScreen::createInstance(const WaylandOutput& output) {
 
 void LockScreen::resetLockState() {
   m_pendingAfterLocked = {};
+  m_suspendTimeoutTimer.stop();
   m_lockDeferred = false;
   if (m_lock == nullptr) {
     m_lockPending = false;
@@ -766,7 +818,10 @@ void LockScreen::tryAuthenticate() {
   updatePromptOnSurfaces();
 
   const PamAuthenticator authenticator = m_authenticator;
-  const std::string pamService = passwordPamService();
+  // Authenticate against the "login" stack. If fingerprint is enabled, strip
+  // pam_fprintd from it: noctalia drives the reader itself over D-Bus and the
+  // two can't share the sensor. See docs/fingerprint.md.
+  const std::string pamService = "login";
   std::thread([this, generation, password = std::move(password), authenticator, pamService]() mutable {
     const auto result = authenticator.authenticateCurrentUser(password, pamService);
     clearSensitiveString(password);
@@ -823,15 +878,6 @@ void LockScreen::handleFingerprintStatus(const std::string& message, bool isErro
   m_status = message.empty() ? i18n::tr("lockscreen.ready") : message;
   m_statusIsError = isError;
   updatePromptOnSurfaces();
-}
-
-std::string LockScreen::passwordPamService() const {
-  if (m_configService != nullptr
-      && m_configService->config().lockscreen.fingerprint
-      && PamAuthenticator::pamServiceExists("su")) {
-    return "su";
-  }
-  return "login";
 }
 
 void LockScreen::clearSensitiveString(std::string& value) {

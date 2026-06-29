@@ -34,10 +34,12 @@ namespace scripting {
     std::string icon;
     std::string description;
     std::string license = "MIT";
+    std::vector<std::string> dependencies;
     std::string source; // source name ("local" for the implicit dev source)
     bool compatible = true;
     bool deprecated = false;
     bool enabled = false;
+    bool materialized = false;
   };
 
   // Owns the plugin distribution lifecycle: resolves the configured sources into
@@ -56,18 +58,31 @@ namespace scripting {
     // config-reload path, so they don't use this.
     void setOnChanged(std::function<void()> onChanged) { m_onChanged = std::move(onChanged); }
 
+    // Called when a plugin starts or finishes its background git export (the in-flight
+    // set queried by isEnabling() changed). Lets the settings UI redraw the row spinner.
+    void setOnEnablingChanged(std::function<void()> cb) { m_onEnablingChanged = std::move(cb); }
+
     // Resolve source roots + enabled filter from config and (re)scan the registry.
     // No-op when the plugins config is unchanged since the last applied refresh.
     void refresh();
 
-    // Enable a managed-source plugin by id ("author/plugin"): clone/read the git
-    // source if needed, export its runtime files if needed, enforce min_noctalia,
-    // then persist. Persisting fans out a reload (which re-refreshes the registry).
-    // Hard error on an unknown id, a failed export, or an incompatible min_noctalia.
+    // Enable a plugin by id ("author/plugin"). For a git source the runtime export
+    // lazy-fetches blobs from the blobless clone (seconds, network-bound), so it runs
+    // on a worker thread: enable() returns immediately, isEnabling(id) is true until
+    // the export lands, then it persists + refreshes on the main thread. Path / local
+    // dev plugins are validated and persisted inline (no network). The synchronous
+    // result reports only the inline-validation outcome; a git export reports ok and
+    // surfaces later failures via the log.
     [[nodiscard]] EnableResult enable(std::string_view pluginId);
+
+    // Whether a git-source plugin's background export is currently in flight.
+    [[nodiscard]] bool isEnabling(std::string_view pluginId) const;
 
     // Disable a plugin by id and persist. Code stays on disk; settings are retained.
     void disable(std::string_view pluginId);
+
+    // Disable and remove a plugin's materialized files from disk.
+    void remove(std::string_view pluginId);
 
     // Every plugin offered by the local dev source + each configured source, with
     // its compatibility and active state. For the management CLI / settings browser.
@@ -90,8 +105,6 @@ namespace scripting {
     void removeSource(std::string sourceName);
 
   private:
-    [[nodiscard]] std::filesystem::path sourceRoot(const PluginSourceConfig& source) const;
-    [[nodiscard]] std::optional<PluginSourceConfig> findSourceOffering(std::string_view pluginId) const;
     [[nodiscard]] std::optional<PluginSourceConfig> findSource(std::string_view name) const;
     // Plugin ids offered by the implicit local dev source.
     [[nodiscard]] std::unordered_set<std::string> localPluginIds() const;
@@ -112,6 +125,10 @@ namespace scripting {
 
     ConfigService& m_config;
     std::function<void()> m_onChanged;
+    std::function<void()> m_onEnablingChanged;
+    // Git-source plugins whose runtime export is running on a worker thread. Touched
+    // only on the main thread (enable() inserts, the DeferredCall completion erases).
+    std::unordered_set<std::string> m_enabling;
     PluginsConfig m_lastApplied;
     bool m_applied = false;
   };

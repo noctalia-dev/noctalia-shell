@@ -2,11 +2,9 @@
 
 #include "config/schema/config_schema.h"
 #include "config/schema/engine.h"
-#include "core/key_chord.h"
 
 #include <algorithm>
 #include <cstdint>
-#include <cstdio>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -92,6 +90,8 @@ namespace config_export {
         resolved.enabled = *ovr.enabled;
       if (ovr.autoHide)
         resolved.autoHide = *ovr.autoHide;
+      if (ovr.showOnWorkspaceSwitch)
+        resolved.showOnWorkspaceSwitch = *ovr.showOnWorkspaceSwitch;
       if (ovr.reserveSpace)
         resolved.reserveSpace = *ovr.reserveSpace;
       if (ovr.layer)
@@ -123,6 +123,8 @@ namespace config_export {
         resolved.marginEnds = *ovr.marginEnds;
       if (ovr.marginEdge)
         resolved.marginEdge = *ovr.marginEdge;
+      if (ovr.marginOppositeEdge)
+        resolved.marginOppositeEdge = *ovr.marginOppositeEdge;
       if (ovr.padding)
         resolved.padding = *ovr.padding;
       if (ovr.widgetSpacing)
@@ -164,10 +166,20 @@ namespace config_export {
       if (ovr.widgetCapsulePadding)
         resolved.widgetCapsulePadding = static_cast<float>(*ovr.widgetCapsulePadding);
       if (ovr.widgetCapsuleRadius.has_value()) {
-        resolved.widgetCapsuleRadius = *ovr.widgetCapsuleRadius;
+        resolved.widgetCapsuleRadius = ovr.widgetCapsuleRadius;
       }
       if (ovr.widgetCapsuleOpacity)
         resolved.widgetCapsuleOpacity = static_cast<float>(*ovr.widgetCapsuleOpacity);
+      if (ovr.deadZone.command)
+        resolved.deadZone.command = *ovr.deadZone.command;
+      if (ovr.deadZone.rightCommand)
+        resolved.deadZone.rightCommand = *ovr.deadZone.rightCommand;
+      if (ovr.deadZone.middleCommand)
+        resolved.deadZone.middleCommand = *ovr.deadZone.middleCommand;
+      if (ovr.deadZone.scrollUpCommand)
+        resolved.deadZone.scrollUpCommand = *ovr.deadZone.scrollUpCommand;
+      if (ovr.deadZone.scrollDownCommand)
+        resolved.deadZone.scrollDownCommand = *ovr.deadZone.scrollDownCommand;
       return resolved;
     }
 

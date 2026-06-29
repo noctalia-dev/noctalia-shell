@@ -4,7 +4,6 @@
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/process.h"
-#include "i18n/i18n_service.h"
 #include "lua.h"
 #include "luacode.h"
 #include "lualib.h"
@@ -17,6 +16,7 @@
 #include "time/time_format.h"
 #include "util/file_utils.h"
 #include "util/fuzzy_match.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
 #include <atomic>
@@ -52,6 +52,9 @@ namespace {
   // A single stream line can't exceed this; protects against a process spewing one
   // unbounded line with no newline.
   constexpr std::size_t kMaxStreamLineBytes = 64 * 1024;
+  // Per-plugin VM heap ceiling. Far above any legitimate plugin's working set, so
+  // it only ever trips on a runaway allocation (an unbounded table/string loop).
+  constexpr std::size_t kMemoryCeilingBytes = 128 * 1024 * 1024;
 
   std::uint64_t& nextHostId() {
     static std::uint64_t id = 1;
@@ -293,9 +296,92 @@ namespace {
     return 1;
   }
 
+  int luau_outputs(lua_State* L) {
+    auto* host = hostForState(L);
+    if (host == nullptr) {
+      lua_newtable(L);
+      return 1;
+    }
+    const auto outputs = host->api().outputs();
+    lua_createtable(L, static_cast<int>(outputs.size()), 0);
+    int index = 1;
+    for (const auto& out : outputs) {
+      lua_createtable(L, 0, 8);
+      setTableString(L, "name", out.name);
+      setTableString(L, "description", out.description);
+      setTableInteger(L, "width", out.width);
+      setTableInteger(L, "height", out.height);
+      setTableInteger(L, "x", out.x);
+      setTableInteger(L, "y", out.y);
+      setTableInteger(L, "scale", out.scale);
+      setTableBool(L, "focused", out.focused);
+      lua_rawseti(L, -2, index++);
+    }
+    return 1;
+  }
+
+  int luau_setWallpaperEnabled(lua_State* L) {
+    size_t len = 0;
+    const char* connector = luaL_checklstring(L, 1, &len);
+    luaL_checktype(L, 2, LUA_TBOOLEAN);
+    const bool enabled = lua_toboolean(L, 2) != 0;
+    if (auto* host = hostForState(L)) {
+      host->scriptSetWallpaperEnabled(std::string(connector, len), enabled);
+    }
+    return 0;
+  }
+
+  // setWallpaper(path) or setWallpaper(connector, path) — apply and persist a
+  // wallpaper image. With one argument it targets all outputs.
+  int luau_setWallpaper(lua_State* L) {
+    std::string connector;
+    std::string path;
+    if (lua_gettop(L) >= 2 && !lua_isnil(L, 2)) {
+      size_t connectorLen = 0;
+      const char* connectorStr = luaL_checklstring(L, 1, &connectorLen);
+      size_t pathLen = 0;
+      const char* pathStr = luaL_checklstring(L, 2, &pathLen);
+      connector.assign(connectorStr, connectorLen);
+      path.assign(pathStr, pathLen);
+    } else {
+      size_t pathLen = 0;
+      const char* pathStr = luaL_checklstring(L, 1, &pathLen);
+      path.assign(pathStr, pathLen);
+    }
+    if (auto* host = hostForState(L)) {
+      host->scriptSetWallpaper(std::move(connector), std::move(path));
+    }
+    return 0;
+  }
+
+  // togglePanel("author/plugin:panel") — toggle a host panel by id.
+  int luau_togglePanel(lua_State* L) {
+    size_t len = 0;
+    const char* panelId = luaL_checklstring(L, 1, &len);
+    if (auto* host = hostForState(L)) {
+      host->scriptTogglePanel(std::string(panelId, len));
+    }
+    return 0;
+  }
+
   int luau_isDarkMode(lua_State* L) {
     auto* host = hostForState(L);
     lua_pushboolean(L, host != nullptr && host->api().isDarkMode() ? 1 : 0);
+    return 1;
+  }
+
+  int luau_wallpaperDirectory(lua_State* L) {
+    auto* host = hostForState(L);
+    if (host == nullptr) {
+      lua_pushnil(L);
+      return 1;
+    }
+    const std::string directory = host->api().wallpaperDirectory();
+    if (directory.empty()) {
+      lua_pushnil(L);
+      return 1;
+    }
+    lua_pushlstring(L, directory.data(), directory.size());
     return 1;
   }
 
@@ -844,6 +930,37 @@ namespace {
       {nullptr, nullptr},
   };
 
+  int luau_string_trim(lua_State* L) {
+    size_t len = 0;
+    const char* str = luaL_checklstring(L, 1, &len);
+    const std::string out = StringUtils::trim(std::string_view(str, len));
+    lua_pushlstring(L, out.data(), out.size());
+    return 1;
+  }
+
+  int luau_string_urlEncode(lua_State* L) {
+    size_t len = 0;
+    const char* str = luaL_checklstring(L, 1, &len);
+    const std::string out = StringUtils::urlEncode(std::string_view(str, len));
+    lua_pushlstring(L, out.data(), out.size());
+    return 1;
+  }
+
+  int luau_string_urlDecode(lua_State* L) {
+    size_t len = 0;
+    const char* str = luaL_checklstring(L, 1, &len);
+    const std::string out = StringUtils::urlDecode(std::string_view(str, len));
+    lua_pushlstring(L, out.data(), out.size());
+    return 1;
+  }
+
+  const luaL_Reg kNoctaliaStringLib[] = {
+      {"trim", luau_string_trim},
+      {"urlEncode", luau_string_urlEncode},
+      {"urlDecode", luau_string_urlDecode},
+      {nullptr, nullptr},
+  };
+
   int luau_fuzzyScore(lua_State* L) {
     size_t patternLen = 0;
     const char* pattern = luaL_checklstring(L, 1, &patternLen);
@@ -869,7 +986,12 @@ namespace {
       {"flatpakAppInstalled", luau_flatpakAppInstalled},
       {"portalAvailable", luau_portalAvailable},
       {"focusedOutputName", luau_focusedOutputName},
+      {"outputs", luau_outputs},
+      {"setWallpaperEnabled", luau_setWallpaperEnabled},
+      {"setWallpaper", luau_setWallpaper},
+      {"togglePanel", luau_togglePanel},
       {"isDarkMode", luau_isDarkMode},
+      {"wallpaperDirectory", luau_wallpaperDirectory},
       {"notify", luau_notify},
       {"notifyError", luau_notifyError},
       {"copyToClipboard", luau_copyToClipboard},
@@ -901,14 +1023,41 @@ namespace {
     lua_createtable(L, 0, 0);
     luaL_register(L, nullptr, kNoctaliaJsonLib);
     lua_setfield(L, -2, "json");
+    // noctalia.string = { trim, urlEncode, urlDecode }
+    lua_createtable(L, 0, 0);
+    luaL_register(L, nullptr, kNoctaliaStringLib);
+    lua_setfield(L, -2, "string");
     lua_pop(L, 1);
   }
 } // namespace
 
+void* LuauHost::allocate(void* ud, void* ptr, std::size_t osize, std::size_t nsize) {
+  auto* host = static_cast<LuauHost*>(ud);
+  if (nsize == 0) {
+    std::free(ptr);
+    if (host != nullptr) {
+      host->m_memUsed -= osize;
+    }
+    return nullptr;
+  }
+  if (host != nullptr && nsize > osize && host->m_memUsed + (nsize - osize) > kMemoryCeilingBytes) {
+    return nullptr; // refuse growth past the ceiling -> catchable LUA_ERRMEM
+  }
+  void* result = std::realloc(ptr, nsize);
+  if (result == nullptr) {
+    return nullptr; // realloc failed; old block intact, accounting unchanged
+  }
+  if (host != nullptr) {
+    host->m_memUsed += nsize;
+    host->m_memUsed -= osize; // osize == 0 for a fresh allocation
+  }
+  return result;
+}
+
 LuauHost::LuauHost(scripting::ScriptApiContext& api, CompositorPlatform* platform) : m_api(api), m_platform(platform) {
   m_hostId = nextHostId()++;
 
-  m_L = luaL_newstate();
+  m_L = lua_newstate(&LuauHost::allocate, this);
   lua_callbacks(m_L)->userdata = this;
   lua_callbacks(m_L)->interrupt = budgetInterrupt;
   luaL_openlibs(m_L);
@@ -1355,6 +1504,33 @@ void LuauHost::scriptNotifyError(std::string title, std::string body) {
     return;
   }
   notify::error("Noctalia", title, body);
+}
+
+void LuauHost::scriptSetWallpaperEnabled(std::string connector, bool enabled) {
+  if (m_scriptContext != nullptr) {
+    m_scriptContext->sideEffects.push_back(
+        {.kind = scripting::ScriptSideEffectKind::SetWallpaperEnabled,
+         .title = std::move(connector),
+         .body = {},
+         .flag = enabled}
+    );
+  }
+}
+
+void LuauHost::scriptSetWallpaper(std::string connector, std::string path) {
+  if (m_scriptContext != nullptr) {
+    m_scriptContext->sideEffects.push_back(
+        {.kind = scripting::ScriptSideEffectKind::SetWallpaper, .title = std::move(connector), .body = std::move(path)}
+    );
+  }
+}
+
+void LuauHost::scriptTogglePanel(std::string panelId) {
+  if (m_scriptContext != nullptr) {
+    m_scriptContext->sideEffects.push_back(
+        {.kind = scripting::ScriptSideEffectKind::TogglePanel, .title = std::move(panelId), .body = {}}
+    );
+  }
 }
 
 bool LuauHost::scriptCopyToClipboard(std::string text, std::string mimeType) {

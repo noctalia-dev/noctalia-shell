@@ -178,12 +178,30 @@ void NotificationManager::notifyUnreadStateChangedIfNeeded(bool previousUnreadSt
   }
 }
 
-uint32_t NotificationManager::addOrReplace(
-    uint32_t replacesId, std::string appName, std::string summary, std::string body, Urgency urgency, int32_t timeout,
-    NotificationOrigin origin, bool transient, std::vector<std::string> actions, std::optional<std::string> icon,
-    std::optional<NotificationImageData> imageData, std::optional<std::string> category,
-    std::optional<std::string> desktopEntry
-) {
+uint32_t NotificationManager::addOrReplace(NotificationRequest request) {
+  const uint32_t replacesId = request.replacesId;
+  auto& appName = request.appName;
+  auto& summary = request.summary;
+  auto& body = request.body;
+  const Urgency urgency = request.urgency;
+  int32_t timeout = request.timeout;
+  const NotificationOrigin origin = request.origin;
+  const bool transient = request.transient;
+  auto& actions = request.actions;
+  auto& icon = request.icon;
+  auto& imageData = request.imageData;
+  auto& category = request.category;
+  auto& desktopEntry = request.desktopEntry;
+  const auto& forcedId = request.forcedId;
+
+  if (actions.size() > kMaxNotificationActions * 2) {
+    kLog.warn(
+        "notification from \"{}\" supplied {} action pairs, truncating to {}", appName, actions.size() / 2,
+        kMaxNotificationActions
+    );
+    actions.resize(kMaxNotificationActions * 2);
+  }
+
   const auto now = Clock::now();
   const auto wallNow = WallClock::now();
 
@@ -198,6 +216,11 @@ uint32_t NotificationManager::addOrReplace(
   const ExternalNotificationDispatch externalDispatch = origin == NotificationOrigin::External
       ? evaluateExternalDispatch(urgency, appName, category, desktopEntry, transient)
       : ExternalNotificationDispatch{};
+
+  // A matching filter with allow_permanent = false expires otherwise-permanent (timeout 0) notifications.
+  if (timeout == 0 && externalDispatch.disallowPermanent) {
+    timeout = kDefaultNotificationTimeout;
+  }
 
   if (replacesId != 0) {
     if (m_suppressedIds.contains(replacesId)) {
@@ -278,7 +301,10 @@ uint32_t NotificationManager::addOrReplace(
     }
   }
 
-  const uint32_t id = m_nextId++;
+  const uint32_t id = forcedId.has_value() ? *forcedId : m_nextId++;
+  if (forcedId.has_value() && *forcedId >= m_nextId) {
+    m_nextId = *forcedId + 1;
+  }
   m_notifications.push_back(
       Notification{
           .id = id,
@@ -325,14 +351,48 @@ uint32_t NotificationManager::addOrReplace(
   return n.id;
 }
 
+uint32_t NotificationManager::adoptExternal(uint32_t id, NotificationRequest request) {
+  request.origin = NotificationOrigin::External;
+
+  if (id == 0) {
+    request.replacesId = 0;
+    request.forcedId = std::nullopt;
+    return addOrReplace(std::move(request));
+  }
+
+  if (m_idToIndex.contains(id)) {
+    request.replacesId = id;
+    request.forcedId = std::nullopt;
+    return addOrReplace(std::move(request));
+  }
+
+  if (id >= m_nextId) {
+    m_nextId = id + 1;
+  }
+
+  request.replacesId = 0;
+  request.forcedId = id;
+  return addOrReplace(std::move(request));
+}
+
 uint32_t NotificationManager::addInternal(
     std::string appName, std::string summary, std::string body, Urgency urgency, int32_t timeout,
     std::optional<std::string> icon, std::optional<NotificationImageData> imageData,
     std::optional<std::string> category, std::optional<std::string> desktopEntry
 ) {
   return addOrReplace(
-      0, std::move(appName), std::move(summary), std::move(body), urgency, timeout, NotificationOrigin::Internal, false,
-      {}, std::move(icon), std::move(imageData), std::move(category), std::move(desktopEntry)
+      NotificationRequest{
+          .appName = std::move(appName),
+          .summary = std::move(summary),
+          .body = std::move(body),
+          .urgency = urgency,
+          .timeout = timeout,
+          .origin = NotificationOrigin::Internal,
+          .icon = std::move(icon),
+          .imageData = std::move(imageData),
+          .category = std::move(category),
+          .desktopEntry = std::move(desktopEntry),
+      }
   );
 }
 
@@ -592,6 +652,7 @@ NotificationManager::ExternalNotificationDispatch NotificationManager::evaluateE
           .desktopEntry = desktopEntry.has_value() ? std::optional<std::string_view>{*desktopEntry} : std::nullopt,
       }
   );
+  dispatch.disallowPermanent = resolved.matched && !resolved.allowPermanent;
   if (resolved.matched && !urgencyIsAllowed(resolved.allowedUrgencies, urgency)) {
     dispatch.fullySuppress = true;
     dispatch.showToast = false;
