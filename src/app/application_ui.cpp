@@ -367,6 +367,9 @@ void Application::scheduleGreeterAutoSync() {
 
 void Application::initLockScreenAndSession() {
   m_lockScreen.initialize(m_wayland, &m_renderContext, &m_configService, &m_sharedTextureCache, m_systemBus.get());
+  if (m_projectMRenderer != nullptr) {
+    m_lockScreen.setVisualizer(m_projectMRenderer.get());
+  }
   m_wallpaper.setAutomationGate([this]() { return !m_lockScreen.isActive(); });
   m_configService.addReloadCallback([this]() {
     if (m_logindService != nullptr) {
