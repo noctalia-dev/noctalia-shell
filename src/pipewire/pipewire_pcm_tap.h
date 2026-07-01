@@ -91,10 +91,11 @@ private:
   bool m_started = false; // start() called and not since stop()ped
   bool m_micFallbackAllowed = false; // privacy gate; see setMicFallbackAllowed
 
-  // Mic automatic gain control. m_micAgcActive is set on (re)bind (main
-  // thread, while no RT callback runs); m_agcEnvelope is RT-thread-only state
-  // advanced inside feedSamples(). Inactive — gain stays 1.0 — for sink taps.
-  bool m_micAgcActive = false;
+  // Automatic gain control. Set true on (re)bind (main thread, while no RT
+  // callback runs); m_agcEnvelope is RT-thread-only state advanced inside
+  // feedSamples(). Applied to both mic captures and sink monitors so projectM
+  // sees a consistent signal level regardless of source volume.
+  bool m_agcActive = false;
   float m_agcEnvelope = 0.0f;
 
   // m_ring holds kRingFrames * kMaxChannels floats. Real channel count is

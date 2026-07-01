@@ -383,13 +383,13 @@ void PipeWirePcmTap::rebuildStream() {
     return;
   }
   const bool targetIsSink = node->mediaClass == "Audio/Sink";
-  // AGC runs on source (mic/line-in) captures only; sink monitors keep their
-  // native dynamics. We're on the (single) pw_loop thread, m_stream.reset()
-  // above drained any in-flight on_process, and the new Stream below has not
-  // started yet — so feedSamples cannot be running concurrently with this
-  // write. Seed the envelope fresh for the new source. (See the threading
-  // note in the header for the wider picture.)
-  m_micAgcActive = !targetIsSink;
+  // AGC runs for both mic captures and sink monitors so projectM sees a
+  // consistent signal level regardless of source volume. We're on the (single)
+  // pw_loop thread, m_stream.reset() above drained any in-flight on_process,
+  // and the new Stream below has not started yet — so feedSamples cannot be
+  // running concurrently with this write. Seed the envelope fresh for the new
+  // source. (See the threading note in the header for the wider picture.)
+  m_agcActive = true;
   m_agcEnvelope = kAgcInitialEnvelope;
   m_stream = std::make_unique<Stream>(*this, node->id, node->name, targetIsSink);
   if (!m_stream->start()) {
@@ -429,11 +429,11 @@ void PipeWirePcmTap::feedSamples(const float* interleaved, int frameCount, int c
     return;
   }
 
-  // Mic AGC: scan this chunk's peak, advance the envelope (fast attack / slow
+  // AGC: scan this chunk's peak, advance the envelope (fast attack / slow
   // release) and derive a capped makeup gain. m_agcEnvelope is touched only
-  // here on the RT thread. Sink monitors leave gain at 1.0 → pass-through.
+  // here on the RT thread. Keeps projectM reactive for both mic and sink taps.
   float gain = 1.0f;
-  if (m_micAgcActive) {
+  if (m_agcActive) {
     const int sampleCount = frameCount * channels;
     float peak = 0.0f;
     for (int i = 0; i < sampleCount; ++i) {
