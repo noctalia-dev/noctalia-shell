@@ -1,4 +1,4 @@
-#include "shell/control_center/media_tab.h"
+#include "shell/control_center/tabs/media_tab.h"
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"

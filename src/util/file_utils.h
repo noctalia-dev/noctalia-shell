@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cstdint>
 #include <cstdlib>
@@ -86,6 +87,124 @@ namespace FileUtils {
     return out;
   }
 
+  // Expand XDG base-directory tokens ($XDG_CONFIG_HOME, etc.) to absolute paths
+  // using the same spec-aware resolution as the template engine.
+  [[nodiscard]] inline std::string expandXdgBaseDir(const std::string& path) {
+    struct XdgBase {
+      std::string_view token;
+      std::string_view envVar;
+      std::string_view homeDefault;
+    };
+    static constexpr std::array<XdgBase, 4> kBases = {{
+        {"$XDG_CONFIG_HOME", "XDG_CONFIG_HOME", ".config"},
+        {"$XDG_DATA_HOME", "XDG_DATA_HOME", ".local/share"},
+        {"$XDG_STATE_HOME", "XDG_STATE_HOME", ".local/state"},
+        {"$XDG_CACHE_HOME", "XDG_CACHE_HOME", ".cache"},
+    }};
+    for (const XdgBase& b : kBases) {
+      if (!path.starts_with(b.token))
+        continue;
+      if (path.size() != b.token.size() && path[b.token.size()] != '/')
+        continue;
+      std::string base;
+      if (const char* env = std::getenv(std::string(b.envVar).c_str()); env != nullptr && env[0] != '\0') {
+        base = env;
+      } else if (const char* home = std::getenv("HOME"); home != nullptr && home[0] != '\0') {
+        base = std::string(home) + "/" + std::string(b.homeDefault);
+      } else {
+        return path;
+      }
+      return base + path.substr(b.token.size());
+    }
+    return path;
+  }
+
+  // Infer the client's config root from a template output path (e.g.
+  // $XDG_CONFIG_HOME/vesktop/themes/file.css → $XDG_CONFIG_HOME/vesktop).
+  // Returns nullopt when no recognisable client-root pattern is found.
+  // This mirrors the logic in template_engine's shouldSkipTemplateOutput so
+  // tooltips can filter to only paths that will actually be written.
+  [[nodiscard]] inline std::optional<std::filesystem::path>
+  inferClientConfigRoot(const std::filesystem::path& outputPath) {
+    std::vector<std::filesystem::path> parts;
+    parts.reserve(16);
+    for (const auto& part : outputPath) {
+      if (!part.empty() && part != std::filesystem::path("."))
+        parts.push_back(part);
+    }
+    for (std::size_t i = 0; i + 3 < parts.size(); ++i) {
+      if (parts[i] == ".var" && parts[i + 1] == "app" && parts[i + 3] == "config") {
+        std::filesystem::path root;
+        for (std::size_t j = 0; j <= i + 3; ++j)
+          root /= parts[j];
+        return root;
+      }
+    }
+    std::filesystem::path current = outputPath.parent_path();
+    while (!current.empty() && current != current.root_path()) {
+      if (current.filename() == "themes") {
+        std::filesystem::path parent = current.parent_path();
+        const auto grandparent = parent.parent_path();
+        if (parent.filename() == "extensions" || grandparent.filename() == "extensions") {
+          std::filesystem::path walk = current;
+          while (!walk.empty() && walk.filename() != "extensions")
+            walk = walk.parent_path();
+          if (walk.filename() == "extensions")
+            return walk.parent_path();
+        }
+        return parent;
+      }
+      current = current.parent_path();
+    }
+    return std::nullopt;
+  }
+
+  // Returns true when the output path would actually be written by the template
+  // engine (the client appears installed). Paths without a recognisable
+  // client-root pattern are always treated as applicable.
+  [[nodiscard]] inline bool isOutputPathApplicable(const std::string& outputPath) {
+    const std::filesystem::path resolved = FileUtils::expandUserPath(expandXdgBaseDir(outputPath));
+    if (auto root = inferClientConfigRoot(resolved)) {
+      std::error_code ec;
+      return std::filesystem::exists(*root, ec);
+    }
+    return true;
+  }
+
+  // Expand XDG base-directory tokens ($XDG_CONFIG_HOME, etc.) to their known
+  // defaults under ~ for user-friendly display. Paths that already start with
+  // $HOME are abbreviated to ~. Dynamic (script-resolved) paths are left as-is.
+  [[nodiscard]] inline std::string xdgPathForDisplay(std::string_view raw) {
+    struct Mapping {
+      std::string_view token;
+      std::string_view homeDefault;
+    };
+    static constexpr std::array<Mapping, 4> kMappings = {{
+        {"$XDG_CONFIG_HOME", ".config"},
+        {"$XDG_DATA_HOME", ".local/share"},
+        {"$XDG_STATE_HOME", ".local/state"},
+        {"$XDG_CACHE_HOME", ".cache"},
+    }};
+    std::string expanded(raw);
+    for (const auto& m : kMappings) {
+      if (!expanded.starts_with(m.token))
+        continue;
+      if (expanded.size() != m.token.size() && expanded[m.token.size()] != '/')
+        continue;
+      expanded = "~/" + std::string(m.homeDefault) + expanded.substr(m.token.size());
+      break;
+    }
+    if (!expanded.starts_with("~/")) {
+      const char* home = std::getenv("HOME");
+      if (home != nullptr && home[0] != '\0') {
+        const std::string homeStr(home);
+        if (expanded.starts_with(homeStr) && (expanded.size() == homeStr.size() || expanded[homeStr.size()] == '/')) {
+          expanded = "~" + expanded.substr(homeStr.size());
+        }
+      }
+    }
+    return expanded;
+  }
 
   [[nodiscard]] inline bool
   containsPath(const std::vector<std::filesystem::path>& paths, const std::filesystem::path& path) {

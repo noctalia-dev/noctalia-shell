@@ -1735,11 +1735,19 @@ void Bar::syncInstances() {
   const auto& bars = m_config->config().bars;
 
   // Remove instances for outputs that no longer exist
-  std::erase_if(m_instances, [&outputs](const auto& inst) {
+  std::erase_if(m_instances, [&outputs, this](const auto& inst) {
     const auto it = std::ranges::find(outputs, inst->outputName, &WaylandOutput::name);
     const bool found = it != outputs.end() && it->done && it->hasUsableGeometry();
     if (!found) {
       kLog.info("removing instance for output {}", inst->outputName);
+    }
+    if (!found) {
+      if (inst->surface != nullptr) {
+        m_surfaceMap.erase(inst->surface->wlSurface());
+      }
+      if (m_hoveredInstance == inst.get()) {
+        m_hoveredInstance = nullptr;
+      }
     }
     return !found;
   });
@@ -1827,7 +1835,15 @@ void Bar::createInstance(const WaylandOutput& output, std::size_t barIndex, cons
 }
 
 void Bar::destroyInstance(std::uint32_t outputName) {
-  std::erase_if(m_instances, [outputName](const auto& inst) { return inst->outputName == outputName; });
+  std::erase_if(m_instances, [outputName, this](const auto& inst) {
+    if (inst->surface != nullptr) {
+      m_surfaceMap.erase(inst->surface->wlSurface());
+    }
+    if (m_hoveredInstance == inst.get()) {
+      m_hoveredInstance = nullptr;
+    }
+    return inst->outputName == outputName;
+  });
 }
 
 void Bar::populateWidgets(BarInstance& instance) {

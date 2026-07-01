@@ -15,9 +15,9 @@ class Label;
 class Renderer;
 class Slider;
 
-class DisplayTab : public Tab {
+class MonitorTab : public Tab {
 public:
-  DisplayTab(BrightnessService* brightness, ConfigService* config);
+  MonitorTab(BrightnessService* brightness, ConfigService* config);
 
   std::unique_ptr<Flex> create() override;
   void setActive(bool active) override;

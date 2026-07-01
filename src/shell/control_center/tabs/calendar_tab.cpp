@@ -1,4 +1,4 @@
-#include "shell/control_center/calendar_tab.h"
+#include "shell/control_center/tabs/calendar_tab.h"
 
 #include "calendar/calendar_service.h"
 #include "config/config_service.h"

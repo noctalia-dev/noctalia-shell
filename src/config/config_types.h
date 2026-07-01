@@ -962,6 +962,7 @@ struct ShellConfig {
   bool appIconColorize = false;
   std::optional<ColorSpec> appIconColor;
   bool launchAppsAsSystemdServices = false;
+  std::string launchAppsCustomCommand;
   /// When false, disables Wayland clipboard integration (history panel, data-control binding, Input paste/copy hooks).
   bool clipboardEnabled = true;
   /// Maximum unpinned clipboard history entries retained (pinned entries are exempt).
@@ -1111,6 +1112,7 @@ struct BrightnessMonitorOverride {
 
 struct BrightnessConfig {
   bool enableDdcutil = false;
+  bool syncBrightnessOfAllMonitors = false;
   std::vector<std::string> ddcutilIgnoreMmids;
   std::vector<BrightnessMonitorOverride> monitorOverrides;
   float minimumBrightness = 0.0f;
@@ -1344,6 +1346,7 @@ struct ControlCenterConfig {
   static constexpr std::int32_t kDefaultWidth = 700;
 
   std::vector<ShortcutConfig> shortcuts;
+  std::vector<std::string> hiddenTabs; // tab keys (see kTabs) the user has hidden; empty = all available shown
   ControlCenterSidebarMode sidebarMode = ControlCenterSidebarMode::Compact;
   ControlCenterSidebarMode sidebarSectionMode = ControlCenterSidebarMode::Compact;
   std::int32_t width = kDefaultWidth; // full-sidebar logical width; compact/none modes scale down from this

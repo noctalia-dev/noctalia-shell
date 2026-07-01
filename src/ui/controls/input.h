@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -209,4 +210,9 @@ private:
   float m_lastPrimaryPressY = 0.0f;
   bool m_hasLastPrimaryPress = false;
   Signal<>::ScopedConnection m_paletteConn;
+
+  // Detects synchronous self-destruction from user callbacks (onSubmit/onKeyEvent
+  // can close a dialog that owns this Input). handleKey takes a weak_ptr to it and
+  // bails before touching members if the callback tore us down.
+  std::shared_ptr<int> m_aliveToken = std::make_shared<int>(0);
 };

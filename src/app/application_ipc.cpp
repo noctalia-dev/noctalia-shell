@@ -99,6 +99,7 @@
 #include <limits>
 #include <malloc.h>
 #include <optional>
+#include <ranges>
 #include <stdexcept>
 #include <string_view>
 #include <utility>
@@ -207,6 +208,30 @@ void Application::initIpc() {
         return "ok\n";
       },
       "notification-clear-active", "Dismiss all currently active notifications"
+  );
+
+  m_ipcService.registerHandler(
+      "notification-invoke-latest",
+      [this](const std::string&) -> std::string {
+        // Mirror the toast left-click behaviour for the most recent active notification:
+        // invoke its "default" action so the source application raises/focuses its window.
+        // all() stores notifications oldest-first (push_back), so iterate in reverse for newest.
+        const auto& notifications = m_notificationManager.all();
+        for (const auto& notification : std::views::reverse(notifications)) {
+          const auto& actions = notification.actions; // pairs: [key, label, ...]; "default" must be first.
+          if (actions.size() >= 2 && actions[0] == "default") {
+            if (!m_notificationManager.invokeAction(notification.id, "default", true)) {
+              return "error: invokeAction failed\n";
+            }
+            if (m_panelManager.isOpenPanel("control-center")) {
+              m_panelManager.refresh();
+            }
+            return "ok\n";
+          }
+        }
+        return "ok\n"; // No active notification carries a default action; nothing to do.
+      },
+      "notification-invoke-latest", "Invoke the default action of the most recent active notification"
   );
 
   m_ipcService.registerHandler(

@@ -151,6 +151,14 @@ void Flex::setDirection(FlexDirection direction) {
   markLayoutDirty();
 }
 
+void Flex::setWrap(bool wrap) {
+  if (m_wrap == wrap) {
+    return;
+  }
+  m_wrap = wrap;
+  markLayoutDirty();
+}
+
 void Flex::setGap(float gap) {
   if (m_gap == gap) {
     return;
@@ -463,6 +471,10 @@ LayoutSize Flex::runLayout(Renderer& renderer, const LayoutConstraints& constrai
     }
   }
 
+  // Wrapping needs a known main extent to break lines against; flexGrow distribution
+  // is bypassed so wrapped items keep their natural main size.
+  const bool wrapping = m_wrap && mainKnown && !items.empty();
+
   auto measureItem = [&](ChildLayout& item, bool exactMain, float assignedMain) {
     LayoutConstraints childConstraints;
     if (exactMain) {
@@ -483,7 +495,7 @@ LayoutSize Flex::runLayout(Renderer& renderer, const LayoutConstraints& constrai
   };
 
   for (auto& item : items) {
-    if (mainKnown && totalGrow > 0.0f && item.node->flexGrow() > 0.0f) {
+    if (!wrapping && mainKnown && totalGrow > 0.0f && item.node->flexGrow() > 0.0f) {
       continue;
     }
     measureItem(item, false, 0.0f);
@@ -501,7 +513,7 @@ LayoutSize Flex::runLayout(Renderer& renderer, const LayoutConstraints& constrai
   }
   const float totalGap = m_gap * static_cast<float>(numGaps);
 
-  if (mainKnown && totalGrow > 0.0f) {
+  if (!wrapping && mainKnown && totalGrow > 0.0f) {
     float fixedMain = mainPaddingStart(*this, horizontal) + mainPaddingEnd(*this, horizontal) + totalGap;
     for (const auto& item : items) {
       if (item.node->flexGrow() <= 0.0f) {
@@ -518,80 +530,198 @@ LayoutSize Flex::runLayout(Renderer& renderer, const LayoutConstraints& constrai
     }
   }
 
-  float crossMax = 0.0f;
-  float childrenMain = 0.0f;
-  for (const auto& item : items) {
-    childrenMain += item.main;
-    crossMax = std::max(crossMax, item.cross);
-  }
-  const float contentMain =
-      mainPaddingStart(*this, horizontal) + childrenMain + totalGap + mainPaddingEnd(*this, horizontal);
-  const float contentCross = crossPaddingStart(*this, horizontal) + crossMax + crossPaddingEnd(*this, horizontal);
+  if (wrapping) {
+    const float padMainStart = mainPaddingStart(*this, horizontal);
+    const float padMainEnd = mainPaddingEnd(*this, horizontal);
+    const float padCrossStart = crossPaddingStart(*this, horizontal);
+    const float innerMain = std::max(0.0f, containerMain - padMainStart - padMainEnd);
 
-  LayoutSize desired = sizeFromAxes(horizontal, contentMain, contentCross);
-  if (widthKnown) {
-    desired.width = targetWidth;
-  }
-  if (heightKnown) {
-    desired.height = targetHeight;
-  }
-  desired.width = constrainFlexWidth(desired.width);
-  desired.height = constrainFlexHeight(desired.height);
-  setSizeFromLayout(desired.width, desired.height);
-
-  if (arrangeChildren) {
-    const float finalMain = horizontal ? width() : height();
-    const float finalCross = horizontal ? height() : width();
-    const float innerMain =
-        std::max(0.0f, finalMain - mainPaddingStart(*this, horizontal) - mainPaddingEnd(*this, horizontal));
-    const float finalInnerCross =
-        std::max(0.0f, finalCross - crossPaddingStart(*this, horizontal) - crossPaddingEnd(*this, horizontal));
-    float arrangedChildrenMain = 0.0f;
-    for (const auto& item : items) {
-      arrangedChildrenMain += item.main;
-    }
-
-    float effectiveGap = m_gap;
-    if (m_justify == FlexJustify::SpaceBetween && items.size() > 1 && numGaps > 0) {
-      effectiveGap = std::max(m_gap, (innerMain - arrangedChildrenMain) / static_cast<float>(numGaps));
-    }
-    const float arrangedContentMain = arrangedChildrenMain + effectiveGap * static_cast<float>(numGaps);
-
-    float cursor = mainPaddingStart(*this, horizontal);
-    if (m_justify == FlexJustify::Center) {
-      cursor += std::floor(std::max(0.0f, (innerMain - arrangedContentMain) * 0.5f));
-    } else if (m_justify == FlexJustify::End) {
-      cursor += std::max(0.0f, innerMain - arrangedContentMain);
-    }
-
-    bool first = true;
-    bool prevExcluded = items.empty() || items.front().gapExcluded;
-    for (auto& item : items) {
-      if (!first) {
-        if (!prevExcluded && !item.gapExcluded) {
-          cursor += effectiveGap;
-        }
-        prevExcluded = item.gapExcluded;
-      }
-      first = false;
-
-      float childCross = item.cross;
-      float crossPos = crossPaddingStart(*this, horizontal);
-      if (m_align == FlexAlign::Stretch) {
-        childCross = finalInnerCross;
+    // Greedy line breaking on the main axis: lineBreaks[k] is the index of the
+    // first item on line k; lineCrossExtent[k] is that line's max cross size.
+    std::vector<std::size_t> lineBreaks;
+    std::vector<float> lineCrossExtent;
+    lineBreaks.push_back(0);
+    float lineMainUsed = 0.0f;
+    float lineCross = 0.0f;
+    bool lineHasItem = false;
+    bool prevExcluded = true;
+    for (std::size_t i = 0; i < items.size(); ++i) {
+      const float gapBefore = (lineHasItem && !prevExcluded && !items[i].gapExcluded) ? m_gap : 0.0f;
+      if (lineHasItem && lineMainUsed + gapBefore + items[i].main > innerMain + 0.5f) {
+        lineCrossExtent.push_back(lineCross);
+        lineBreaks.push_back(i);
+        lineMainUsed = items[i].main;
+        lineCross = items[i].cross;
       } else {
-        const float extraCross = finalInnerCross - childCross;
-        if (m_align == FlexAlign::Center) {
-          crossPos += std::floor(extraCross * 0.5f);
-        } else if (m_align == FlexAlign::End) {
-          crossPos += extraCross;
+        lineMainUsed += gapBefore + items[i].main;
+        lineCross = std::max(lineCross, items[i].cross);
+      }
+      lineHasItem = true;
+      prevExcluded = items[i].gapExcluded;
+    }
+    lineCrossExtent.push_back(lineCross);
+
+    const std::size_t numLines = lineBreaks.size();
+    float totalCross = 0.0f;
+    for (const float c : lineCrossExtent) {
+      totalCross += c;
+    }
+    if (numLines > 1) {
+      totalCross += m_gap * static_cast<float>(numLines - 1);
+    }
+
+    const float contentMain = padMainStart + innerMain + padMainEnd;
+    const float contentCross = padCrossStart + totalCross + crossPaddingEnd(*this, horizontal);
+    LayoutSize desired = sizeFromAxes(horizontal, contentMain, contentCross);
+    if (widthKnown) {
+      desired.width = targetWidth;
+    }
+    if (heightKnown) {
+      desired.height = targetHeight;
+    }
+    desired.width = constrainFlexWidth(desired.width);
+    desired.height = constrainFlexHeight(desired.height);
+    setSizeFromLayout(desired.width, desired.height);
+
+    if (arrangeChildren) {
+      float crossCursor = padCrossStart;
+      for (std::size_t line = 0; line < numLines; ++line) {
+        const std::size_t begin = lineBreaks[line];
+        const std::size_t end = (line + 1 < numLines) ? lineBreaks[line + 1] : items.size();
+        const float bandCross = lineCrossExtent[line];
+
+        float lineItemsMain = 0.0f;
+        int lineGaps = 0;
+        prevExcluded = items[begin].gapExcluded;
+        for (std::size_t i = begin; i < end; ++i) {
+          lineItemsMain += items[i].main;
+          if (i > begin && !prevExcluded && !items[i].gapExcluded) {
+            lineGaps++;
+          }
+          prevExcluded = items[i].gapExcluded;
         }
+
+        float effectiveGap = m_gap;
+        if (m_justify == FlexJustify::SpaceBetween && (end - begin) > 1 && lineGaps > 0) {
+          effectiveGap = std::max(m_gap, (innerMain - lineItemsMain) / static_cast<float>(lineGaps));
+        }
+        const float lineContentMain = lineItemsMain + effectiveGap * static_cast<float>(lineGaps);
+
+        float cursor = padMainStart;
+        if (m_justify == FlexJustify::Center) {
+          cursor += std::floor(std::max(0.0f, (innerMain - lineContentMain) * 0.5f));
+        } else if (m_justify == FlexJustify::End) {
+          cursor += std::max(0.0f, innerMain - lineContentMain);
+        }
+
+        bool first = true;
+        prevExcluded = items[begin].gapExcluded;
+        for (std::size_t i = begin; i < end; ++i) {
+          if (!first) {
+            if (!prevExcluded && !items[i].gapExcluded) {
+              cursor += effectiveGap;
+            }
+            prevExcluded = items[i].gapExcluded;
+          }
+          first = false;
+
+          float childCross = items[i].cross;
+          float crossPos = crossCursor;
+          if (m_align == FlexAlign::Stretch) {
+            childCross = bandCross;
+          } else {
+            const float extraCross = bandCross - childCross;
+            if (m_align == FlexAlign::Center) {
+              crossPos += std::floor(extraCross * 0.5f);
+            } else if (m_align == FlexAlign::End) {
+              crossPos += extraCross;
+            }
+          }
+
+          items[i].node->arrange(
+              renderer, rectFromAxes(horizontal, std::round(cursor), std::round(crossPos), items[i].main, childCross)
+          );
+          cursor += items[i].main;
+        }
+        crossCursor += bandCross + m_gap;
+      }
+    }
+  } else {
+    float crossMax = 0.0f;
+    float childrenMain = 0.0f;
+    for (const auto& item : items) {
+      childrenMain += item.main;
+      crossMax = std::max(crossMax, item.cross);
+    }
+    const float contentMain =
+        mainPaddingStart(*this, horizontal) + childrenMain + totalGap + mainPaddingEnd(*this, horizontal);
+    const float contentCross = crossPaddingStart(*this, horizontal) + crossMax + crossPaddingEnd(*this, horizontal);
+
+    LayoutSize desired = sizeFromAxes(horizontal, contentMain, contentCross);
+    if (widthKnown) {
+      desired.width = targetWidth;
+    }
+    if (heightKnown) {
+      desired.height = targetHeight;
+    }
+    desired.width = constrainFlexWidth(desired.width);
+    desired.height = constrainFlexHeight(desired.height);
+    setSizeFromLayout(desired.width, desired.height);
+
+    if (arrangeChildren) {
+      const float finalMain = horizontal ? width() : height();
+      const float finalCross = horizontal ? height() : width();
+      const float innerMain =
+          std::max(0.0f, finalMain - mainPaddingStart(*this, horizontal) - mainPaddingEnd(*this, horizontal));
+      const float finalInnerCross =
+          std::max(0.0f, finalCross - crossPaddingStart(*this, horizontal) - crossPaddingEnd(*this, horizontal));
+      float arrangedChildrenMain = 0.0f;
+      for (const auto& item : items) {
+        arrangedChildrenMain += item.main;
       }
 
-      item.node->arrange(
-          renderer, rectFromAxes(horizontal, std::round(cursor), std::round(crossPos), item.main, childCross)
-      );
-      cursor += item.main;
+      float effectiveGap = m_gap;
+      if (m_justify == FlexJustify::SpaceBetween && items.size() > 1 && numGaps > 0) {
+        effectiveGap = std::max(m_gap, (innerMain - arrangedChildrenMain) / static_cast<float>(numGaps));
+      }
+      const float arrangedContentMain = arrangedChildrenMain + effectiveGap * static_cast<float>(numGaps);
+
+      float cursor = mainPaddingStart(*this, horizontal);
+      if (m_justify == FlexJustify::Center) {
+        cursor += std::floor(std::max(0.0f, (innerMain - arrangedContentMain) * 0.5f));
+      } else if (m_justify == FlexJustify::End) {
+        cursor += std::max(0.0f, innerMain - arrangedContentMain);
+      }
+
+      bool first = true;
+      bool prevExcluded = items.empty() || items.front().gapExcluded;
+      for (auto& item : items) {
+        if (!first) {
+          if (!prevExcluded && !item.gapExcluded) {
+            cursor += effectiveGap;
+          }
+          prevExcluded = item.gapExcluded;
+        }
+        first = false;
+
+        float childCross = item.cross;
+        float crossPos = crossPaddingStart(*this, horizontal);
+        if (m_align == FlexAlign::Stretch) {
+          childCross = finalInnerCross;
+        } else {
+          const float extraCross = finalInnerCross - childCross;
+          if (m_align == FlexAlign::Center) {
+            crossPos += std::floor(extraCross * 0.5f);
+          } else if (m_align == FlexAlign::End) {
+            crossPos += extraCross;
+          }
+        }
+
+        item.node->arrange(
+            renderer, rectFromAxes(horizontal, std::round(cursor), std::round(crossPos), item.main, childCross)
+        );
+        cursor += item.main;
+      }
     }
   }
 

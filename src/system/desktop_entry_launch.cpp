@@ -48,6 +48,29 @@ namespace {
     while (!result.empty() && result.back() == ' ') {
       result.pop_back();
     }
+
+    // Strip orphaned Flatpak @@ file-forwarding markers.
+    for (std::size_t pos = 0;;) {
+      pos = result.find("@@u", pos);
+      if (pos == std::string::npos)
+        break;
+      std::size_t end = result.find("@@", pos + 3);
+      if (end == std::string::npos)
+        break;
+      bool onlyWhitespace = true;
+      for (std::size_t j = pos + 3; j < end; ++j) {
+        if (result[j] != ' ') {
+          onlyWhitespace = false;
+          break;
+        }
+      }
+      if (onlyWhitespace) {
+        result.erase(pos, end + 2 - pos);
+      } else {
+        pos = end + 2;
+      }
+    }
+
     return result;
   }
 
@@ -92,6 +115,21 @@ namespace {
     return appName.empty() ? "desktop-entry" : std::string(appName);
   }
 
+  std::string parseCustomCommand(const std::string& exec, const std::string& customCommand) {
+    if (customCommand.empty()) {
+      return exec;
+    }
+    constexpr std::string_view kPlaceholder = "$CMD";
+    if (!customCommand.contains(kPlaceholder)) {
+      kLog.warn("Custom command does not contain '$CMD': '{}'", customCommand);
+    }
+    std::string command = customCommand;
+    for (std::size_t pos = 0; (pos = command.find(kPlaceholder, pos)) != std::string::npos; pos += exec.length()) {
+      command.replace(pos, kPlaceholder.size(), exec);
+    }
+    return command;
+  }
+
 } // namespace
 
 namespace desktop_entry_launch {
@@ -126,7 +164,16 @@ namespace desktop_entry_launch {
   }
 
   bool launchEntry(const DesktopEntry& entry, const LaunchOptions& options) {
-    auto prepared = prepareCommand(entry.exec, entry.terminal);
+    if (options.runAsSystemdService && !options.customCommand.empty()) {
+      kLog.warn(
+          "launch_apps_as_systemd_services and launch_apps_custom_command are mutually exclusive; ignoring custom "
+          "command"
+      );
+    }
+    const std::string customCommand = options.runAsSystemdService ? "" : options.customCommand;
+    const std::string command = parseCustomCommand(entry.exec, customCommand);
+    auto prepared = prepareCommand(command, entry.terminal);
+
     if (!prepared.has_value()) {
       kLog.warn("Failed to prepare launch command for desktop entry '{}'", entry.id.empty() ? entry.name : entry.id);
       return false;
@@ -143,7 +190,15 @@ namespace desktop_entry_launch {
       const DesktopAction& action, std::string_view appName, std::string_view workingDir, bool terminal,
       const LaunchOptions& options
   ) {
-    auto prepared = prepareCommand(action.exec, terminal);
+    if (options.runAsSystemdService && !options.customCommand.empty()) {
+      kLog.warn(
+          "launch_apps_as_systemd_services and launch_apps_custom_command are mutually exclusive; ignoring custom "
+          "command"
+      );
+    }
+    const std::string customCommand = options.runAsSystemdService ? "" : options.customCommand;
+    const std::string command = parseCustomCommand(action.exec, customCommand);
+    auto prepared = prepareCommand(command, terminal);
     if (!prepared.has_value()) {
       kLog.warn(
           "Failed to prepare launch command for desktop action '{}'", action.id.empty() ? action.name : action.id

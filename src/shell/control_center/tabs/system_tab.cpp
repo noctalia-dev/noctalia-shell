@@ -1,4 +1,4 @@
-#include "shell/control_center/system_tab.h"
+#include "shell/control_center/tabs/system_tab.h"
 
 #include "i18n/i18n.h"
 #include "shell/panel/panel_manager.h"

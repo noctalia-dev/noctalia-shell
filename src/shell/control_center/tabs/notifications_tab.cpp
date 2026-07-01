@@ -1,4 +1,4 @@
-#include "shell/control_center/notifications_tab.h"
+#include "shell/control_center/tabs/notifications_tab.h"
 
 #include "core/log.h"
 #include "i18n/i18n.h"

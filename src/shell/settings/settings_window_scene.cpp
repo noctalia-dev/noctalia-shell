@@ -1,6 +1,10 @@
 #include "compositors/compositor_detect.h"
 #include "compositors/compositor_platform.h"
 #include "config/config_service.h"
+#include "config/schema/config_schema.h"
+#include "config/schema/engine.h"
+#include "core/log.h"
+#include "core/scoped_timer.h"
 #include "core/ui_phase.h"
 #include "dbus/upower/upower_service.h"
 #include "i18n/i18n.h"
@@ -19,6 +23,7 @@
 #include "shell/tooltip/tooltip_manager.h"
 #include "system/battery_warning_monitor.h"
 #include "system/dependency_service.h"
+#include "theme/builtin_templates.h"
 #include "theme/community_palettes.h"
 #include "theme/community_templates.h"
 #include "theme/custom_palettes.h"
@@ -34,15 +39,19 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace {
+
+  constexpr Logger kLog("settings");
 
   constexpr auto kSearchDebounceInterval = std::chrono::milliseconds(120);
 
@@ -117,6 +126,441 @@ namespace {
 
   bool containsPath(const std::vector<std::vector<std::string>>& paths, const std::vector<std::string>& path) {
     return std::ranges::contains(paths, path);
+  }
+
+  bool settingPathMayReshapeRegistry(const std::vector<std::string>& path) {
+    if (path.empty()) {
+      return true;
+    }
+    if (path[0] == "bar" || path[0] == "widget" || path[0] == "plugins" || path[0] == "plugin_settings") {
+      return true;
+    }
+    if (path.size() >= 2 && path[0] == "theme" && (path[1] == "mode" || path[1] == "source")) {
+      return true;
+    }
+    if (path.size() >= 2 && path[0] == "calendar" && path[1] == "account") {
+      return true;
+    }
+    if (path.size() >= 2 && path[0] == "shell" && path[1] == "greeter_sync") {
+      return true;
+    }
+    return false;
+  }
+
+  std::optional<double> overrideNumber(const ConfigOverrideValue& value) {
+    if (const auto* v = std::get_if<double>(&value)) {
+      return *v;
+    }
+    if (const auto* v = std::get_if<std::int64_t>(&value)) {
+      return static_cast<double>(*v);
+    }
+    return std::nullopt;
+  }
+
+  std::optional<int> overrideInt(const ConfigOverrideValue& value) {
+    if (const auto* v = std::get_if<std::int64_t>(&value)) {
+      return static_cast<int>(*v);
+    }
+    if (const auto* v = std::get_if<double>(&value)) {
+      return static_cast<int>(std::lround(*v));
+    }
+    return std::nullopt;
+  }
+
+  std::optional<std::string> overrideSelectValue(const ConfigOverrideValue& value) {
+    if (const auto* v = std::get_if<std::string>(&value)) {
+      return *v;
+    }
+    if (const auto* v = std::get_if<std::int64_t>(&value)) {
+      return std::to_string(*v);
+    }
+    if (const auto* v = std::get_if<bool>(&value)) {
+      return *v ? "true" : "false";
+    }
+    return std::nullopt;
+  }
+
+  bool patchSettingEntryValue(
+      settings::SettingEntry& entry, const std::vector<std::string>& path, const ConfigOverrideValue& value
+  ) {
+    if (auto* range = std::get_if<settings::RangeSliderSetting>(&entry.control)) {
+      const auto number = overrideNumber(value);
+      if (!number.has_value()) {
+        return false;
+      }
+      if (entry.path == path) {
+        range->lowValue = *number;
+        return true;
+      }
+      if (range->highPath == path) {
+        range->highValue = *number;
+        return true;
+      }
+      return false;
+    }
+
+    if (entry.path != path) {
+      return false;
+    }
+
+    if (auto* toggle = std::get_if<settings::ToggleSetting>(&entry.control)) {
+      const auto* checked = std::get_if<bool>(&value);
+      if (checked == nullptr) {
+        return false;
+      }
+      toggle->checked = *checked;
+      return true;
+    }
+    if (auto* select = std::get_if<settings::SelectSetting>(&entry.control)) {
+      auto selected = overrideSelectValue(value);
+      if (!selected.has_value()) {
+        return false;
+      }
+      select->selectedValue = std::move(*selected);
+      return true;
+    }
+    if (auto* picker = std::get_if<settings::SearchPickerSetting>(&entry.control)) {
+      const auto* selected = std::get_if<std::string>(&value);
+      if (selected == nullptr) {
+        return false;
+      }
+      picker->selectedValue = *selected;
+      return true;
+    }
+    if (auto* slider = std::get_if<settings::SliderSetting>(&entry.control)) {
+      const auto number = overrideNumber(value);
+      if (!number.has_value()) {
+        return false;
+      }
+      slider->value = *number;
+      return true;
+    }
+    if (auto* text = std::get_if<settings::TextSetting>(&entry.control)) {
+      const auto* next = std::get_if<std::string>(&value);
+      if (next == nullptr) {
+        return false;
+      }
+      text->value = *next;
+      return true;
+    }
+    if (auto* optionalNumber = std::get_if<settings::OptionalNumberSetting>(&entry.control)) {
+      if (const auto number = overrideNumber(value); number.has_value()) {
+        optionalNumber->value = *number;
+        return true;
+      }
+      const auto* text = std::get_if<std::string>(&value);
+      if (text != nullptr && (*text == "auto" || text->empty())) {
+        optionalNumber->value = std::nullopt;
+        return true;
+      }
+      return false;
+    }
+    if (auto* optionalStepper = std::get_if<settings::OptionalStepperSetting>(&entry.control)) {
+      if (const auto number = overrideInt(value); number.has_value()) {
+        optionalStepper->value = *number;
+        return true;
+      }
+      const auto* text = std::get_if<std::string>(&value);
+      if (text != nullptr && (*text == "auto" || text->empty())) {
+        optionalStepper->value = std::nullopt;
+        return true;
+      }
+      return false;
+    }
+    if (auto* stepper = std::get_if<settings::StepperSetting>(&entry.control)) {
+      const auto number = overrideInt(value);
+      if (!number.has_value()) {
+        return false;
+      }
+      stepper->value = *number;
+      return true;
+    }
+    if (auto* list = std::get_if<settings::ListSetting>(&entry.control)) {
+      const auto* items = std::get_if<std::vector<std::string>>(&value);
+      if (items == nullptr) {
+        return false;
+      }
+      list->items = *items;
+      return true;
+    }
+    if (auto* shortcuts = std::get_if<settings::ShortcutListSetting>(&entry.control)) {
+      const auto* items = std::get_if<std::vector<ShortcutConfig>>(&value);
+      if (items == nullptr) {
+        return false;
+      }
+      shortcuts->items = *items;
+      return true;
+    }
+    if (auto* keybinds = std::get_if<settings::KeybindListSetting>(&entry.control)) {
+      const auto* items = std::get_if<std::vector<KeyChord>>(&value);
+      if (items == nullptr) {
+        return false;
+      }
+      keybinds->items = *items;
+      return true;
+    }
+    if (auto* sessionActions = std::get_if<settings::SessionPanelActionsSetting>(&entry.control)) {
+      const auto* items = std::get_if<std::vector<SessionPanelActionConfig>>(&value);
+      if (items == nullptr) {
+        return false;
+      }
+      sessionActions->items = *items;
+      return true;
+    }
+    if (auto* idle = std::get_if<settings::IdleBehaviorsSetting>(&entry.control)) {
+      const auto* items = std::get_if<std::vector<IdleBehaviorConfig>>(&value);
+      if (items == nullptr) {
+        return false;
+      }
+      idle->items = *items;
+      return true;
+    }
+    if (auto* filters = std::get_if<settings::NotificationFiltersSetting>(&entry.control)) {
+      const auto* items = std::get_if<std::vector<NotificationFilterConfig>>(&value);
+      if (items == nullptr) {
+        return false;
+      }
+      filters->items = *items;
+      return true;
+    }
+    if (auto* multi = std::get_if<settings::MultiSelectSetting>(&entry.control)) {
+      const auto* selected = std::get_if<std::vector<std::string>>(&value);
+      if (selected == nullptr) {
+        return false;
+      }
+      multi->selectedValues = *selected;
+      return true;
+    }
+    if (auto* grid = std::get_if<settings::TemplateGridSetting>(&entry.control)) {
+      const auto* selected = std::get_if<std::vector<std::string>>(&value);
+      if (selected == nullptr) {
+        return false;
+      }
+      grid->selectedValues = *selected;
+      return true;
+    }
+    if (auto* color = std::get_if<settings::ColorSpecPickerSetting>(&entry.control)) {
+      const auto* selected = std::get_if<std::string>(&value);
+      if (selected == nullptr) {
+        return false;
+      }
+      color->selectedValue = *selected;
+      return true;
+    }
+    return false;
+  }
+
+  bool patchSettingsRegistryValue(
+      std::vector<settings::SettingEntry>& registry, const std::vector<std::string>& path,
+      const ConfigOverrideValue& value
+  ) {
+    if (settingPathMayReshapeRegistry(path)) {
+      return false;
+    }
+
+    bool patched = false;
+    for (auto& entry : registry) {
+      const bool pathMatches = entry.path == path
+          || (std::holds_alternative<settings::RangeSliderSetting>(entry.control)
+              && std::get<settings::RangeSliderSetting>(entry.control).highPath == path);
+      if (!pathMatches) {
+        continue;
+      }
+      if (!patchSettingEntryValue(entry, path, value)) {
+        return false;
+      }
+      patched = true;
+    }
+    return patched;
+  }
+
+  std::optional<toml::table> configSectionTable(const Config& cfg, std::string_view section) {
+    namespace schema = noctalia::config::schema;
+
+    if (section == "audio") {
+      return schema::writeTable(cfg.audio, schema::audioSchema());
+    }
+    if (section == "backdrop") {
+      return schema::writeTable(cfg.backdrop, schema::backdropSchema());
+    }
+    if (section == "battery") {
+      return schema::writeTable(cfg.battery, schema::batterySchema());
+    }
+    if (section == "brightness") {
+      return schema::writeTable(cfg.brightness, schema::brightnessSchema());
+    }
+    if (section == "calendar") {
+      return schema::writeTable(cfg.calendar, schema::calendarSchema());
+    }
+    if (section == "control_center") {
+      return schema::writeTable(cfg.controlCenter, schema::controlCenterSchema());
+    }
+    if (section == "dock") {
+      return schema::writeTable(cfg.dock, schema::dockSchema());
+    }
+    if (section == "desktop_widgets") {
+      return schema::writeTable(cfg.desktopWidgets, schema::desktopWidgetsSchema());
+    }
+    if (section == "hooks") {
+      return schema::writeTable(cfg.hooks, schema::hooksSchema());
+    }
+    if (section == "hot_corners") {
+      return schema::writeTable(cfg.hotCorners, schema::hotCornersSchema());
+    }
+    if (section == "idle") {
+      return schema::writeTable(cfg.idle, schema::idleSchema());
+    }
+    if (section == "keybinds") {
+      return schema::writeTable(cfg.keybinds, schema::keybindsSchema());
+    }
+    if (section == "location") {
+      return schema::writeTable(cfg.location, schema::locationSchema());
+    }
+    if (section == "lockscreen") {
+      return schema::writeTable(cfg.lockscreen, schema::lockscreenSchema());
+    }
+    if (section == "lockscreen_widgets") {
+      return schema::writeTable(cfg.lockscreenWidgets, schema::lockscreenWidgetsSchema());
+    }
+    if (section == "nightlight") {
+      return schema::writeTable(cfg.nightlight, schema::nightlightSchema());
+    }
+    if (section == "notification") {
+      return schema::writeTable(cfg.notification, schema::notificationSchema());
+    }
+    if (section == "osd") {
+      return schema::writeTable(cfg.osd, schema::osdSchema());
+    }
+    if (section == "plugins") {
+      return schema::writeTable(cfg.plugins, schema::pluginsSchema());
+    }
+    if (section == "shell") {
+      return schema::writeTable(cfg.shell, schema::shellSchema());
+    }
+    if (section == "system") {
+      return schema::writeTable(cfg.system, schema::systemSchema());
+    }
+    if (section == "theme") {
+      return schema::writeTable(cfg.theme, schema::themeSchema());
+    }
+    if (section == "wallpaper") {
+      return schema::writeTable(cfg.wallpaper, schema::wallpaperSchema());
+    }
+    if (section == "weather") {
+      return schema::writeTable(cfg.weather, schema::weatherSchema());
+    }
+    return std::nullopt;
+  }
+
+  const toml::node* findSectionValue(const toml::table& sectionTable, const std::vector<std::string>& path) {
+    if (path.size() < 2) {
+      return nullptr;
+    }
+
+    const toml::node* node = &sectionTable;
+    for (std::size_t i = 1; i < path.size(); ++i) {
+      const auto* table = node->as_table();
+      if (table == nullptr) {
+        return nullptr;
+      }
+      node = table->get(path[i]);
+      if (node == nullptr) {
+        return nullptr;
+      }
+    }
+    return node;
+  }
+
+  std::optional<ConfigOverrideValue> configOverrideValueFromNode(const toml::node& node) {
+    if (auto value = node.value<bool>()) {
+      return ConfigOverrideValue{*value};
+    }
+    if (auto value = node.value<std::int64_t>()) {
+      return ConfigOverrideValue{*value};
+    }
+    if (auto value = node.value<double>()) {
+      return ConfigOverrideValue{*value};
+    }
+    if (auto value = node.value<std::string>()) {
+      return ConfigOverrideValue{*value};
+    }
+
+    const auto* array = node.as_array();
+    if (array == nullptr) {
+      return std::nullopt;
+    }
+
+    std::vector<std::string> values;
+    values.reserve(array->size());
+    for (const auto& item : *array) {
+      auto value = item.value<std::string>();
+      if (!value.has_value()) {
+        return std::nullopt;
+      }
+      values.push_back(std::move(*value));
+    }
+    return ConfigOverrideValue{std::move(values)};
+  }
+
+  bool patchSettingsRegistryResetValues(
+      std::vector<settings::SettingEntry>& registry, const Config& cfg,
+      const std::vector<std::vector<std::string>>& paths
+  ) {
+    if (paths.empty()) {
+      return false;
+    }
+
+    std::optional<std::string_view> currentSection;
+    std::optional<toml::table> sectionTable;
+    for (const auto& path : paths) {
+      if (settingPathMayReshapeRegistry(path) || path.empty()) {
+        return false;
+      }
+      if (!currentSection.has_value() || *currentSection != path[0]) {
+        sectionTable = configSectionTable(cfg, path[0]);
+        if (!sectionTable.has_value()) {
+          return false;
+        }
+        currentSection = path[0];
+      }
+
+      const toml::node* node = findSectionValue(*sectionTable, path);
+      if (node == nullptr) {
+        return false;
+      }
+      auto value = configOverrideValueFromNode(*node);
+      if (!value.has_value() || !patchSettingsRegistryValue(registry, path, *value)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  class SettingsProfileWatch {
+  public:
+    SettingsProfileWatch() {
+      if (noctalia::profiling::enabled()) {
+        m_watch.emplace();
+      }
+    }
+
+    void reset() {
+      if (m_watch.has_value()) {
+        m_watch->reset();
+      }
+    }
+
+    [[nodiscard]] bool active() const noexcept { return m_watch.has_value(); }
+    [[nodiscard]] double elapsedMs() const { return m_watch.has_value() ? m_watch->elapsedMs() : 0.0; }
+
+  private:
+    std::optional<noctalia::profiling::StopWatch> m_watch;
+  };
+
+  void logSettingsProfile(std::string_view label, const SettingsProfileWatch& watch) {
+    if (watch.active()) {
+      kLog.info("profile {}: {:.1f}ms", label, watch.elapsedMs());
+    }
   }
 
   bool settingEntryBelongsToPage(
@@ -302,7 +746,12 @@ settings::RegistryEnvironment SettingsWindow::buildRegistryEnvironment() const {
   }
   for (const auto& t : noctalia::theme::CommunityTemplateService::availableTemplates()) {
     env.communityTemplates.push_back(
-        settings::SelectOption{.value = t.id, .label = t.displayName, .description = t.category}
+        settings::SelectOption{
+            .value = t.id,
+            .label = t.displayName,
+            .description = t.category,
+            .tooltip = noctalia::theme::formatTemplateTooltip(t)
+        }
     );
   }
   static const std::vector<settings::SelectOption> kFontFamilies = discoverFontFamilyOptions();
@@ -458,6 +907,8 @@ void SettingsWindow::rebuildSettingsContent() {
   if (m_contentContainer == nullptr) {
     return;
   }
+  SettingsProfileWatch totalProfileWatch;
+  SettingsProfileWatch phaseProfileWatch;
 
   m_pendingContentScrollTarget = nullptr;
   m_idleLiveStatusLabel = nullptr;
@@ -466,6 +917,8 @@ void SettingsWindow::rebuildSettingsContent() {
   while (!m_contentContainer->children().empty()) {
     m_contentContainer->removeChild(m_contentContainer->children().back().get());
   }
+  logSettingsProfile("rebuildContent clear", phaseProfileWatch);
+  phaseProfileWatch.reset();
 
   const float scale = uiScale();
   const Config fallbackCfg{};
@@ -479,6 +932,8 @@ void SettingsWindow::rebuildSettingsContent() {
   m_contentContainer->setDirection(FlexDirection::Vertical);
   m_contentContainer->setAlign(FlexAlign::Stretch);
   m_contentContainer->setGap(Style::spaceMd * scale);
+  logSettingsProfile("rebuildContent setup", phaseProfileWatch);
+  phaseProfileWatch.reset();
 
   settings::addSettingsBarManagement(
       *m_contentContainer,
@@ -510,10 +965,14 @@ void SettingsWindow::rebuildSettingsContent() {
                                    ) { deleteMonitorOverride(std::move(barName), std::move(match)); },
       }
   );
+  logSettingsProfile("rebuildContent barManagement", phaseProfileWatch);
+  phaseProfileWatch.reset();
 
-  settings::addSettingsContentSections(
+  const std::size_t visibleEntries = settings::addSettingsContentSections(
       *m_contentContainer, m_settingsRegistry, makeContentContext(cfg, selectedBar, selectedMonitorOverride)
   );
+  logSettingsProfile("rebuildContent sections", phaseProfileWatch);
+  phaseProfileWatch.reset();
 
   if (m_selectedSection == "plugins" && m_pluginManager != nullptr) {
     refreshPluginListIfNeeded();
@@ -563,6 +1022,14 @@ void SettingsWindow::rebuildSettingsContent() {
                 },
             .openStore = [this]() { openPluginStore(); },
         }
+    );
+  }
+  logSettingsProfile("rebuildContent plugins", phaseProfileWatch);
+  logSettingsProfile("rebuildContent total", totalProfileWatch);
+  if (noctalia::profiling::enabled()) {
+    kLog.info(
+        "profile rebuildContent visibleEntries={} registrySize={} selectedSection=\"{}\" searchActive={}",
+        visibleEntries, m_settingsRegistry.size(), m_selectedSection, !m_searchQuery.empty()
     );
   }
 }
@@ -884,27 +1351,15 @@ std::unique_ptr<Flex> SettingsWindow::buildBody(
   return body;
 }
 
-void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
-  uiAssertNotRendering("SettingsWindow::buildScene");
-  if (m_renderContext == nullptr || m_surface == nullptr) {
-    return;
-  }
-
-  const auto w = static_cast<float>(width);
-  const auto h = static_cast<float>(height);
-  const float scale = uiScale();
-  m_actionsMenuButton = nullptr;
-  m_contentScrollView = nullptr;
-
-  const Config fallbackCfg{};
-  const Config& cfg = m_config != nullptr ? m_config->config() : fallbackCfg;
-  const auto availableBars = settings::barNames(cfg);
-  syncSelectedBarState(cfg, availableBars);
-
-  const BarConfig* selectedBar = settings::findBar(cfg, m_selectedBarName);
+void SettingsWindow::refreshSettingsRegistry(const Config& cfg) {
+  SettingsProfileWatch phaseProfileWatch;
 
   const auto env = buildRegistryEnvironment();
+  logSettingsProfile("refreshRegistry registryEnvironment", phaseProfileWatch);
+  phaseProfileWatch.reset();
   m_settingsRegistry = settings::buildSettingsRegistry(cfg, nullptr, nullptr, env);
+  logSettingsProfile("refreshRegistry registry", phaseProfileWatch);
+  phaseProfileWatch.reset();
 
   if (m_syncGreeterAppearance && env.greeterSyncAvailable) {
     auto it = std::ranges::find_if(m_settingsRegistry, [](const settings::SettingEntry& e) {
@@ -1156,6 +1611,108 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       ++it;
     }
   }
+  logSettingsProfile("refreshRegistry injectedEntries", phaseProfileWatch);
+}
+
+std::vector<std::vector<std::string>> SettingsWindow::currentPageResetPaths() const {
+  std::vector<std::vector<std::string>> resetPagePaths;
+  if (m_config == nullptr) {
+    return resetPagePaths;
+  }
+  for (const auto& entry : m_settingsRegistry) {
+    if (!entry.path.empty()
+        && settingEntryBelongsToPage(entry, m_selectedSection, m_selectedBarName, m_selectedMonitorOverride)
+        && m_config->hasEffectiveOverride(entry.path)
+        && !containsPath(resetPagePaths, entry.path)) {
+      resetPagePaths.push_back(entry.path);
+    }
+  }
+  return resetPagePaths;
+}
+
+bool SettingsWindow::tryPatchSettingsRegistryValue(
+    const std::vector<std::string>& path, const ConfigOverrideValue& value
+) {
+  std::vector<settings::SettingEntry> patchedRegistry = m_settingsRegistry;
+  if (!patchSettingsRegistryValue(patchedRegistry, path, value)) {
+    return false;
+  }
+  m_settingsRegistry = std::move(patchedRegistry);
+  return true;
+}
+
+bool SettingsWindow::tryPatchSettingsRegistryOverrides(
+    const std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>& overrides
+) {
+  std::vector<settings::SettingEntry> patchedRegistry = m_settingsRegistry;
+  for (const auto& [path, value] : overrides) {
+    if (!patchSettingsRegistryValue(patchedRegistry, path, value)) {
+      return false;
+    }
+  }
+  m_settingsRegistry = std::move(patchedRegistry);
+  return true;
+}
+
+bool SettingsWindow::tryPatchSettingsRegistryResetValues(const std::vector<std::vector<std::string>>& paths) {
+  if (m_config == nullptr) {
+    return false;
+  }
+
+  std::vector<settings::SettingEntry> patchedRegistry = m_settingsRegistry;
+  if (!patchSettingsRegistryResetValues(patchedRegistry, m_config->config(), paths)) {
+    return false;
+  }
+  m_settingsRegistry = std::move(patchedRegistry);
+  return true;
+}
+
+void SettingsWindow::rebuildFilterRow(float scale) {
+  if (m_mainContainer == nullptr || m_filterRow == nullptr) {
+    return;
+  }
+
+  const auto& children = m_mainContainer->children();
+  auto it =
+      std::ranges::find_if(children, [this](const std::unique_ptr<Node>& child) { return child.get() == m_filterRow; });
+  if (it == children.end()) {
+    return;
+  }
+
+  const std::size_t index = static_cast<std::size_t>(std::distance(children.begin(), it));
+  (void)m_mainContainer->removeChild(m_filterRow);
+  const std::string resetPageScope = pageScopeKey(m_selectedSection, m_selectedBarName, m_selectedMonitorOverride);
+  m_filterRow = m_mainContainer->insertChildAt(
+      index, centeredRow(buildFilterRow(scale, resetPageScope, currentPageResetPaths()))
+  );
+}
+
+void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
+  uiAssertNotRendering("SettingsWindow::buildScene");
+  if (m_renderContext == nullptr || m_surface == nullptr) {
+    return;
+  }
+  SettingsProfileWatch totalProfileWatch;
+  SettingsProfileWatch phaseProfileWatch;
+
+  const auto w = static_cast<float>(width);
+  const auto h = static_cast<float>(height);
+  const float scale = uiScale();
+  m_actionsMenuButton = nullptr;
+  m_contentScrollView = nullptr;
+
+  const Config fallbackCfg{};
+  const Config& cfg = m_config != nullptr ? m_config->config() : fallbackCfg;
+  const auto availableBars = settings::barNames(cfg);
+  syncSelectedBarState(cfg, availableBars);
+
+  const BarConfig* selectedBar = settings::findBar(cfg, m_selectedBarName);
+  logSettingsProfile("buildScene configSelection", phaseProfileWatch);
+  phaseProfileWatch.reset();
+
+  refreshSettingsRegistry(cfg);
+  logSettingsProfile("buildScene refreshRegistry", phaseProfileWatch);
+  phaseProfileWatch.reset();
 
   const auto sections = sectionKeys(m_settingsRegistry);
   const auto containsSection = [&sections](settings::SettingsSection section) {
@@ -1176,23 +1733,17 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   }
 
   const std::string resetPageScope = pageScopeKey(m_selectedSection, m_selectedBarName, m_selectedMonitorOverride);
-  std::vector<std::vector<std::string>> resetPagePaths;
-  if (m_config != nullptr) {
-    for (const auto& entry : m_settingsRegistry) {
-      if (settingEntryBelongsToPage(entry, m_selectedSection, m_selectedBarName, m_selectedMonitorOverride)
-          && m_config->hasEffectiveOverride(entry.path)
-          && !containsPath(resetPagePaths, entry.path)) {
-        resetPagePaths.push_back(entry.path);
-      }
-    }
-  }
+  std::vector<std::vector<std::string>> resetPagePaths = currentPageResetPaths();
   if (m_pendingResetPageScope != resetPageScope) {
     m_pendingResetPageScope.clear();
   }
+  logSettingsProfile("buildScene navigationState", phaseProfileWatch);
+  phaseProfileWatch.reset();
 
   m_inputDispatcher.setSceneRoot(nullptr);
   m_mainContainer = nullptr;
   m_headerRow = nullptr;
+  m_filterRow = nullptr;
   m_panelBackground = nullptr;
   m_contentContainer = nullptr;
   m_sceneRoot = std::make_unique<Node>();
@@ -1216,6 +1767,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       },
   });
   m_panelBackground = static_cast<Box*>(m_sceneRoot->addChild(std::move(bg)));
+  logSettingsProfile("buildScene sceneRoot", phaseProfileWatch);
+  phaseProfileWatch.reset();
 
   auto main = ui::column({
       .align = FlexAlign::Stretch,
@@ -1227,18 +1780,26 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   });
 
   m_headerRow = main->addChild(centeredRow(buildHeaderRow(scale)));
-  main->addChild(centeredRow(buildFilterRow(scale, resetPageScope, std::move(resetPagePaths))));
+  m_filterRow = main->addChild(centeredRow(buildFilterRow(scale, resetPageScope, std::move(resetPagePaths))));
   if (auto status = buildStatusRow(scale)) {
     main->addChild(centeredRow(std::move(status)));
   }
+  logSettingsProfile("buildScene chrome", phaseProfileWatch);
+  phaseProfileWatch.reset();
 
   auto bodyRow = centeredRow(buildBody(scale, cfg, sections, availableBars));
   bodyRow->setFlexGrow(1.0f);
   main->addChild(std::move(bodyRow));
+  logSettingsProfile("buildScene body", phaseProfileWatch);
+  phaseProfileWatch.reset();
 
   main->setSize(w, h);
   main->layout(*m_renderContext);
+  logSettingsProfile("buildScene layout", phaseProfileWatch);
+  phaseProfileWatch.reset();
   applyPendingContentScrollTarget(Style::spaceMd * scale);
+  logSettingsProfile("buildScene scrollTarget", phaseProfileWatch);
+  phaseProfileWatch.reset();
   m_mainContainer = static_cast<Flex*>(m_sceneRoot->addChild(std::move(main)));
 
   m_inputDispatcher.setTextInputContext(m_surface->wlSurface(), m_wayland->textInputService());
@@ -1259,4 +1820,12 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   });
   m_inputDispatcher.setSceneRoot(m_sceneRoot.get());
   m_surface->setSceneRoot(m_sceneRoot.get());
+  logSettingsProfile("buildScene input", phaseProfileWatch);
+  logSettingsProfile("buildScene total", totalProfileWatch);
+  if (noctalia::profiling::enabled()) {
+    kLog.info(
+        "profile buildScene registrySize={} sections={} selectedSection=\"{}\" size={}x{}", m_settingsRegistry.size(),
+        sections.size(), m_selectedSection, width, height
+    );
+  }
 }

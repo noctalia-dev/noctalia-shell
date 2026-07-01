@@ -34,6 +34,9 @@ namespace ui {
       if (props.justify.has_value()) {
         flex.setJustify(*props.justify);
       }
+      if (props.wrap.has_value()) {
+        flex.setWrap(*props.wrap);
+      }
       if (props.gap.has_value()) {
         flex.setGap(*props.gap);
       }

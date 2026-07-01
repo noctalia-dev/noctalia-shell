@@ -1,4 +1,4 @@
-#include "shell/control_center/display_tab.h"
+#include "shell/control_center/tabs/monitor_tab.h"
 
 #include "config/config_service.h"
 #include "i18n/i18n.h"
@@ -60,10 +60,10 @@ namespace {
 
 } // namespace
 
-DisplayTab::DisplayTab(BrightnessService* brightness, ConfigService* config)
+MonitorTab::MonitorTab(BrightnessService* brightness, ConfigService* config)
     : m_brightness(brightness), m_configService(config) {}
 
-std::unique_ptr<Flex> DisplayTab::create() {
+std::unique_ptr<Flex> MonitorTab::create() {
   const float scale = contentScale();
 
   auto tab = ui::column({
@@ -86,7 +86,7 @@ std::unique_ptr<Flex> DisplayTab::create() {
   return tab;
 }
 
-void DisplayTab::setActive(bool active) {
+void MonitorTab::setActive(bool active) {
   const bool becameActive = active && !m_active;
   m_active = active;
   if (becameActive && m_brightness != nullptr) {
@@ -94,7 +94,7 @@ void DisplayTab::setActive(bool active) {
   }
 }
 
-void DisplayTab::onClose() {
+void MonitorTab::onClose() {
   flushPendingBrightness(true);
   m_debounceTimer.stop();
   m_rootLayout = nullptr;
@@ -103,7 +103,7 @@ void DisplayTab::onClose() {
   m_lastDisplayListKey.clear();
 }
 
-bool DisplayTab::dragging() const noexcept {
+bool MonitorTab::dragging() const noexcept {
   for (const auto& card : m_cards) {
     if (card.slider != nullptr && card.slider->dragging()) {
       return true;
@@ -112,7 +112,7 @@ bool DisplayTab::dragging() const noexcept {
   return false;
 }
 
-void DisplayTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
+void MonitorTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
   if (m_rootLayout == nullptr) {
     return;
   }
@@ -142,7 +142,7 @@ void DisplayTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
   m_rootLayout->layout(renderer);
 }
 
-void DisplayTab::doUpdate(Renderer& renderer) {
+void MonitorTab::doUpdate(Renderer& renderer) {
   rebuildCards(renderer);
 
   if (m_brightness == nullptr) {
@@ -205,7 +205,7 @@ void DisplayTab::doUpdate(Renderer& renderer) {
   }
 }
 
-void DisplayTab::rebuildCards(Renderer& /*renderer*/) {
+void MonitorTab::rebuildCards(Renderer& /*renderer*/) {
   if (m_brightness == nullptr || m_rootLayout == nullptr) {
     return;
   }
@@ -365,7 +365,7 @@ void DisplayTab::rebuildCards(Renderer& /*renderer*/) {
   }
 }
 
-void DisplayTab::queueBrightness(const std::string& displayId, float value) {
+void MonitorTab::queueBrightness(const std::string& displayId, float value) {
   m_pendingDisplayId = displayId;
   m_pendingBrightness = value;
 
@@ -380,7 +380,7 @@ void DisplayTab::queueBrightness(const std::string& displayId, float value) {
   }
 }
 
-void DisplayTab::flushPendingBrightness(bool /*force*/) {
+void MonitorTab::flushPendingBrightness(bool /*force*/) {
   m_debounceTimer.stop();
 
   if (m_pendingBrightness < 0.0f || m_brightness == nullptr) {

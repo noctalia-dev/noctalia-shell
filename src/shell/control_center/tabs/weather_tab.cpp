@@ -1,7 +1,9 @@
-#include "shell/control_center/weather_tab.h"
+#include "shell/control_center/tabs/weather_tab.h"
 
 #include "config/config_service.h"
 #include "i18n/i18n.h"
+#include "render/animation/animation.h"
+#include "render/animation/animation_manager.h"
 #include "render/scene/effect_node.h"
 #include "render/scene/input_area.h"
 #include "shell/panel/panel_manager.h"
@@ -272,6 +274,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
         applySectionCardStyle(column, scale, opacity, borders);
         column.setGap(Style::spaceXs * scale);
         column.setPadding(Style::spaceMd * scale, Style::spaceMd * scale);
+        column.setClipChildren(true);
       },
   });
 
@@ -295,11 +298,18 @@ std::unique_ptr<Flex> WeatherTab::create() {
             if (m_forecastView == nextView) {
               return;
             }
-            m_forecastView = nextView;
-            PanelManager::instance().refresh();
+            beginForecastSlideOut(nextView);
           },
       })
   );
+
+  auto forecastRowsContainer = ui::column({
+      .out = &m_forecastRowsContainer,
+      .align = FlexAlign::Stretch,
+      .gap = Style::spaceXs * scale,
+      .fillWidth = true,
+      .flexGrow = 1.0f,
+  });
 
   for (std::size_t i = 0; i < kForecastRowCount; ++i) {
     auto row = ui::column(
@@ -363,10 +373,10 @@ std::unique_ptr<Flex> WeatherTab::create() {
     hitArea->setZIndex(2);
     m_forecastHitAreas[i] = static_cast<InputArea*>(row->addChild(std::move(hitArea)));
 
-    forecastColumn->addChild(std::move(row));
+    forecastRowsContainer->addChild(std::move(row));
 
     if (i + 1 < kForecastRowCount) {
-      forecastColumn->addChild(
+      forecastRowsContainer->addChild(
           ui::separator({
               .out = &m_forecastSeparators[i],
               .thickness = std::max(1.0f, scale),
@@ -375,12 +385,116 @@ std::unique_ptr<Flex> WeatherTab::create() {
     }
   }
 
+  forecastColumn->addChild(std::move(forecastRowsContainer));
   tab->addChild(std::move(forecastColumn));
   return tab;
 }
 
+void WeatherTab::cancelForecastSlide() {
+  const bool wasAnimating = m_forecastSlideAnimId != 0;
+  if (wasAnimating && m_forecastColumn != nullptr) {
+    AnimationManager* animations = m_forecastColumn->animationManager();
+    if (animations != nullptr) {
+      animations->cancel(m_forecastSlideAnimId);
+    }
+    m_forecastSlideAnimId = 0;
+  }
+  m_startForecastSlideIn = false;
+  if (wasAnimating && m_forecastRowsContainer != nullptr) {
+    m_forecastRowsContainer->setPosition(m_forecastRowsBaseX, m_forecastRowsBaseY);
+    m_forecastRowsContainer->setOpacity(1.0f);
+  }
+}
+
+void WeatherTab::applyForecastSlide(float progress, bool slidingIn) {
+  if (m_forecastRowsContainer == nullptr || m_forecastColumn == nullptr) {
+    return;
+  }
+
+  const float travel = m_forecastColumn->width();
+  if (travel <= 0.0f) {
+    return;
+  }
+
+  const auto direction = static_cast<float>(m_forecastSlideDirection);
+  const float baseX = m_forecastRowsBaseX;
+  const float baseY = m_forecastRowsBaseY;
+  if (slidingIn) {
+    m_forecastRowsContainer->setPosition(baseX + direction * travel * (1.0f - progress), baseY);
+    m_forecastRowsContainer->setOpacity(0.7f + 0.3f * progress);
+  } else {
+    m_forecastRowsContainer->setPosition(baseX - direction * travel * progress, baseY);
+    m_forecastRowsContainer->setOpacity(1.0f - 0.3f * progress);
+  }
+}
+
+void WeatherTab::beginForecastSlideOut(ForecastView nextView) {
+  cancelForecastSlide();
+
+  AnimationManager* animations = m_forecastColumn != nullptr ? m_forecastColumn->animationManager() : nullptr;
+  if (animations == nullptr || m_forecastRowsContainer == nullptr) {
+    m_forecastView = nextView;
+    PanelManager::instance().refresh();
+    return;
+  }
+
+  m_forecastRowsBaseX = m_forecastRowsContainer->x();
+  m_forecastRowsBaseY = m_forecastRowsContainer->y();
+  m_forecastSlideDirection = nextView == ForecastView::Hourly ? 1 : -1;
+  m_pendingForecastView = nextView;
+
+  PanelManager::instance().requestFrameTick();
+  m_forecastSlideAnimId = animations->animate(
+      0.0f, 1.0f, static_cast<float>(Style::animFast), Easing::EaseOutCubic,
+      [this](float progress) {
+        applyForecastSlide(progress, false);
+        PanelManager::instance().requestRedraw();
+      },
+      [this]() {
+        m_forecastSlideAnimId = 0;
+        m_forecastView = m_pendingForecastView;
+        m_startForecastSlideIn = true;
+        PanelManager::instance().refresh();
+      },
+      m_forecastColumn
+  );
+}
+
+void WeatherTab::beginForecastSlideIn() {
+  AnimationManager* animations = m_forecastColumn != nullptr ? m_forecastColumn->animationManager() : nullptr;
+  if (animations == nullptr || m_forecastRowsContainer == nullptr) {
+    return;
+  }
+
+  applyForecastSlide(0.0f, true);
+  PanelManager::instance().requestFrameTick();
+  m_forecastSlideAnimId = animations->animate(
+      0.0f, 1.0f, static_cast<float>(Style::animFast), Easing::EaseOutCubic,
+      [this](float progress) {
+        applyForecastSlide(progress, true);
+        PanelManager::instance().requestRedraw();
+      },
+      [this]() {
+        m_forecastSlideAnimId = 0;
+        if (m_forecastRowsContainer != nullptr) {
+          m_forecastRowsContainer->setPosition(m_forecastRowsBaseX, m_forecastRowsBaseY);
+          m_forecastRowsContainer->setOpacity(1.0f);
+        }
+      },
+      m_forecastColumn
+  );
+}
+
 void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
   if (m_rootLayout == nullptr || m_currentText == nullptr || m_forecastColumn == nullptr) {
+    return;
+  }
+
+  const bool slidingOut = m_forecastSlideAnimId != 0 && !m_startForecastSlideIn;
+  const float scale = contentScale();
+
+  if (slidingOut) {
+    m_rootLayout->layout(renderer);
     return;
   }
 
@@ -413,8 +527,6 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
       label->setMaxWidth(leftColumnWidth);
     }
   }
-
-  const float scale = contentScale();
 
   if (m_currentCard != nullptr) {
     m_currentCard->setMinHeight(Style::controlHeightLg * 3.1f * scale);
@@ -547,6 +659,15 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
     m_forecastHitAreas[i]->setSize(
         visible ? m_forecastRows[i]->width() : 0.0f, visible ? m_forecastRows[i]->height() : 0.0f
     );
+  }
+
+  if (m_startForecastSlideIn) {
+    m_startForecastSlideIn = false;
+    if (m_forecastRowsContainer != nullptr) {
+      m_forecastRowsBaseX = m_forecastRowsContainer->x();
+      m_forecastRowsBaseY = m_forecastRowsContainer->y();
+    }
+    beginForecastSlideIn();
   }
 }
 

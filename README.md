@@ -102,7 +102,7 @@ sudo pacman -S meson gcc just \
   libglvnd freetype2 fontconfig \
   cairo pango harfbuzz \
   libxkbcommon glib2 \
-  sdbus-cpp libpipewire polkit \
+  sdbus-cpp libpipewire wireplumber polkit \
   pam curl libwebp librsvg \
   libqalculate libxml2 \
   jemalloc
@@ -116,7 +116,7 @@ sudo dnf install meson gcc-c++ just \
   freetype-devel fontconfig-devel \
   cairo-devel pango-devel harfbuzz-devel \
   libxkbcommon-devel glib2-devel \
-  sdbus-cpp-devel pipewire-devel \
+  sdbus-cpp-devel pipewire-devel wireplumber-devel \
   pam-devel polkit-devel libcurl-devel libwebp-devel librsvg2-devel \
   libqalculate-devel libxml2-devel \
   jemalloc-devel
@@ -130,7 +130,7 @@ sudo zypper install meson gcc-c++ just \
   freetype2-devel fontconfig-devel \
   cairo-devel pango-devel harfbuzz-devel \
   libxkbcommon-devel glib2-devel \
-  sdbus-cpp-devel pipewire-devel \
+  sdbus-cpp-devel pipewire-devel wireplumber-devel \
   pam-devel polkit-devel libcurl-devel libwebp-devel librsvg-devel \
   libqalculate-devel libxml2-devel \
   jemalloc-devel
@@ -144,7 +144,7 @@ sudo apt install meson g++ just \
   libfreetype-dev libfontconfig-dev \
   libcairo2-dev libpango1.0-dev libharfbuzz-dev \
   libxkbcommon-dev libglib2.0-dev \
-  libsdbus-c++-dev libpipewire-0.3-dev \
+  libsdbus-c++-dev libpipewire-0.3-dev libwireplumber-0.5-dev \
   libpam0g-dev libpolkit-agent-1-dev libpolkit-gobject-1-dev \
   libcurl4-openssl-dev libwebp-dev librsvg2-dev \
   libqalculate-dev libxml2-dev \
@@ -159,7 +159,7 @@ sudo moss it meson build-essential \
   freetype-devel fontconfig-devel \
   cairo-devel pango-devel harfbuzz-devel \
   libxkbcommon-devel glib2-devel \
-  sdbus-cpp-devel pipewire-devel \
+  sdbus-cpp-devel pipewire-devel wireplumber-devel \
   linux-pam-devel polkit-devel \
   curl-devel libwebp-devel librsvg-devel \
   libqalculate-devel libxml2-devel \
@@ -172,14 +172,16 @@ sudo xbps-install meson ninja pkg-config git \
   wayland-devel wayland-protocols libepoxy-devel \
   MesaLib-devel libglvnd-devel cairo-devel \
   pango-devel fontconfig-devel freetype-devel \
-  harfbuzz-devel libxkbcommon-devel pipewire-devel \
+  harfbuzz-devel libxkbcommon-devel pipewire-devel wireplumber-devel \
   libcurl-devel pam-devel libwebp-devel \
   basu-devel sdbus-c++-devel \
   polkit-devel librsvg-devel libqalculate-devel libxml2-devel jemalloc-devel
 ```
 
-Vendored dependencies, with no system package needed: `Wuffs`, `tomlplusplus`,
+Vendored dependencies, with no system package needed: `Wuffs`,
 `nlohmann/json`, `Luau`, `dr_wav`, `fzy`, `stb_image_resize2`, and Material Color Utilities.
+
+Dependencies that are vendored by default, with a meson option to instead use the system package: `tomlplusplus`
 
 System packages required beyond the Wayland/GL stack: `libwebp` handles WebP decoding and thumbnail encoding. Wuffs
 handles the other supported raster image formats. `libqalculate` powers the launcher calculator (arithmetic, unit and

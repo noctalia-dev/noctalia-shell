@@ -116,6 +116,7 @@ class NotificationDBusHost;
 class PipeWirePcmTap;
 class PipeWirePollSource;
 class PipeWireService;
+class WirePlumberMixer;
 class PipeWireSpectrum;
 class PipeWireSpectrumPollSource;
 class PolkitAgent;
@@ -262,6 +263,7 @@ private:
   std::unique_ptr<sdbus::IProxy> m_notificationBusNameWatchProxy;
   bool m_notificationBusNameWatchInstalled = false;
   std::unique_ptr<PipeWireService> m_pipewireService;
+  std::unique_ptr<WirePlumberMixer> m_wirePlumberMixer;
   std::unique_ptr<EasyEffectsService> m_easyEffectsService;
   std::unique_ptr<PipeWireSpectrum> m_pipewireSpectrum;
   std::unique_ptr<PipeWirePcmTap> m_pipewirePcmTap;

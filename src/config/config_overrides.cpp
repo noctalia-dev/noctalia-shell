@@ -1412,12 +1412,25 @@ bool ConfigService::deleteCalendarAccountOverride(std::string_view id) {
 }
 
 bool ConfigService::setOverride(const std::vector<std::string>& path, ConfigOverrideValue value) {
+  return setOverride(path, std::move(value), nullptr);
+}
+
+bool ConfigService::setOverride(const std::vector<std::string>& path, ConfigOverrideValue value, bool* changed) {
   std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides;
   overrides.emplace_back(path, std::move(value));
-  return setOverrides(std::move(overrides));
+  return setOverrides(std::move(overrides), changed);
 }
 
 bool ConfigService::setOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides) {
+  return setOverrides(std::move(overrides), nullptr);
+}
+
+bool ConfigService::setOverrides(
+    std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides, bool* changed
+) {
+  if (changed != nullptr) {
+    *changed = false;
+  }
   if (m_overridesPath.empty() || overrides.empty()) {
     return false;
   }
@@ -1465,6 +1478,9 @@ bool ConfigService::setOverrides(std::vector<std::pair<std::vector<std::string>,
   }
 
   m_ownOverridesWritePending = true;
+  if (changed != nullptr) {
+    *changed = true;
+  }
   extractWallpaperFromOverrides();
   loadAll();
   fireReloadCallbacks();
@@ -1472,23 +1488,51 @@ bool ConfigService::setOverrides(std::vector<std::pair<std::vector<std::string>,
 }
 
 bool ConfigService::clearOverride(const std::vector<std::string>& path) {
-  if (m_overridesPath.empty() || path.empty()) {
+  bool changed = false;
+  if (!clearOverrides({path}, &changed)) {
+    return false;
+  }
+  return changed;
+}
+
+bool ConfigService::clearOverrides(const std::vector<std::vector<std::string>>& paths, bool* changed) {
+  if (changed != nullptr) {
+    *changed = false;
+  }
+  if (m_overridesPath.empty()) {
     return false;
   }
 
-  if (!eraseOverridePath(m_overridesTable, path, overridePreserveDepthForPath(path))) {
-    return false;
-  }
-  if (path.size() == 2 && path[0] == "idle" && path[1] == "behavior") {
-    eraseOverridePath(m_overridesTable, {"idle", "behavior_order"}, overridePreserveDepthForPath(path));
+  toml::table next = m_overridesTable;
+  bool anyChanged = false;
+  for (const auto& path : paths) {
+    if (path.empty()) {
+      return false;
+    }
+    if (eraseOverridePath(next, path, overridePreserveDepthForPath(path))) {
+      anyChanged = true;
+      if (path.size() == 2 && path[0] == "idle" && path[1] == "behavior") {
+        eraseOverridePath(next, {"idle", "behavior_order"}, overridePreserveDepthForPath(path));
+      }
+    }
   }
 
+  if (!anyChanged) {
+    return true;
+  }
+
+  toml::table previous = std::move(m_overridesTable);
+  m_overridesTable = std::move(next);
   if (!writeOverridesToFile()) {
+    m_overridesTable = std::move(previous);
     kLog.warn("failed to write {}", m_overridesPath);
     return false;
   }
 
   m_ownOverridesWritePending = true;
+  if (changed != nullptr) {
+    *changed = true;
+  }
   extractWallpaperFromOverrides();
   loadAll();
   fireReloadCallbacks();

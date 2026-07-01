@@ -1,4 +1,4 @@
-#include "shell/control_center/bluetooth_tab.h"
+#include "shell/control_center/tabs/bluetooth_tab.h"
 
 #include "core/ui_phase.h"
 #include "i18n/i18n.h"

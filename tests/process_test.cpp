@@ -4,10 +4,15 @@
 #include <condition_variable>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <mutex>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <thread>
+#include <unistd.h>
 #include <utility>
 
 namespace {
@@ -17,6 +22,19 @@ namespace {
       std::fprintf(stderr, "process_test: %s\n", message);
     }
     return condition;
+  }
+
+  std::string shellQuote(const std::string& value) {
+    std::string quoted = "'";
+    for (const char ch : value) {
+      if (ch == '\'') {
+        quoted += "'\\''";
+      } else {
+        quoted += ch;
+      }
+    }
+    quoted += "'";
+    return quoted;
   }
 
   bool capturedAsyncDeliversCallbacksAndResult() {
@@ -122,6 +140,51 @@ namespace {
     return ok;
   }
 
+  bool detachedAsyncInheritsLaunchEnvironment() {
+    const std::filesystem::path outPath =
+        std::filesystem::temp_directory_path() / ("noctalia_process_env_test_" + std::to_string(::getpid()));
+    std::error_code ec;
+    std::filesystem::remove(outPath, ec);
+
+    ::setenv("NOCTALIA_WALLPAPER_PATH", "/tmp/noctalia test/wallpaper.png", 1);
+    ::setenv("NOCTALIA_WALLPAPER_CONNECTOR", "DP-1", 1);
+
+    const std::string command = "printf '%s\\n%s' \"$NOCTALIA_WALLPAPER_PATH\" \"$NOCTALIA_WALLPAPER_CONNECTOR\" > "
+        + shellQuote(outPath.string());
+    const bool launched = process::runAsync(command);
+    ::unsetenv("NOCTALIA_WALLPAPER_PATH");
+    ::unsetenv("NOCTALIA_WALLPAPER_CONNECTOR");
+
+    if (!expect(launched, "detached async env command did not launch")) {
+      return false;
+    }
+
+    std::string contents;
+    for (int i = 0; i < 50; ++i) {
+      std::ifstream in(outPath);
+      contents.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+      if (contents == "/tmp/noctalia test/wallpaper.png\nDP-1") {
+        break;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    }
+
+    std::filesystem::remove(outPath, ec);
+    return expect(contents == "/tmp/noctalia test/wallpaper.png\nDP-1", "detached async env was not visible in child");
+  }
+
+  bool commandExistsRejectsDirectories() {
+    bool ok = true;
+    ok =
+        expect(!process::commandExists("/usr/bin"), "commandExists should return false for /usr/bin (directory)") && ok;
+    ok = expect(!process::commandExists("/"), "commandExists should return false for / (directory)") && ok;
+    ok = expect(process::commandExists("true"), "commandExists should return true for 'true' on PATH") && ok;
+    ok = expect(!process::commandExists(""), "commandExists should return false for empty string") && ok;
+    ok =
+        expect(!process::commandExists("/nonexistent"), "commandExists should return false for nonexistent path") && ok;
+    return ok;
+  }
+
 } // namespace
 
 int main() {
@@ -130,5 +193,7 @@ int main() {
   ok = capturedAsyncDeliversCallbacksAndResult() && ok;
   ok = capturedAsyncDeliversCompletionOnly() && ok;
   ok = syncAppliesEnvOverrides() && ok;
+  ok = detachedAsyncInheritsLaunchEnvironment() && ok;
+  ok = commandExistsRejectsDirectories() && ok;
   return ok ? 0 : 1;
 }

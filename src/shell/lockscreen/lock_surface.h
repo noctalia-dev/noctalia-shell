@@ -7,6 +7,7 @@
 #include "render/core/texture_manager.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
+#include "shell/lockscreen/lockscreen_login_box.h"
 #include "wayland/surface.h"
 
 #include <cstdint>
@@ -40,6 +41,7 @@ public:
   bool initialize(ext_session_lock_v1* lock, wl_output* output, std::int32_t scale);
   void setLockedState(bool locked);
   void setPromptState(std::string user, std::string password, std::string status, bool error, bool authenticating);
+  void setKeyboardIndicators(bool capsLock, bool hasMultipleLayouts, bool layoutSwitchable, std::string layoutLabel);
   void setTextureCache(SharedTextureCache* cache) noexcept { m_textureCache = cache; }
   void setWallpaperPath(std::string wallpaperPath);
   void setWallpaperFillMode(WallpaperFillMode fillMode);
@@ -58,6 +60,7 @@ public:
   void setBlackout(bool blackout);
   [[nodiscard]] bool isBlackout() const noexcept { return m_blackout; }
   void setOnLogin(std::function<void()> onLogin);
+  void setOnCycleLayout(std::function<void()> onCycleLayout);
   void setOnPasswordChanged(std::function<void(const std::string&)> onPasswordChanged);
   void selectAllPassword();
   void clearPasswordSelection();
@@ -90,6 +93,8 @@ private:
   void releaseCaptureTextures();
   void layoutScene(std::uint32_t width, std::uint32_t height);
   void updateCopy();
+  [[nodiscard]] lockscreen_login_box::LoginBoxStyle resolveLoginStyle() const;
+  [[nodiscard]] std::string resolveStatusText(const lockscreen_login_box::LoginBoxStyle& style, bool& isError) const;
   [[nodiscard]] bool passwordFieldContainsPoint(float sceneX, float sceneY) const;
   void focusPasswordField();
 
@@ -105,6 +110,7 @@ private:
   Box* m_loginPanel = nullptr;
   Input* m_passwordField = nullptr;
   Button* m_loginButton = nullptr;
+  Button* m_layoutChip = nullptr;
   Label* m_statusLabel = nullptr;
   SharedTextureCache* m_textureCache = nullptr;
   TextureHandle m_wallpaperTexture{};
@@ -127,6 +133,7 @@ private:
   void* m_livePaperImage = nullptr; // EGLImageKHR for the live-paper visualizer source
   InputDispatcher m_inputDispatcher;
   std::function<void()> m_onLogin;
+  std::function<void()> m_onCycleLayout;
   std::function<void(const std::string&)> m_onPasswordChanged;
   bool m_locked = false;
   std::string m_user;
@@ -134,6 +141,10 @@ private:
   std::string m_status;
   bool m_error = false;
   bool m_authenticating = false;
+  bool m_capsLock = false;
+  bool m_hasMultipleLayouts = false;
+  bool m_layoutSwitchable = false;
+  std::string m_layoutLabel;
   std::string m_outputKey;
   LockscreenWidgetsHost* m_widgetsHost = nullptr;
   bool m_firstFrameRendered = false;

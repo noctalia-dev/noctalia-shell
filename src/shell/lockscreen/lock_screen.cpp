@@ -2,6 +2,7 @@
 
 #include "auth/fingerprint_authenticator.h"
 #include "capture/screencopy_util.h"
+#include "compositors/compositor_platform.h"
 #include "config/config_service.h"
 #include "config/config_types.h"
 #include "core/deferred_call.h"
@@ -12,6 +13,7 @@
 #include "i18n/i18n.h"
 #include "render/render_context.h"
 #include "render/visualizer/projectm_renderer.h"
+#include "shell/bar/widgets/keyboard_layout_widget.h"
 #include "shell/desktop/desktop_widget_layout.h"
 #include "shell/lockscreen/lock_surface.h"
 #include "ui/palette.h"
@@ -54,13 +56,14 @@ LockScreen::~LockScreen() {
 
 bool LockScreen::initialize(
     WaylandConnection& wayland, RenderContext* renderContext, ConfigService* configService,
-    SharedTextureCache* textureCache, SystemBus* systemBus
+    SharedTextureCache* textureCache, SystemBus* systemBus, CompositorPlatform* compositorPlatform
 ) {
   m_wayland = &wayland;
   m_renderContext = renderContext;
   m_configService = configService;
   m_textureCache = textureCache;
   m_systemBus = systemBus;
+  m_compositorPlatform = compositorPlatform;
   m_user = PamAuthenticator::currentUsername();
 
   if (m_systemBus != nullptr) {
@@ -456,7 +459,8 @@ void LockScreen::handleLocked(void* data, ext_session_lock_v1* /*lock*/) {
   }
   self->m_lockPending = false;
   self->m_locked = true;
-  self->m_status = i18n::tr("lockscreen.ready");
+  // Idle status is empty; the surface renders the (togglable) password hint itself.
+  self->m_status.clear();
   self->m_statusIsError = false;
   for (auto& instance : self->m_instances) {
     instance.surface->setLockedState(true);
@@ -480,6 +484,7 @@ void LockScreen::handleLocked(void* data, ext_session_lock_v1* /*lock*/) {
 
 
   self->updatePromptOnSurfaces();
+  self->updateIndicatorsOnSurfaces();
   self->startFingerprint();
   kLog.info("session is locked");
   if (self->m_onSessionLocked) {
@@ -725,8 +730,10 @@ void LockScreen::createInstance(const WaylandOutput& output) {
   }
   surface->setRenderCallback([this]() { tryFlushPendingAfterLocked(); });
   surface->setOnLogin([this]() { tryAuthenticate(); });
+  surface->setOnCycleLayout([this]() { cycleKeyboardLayout(); });
   surface->setOnPasswordChanged([this](const std::string& value) { handlePasswordEdited(value); });
   surface->setPromptState(m_user, m_password, m_status, m_statusIsError, m_authenticating);
+  applyIndicatorsToSurface(*surface);
 
   surface->setBlackout(!isInteractiveOutput(output));
 
@@ -770,6 +777,50 @@ void LockScreen::updatePromptOnSurfaces() {
   }
 }
 
+void LockScreen::applyIndicatorsToSurface(LockSurface& surface) const {
+  const bool capsLock = m_wayland != nullptr && m_wayland->keyboardLockKeysState().capsLock;
+  bool hasMultipleLayouts = false;
+  bool switchable = false;
+  std::string layoutLabel;
+  if (m_compositorPlatform != nullptr) {
+    hasMultipleLayouts = m_compositorPlatform->keyboardLayoutNames().size() > 1;
+    switchable = m_compositorPlatform->hasKeyboardLayoutBackend();
+    layoutLabel = KeyboardLayoutWidget::formatLayoutLabel(
+        m_compositorPlatform->currentKeyboardLayoutName(), KeyboardLayoutWidget::DisplayMode::Short
+    );
+  }
+  surface.setKeyboardIndicators(capsLock, hasMultipleLayouts, switchable, std::move(layoutLabel));
+}
+
+void LockScreen::updateIndicatorsOnSurfaces() {
+  for (auto& instance : m_instances) {
+    if (instance.surface != nullptr) {
+      applyIndicatorsToSurface(*instance.surface);
+    }
+  }
+}
+
+void LockScreen::cycleKeyboardLayout() {
+  if (m_compositorPlatform == nullptr || !m_compositorPlatform->cycleKeyboardLayout()) {
+    return;
+  }
+  updateIndicatorsOnSurfaces();
+}
+
+void LockScreen::onLockKeysChanged() {
+  if (!isActive()) {
+    return;
+  }
+  updateIndicatorsOnSurfaces();
+}
+
+void LockScreen::onKeyboardLayoutChanged() {
+  if (!isActive()) {
+    return;
+  }
+  updateIndicatorsOnSurfaces();
+}
+
 void LockScreen::invalidatePendingAuthentication() {
   ++m_authGeneration;
   m_authenticating = false;
@@ -777,6 +828,8 @@ void LockScreen::invalidatePendingAuthentication() {
 
 void LockScreen::handlePasswordEdited(const std::string& value) {
   if (m_authenticating) {
+    m_password = value;
+    updatePromptOnSurfaces();
     return;
   }
   if (m_password == value && m_status.empty() && !m_statusIsError) {
@@ -874,8 +927,8 @@ void LockScreen::handleFingerprintStatus(const std::string& message, bool isErro
   if (!m_password.empty()) {
     return;
   }
-  // Empty message means verification disarmed; fall back to the default prompt.
-  m_status = message.empty() ? i18n::tr("lockscreen.ready") : message;
+  // Empty message means verification disarmed; fall back to the idle prompt (rendered by the surface).
+  m_status = message.empty() ? std::string{} : message;
   m_statusIsError = isError;
   updatePromptOnSurfaces();
 }

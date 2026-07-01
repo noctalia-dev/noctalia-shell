@@ -1,4 +1,4 @@
-#include "shell/control_center/network_tab.h"
+#include "shell/control_center/tabs/network_tab.h"
 
 #include "core/ui_phase.h"
 #include "dbus/network/inetwork_service.h"

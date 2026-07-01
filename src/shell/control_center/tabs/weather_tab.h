@@ -1,5 +1,6 @@
 #pragma once
 
+#include "render/animation/animation_manager.h"
 #include "render/core/render_styles.h"
 #include "shell/control_center/tab.h"
 
@@ -26,9 +27,18 @@ public:
   void onFrameTick(float deltaMs) override;
 
 private:
+  enum class ForecastView : std::uint8_t {
+    Daily = 0,
+    Hourly = 1,
+  };
+
   void doLayout(Renderer& renderer, float contentWidth, float bodyHeight) override;
   void doUpdate(Renderer& renderer) override;
   void sync(Renderer& renderer);
+  void beginForecastSlideOut(ForecastView nextView);
+  void beginForecastSlideIn();
+  void applyForecastSlide(float progress, bool slidingIn);
+  void cancelForecastSlide();
   void setForecastVisibleRowCount(std::size_t count);
   void syncDailyForecast(Renderer& renderer, const WeatherSnapshot& snapshot);
   void syncHourlyForecast(Renderer& renderer, const WeatherSnapshot& snapshot);
@@ -38,11 +48,6 @@ private:
   [[nodiscard]] static std::string hourLabel(const std::string& isoTime, const std::string& timeFormat);
   [[nodiscard]] static std::string weekdayLabel(const std::string& isoDate);
   [[nodiscard]] static EffectType effectForWeatherCode(std::int32_t code, bool isDay);
-
-  enum class ForecastView : std::uint8_t {
-    Daily = 0,
-    Hourly = 1,
-  };
 
   static constexpr std::size_t kForecastRowCount = 7;
   static constexpr std::size_t kDetailRowCount = 7;
@@ -59,6 +64,7 @@ private:
   Glyph* m_locationPromptGlyph = nullptr;
   Label* m_locationPromptBody = nullptr;
   Flex* m_forecastColumn = nullptr;
+  Flex* m_forecastRowsContainer = nullptr;
   Segmented* m_forecastViewPicker = nullptr;
   Label* m_statusLabel = nullptr;
   Glyph* m_currentGlyph = nullptr;
@@ -86,5 +92,11 @@ private:
   EffectNode* m_effectNode = nullptr;
   EffectType m_activeEffect = EffectType::None;
   ForecastView m_forecastView = ForecastView::Daily;
+  int m_forecastSlideDirection = 0;
+  ForecastView m_pendingForecastView = ForecastView::Daily;
+  bool m_startForecastSlideIn = false;
+  AnimationManager::Id m_forecastSlideAnimId = 0;
+  float m_forecastRowsBaseX = 0.0f;
+  float m_forecastRowsBaseY = 0.0f;
   float m_shaderTime = 0.0f;
 };

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "render/animation/animation_manager.h"
 #include "shell/control_center/tab.h"
 #include "ui/signal.h"
 
@@ -14,6 +15,7 @@ class Image;
 class Label;
 class Renderer;
 class ScreenTimeService;
+class ScrollView;
 class Segmented;
 
 class ScreenTimeTab : public Tab {
@@ -32,6 +34,10 @@ private:
   void bindAppNameMaxWidths(Renderer& renderer, float gridWidth);
   void layoutChart(Renderer& renderer);
   void layoutAppRows(Renderer& renderer);
+  void beginRangeSlideOut(int nextRangeDays);
+  void beginRangeSlideIn();
+  void applyRangeSlide(float progress, bool slidingIn);
+  void cancelRangeSlide();
   void syncEnabledUi();
   void syncDayLabelHover();
   [[nodiscard]] std::string resolveIconPath(const std::string& appKey) const;
@@ -40,11 +46,18 @@ private:
   bool m_active = false;
   int m_rangeDays = 1;
   std::string m_lastSnapshotKey;
+  int m_rangeSlideDirection = 0;
+  int m_pendingRangeDays = 1;
+  bool m_startRangeSlideIn = false;
+  AnimationManager::Id m_rangeSlideAnimId = 0;
+  float m_scrollBaseX = 0.0f;
+  float m_scrollBaseY = 0.0f;
 
   Flex* m_root = nullptr;
   Flex* m_usageCard = nullptr;
   Label* m_disabledLabel = nullptr;
   Segmented* m_rangePicker = nullptr;
+  ScrollView* m_scroll = nullptr;
   Flex* m_chartPlotRow = nullptr;
   Flex* m_chartLabelRow = nullptr;
   Flex* m_mostUsedSection = nullptr;

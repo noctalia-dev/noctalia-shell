@@ -141,9 +141,11 @@ namespace lockscreen_login_box {
   PanelContentLayout panelContentLayout(float panelWidth, float panelHeight, bool showLoginButton) {
     PanelContentLayout layout;
     layout.contentLeft = Style::spaceLg;
+    // Center the input row vertically so the free space above and below the input is equal.
     layout.controlHeight = std::min(Style::controlHeight, panelHeight - Style::spaceSm * 2.0f);
     layout.contentTop = std::max(Style::spaceSm, (panelHeight - layout.controlHeight) * 0.5f);
-    const float rightInset = Style::spaceLg + Style::spaceSm;
+    // Match the left inset so the padding left of the first control equals the padding right of the last.
+    const float rightInset = Style::spaceLg;
     const float contentWidth = panelWidth - Style::spaceLg - rightInset;
     const float buttonWidth = layout.controlHeight;
     const float gap = Style::spaceSm;
@@ -194,6 +196,9 @@ namespace lockscreen_login_box {
     style.inputOpacity = std::clamp(readFloat(settings, kInputOpacityKey, style.inputOpacity), 0.0f, 1.0f);
     style.inputRadius = std::clamp(readFloat(settings, kInputRadiusKey, style.inputRadius), 0.0f, 32.0f);
     style.showLoginButton = readBool(settings, kShowLoginButtonKey, style.showLoginButton);
+    style.showPasswordHint = readBool(settings, kShowPasswordHintKey, style.showPasswordHint);
+    style.showCapsLock = readBool(settings, kShowCapsLockKey, style.showCapsLock);
+    style.showKeyboardLayout = readBool(settings, kShowKeyboardLayoutKey, style.showKeyboardLayout);
     return style;
   }
 
@@ -202,6 +207,9 @@ namespace lockscreen_login_box {
   ) {
     if (scope == desktop_settings::DesktopWidgetSettingsScope::Widget) {
       settings.insert_or_assign(std::string(kShowLoginButtonKey), true);
+      settings.insert_or_assign(std::string(kShowPasswordHintKey), true);
+      settings.insert_or_assign(std::string(kShowCapsLockKey), true);
+      settings.insert_or_assign(std::string(kShowKeyboardLayoutKey), true);
       settings.insert_or_assign(std::string(kInputOpacityKey), 1.0);
       settings.insert_or_assign(std::string(kInputRadiusKey), 6.0);
     }
@@ -220,6 +228,15 @@ namespace lockscreen_login_box {
   void normalizeSettings(std::unordered_map<std::string, WidgetSettingValue>& settings) {
     if (!settings.contains(std::string(kShowLoginButtonKey))) {
       settings.insert_or_assign(std::string(kShowLoginButtonKey), true);
+    }
+    if (!settings.contains(std::string(kShowPasswordHintKey))) {
+      settings.insert_or_assign(std::string(kShowPasswordHintKey), true);
+    }
+    if (!settings.contains(std::string(kShowCapsLockKey))) {
+      settings.insert_or_assign(std::string(kShowCapsLockKey), true);
+    }
+    if (!settings.contains(std::string(kShowKeyboardLayoutKey))) {
+      settings.insert_or_assign(std::string(kShowKeyboardLayoutKey), true);
     }
     clampOpacitySetting(settings, "background_opacity");
     clampRadiusSetting(settings, "background_radius");

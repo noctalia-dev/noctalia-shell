@@ -22,7 +22,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <toml.hpp>
+#include <toml++/toml.hpp>
 #include <vector>
 
 namespace {

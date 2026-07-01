@@ -357,9 +357,9 @@
       "audio": "音频",
       "bluetooth": "蓝牙",
       "calendar": "日历",
-      "display": "屏幕",
       "home": "主页",
       "media": "媒体",
+      "monitor": "屏幕",
       "network": "网络",
       "notifications": "通知",
       "power": "电源",
@@ -368,23 +368,45 @@
       "weather": "天气"
     },
     "weather": {
+      "daily": {
+        "tooltip": {
+          "condition": "天气",
+          "high": "最高",
+          "low": "最低",
+          "sunrise": "日出",
+          "sunset": "日落"
+        }
+      },
       "data-unavailable": "天气数据不可用",
       "details": {
         "elevation": "海拔",
         "sunrise": "日出",
         "sunset": "日落",
-        "temp-max": "最高温度",
-        "temp-min": "最低温度",
+        "temp-max": "最高气温",
+        "temp-min": "最低气温",
         "timezone": "时区",
-        "uv-index": "紫外线指数",
+        "uv-index": "紫外线",
         "wind": "风速"
       },
-      "disabled": "在 config.toml 中启用 [weather]",
+      "disabled": "请在 config.toml 中启用 [weather]",
       "fetching": "正在获取天气预报...",
       "forecast-placeholder": {
         "day": "星期日",
         "description": "天气",
-        "temperature": "10°C / 4°C"
+        "temperature": "10 / 4°C"
+      },
+      "forecast-view": {
+        "daily": "每日",
+        "hourly": "每小时"
+      },
+      "hourly": {
+        "summary": "{condition} / 降水概率 {precip}%",
+        "tooltip": {
+          "condition": "天气",
+          "humidity": "湿度",
+          "rain": "降水",
+          "wind": "风速"
+        }
       },
       "location-unavailable": "位置不可用",
       "no-location-body": "请填写地址或启用自动定位。",
@@ -460,6 +482,11 @@
         "label-min-width": "标签最小宽度",
         "layout": "布局",
         "mirrored": "镜像",
+        "network-speed-compact": "紧凑网速",
+        "network-speed-unit": "网速单位",
+        "network-speed-unit-auto": "自动",
+        "network-speed-unit-kilobytes": "kB/s",
+        "network-speed-unit-megabytes": "MB/s",
         "opacity": "不透明度",
         "primary-color": "主色",
         "reset-defaults": "恢复默认设置",
@@ -468,9 +495,12 @@
         "secondary-color": "辅助色",
         "sensitivity": "灵敏度",
         "shadow": "阴影",
+        "show-caps-lock": "大写锁定提示",
         "show-forecast": "显示天气预报",
+        "show-keyboard-layout": "键盘布局",
         "show-label": "显示标签",
         "show-login-button": "登录按钮",
+        "show-password-hint": "密码提示",
         "show-when-idle": "空闲时显示",
         "stat": "统计",
         "stat-cpu-temp": "CPU 温度",
@@ -621,6 +651,7 @@
   "lockscreen": {
     "authenticating": "正在验证身份...",
     "authentication-failed": "身份验证失败",
+    "caps-lock-on": "大写锁定已开启",
     "password-cleared": "密码已清除",
     "password-placeholder": "密码",
     "ready": "请输入密码并按下 Enter 键。",
@@ -657,7 +688,7 @@
       "desktop-widgets-editor": "桌面小组件编辑器",
       "desktop-widgets-editor-enabled": "桌面小组件编辑器已开启。请切换到空的工作区查看编辑器图层。",
       "greeter-sync": "Noctalia Greeter",
-      "greeter-sync-pending": "正在等待管理员授权以写入 greeter 配置。",
+      "greeter-sync-pending": "正在等待管理员授权以写入 Greeter 配置。",
       "greeter-sync-pending-console": "正在等待管理员授权。请在 Noctalia 的 Polkit 弹窗、TTY 或控制台中确认，或手动运行 pkexec。",
       "greeter-sync-pending-manual": "同步文件已就绪。请在终端运行：pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\" 或设置 shell.greeter_sync.privilege_command（例如 ghostty -e pkexec）后重新同步。",
       "greeter-sync-success": "外观已同步。更改将在下次登录时生效。",
@@ -680,7 +711,7 @@
       "screen-time-reset-success": "使用记录已清除。",
       "session-bus-unavailable": "会话总线不可用",
       "wallpaper-palette-export": "自定义配色方案",
-      "wallpaper-palette-export-success": "已保存 \"{name}\" 并将配色方案源切换为自定义。"
+      "wallpaper-palette-export-success": "已保存 \"{name}\" 并将配色方案来源更改为自定义。"
     }
   },
   "osd": {
@@ -725,6 +756,13 @@
     "wifi": {
       "off": "Wi-Fi 关闭",
       "on": "Wi-Fi 开启"
+    }
+  },
+  "plugins": {
+    "auto-disabled": {
+      "body-errors": "{plugin} 错误过多，已被禁用。请修复问题后重新加载。",
+      "body-timeouts": "{plugin} 停止响应，已被禁用。请修复问题后重新加载。",
+      "title": "插件已禁用"
     }
   },
   "power": {
@@ -1774,7 +1812,7 @@
             "label": "蓝牙启用时"
           },
           "colors-changed": {
-            "description": "当前配色方案变化时执行的命令",
+            "description": "当前配色方案更改时执行的命令",
             "label": "配色改变时"
           },
           "logging-out": {
@@ -1960,7 +1998,7 @@
           "label": "大小"
         },
         "show-actions": {
-          "description": "在 Toast 通知中显示操作按钮；禁用后，点击 Toast 将触发其默认操作",
+          "description": "在 Toast 通知中显示操作按钮；禁用后，点击 Toast 将触发默认操作",
           "label": "显示操作按钮"
         },
         "show-app-name": {
@@ -1984,6 +2022,10 @@
         "control-center-sidebar-section": {
           "description": "打开特定选项卡时（音量、媒体等）",
           "label": "打开选项卡时的侧边栏"
+        },
+        "control-center-tabs": {
+          "description": "选择控制中心中显示的标签页；未勾选的标签页将被隐藏",
+          "label": "控制中心标签页"
         },
         "control-center-width": {
           "description": "控制中心面板的宽度（像素）；紧凑模式和无侧边栏模式会以此为基准按比例缩小",
@@ -2153,7 +2195,7 @@
           "placeholder": "城市, 国家"
         },
         "location-auto-locate": {
-          "description": "通过 noctalia.dev，根据 IP 地址自动定位",
+          "description": "根据 IP 地址自动定位，通过 noctalia.dev 查询",
           "label": "自动定位（IP）"
         },
         "longitude": {
@@ -2197,6 +2239,10 @@
         "sunset": {
           "description": "手动设置日落时间（HH:MM），未设置地址时使用",
           "label": "日落时间"
+        },
+        "sync-monitor-brightness": {
+          "description": "同步所有屏幕的亮度",
+          "label": "同步屏幕亮度"
         },
         "system-monitor": {
           "cpu-poll": {
@@ -2350,13 +2396,22 @@
           "description": "Shell UI 默认日期格式",
           "label": "日期格式"
         },
+        "greeter-sync-auto": {
+          "description": "每当壁纸、配色或主题模式改变时，自动同步 Greeter",
+          "label": "自动同步 Greeter"
+        },
         "greeter-sync-privilege-command": {
-          "description": "用于替代 pkexec/run0 执行 greeter 同步。应用路径和暂存目录将自动追加。例如：ghostty -e pkexec",
+          "description": "用于替代 pkexec/run0 执行 Greeter 同步。应用路径和暂存目录将自动追加。例如：ghostty -e pkexec",
           "label": "Greeter 同步提权命令"
         },
         "launch-apps-as-systemd-services": {
           "description": "将应用程序作为独立的 systemd 服务启动，避免与 Noctalia 共享同一 cgroup",
           "label": "作为 systemd 服务启动应用"
+        },
+        "launch-apps-custom-command": {
+          "description": "应用启动器使用的自定义命令，其中 $CMD 会被替换为原命令",
+          "label": "自定义启动器命令",
+          "placeholder": "$CMD"
         },
         "middle-click-opens-widget-settings": {
           "description": "在状态栏中键点击小组件时打开其设置",
@@ -2395,7 +2450,7 @@
           "label": "键盘布局"
         },
         "osd-kinds-lock-keys": {
-          "description": "大写锁定、数字锁定和滚动锁定变化时显示 OSD 弹窗",
+          "description": "大写锁定、数字锁定和滚动锁定切换时显示 OSD 弹窗",
           "label": "锁定键"
         },
         "osd-kinds-media": {
@@ -2571,12 +2626,12 @@
           "label": "自动轮换"
         },
         "automation-interval": {
-          "description": "壁纸切换的间隔秒数",
+          "description": "切换壁纸的间隔秒数",
           "label": "轮换间隔"
         },
         "automation-order": {
-          "description": "随机或按字母顺序选择壁纸",
-          "label": "顺序"
+          "description": "以随机或按字母顺序选择壁纸",
+          "label": "轮换顺序"
         },
         "automation-recursive": {
           "description": "在嵌套文件夹中搜索壁纸",
@@ -2682,6 +2737,7 @@
       },
       "options": {
         "always": "始终",
+        "auto": "自动",
         "cpu-temp": "CPU 温度",
         "cpu-usage": "CPU 使用率",
         "disk-percent": "磁盘使用率",
@@ -2698,6 +2754,8 @@
         "id": "ID",
         "input": "输入",
         "instance": "独立运行",
+        "kilobytes": "kB/s",
+        "megabytes": "MB/s",
         "name": "名称",
         "net-rx": "网络下行",
         "net-tx": "网络上行",
@@ -2851,6 +2909,12 @@
           "description": "焦点工作区的颜色；也支持固定的十六进制颜色值",
           "label": "焦点工作区颜色"
         },
+        "focused-output-only": {
+          "description": "仅高亮焦点屏幕上的活动工作区",
+          "label": "仅高亮焦点屏幕",
+          "taskbar-description": "仅当前聚焦屏幕上的活动工作区使用焦点颜色；其他屏幕的活动工作区使用非空颜色",
+          "workspaces-description": "仅当前聚焦屏幕上的活动工作区使用焦点颜色；其他屏幕的活动工作区使用非空颜色"
+        },
         "font-family": {
           "description": "此小组件的字体；留空则继承状态栏字体",
           "label": "字体"
@@ -2866,7 +2930,8 @@
         "glyph": {
           "description": "图标名称",
           "label": "图标",
-          "sysmon-description": "自定义图标；留空则使用当前所选统计项的默认图标。"
+          "sysmon-description": "自定义图标；留空则使用当前所选统计项的默认图标。",
+          "volume-description": "自定义图标；留空则使用内置的动态图标"
         },
         "group-by-workspace": {
           "description": "可获取合成器数据时，按工作区将任务栏图标分组到胶囊中",
@@ -3021,6 +3086,18 @@
           "description": "静音时图标和标签的颜色；也支持固定的十六进制颜色值",
           "label": "静音颜色"
         },
+        "mute-glyph": {
+          "description": "静音或 0% 音量时使用的图标；留空则使用内置的静音图标",
+          "label": "静音图标"
+        },
+        "network-speed-compact": {
+          "description": "使用简短的单位后缀（例如 1.2M，而不是 1.2 MB/s）",
+          "label": "紧凑网速"
+        },
+        "network-speed-unit": {
+          "description": "用于网络接收和发送速度的单位；“自动”将在 B/s、kB/s、MB/s 和 GB/s 之间自动切换",
+          "label": "网速单位"
+        },
         "occupied-color": {
           "description": "非空工作区的颜色；也支持固定的十六进制颜色值",
           "label": "非空工作区颜色"
@@ -3109,6 +3186,10 @@
         "show-scroll-lock": {
           "description": "显示滚动锁定状态",
           "label": "显示滚动锁定"
+        },
+        "show-temperature": {
+          "description": "显示当前气温文本",
+          "label": "显示气温"
         },
         "show-when-idle": {
           "description": "未播放媒体时保持可视化显示",
@@ -3217,6 +3298,7 @@
       "reset-page": "重置页面",
       "reset-page-confirm": "确认重置",
       "search-placeholder": "搜索设置...",
+      "search-truncated": "仅显示前 {count} 个匹配项。请缩小搜索范围以减少结果。",
       "support-report": "诊断报告",
       "support-report-saved": "诊断报告已保存。",
       "support-report-title": "保存诊断报告",

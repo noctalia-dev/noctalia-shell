@@ -357,9 +357,9 @@
       "audio": "Audio",
       "bluetooth": "Bluetooth",
       "calendar": "Calendrier",
-      "display": "Écran",
       "home": "Accueil",
       "media": "Média",
+      "monitor": "Écran",
       "network": "Réseau",
       "notifications": "Notifications",
       "power": "Alimentation",
@@ -368,6 +368,12 @@
       "weather": "Météo"
     },
     "weather": {
+      "daily": {
+        "tooltip": {
+          "sunrise": "Lever du Soleil",
+          "sunset": "Coucher du Soleil"
+        }
+      },
       "data-unavailable": "Données météo indisponibles.",
       "details": {
         "elevation": "Élevation",
@@ -376,6 +382,7 @@
         "temp-max": "Température Max",
         "temp-min": "Température Min",
         "timezone": "Fuseau horaire",
+        "uv-index": "Index UV",
         "wind": "Vent"
       },
       "disabled": "Activer [weather] dans config.toml",
@@ -384,6 +391,16 @@
         "day": "Dimanche",
         "description": "Météo",
         "temperature": "10 / 4 °C"
+      },
+      "forecast-view": {
+        "daily": "Journalier"
+      },
+      "hourly": {
+        "tooltip": {
+          "humidity": "Humidité",
+          "rain": "Pluie",
+          "wind": "Vent"
+        }
       },
       "location-unavailable": "Localisation indisponible",
       "no-location-body": "Ajoute ton adresse ou active la localisation automatique dans les paramètres de localisation.",
@@ -459,6 +476,9 @@
         "label-min-width": "Largeur minimale du label",
         "layout": "Disposition",
         "mirrored": "Miroir",
+        "network-speed-unit-auto": "Auto",
+        "network-speed-unit-kilobytes": "kB/s",
+        "network-speed-unit-megabytes": "MB/s",
         "opacity": "Opacité",
         "primary-color": "Couleur principale",
         "reset-defaults": "Réinitialiser les valeurs par défaut",
@@ -774,6 +794,7 @@
     },
     "badges": {
       "advanced": "Avancé",
+      "community": "Communauté",
       "inherited": "Hérité",
       "monitor": "Écran",
       "official": "Officiel",
@@ -1154,6 +1175,9 @@
         "ultra-heavy": "Ultra-lourd",
         "ultra-light": "Ultra-léger"
       },
+      "hot-corners": {
+        "launcher": "Lanceur"
+      },
       "layer": {
         "overlay": "Superposition",
         "top": "Haut"
@@ -1307,6 +1331,9 @@
         "title": "Sources",
         "update": "Mettre à jour",
         "update-on-startup": "Mettre à jour au démarrage"
+      },
+      "store": {
+        "category-all": "Tout"
       }
     },
     "schema": {

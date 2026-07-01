@@ -917,6 +917,9 @@ void Input::doLayout(Renderer& renderer) {
 }
 
 void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool preedit) {
+  // onSubmit/onKeyEvent below can synchronously destroy this Input (e.g. closing a
+  // dialog that owns it). Bail before touching members if that happens.
+  const std::weak_ptr<int> alive = m_aliveToken;
   clampEditState();
 
   const bool validateMatch = g_validateKeyMatcher && g_validateKeyMatcher(sym, modifiers);
@@ -926,8 +929,13 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
 
   // A printable key that doubles as a keybind chord (Space is bound to Validate)
   // is text while the field is focused, not an activation to hand to the panel.
-  if (m_onKeyEvent && !(plainPrintableText && validateMatch) && m_onKeyEvent(sym, modifiers)) {
-    return;
+  if (m_onKeyEvent && !(plainPrintableText && validateMatch)) {
+    if (m_onKeyEvent(sym, modifiers)) {
+      return;
+    }
+    if (alive.expired()) {
+      return;
+    }
   }
   const bool undoShortcut = ctrl && !shift && (sym == 'z' || sym == 'Z');
   const bool redoShortcut = (ctrl && (sym == 'y' || sym == 'Y')) || (ctrl && shift && (sym == 'z' || sym == 'Z'));
@@ -1091,6 +1099,9 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
   } else if (validateMatch && !plainPrintableText) {
     if (m_onSubmit) {
       m_onSubmit(m_value);
+      if (alive.expired()) {
+        return;
+      }
     }
   } else if (utf32 >= 0x20U && utf32 != 0x7FU) {
     // Printable character (skip DEL = 0x7F)

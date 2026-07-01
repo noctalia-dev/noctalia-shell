@@ -1488,8 +1488,27 @@ void ClipboardService::closeActiveWrite(std::size_t index) {
 }
 
 std::string ClipboardService::buildTextPreview(const std::vector<std::uint8_t>& data) {
-  const std::size_t previewSize = std::min<std::size_t>(data.size(), kPreviewBytes);
-  std::string preview(reinterpret_cast<const char*>(data.data()), previewSize);
+  const std::size_t limit = std::min<std::size_t>(data.size(), kPreviewBytes);
+  // Forward-scan to find the last complete UTF-8 sequence within the byte limit.
+  std::size_t safeSize = 0;
+  std::size_t i = 0;
+  while (i < limit) {
+    const auto b = static_cast<uint8_t>(data[i]);
+    int seqLen = 1;
+    if ((b & 0x80) == 0)
+      seqLen = 1;
+    else if ((b & 0xE0) == 0xC0)
+      seqLen = 2;
+    else if ((b & 0xF0) == 0xE0)
+      seqLen = 3;
+    else if ((b & 0xF8) == 0xF0)
+      seqLen = 4;
+    if (i + static_cast<std::size_t>(seqLen) > limit)
+      break;
+    safeSize = i + seqLen;
+    i += seqLen;
+  }
+  std::string preview(reinterpret_cast<const char*>(data.data()), safeSize);
   std::ranges::replace(preview, '\n', ' ');
   std::ranges::replace(preview, '\r', ' ');
   std::ranges::replace(preview, '\t', ' ');

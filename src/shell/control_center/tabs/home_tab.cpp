@@ -1,4 +1,4 @@
-#include "shell/control_center/home_tab.h"
+#include "shell/control_center/tabs/home_tab.h"
 
 #include "config/config_service.h"
 #include "core/build_info.h"

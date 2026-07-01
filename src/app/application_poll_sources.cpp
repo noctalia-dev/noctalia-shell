@@ -7,6 +7,7 @@
 #include "dbus/system_bus_poll_source.h"
 #include "pipewire/pipewire_poll_source.h"
 #include "pipewire/pipewire_spectrum_poll_source.h"
+#include "pipewire/wireplumber_mixer.h"
 #include "system/brightness_poll_source.h"
 
 std::vector<PollSource*> Application::currentPollSources() {
@@ -43,6 +44,9 @@ std::vector<PollSource*> Application::currentPollSources() {
   }
   if (m_pipewireSpectrumPollSource != nullptr) {
     sources.push_back(m_pipewireSpectrumPollSource.get());
+  }
+  if (m_wirePlumberMixer != nullptr) {
+    sources.push_back(m_wirePlumberMixer.get());
   }
   if (m_polkitPollSource != nullptr) {
     sources.push_back(m_polkitPollSource.get());

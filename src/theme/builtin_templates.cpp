@@ -42,6 +42,38 @@ namespace noctalia::theme {
       out.push_back(std::move(entry));
     }
 
+    const toml::table* templates = root["templates"].as_table();
+    if (templates != nullptr) {
+      for (auto& entry : out) {
+        const toml::table* tpl = templates->get_as<toml::table>(entry.id);
+        if (tpl == nullptr) {
+          continue;
+        }
+        if (const auto opd = tpl->get_as<std::string>("output_path_dynamic")) {
+          entry.outputDynamic = true;
+          entry.outputPathDynamicCommand = opd->get();
+        }
+        const toml::node* op = tpl->get("output_path");
+        if (op != nullptr) {
+          if (const auto str = op->as_string()) {
+            entry.outputPaths.push_back(str->get());
+          } else if (const auto arr = op->as_array()) {
+            for (const auto& item : *arr) {
+              if (const auto itemStr = item.as_string()) {
+                entry.outputPaths.push_back(itemStr->get());
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Dynamic output paths (output_path_dynamic) are resolved by the template
+    // engine at apply time — the only consumers here (settings tooltip, CLI list)
+    // do not need concrete paths, so we do not spawn a shell per template just to
+    // populate a tooltip. Such entries keep outputDynamic = true, and the tooltip
+    // reports "(output resolved at apply time)".
+
     std::ranges::sort(out, [](const BuiltinTemplateInfo& lhs, const BuiltinTemplateInfo& rhs) {
       if (lhs.category != rhs.category) {
         return lhs.category < rhs.category;
@@ -60,6 +92,8 @@ namespace noctalia::theme {
       t.id = std::move(entry.id);
       t.displayName = entry.name.empty() ? t.id : std::move(entry.name);
       t.category = std::move(entry.category);
+      t.outputPaths = std::move(entry.outputPaths);
+      t.outputDynamic = entry.outputDynamic;
       out.push_back(std::move(t));
     }
     std::ranges::sort(out, [](const AvailableTemplate& a, const AvailableTemplate& b) {

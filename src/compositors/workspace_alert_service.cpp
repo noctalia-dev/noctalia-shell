@@ -20,7 +20,7 @@ bool WorkspaceAlertService::add(std::string_view token) {
   if (token.empty()) {
     return false;
   }
-  return m_alerts.emplace(std::string{token}).second;
+  return m_alerts.emplace(token).second;
 }
 
 bool WorkspaceAlertService::clear(std::string_view token) {
@@ -89,7 +89,7 @@ bool WorkspaceAlertService::isKnownWorkspaceToken(std::string_view token, const 
   if (token.empty()) {
     return false;
   }
-  return std::any_of(workspaces.begin(), workspaces.end(), [&](const Workspace& workspace) {
+  return std::ranges::any_of(workspaces, [&](const Workspace& workspace) {
     return identifierMatches(workspace, token);
   });
 }

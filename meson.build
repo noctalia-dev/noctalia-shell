@@ -68,6 +68,7 @@ polkit_gobject_dep  = dependency('polkit-gobject-1')
 # PipeWire/SPA headers use GCC extensions that trigger -Wpedantic/-Wconversion;
 # mark as system so the compiler suppresses those warnings.
 pipewire_dep        = dependency('libpipewire-0.3', include_type: 'system')
+wireplumber_dep     = dependency('wireplumber-0.5', include_type: 'system')
 curl_dep            = dependency('libcurl')
 libqalculate_dep    = dependency('libqalculate')
 libxml2_dep         = dependency('libxml-2.0')
@@ -188,6 +189,15 @@ mcu_dep = declare_dependency(
 stb_dep = declare_dependency(
   include_directories: include_directories('third_party/stb', is_system: true),
 )
+
+# ── Vendored: tomlplusplus (header-only) ─────────────────────────────────
+if get_option('system_tomlplusplus')
+  tomlplusplus_dep = dependency('tomlplusplus')
+else
+  tomlplusplus_dep = declare_dependency(
+    include_directories: include_directories('third_party/tomlplusplus', is_system: true),
+  )
+endif
 
 # ── Vendored: md4c (CommonMark parser) ───────────────────────────────────────
 _md4c_lib = static_library('md4c',
@@ -486,6 +496,7 @@ _noctalia_sources = files(
   'src/notification/notification_display_name.cpp',
   'src/notification/notification_history_store.cpp',
   'src/pipewire/pipewire_service.cpp',
+  'src/pipewire/wireplumber_mixer.cpp',
   'src/pipewire/privacy_filter.cpp',
   'src/pipewire/pipewire_spectrum.cpp',
   'src/pipewire/sound_player.cpp',
@@ -583,22 +594,22 @@ _noctalia_sources = files(
   'src/shell/desktop/widgets/plugin_desktop_widget.cpp',
   'src/shell/desktop/widgets/desktop_weather_widget.cpp',
   'src/shell/clipboard/clipboard_panel.cpp',
-  'src/shell/control_center/calendar_tab.cpp',
-  'src/shell/control_center/audio_tab.cpp',
-  'src/shell/control_center/bluetooth_tab.cpp',
+  'src/shell/control_center/tabs/calendar_tab.cpp',
+  'src/shell/control_center/tabs/audio_tab.cpp',
+  'src/shell/control_center/tabs/bluetooth_tab.cpp',
   'src/shell/control_center/control_center_panel.cpp',
-  'src/shell/control_center/display_tab.cpp',
-  'src/shell/control_center/media_tab.cpp',
-  'src/shell/control_center/network_tab.cpp',
-  'src/shell/control_center/notifications_tab.cpp',
-  'src/shell/control_center/power_tab.cpp',
-  'src/shell/control_center/screen_time_tab.cpp',
-  'src/shell/control_center/home_tab.cpp',
+  'src/shell/control_center/tabs/monitor_tab.cpp',
+  'src/shell/control_center/tabs/media_tab.cpp',
+  'src/shell/control_center/tabs/network_tab.cpp',
+  'src/shell/control_center/tabs/notifications_tab.cpp',
+  'src/shell/control_center/tabs/power_tab.cpp',
+  'src/shell/control_center/tabs/screen_time_tab.cpp',
+  'src/shell/control_center/tabs/home_tab.cpp',
   'src/shell/control_center/plugin_shortcut.cpp',
   'src/shell/control_center/shortcut_registry.cpp',
-  'src/shell/control_center/system_tab.cpp',
+  'src/shell/control_center/tabs/system_tab.cpp',
   'src/shell/control_center/tab.cpp',
-  'src/shell/control_center/weather_tab.cpp',
+  'src/shell/control_center/tabs/weather_tab.cpp',
   'src/core/files/directory_scanner.cpp',
   'src/ui/dialogs/color_picker_dialog.cpp',
   'src/ui/dialogs/color_picker_dialog_popup.cpp',
@@ -905,7 +916,6 @@ endif
 # ── Include directories ────────────────────────────────────────────────────────
 _noctalia_inc = [
   include_directories('src'),
-  include_directories('third_party/tomlplusplus', is_system: true),
   include_directories('third_party/wuffs', is_system: true),
   # nlohmann is header-only and uses GCC extensions in some paths; treat as system.
   include_directories('third_party/nlohmann', is_system: true),
@@ -939,6 +949,7 @@ noctalia_exe = executable('noctalia',
     polkit_agent_dep,
     polkit_gobject_dep,
     pipewire_dep,
+    wireplumber_dep,
     curl_dep,
     libqalculate_dep,
     pam_dep,
@@ -947,6 +958,7 @@ noctalia_exe = executable('noctalia',
     mcu_dep,
     libxml2_dep,
     stb_dep,
+    tomlplusplus_dep,
     md4c_dep,
     libwebp_dep,
     luau_dep,
@@ -1071,6 +1083,7 @@ process_test = executable('process_test',
   sources: files(
     'tests/process_test.cpp',
     'src/core/process.cpp',
+    'src/core/process_fds.cpp',
     'src/core/log.cpp'
   ),
   include_directories: _noctalia_inc,
@@ -1088,12 +1101,24 @@ battery_hook_state_test = executable('battery_hook_state_test',
 
 test('battery_hook_state', battery_hook_state_test)
 
+hook_manager_test = executable('hook_manager_test',
+  sources: files(
+    'tests/hook_manager_test.cpp',
+    'src/hooks/hook_manager.cpp',
+    'src/core/log.cpp',
+  ),
+  include_directories: _noctalia_inc,
+)
+
+test('hook_manager', hook_manager_test)
+
 desktop_entry_launch_test = executable('desktop_entry_launch_test',
   sources: files(
     'tests/desktop_entry_launch_test.cpp',
     'src/system/desktop_entry_launch.cpp',
     'src/system/terminal_launch.cpp',
     'src/core/process.cpp',
+    'src/core/process_fds.cpp',
     'src/core/log.cpp',
   ),
   include_directories: _noctalia_inc,
@@ -1213,6 +1238,7 @@ plugin_git_export_test = executable('plugin_git_export_test',
     'tests/plugin_git_export_test.cpp',
     'src/scripting/plugin_git.cpp',
     'src/core/process.cpp',
+    'src/core/process_fds.cpp',
     'src/core/log.cpp',
   ),
   include_directories: _noctalia_inc,
@@ -1300,6 +1326,9 @@ plugin_manifest_test = executable('plugin_manifest_test',
     'src/core/log.cpp',
   ),
   include_directories: _noctalia_inc,
+  dependencies: [
+    tomlplusplus_dep,
+  ],
 )
 
 test('plugin_manifest', plugin_manifest_test)
@@ -1339,7 +1368,10 @@ config_schema_roundtrip_test = executable('config_schema_roundtrip_test',
     'src/core/key_chord.cpp',
   ),
   include_directories: _noctalia_inc,
-  dependencies: [xkbcommon_dep],
+  dependencies: [
+    xkbcommon_dep,
+    tomlplusplus_dep,
+  ],
 )
 
 test('config_schema_roundtrip', config_schema_roundtrip_test)
@@ -1358,7 +1390,10 @@ config_widget_test = executable('config_widget_test',
     'src/core/key_chord.cpp',
   ),
   include_directories: _noctalia_inc,
-  dependencies: [xkbcommon_dep],
+  dependencies: [
+    xkbcommon_dep,
+    tomlplusplus_dep,
+  ],
 )
 
 test('config_widget', config_widget_test)
@@ -1378,7 +1413,10 @@ config_path_resolution_test = executable('config_path_resolution_test',
     'src/core/key_chord.cpp',
   ),
   include_directories: _noctalia_inc,
-  dependencies: [xkbcommon_dep],
+  dependencies: [
+    xkbcommon_dep,
+    tomlplusplus_dep,
+  ],
 )
 
 test('config_path_resolution', config_path_resolution_test)
@@ -1404,6 +1442,9 @@ state_store_test = executable('state_store_test',
     'src/core/log.cpp',
   ),
   include_directories: _noctalia_inc,
+  dependencies: [
+    tomlplusplus_dep,
+  ],
 )
 
 test('state_store', state_store_test)

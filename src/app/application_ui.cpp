@@ -366,7 +366,9 @@ void Application::scheduleGreeterAutoSync() {
 }
 
 void Application::initLockScreenAndSession() {
-  m_lockScreen.initialize(m_wayland, &m_renderContext, &m_configService, &m_sharedTextureCache, m_systemBus.get());
+  m_lockScreen.initialize(
+      m_wayland, &m_renderContext, &m_configService, &m_sharedTextureCache, m_systemBus.get(), &m_compositorPlatform
+  );
   if (m_projectMRenderer != nullptr) {
     m_lockScreen.setVisualizer(m_projectMRenderer.get());
   }
@@ -470,6 +472,11 @@ void Application::initInputDispatch() {
     m_notificationToast.onPointerEvent(event);
   });
 
+  m_wayland.setLockKeysChangeCallback([this]() {
+    if (m_lockScreen.isActive()) {
+      m_lockScreen.onLockKeysChanged();
+    }
+  });
   m_wayland.setKeyboardEventCallback([this](const KeyboardEvent& event) {
     if (m_lockScreen.isActive()) {
       m_lockScreen.onKeyboardEvent(event);

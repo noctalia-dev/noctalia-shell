@@ -58,9 +58,13 @@
       "network": {
         "connected": "Verbunden",
         "connecting": "Verbinden",
+        "download": "Empfangen",
         "ip": "IP",
         "network": "Netzwerk",
         "networks": "Netzwerke",
+        "networks-count": "{count} Netzwerk",
+        "networks-count-plural": "{count} Netzwerke",
+        "upload": "Senden",
         "wired": "Kabelgebunden"
       },
       "scripted": {
@@ -303,9 +307,9 @@
       "audio": "Audio",
       "bluetooth": "Bluetooth",
       "calendar": "Kalender",
-      "display": "Monitor",
       "home": "Startseite",
       "media": "Medien",
+      "monitor": "Monitor",
       "network": "Netzwerk",
       "notifications": "Benachrichtigungen",
       "power": "Energie",

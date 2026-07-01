@@ -357,9 +357,9 @@
       "audio": "Âm thanh",
       "bluetooth": "Bluetooth",
       "calendar": "Lịch",
-      "display": "Màn hình",
       "home": "Trang chủ",
       "media": "Trình phát",
+      "monitor": "Màn hình",
       "network": "Mạng",
       "notifications": "Thông báo",
       "power": "Nguồn",
@@ -730,7 +730,7 @@
     },
     "nightlight": {
       "forced": "Luôn bật",
-      "off": "Tắt đèn ban đêm",
+      "off": "Tắt ánh sáng đêm",
       "running": "Đang chạy",
       "scheduled": "Hẹn giờ"
     },
@@ -739,11 +739,17 @@
       "camera-on": "Camera đang hoạt động",
       "mic-off": "Micrô đã dừng hoạt động",
       "mic-on": "Mic đang hoạt động",
-      "screen-off": "Chia sẻ màn hình đã dừng lại"
+      "screen-off": "Chia sẻ màn hình đã dừng lại",
+      "screen-on": "Chia sẻ màn hình đang hoạt động"
     },
     "wifi": {
       "off": "Wi-Fi Tắt",
       "on": "Wi-Fi Bật"
+    }
+  },
+  "plugins": {
+    "auto-disabled": {
+      "title": "Plugin đã tắt"
     }
   },
   "power": {
@@ -1113,9 +1119,11 @@
       "filter": {
         "add": "Thêm bộ lọc",
         "add-title": "Thêm bộ lọc thông báo",
+        "allow-permanent": "Cho phép vĩnh viễn",
         "allowed-urgencies-label": "Mức độ ưu tiên được phép",
         "flag": {
           "history": "lịch sử",
+          "permanent": "Vĩnh viễn",
           "sound": "âm thanh",
           "toast": "thông báo nổi"
         },
@@ -1174,7 +1182,10 @@
       },
       "hot-corners": {
         "command": "Chạy lệnh",
-        "control-center": "Trung tâm điều khiển"
+        "control-center": "Trung tâm điều khiển",
+        "launcher": "Trình khởi chạy",
+        "none": "Không",
+        "window-switcher": "Chuyển cửa sổ"
       },
       "layer": {
         "overlay": "Overlay",
@@ -1189,10 +1200,14 @@
         "horizontal": "Ngang",
         "vertical": "Dọc"
       },
+      "panel-position": {
+        "auto": "Theo Bar"
+      },
       "screen-position": {
         "bottom-center": "Giữa dưới",
         "bottom-left": "Góc dưới bên trái",
         "bottom-right": "Góc dưới bên phải",
+        "center": "Canh giữa",
         "center-left": "Giữa trái",
         "center-right": "Giữa phải",
         "top-center": "Giữa trên",
@@ -1247,6 +1262,7 @@
           "crop": "Cắt",
           "fit": "Vừa",
           "repeat": "Lặp lại",
+          "span": "Phủ",
           "stretch": "Kéo giãn"
         },
         "order": {
@@ -1270,12 +1286,26 @@
       }
     },
     "plugins": {
+      "browse-store": "Tìm kiếm plugin",
+      "panels": {
+        "open-near-click": {
+          "label": "Mở tại nơi click"
+        },
+        "placement": {
+          "label": "Vị trí đặt"
+        },
+        "position": {
+          "label": "Vị trí"
+        }
+      },
       "plugins": {
         "configure": "Cấu hình",
         "deprecated": "đã lỗi thời",
         "empty": "Không tìm thấy plugin nào. Hãy thêm nguồn hoặc kiểm tra mạng của bạn.",
         "loading": "Đang tải các plugin...",
         "refreshing": "Đang làm mới các plugin...",
+        "remove": "Loại bỏ plugin",
+        "requires": "Cần: {dependencies}",
         "requires-newer-noctalia": "Yêu cầu phiên bản Noctalia mới hơn",
         "title": "Plugins"
       },
@@ -1308,6 +1338,17 @@
         "title": "Các nguồn",
         "update": "Cập nhật",
         "update-on-startup": "Cập nhật khi khởi động"
+      },
+      "store": {
+        "add": "Thêm vào Noctalia",
+        "category-all": "Tất cả",
+        "empty": "Không tìm thấy plugin",
+        "incompatible": "Không phù hợp",
+        "loading": "Đang tải danh mục...",
+        "no-readme": "Không có mô tả",
+        "results-count": "{count} plugins",
+        "search-placeholder": "Tìm plugins...",
+        "title": "Cửa hàng plugin"
       }
     },
     "schema": {
@@ -1547,14 +1588,29 @@
         }
       },
       "desktop": {
+        "hot-corners-bottom-left": {
+          "label": "Góc dưới bên trái"
+        },
         "hot-corners-bottom-left-command": {
           "label": "Lệnh"
+        },
+        "hot-corners-bottom-right": {
+          "label": "Góc dưới bên phải"
         },
         "hot-corners-bottom-right-command": {
           "label": "Lệnh"
         },
+        "hot-corners-enabled": {
+          "label": "Hot corners"
+        },
+        "hot-corners-top-left": {
+          "label": "Góc trên bên trái"
+        },
         "hot-corners-top-left-command": {
           "label": "Lệnh"
+        },
+        "hot-corners-top-right": {
+          "label": "Góc trên bên phải"
         },
         "hot-corners-top-right-command": {
           "label": "Lệnh"
@@ -1938,6 +1994,9 @@
           "description": "Chọn tối đa sáu nút lối tắt cho tab Trang chủ",
           "label": "Lối tắt Trang chủ"
         },
+        "launcher-app-grid": {
+          "label": "Hiển thị ứng dụng dạng lưới"
+        },
         "launcher-categories": {
           "description": "Hiển thị bộ lọc danh mục trong Trình khởi chạy; hiện bằng F6, sau đó chuyển bằng F6 và Shift+F6",
           "label": "Hiển thị danh mục"
@@ -1995,12 +2054,33 @@
           "description": "Chọn xem trình khởi chạy gắn vào Bar, nổi gần đó, hay mở ở giữa màn hình",
           "label": "Vị trí"
         },
+        "placement-polkit": {
+          "label": "Vị trí"
+        },
         "placement-session": {
           "description": "Chọn xem Session menu gắn vào Bar, nổi gần đó, hay mở ở giữa",
           "label": "Vị trí"
         },
         "placement-wallpaper": {
           "description": "Chọn xem trình chọn hình nền gắn vào thanh Bar, nổi gần đó hay mở ở giữa",
+          "label": "Vị trí"
+        },
+        "position-clipboard": {
+          "label": "Vị trí"
+        },
+        "position-control-center": {
+          "label": "Vị trí"
+        },
+        "position-launcher": {
+          "label": "Vị trí"
+        },
+        "position-polkit": {
+          "label": "Vị trí"
+        },
+        "position-session": {
+          "label": "Vị trí"
+        },
+        "position-wallpaper": {
           "label": "Vị trí"
         },
         "shadow": {
@@ -2079,7 +2159,7 @@
         },
         "night-light": {
           "description": "Làm ấm màu màn hình vào ban đêm",
-          "label": "Ánh sáng ban đêm",
+          "label": "Ánh sáng đêm",
           "requires-gamma-control": "Trình tổng hợp không hỗ trợ điều khiển gamma."
         },
         "night-temperature": {
@@ -2209,6 +2289,9 @@
         "main-axis-padding": {
           "label": "Khoảng đệm trục chính"
         },
+        "opposite-edge-margin": {
+          "label": "Lề cạnh đối diện"
+        },
         "position": {
           "label": "Vị trí"
         },
@@ -2304,9 +2387,15 @@
           "description": "Hiển thị cửa sổ OSD khi bắt đầu phát bài hát mới",
           "label": "Đang phát"
         },
+        "osd-kinds-nightlight": {
+          "label": "Ánh sáng đêm"
+        },
         "osd-kinds-power-profile": {
           "description": "Hiển thị OSD khi cấu hình nguồn thay đổi",
           "label": "Chế độ nguồn"
+        },
+        "osd-kinds-privacy": {
+          "label": "Quyền riêng tư"
         },
         "osd-kinds-volume": {
           "description": "Hiển thị các cửa sổ bật lên OSD khi âm lượng thay đổi; sử dụng cài đặt nâng cao để điều khiển đầu ra và đầu vào riêng biệt",
@@ -2344,6 +2433,9 @@
           "description": "Vị trí hiển thị của các OSD popup",
           "label": "Vị trí màn hình"
         },
+        "osd-position-vertical": {
+          "label": "Vị trí dọc"
+        },
         "osd-scale": {
           "description": "Điều chỉnh tỷ lệ các OSD pop-up theo tỷ lệ giao diện người dùng của Noctalia (1.0 sẽ giữ kích thước mặc định)",
           "label": "Tỷ lệ"
@@ -2359,6 +2451,9 @@
         "privacy-cam-filter-regex": {
           "label": "Bộ lọc camera"
         },
+        "privacy-mic-filter-regex": {
+          "label": "Bộ lọc micrô"
+        },
         "screen-time-enabled": {
           "description": "Theo dõi mức sử dụng của từng ứng dụng và hiển thị trong Trung tâm điều khiển",
           "label": "Thời gian sử dụng màn hình"
@@ -2367,6 +2462,9 @@
           "button": "Đặt lại",
           "description": "Xóa lịch sử sử dụng ứng dụng ở trạng thái đang chạy nền trước đã lưu",
           "label": "Đặt lại dữ liệu thời gian sử dụng"
+        },
+        "screenshot-confirm-region": {
+          "label": "Xác nhận khu vực"
         },
         "screenshot-copy-to-clipboard": {
           "description": "Sao chép ảnh PNG đã chụp vào khay nhớ tạm.",
@@ -2532,6 +2630,7 @@
       "command-label": "Lệnh shell",
       "command-placeholder": "Lệnh bash tùy chọn, để trống nếu muốn dùng hành vi tích hợp sẵn",
       "command-required-placeholder": "Lệnh shell để chạy",
+      "countdown-seconds-label": "Đếm ngược (giây)",
       "glyph-label": "Biểu tượng",
       "glyph-picker-title": "Biểu tượng hành động",
       "kind-section-label": "Hành vi",
@@ -2604,6 +2703,9 @@
         "active-opacity": {
           "description": "Độ mờ đục của biểu tượng cho cửa sổ đang hoạt động (được lấy nét).",
           "label": "Độ mờ biểu tượng đang hoạt động"
+        },
+        "active-pill-size": {
+          "label": "Kích thước viên thuốc đang hoạt động"
         },
         "album-art-only": {
           "description": "Chỉ hiển thị ảnh bìa album dạng tròn, không hiển thị tên bài hát",

@@ -22,6 +22,9 @@ namespace lockscreen_login_box {
   constexpr std::string_view kInputOpacityKey = "input_opacity";
   constexpr std::string_view kInputRadiusKey = "input_radius";
   constexpr std::string_view kShowLoginButtonKey = "show_login_button";
+  constexpr std::string_view kShowPasswordHintKey = "show_password_hint";
+  constexpr std::string_view kShowCapsLockKey = "show_caps_lock";
+  constexpr std::string_view kShowKeyboardLayoutKey = "show_keyboard_layout";
 
   struct LoginBoxStyle {
     ColorSpec panelFill = colorSpecFromRole(ColorRole::SurfaceVariant, 0.88f);
@@ -29,6 +32,9 @@ namespace lockscreen_login_box {
     float inputOpacity = 1.0f;
     float inputRadius = 6.0f;
     bool showLoginButton = true;
+    bool showPasswordHint = true;
+    bool showCapsLock = true;
+    bool showKeyboardLayout = true;
   };
 
   [[nodiscard]] bool isLoginBoxWidget(const DesktopWidgetState& state);

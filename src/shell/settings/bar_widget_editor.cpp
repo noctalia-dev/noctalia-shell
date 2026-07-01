@@ -1995,6 +1995,7 @@ namespace settings {
             valueInputPtr->setValue(formatSliderValue(next, integerValue));
           },
       });
+      valueInputPtr->setValue(formatSliderValue(sliderPtr->value(), integerValue));
       slider->setOnDragEnd([sliderPtr, onCommit]() { onCommit(sliderPtr->value()); });
 
       const auto commitInputText = [sliderPtr, valueInputPtr, minV, maxV, integerValue,
@@ -2002,16 +2003,17 @@ namespace settings {
         const auto parsed = parseDoubleInput(text);
         if (!parsed.has_value() || *parsed < minV || *parsed > maxV) {
           valueInputPtr->setInvalid(true);
-          return;
+          return false;
         }
         valueInputPtr->setInvalid(false);
         sliderPtr->setValue(*parsed);
         valueInputPtr->setValue(formatSliderValue(sliderPtr->value(), integerValue));
         onCommit(sliderPtr->value());
+        return true;
       };
       valueInput->setOnChange([valueInputPtr](const std::string& /*text*/) { valueInputPtr->setInvalid(false); });
-      valueInput->setOnSubmit([commitInputText](const std::string& text) { commitInputText(text); });
-      valueInput->setOnFocusLoss([commitInputText, valueInputPtr]() { commitInputText(valueInputPtr->value()); });
+      valueInput->setOnSubmit([commitInputText](const std::string& text) { (void)commitInputText(text); });
+      valueInput->setOnFocusLoss([commitInputText, valueInputPtr]() { (void)commitInputText(valueInputPtr->value()); });
 
       auto wrap = ui::row({.align = FlexAlign::Center, .gap = Style::spaceSm * ctx.scale});
       wrap->addChild(std::move(slider));

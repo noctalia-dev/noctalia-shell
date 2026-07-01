@@ -39,6 +39,9 @@ public:
   Flex();
 
   void setDirection(FlexDirection direction);
+  // When enabled, children that exceed the main-axis extent flow onto a new line
+  // (cross-axis spacing reuses the gap). Only engages when the main extent is known.
+  void setWrap(bool wrap);
   void setGap(float gap);
   void setAlign(FlexAlign align);
   void setJustify(FlexJustify justify);
@@ -80,6 +83,7 @@ public:
   std::unique_ptr<Node> removeChild(Node* child) override;
 
   [[nodiscard]] FlexDirection direction() const noexcept { return m_direction; }
+  [[nodiscard]] bool wrap() const noexcept { return m_wrap; }
   [[nodiscard]] float gap() const noexcept { return m_gap; }
   [[nodiscard]] FlexAlign align() const noexcept { return m_align; }
   [[nodiscard]] FlexJustify justify() const noexcept { return m_justify; }
@@ -122,6 +126,7 @@ private:
   ColorSpec m_border = clearColorSpec();
   Signal<>::ScopedConnection m_paletteConn;
   FlexDirection m_direction = FlexDirection::Horizontal;
+  bool m_wrap = false;
   FlexAlign m_align = FlexAlign::Center;
   FlexJustify m_justify = FlexJustify::Start;
   FlexSizePolicy m_widthPolicy = FlexSizePolicy::Content;

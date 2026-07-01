@@ -298,9 +298,9 @@
       "audio": "Audio",
       "bluetooth": "Bluetooth",
       "calendar": "Calendario",
-      "display": "Monitor",
       "home": "Inicio",
       "media": "Medios",
+      "monitor": "Monitor",
       "network": "Red",
       "notifications": "Notificaciones",
       "screen-time": "Tiempo de pantalla",
@@ -598,8 +598,8 @@
       "on": "No Molestar Encencido"
     },
     "lock-keys": {
-      "caps-off": "Bloqueo de Mayúsculas Encendido",
-      "caps-on": "Bloqueo de Mayúsculas Apagado",
+      "caps-off": "Bloqueo Mayúsculas Apagado",
+      "caps-on": "Bloqueo Mayúsculas Encendido",
       "num-off": "Bloqueo Numérico Apagado",
       "num-on": "Bloqueo Numérico Encendido",
       "scroll-off": "Bloq. Despl. Apagado",

@@ -134,8 +134,11 @@ public:
   bool deleteMonitorOverride(std::string_view barName, std::string_view match);
   bool deleteCalendarAccountOverride(std::string_view id);
   bool setOverride(const std::vector<std::string>& path, ConfigOverrideValue value);
+  bool setOverride(const std::vector<std::string>& path, ConfigOverrideValue value, bool* changed);
   bool setOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides);
+  bool setOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides, bool* changed);
   bool clearOverride(const std::vector<std::string>& path);
+  bool clearOverrides(const std::vector<std::vector<std::string>>& paths, bool* changed);
   bool renameOverrideTable(const std::vector<std::string>& oldPath, const std::vector<std::string>& newPath);
 
   [[nodiscard]] static BarConfig resolveForOutput(const BarConfig& base, const WaylandOutput& output);

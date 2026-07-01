@@ -88,6 +88,10 @@ void WaylandSeat::setKeyboardFocusCallback(KeyboardFocusCallback callback) {
   m_keyboardFocusCallback = std::move(callback);
 }
 
+void WaylandSeat::setLockKeysChangeCallback(LockKeysChangeCallback callback) {
+  m_lockKeysChangeCallback = std::move(callback);
+}
+
 void WaylandSeat::setCursorShape(std::uint32_t serial, std::uint32_t shape) {
   if (m_cursorShapeDevice == nullptr) {
     return;
@@ -738,6 +742,13 @@ void WaylandSeat::handleKeyboardModifiers(
   auto* self = static_cast<WaylandSeat*>(data);
   if (self->m_xkbState != nullptr) {
     xkb_state_update_mask(self->m_xkbState, modsDepressed, modsLatched, modsLocked, 0, 0, group);
+  }
+  if (self->m_lockKeysChangeCallback) {
+    const LockKeysState current = self->lockKeysState();
+    if (current != self->m_lastLockKeysState) {
+      self->m_lastLockKeysState = current;
+      self->m_lockKeysChangeCallback();
+    }
   }
 }
 

@@ -357,9 +357,9 @@
       "audio": "Audio",
       "bluetooth": "Bluetooth",
       "calendar": "Calendar",
-      "display": "Monitor",
       "home": "Home",
       "media": "Media",
+      "monitor": "Monitor",
       "network": "Network",
       "notifications": "Notifications",
       "power": "Power",
@@ -482,6 +482,11 @@
         "label-min-width": "Label Min Width",
         "layout": "Layout",
         "mirrored": "Mirrored",
+        "network-speed-compact": "Compact Network Speed",
+        "network-speed-unit": "Network Speed Unit",
+        "network-speed-unit-auto": "Auto",
+        "network-speed-unit-kilobytes": "kB/s",
+        "network-speed-unit-megabytes": "MB/s",
         "opacity": "Opacity",
         "primary-color": "Primary Color",
         "reset-defaults": "Reset to Defaults",
@@ -490,9 +495,12 @@
         "secondary-color": "Secondary Color",
         "sensitivity": "Sensitivity",
         "shadow": "Shadow",
+        "show-caps-lock": "Caps Lock Warning",
         "show-forecast": "Show Forecast",
+        "show-keyboard-layout": "Keyboard Layout",
         "show-label": "Show Label",
         "show-login-button": "Login Button",
+        "show-password-hint": "Password Hint",
         "show-when-idle": "Show When Idle",
         "stat": "Stat",
         "stat-cpu-temp": "CPU Temp",
@@ -643,6 +651,7 @@
   "lockscreen": {
     "authenticating": "Authenticating...",
     "authentication-failed": "Authentication failed",
+    "caps-lock-on": "Caps lock is on",
     "password-cleared": "Password cleared",
     "password-placeholder": "Password",
     "ready": "Type your password and press Enter.",
@@ -2014,6 +2023,10 @@
           "description": "When opening a specific tab (volume, media etc.)",
           "label": "Sidebar When Opening a Tab"
         },
+        "control-center-tabs": {
+          "description": "Choose which tabs appear in the control center; unchecked tabs are hidden",
+          "label": "Control Center Tabs"
+        },
         "control-center-width": {
           "description": "Width of the control center panel in pixels (compact and no-sidebar modes scale down from this)",
           "label": "Control Center Width"
@@ -2227,6 +2240,10 @@
           "description": "Manual sunset time in HH:MM, used when no location is set",
           "label": "Sunset"
         },
+        "sync-monitor-brightness": {
+          "description": "Sync the brightness of all monitors",
+          "label": "Sync monitor brightness"
+        },
         "system-monitor": {
           "cpu-poll": {
             "description": "Seconds between CPU usage, CPU temperature, and load-average samples (0 disables)",
@@ -2390,6 +2407,11 @@
         "launch-apps-as-systemd-services": {
           "description": "Launches applications in separate systemd services so they don't share Noctalia's cgroup",
           "label": "Launch Apps as systemd Services"
+        },
+        "launch-apps-custom-command": {
+          "description": "Custom command used by the app launcher, it substitutes $CMD with the original command.",
+          "label": "Custom Launcher Command",
+          "placeholder": "$CMD"
         },
         "middle-click-opens-widget-settings": {
           "description": "Open a bar widget's settings from the bar with middle click",
@@ -2589,6 +2611,7 @@
           "empty": "No community templates are available yet. Enable community templates and refresh the catalog first.",
           "label": "Community Templates"
         },
+        "dynamic-output": "Output path is resolved when the template is applied",
         "enable-builtins": {
           "description": "Use the bundled catalog of theme templates for apps",
           "label": "Enable Built-In Templates"
@@ -2715,6 +2738,7 @@
       },
       "options": {
         "always": "Always",
+        "auto": "Auto",
         "cpu-temp": "CPU Temperature",
         "cpu-usage": "CPU Usage",
         "disk-percent": "Disk Percent",
@@ -2731,6 +2755,8 @@
         "id": "ID",
         "input": "Input",
         "instance": "Per Placement",
+        "kilobytes": "kB/s",
+        "megabytes": "MB/s",
         "name": "Name",
         "net-rx": "Network RX",
         "net-tx": "Network TX",
@@ -2905,7 +2931,8 @@
         "glyph": {
           "description": "Icon glyph name",
           "label": "Glyph",
-          "sysmon-description": "Custom icon glyph. Leave empty to use the icon for the selected stat."
+          "sysmon-description": "Custom icon glyph. Leave empty to use the icon for the selected stat.",
+          "volume-description": "Custom icon glyph. Leave empty to use the built-in dynamic icons."
         },
         "group-by-workspace": {
           "description": "Group taskbar icons into workspace capsules when compositor data is available",
@@ -3060,6 +3087,18 @@
           "description": "Color role used for the icon and label when muted; fixed hex colors are also supported",
           "label": "Mute Color"
         },
+        "mute-glyph": {
+          "description": "Icon glyph used when muted or at 0% volume. Leave empty to use the built-in mute icon.",
+          "label": "Mute Glyph"
+        },
+        "network-speed-compact": {
+          "description": "Use short unit suffixes such as 1.2M instead of 1.2 MB/s",
+          "label": "Compact Network Speed"
+        },
+        "network-speed-unit": {
+          "description": "Unit used for network receive and transmit speeds; Auto switches between B/s, kB/s, MB/s, and GB/s",
+          "label": "Network Speed Unit"
+        },
         "occupied-color": {
           "description": "Color role used for occupied workspaces; fixed hex colors are also supported",
           "label": "Occupied Color"
@@ -3148,6 +3187,10 @@
         "show-scroll-lock": {
           "description": "Show Scroll Lock state",
           "label": "Show Scroll Lock"
+        },
+        "show-temperature": {
+          "description": "Show current temperature text",
+          "label": "Show Temperature"
         },
         "show-when-idle": {
           "description": "Keep the visualizer visible even when no media is playing",
@@ -3256,6 +3299,7 @@
       "reset-page": "Reset Page",
       "reset-page-confirm": "Confirm Reset",
       "search-placeholder": "Search settings…",
+      "search-truncated": "Showing the first {count} matches. Refine your search to narrow results.",
       "support-report": "Support Report",
       "support-report-saved": "Support report saved.",
       "support-report-title": "Save Support Report",

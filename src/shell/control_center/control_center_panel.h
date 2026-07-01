@@ -1,19 +1,19 @@
 #pragma once
 
 #include "render/animation/animation_manager.h"
-#include "shell/control_center/audio_tab.h"
-#include "shell/control_center/bluetooth_tab.h"
-#include "shell/control_center/calendar_tab.h"
 #include "shell/control_center/control_center_services.h"
-#include "shell/control_center/display_tab.h"
-#include "shell/control_center/home_tab.h"
-#include "shell/control_center/media_tab.h"
-#include "shell/control_center/network_tab.h"
-#include "shell/control_center/notifications_tab.h"
-#include "shell/control_center/power_tab.h"
-#include "shell/control_center/system_tab.h"
 #include "shell/control_center/tab.h"
-#include "shell/control_center/weather_tab.h"
+#include "shell/control_center/tabs/audio_tab.h"
+#include "shell/control_center/tabs/bluetooth_tab.h"
+#include "shell/control_center/tabs/calendar_tab.h"
+#include "shell/control_center/tabs/home_tab.h"
+#include "shell/control_center/tabs/media_tab.h"
+#include "shell/control_center/tabs/monitor_tab.h"
+#include "shell/control_center/tabs/network_tab.h"
+#include "shell/control_center/tabs/notifications_tab.h"
+#include "shell/control_center/tabs/power_tab.h"
+#include "shell/control_center/tabs/system_tab.h"
+#include "shell/control_center/tabs/weather_tab.h"
 #include "shell/panel/panel.h"
 #include "ui/controls/scroll_view.h"
 
@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <memory>
 #include <string_view>
+#include <vector>
 
 class BluetoothAgent;
 class BluetoothService;
@@ -69,6 +70,14 @@ class ControlCenterPanel : public Panel {
 public:
   explicit ControlCenterPanel(const ControlCenterServices& services);
 
+  // Tabs the user may hide from the Settings GUI (every tab except Home).
+  // Keys match the [control_center] hidden_tabs entries.
+  struct TabCatalogEntry {
+    std::string_view key;
+    std::string_view titleKey;
+  };
+  [[nodiscard]] static std::vector<TabCatalogEntry> hideableTabCatalog();
+
   void create() override;
   void onFrameTick(float deltaMs) override;
   void onOpen(std::string_view context) override;
@@ -93,7 +102,7 @@ private:
     Home,
     Media,
     Audio,
-    Display,
+    Monitor,
     System,
     Network,
     Bluetooth,
@@ -117,7 +126,7 @@ private:
       {TabId::Home, "home", "control-center.tabs.home", "home"},
       {TabId::Media, "media", "control-center.tabs.media", "disc-filled"},
       {TabId::Audio, "audio", "control-center.tabs.audio", "volume"},
-      {TabId::Display, "monitor", "control-center.tabs.display", "device-desktop"},
+      {TabId::Monitor, "monitor", "control-center.tabs.monitor", "device-desktop"},
       {TabId::System, "system", "control-center.tabs.system", "activity-heartbeat"},
       {TabId::Power, "power", "control-center.tabs.power", "battery-charging-2"},
       {TabId::Network, "network", "control-center.tabs.network", "wifi"},
@@ -144,7 +153,9 @@ private:
   void applyTabTransitionLayout();
   [[nodiscard]] int visibleTabOrdinal(TabId tab) const;
   void syncTabVisibility();
+  [[nodiscard]] bool isTabFeatureAvailable(TabId tab) const;
   [[nodiscard]] bool isTabVisible(TabId tab) const;
+  [[nodiscard]] static std::string_view tabKey(TabId tab);
   [[nodiscard]] TabId firstVisibleTab() const;
   [[nodiscard]] TabId tabFromContext(std::string_view context) const;
   [[nodiscard]] bool isDirectSectionOpenContext(std::string_view context) const;

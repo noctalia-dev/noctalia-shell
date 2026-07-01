@@ -8,6 +8,7 @@
 #include "core/ui_phase.h"
 #include "i18n/i18n.h"
 #include "render/core/async_texture_cache.h"
+#include "render/core/color.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "shell/control_center/tab.h"
@@ -20,6 +21,7 @@
 #include "wayland/clipboard_service.h"
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <cmath>
 #include <ctime>
@@ -241,6 +243,15 @@ namespace {
           })
       );
 
+      m_lead->addChild(
+          ui::box({
+              .out = &m_colorSwatch,
+              .radius = Style::scaledRadiusSm(scale),
+              .visible = false,
+              .participatesInLayout = false,
+          })
+      );
+
       m_row->addChild(
           ui::column(
               {
@@ -322,19 +333,37 @@ namespace {
       if (m_glyph != nullptr) {
         m_glyph->setGlyph(m_isImage ? "photo" : "file-text");
       }
+
+      Color parsedColor;
+      const bool isColor = !m_isImage && tryParseCssColor(entry.textPreview, parsedColor);
+
+      if (m_colorSwatch != nullptr) {
+        if (isColor) {
+          m_colorSwatch->setFill(fixedColorSpec(parsedColor));
+        }
+        m_colorSwatch->setVisible(isColor);
+        m_colorSwatch->setParticipatesInLayout(isColor);
+      }
+      if (m_glyph != nullptr) {
+        m_glyph->setVisible(!isColor);
+        m_glyph->setParticipatesInLayout(!isColor);
+      }
+
       refreshThumbnail(renderer);
       applyVisualState();
       layout(renderer);
     }
 
     void refreshThumbnail(Renderer& renderer) {
-      if (m_image == nullptr || m_glyph == nullptr) {
+      if (m_image == nullptr || m_glyph == nullptr || m_colorSwatch == nullptr) {
         return;
       }
       if (!m_isImage || m_thumbnailPath.empty() || m_thumbnails == nullptr) {
         m_image->clear(renderer);
         m_image->setVisible(false);
-        m_glyph->setVisible(true);
+        const bool showGlyph = !m_colorSwatch->visible();
+        m_glyph->setVisible(showGlyph);
+        m_glyph->setParticipatesInLayout(showGlyph);
         return;
       }
 
@@ -343,12 +372,14 @@ namespace {
         m_image->clear(renderer);
         m_image->setVisible(false);
         m_glyph->setVisible(true);
+        m_glyph->setParticipatesInLayout(true);
         return;
       }
 
       m_image->setExternalTexture(renderer, handle);
       m_image->setVisible(true);
       m_glyph->setVisible(false);
+      m_glyph->setParticipatesInLayout(false);
     }
 
   private:
@@ -371,6 +402,10 @@ namespace {
       }
       if (m_image != nullptr) {
         m_image->setSize(thumbPx, thumbPx);
+      }
+      if (m_colorSwatch != nullptr && m_colorSwatch->visible()) {
+        const float swatchPx = std::round(thumbPx * 0.82f);
+        m_colorSwatch->setSize(swatchPx, swatchPx);
       }
       if (m_title != nullptr && m_meta != nullptr) {
         const float pinW = m_pinned ? kListPinGlyphSize * m_scale + Style::spaceMd * m_scale : 0.0f;
@@ -425,6 +460,7 @@ namespace {
     Flex* m_lead = nullptr;
     Image* m_image = nullptr;
     Glyph* m_glyph = nullptr;
+    Box* m_colorSwatch = nullptr;
     Glyph* m_pinGlyph = nullptr;
     Flex* m_textColumn = nullptr;
     Label* m_title = nullptr;
@@ -1193,6 +1229,20 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
     m_previewImage = image.get();
     m_previewContent->addChild(std::move(image));
   } else {
+    Color previewColor;
+    if (tryParseCssColor(entry.textPreview, previewColor)) {
+      const float scale = contentScale();
+      const float swatchH = std::round(80.0f * scale);
+      m_previewContent->addChild(
+          ui::box({
+              .fill = fixedColorSpec(previewColor),
+              .radius = Style::scaledRadiusMd(scale),
+              .width = width,
+              .height = swatchH,
+          })
+      );
+    }
+
     if (m_clipboard != nullptr) {
       (void)m_clipboard->ensureEntryLoaded(historyIndex);
     }

@@ -50,6 +50,7 @@
           # output so it can be built and staged independently of a full
           # home-manager rollout (e.g. `nix build .#presets`).
           presets = presets-photosensitive-filtered.packages.${pkgs.stdenv.hostPlatform.system}.default;
+          cuda = pkgs.callPackage ./nix/package.nix { cudaSupport = true; };
         }
       );
 

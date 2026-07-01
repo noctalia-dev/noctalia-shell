@@ -539,6 +539,18 @@ std::span<const ShortcutRegistry::CatalogEntry> ShortcutRegistry::catalog() {
   return combined;
 }
 
+bool ShortcutRegistry::isAvailable(std::string_view type, const Config& config) {
+  if (type == "weather")
+    return config.weather.enabled;
+  if (type == "system")
+    return config.system.monitor.enabled;
+  if (type == "screen_time")
+    return config.shell.screenTimeEnabled;
+  if (type == "clipboard")
+    return config.shell.clipboardEnabled;
+  return true;
+}
+
 std::unique_ptr<Shortcut> ShortcutRegistry::create(std::string_view type, const ShortcutServices& s) {
   if (auto entry = scripting::PluginRegistry::instance().resolve(type);
       entry.has_value() && entry->entry->kind == scripting::PluginEntryKind::Shortcut) {
@@ -586,35 +598,22 @@ std::unique_ptr<Shortcut> ShortcutRegistry::create(std::string_view type, const 
     return std::make_unique<PowerProfileShortcut>(s.powerProfiles);
   if (type == "media")
     return std::make_unique<MediaShortcut>(s.mpris);
-  if (type == "weather") {
-    if (s.config != nullptr && !s.config->config().weather.enabled) {
-      return nullptr;
-    }
+  if (s.config != nullptr && !isAvailable(type, s.config->config())) {
+    return nullptr;
+  }
+  if (type == "weather")
     return std::make_unique<WeatherShortcut>(s.weather);
-  }
-  if (type == "system") {
-    if (s.config != nullptr && !s.config->config().system.monitor.enabled) {
-      return nullptr;
-    }
+  if (type == "system")
     return std::make_unique<SystemShortcut>();
-  }
-  if (type == "screen_time") {
-    if (s.config != nullptr && !s.config->config().shell.screenTimeEnabled) {
-      return nullptr;
-    }
+  if (type == "screen_time")
     return std::make_unique<ScreenTimeShortcut>();
-  }
   if (type == "keyboard_layout")
     return std::make_unique<KeyboardLayoutShortcut>(s.platform, s.config);
   if (type == "wallpaper")
     return std::make_unique<WallpaperShortcut>();
   if (type == "session")
     return std::make_unique<SessionShortcut>();
-  if (type == "clipboard") {
-    if (s.config != nullptr && !s.config->config().shell.clipboardEnabled) {
-      return nullptr;
-    }
+  if (type == "clipboard")
     return std::make_unique<ClipboardShortcut>();
-  }
   return nullptr;
 }

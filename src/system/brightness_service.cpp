@@ -978,12 +978,7 @@ struct BrightnessService::Impl {
     }
   }
 
-  void setBrightness(const std::string& displayId, float value) {
-    DisplayInternal* display = findInternal(displayId);
-    if (display == nullptr) {
-      return;
-    }
-
+  void setBrightness(DisplayInternal* display, float value) {
     value = std::clamp(value, activeConfig.minimumBrightness, 1.0f);
     switch (display->backend) {
     case RuntimeBackend::Backlight:
@@ -992,6 +987,25 @@ struct BrightnessService::Impl {
     case RuntimeBackend::Ddcutil:
       setDdcBrightness(*display, value);
       break;
+    }
+  }
+
+  void setBrightness(const std::string& displayId, float value) {
+    if (activeConfig.syncBrightnessOfAllMonitors) {
+      setAllBrightness(value);
+      return;
+    }
+
+    DisplayInternal* display = findInternal(displayId);
+    if (display == nullptr) {
+      return;
+    }
+    setBrightness(display, value);
+  }
+
+  void setAllBrightness(float value) {
+    for (auto& display : internals) {
+      setBrightness(&display, value);
     }
   }
 
@@ -1433,6 +1447,8 @@ bool BrightnessService::available() const noexcept {
 void BrightnessService::setBrightness(const std::string& displayId, float value) {
   m_impl->setBrightness(displayId, value);
 }
+
+void BrightnessService::setAllBrightness(float value) { m_impl->setAllBrightness(value); }
 
 void BrightnessService::requestDdcRefresh() { m_impl->queueDdcRefreshes(); }
 

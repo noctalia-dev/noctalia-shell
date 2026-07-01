@@ -1,4 +1,4 @@
-#include "shell/control_center/power_tab.h"
+#include "shell/control_center/tabs/power_tab.h"
 
 #include "dbus/power/power_profiles_service.h"
 #include "dbus/upower/upower_service.h"

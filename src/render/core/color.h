@@ -5,6 +5,7 @@
 #include <string>
 #include <string_view>
 
+// RGBA color; every channel is a float in [0,1].
 struct Color {
   float r = 0.0f;
   float g = 0.0f;
@@ -18,8 +19,10 @@ constexpr bool operator==(const Color& lhs, const Color& rhs) noexcept {
 
 constexpr Color rgba(float r, float g, float b, float a = 1.0f) { return Color{r, g, b, a}; }
 
+// Maps a 0-255 channel byte to a [0,1] float.
 constexpr float colorByte(std::uint32_t value) { return static_cast<float>(value) / 255.0f; }
 
+// Builds a Color from a packed 0xRRGGBB integer (alpha = 1).
 constexpr Color rgbHex(std::uint32_t value) {
   return Color{
       .r = colorByte((value >> 16U) & 0xFFU),
@@ -29,6 +32,7 @@ constexpr Color rgbHex(std::uint32_t value) {
   };
 }
 
+// Builds a Color from a packed 0xRRGGBBAA integer.
 constexpr Color rgbaHex(std::uint32_t value) {
   return Color{
       .r = colorByte((value >> 24U) & 0xFFU),
@@ -38,6 +42,7 @@ constexpr Color rgbaHex(std::uint32_t value) {
   };
 }
 
+// One hex digit ('0'-'9', 'a'-'f', 'A'-'F') to its value; throws on anything else.
 constexpr std::uint32_t hexDigit(char c) {
   if (c >= '0' && c <= '9') {
     return static_cast<std::uint32_t>(c - '0');
@@ -53,6 +58,7 @@ constexpr std::uint32_t hexDigit(char c) {
 
 constexpr std::uint32_t hexByte(char high, char low) { return (hexDigit(high) << 4U) | hexDigit(low); }
 
+// Parses "#rgb", "#rgba", "#rrggbb", or "#rrggbbaa" (literal '#' required); throws otherwise.
 constexpr Color hex(std::string_view value) {
   if (value.empty() || value.front() != '#') {
     throw std::invalid_argument("hex color must start with '#'");
@@ -102,6 +108,7 @@ constexpr Color withAlpha(const Color& color, float alpha) {
   return rgba(color.r, color.g, color.b, clamp(alpha));
 }
 
+// Scales rgb by amount (1 = unchanged, >1 brighter), clamped to [0,1]; alpha unchanged.
 constexpr Color brighten(const Color& color, float amount) {
   auto clamp = [](float v) constexpr { return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v); };
   return Color{
@@ -112,6 +119,7 @@ constexpr Color brighten(const Color& color, float amount) {
   };
 }
 
+// Linear blend from a to b; t in [0,1].
 constexpr Color lerpColor(const Color& a, const Color& b, float t) {
   return Color{
       .r = a.r + (b.r - a.r) * t,
@@ -121,9 +129,22 @@ constexpr Color lerpColor(const Color& a, const Color& b, float t) {
   };
 }
 
+// Hue in turns ([0,1), wrapped); saturation/value/alpha in [0,1].
 [[nodiscard]] Color hsv(float h, float s, float v, float a = 1.0f);
+// Hue in degrees (wrapped to [0,360)); saturation/lightness/alpha in [0,1].
+[[nodiscard]] Color hsl(float h, float s, float l, float a = 1.0f);
+// Decomposes rgb into hue (turns, [0,1)), saturation, and value (each [0,1]).
 void rgbToHsv(const Color& rgb, float& h, float& s, float& v);
+// WCAG relative luminance of color, in [0,1].
 [[nodiscard]] float relativeLuminance(const Color& color);
+// Returns opaque black or white, whichever reads better on background.
 [[nodiscard]] Color readableTextColorForBackground(const Color& background);
+// Formats as "#RRGGBB" (alpha dropped).
 [[nodiscard]] std::string formatRgbHex(const Color& color);
+// Like hex() but non-throwing, trims whitespace, and tolerates a missing '#'.
 [[nodiscard]] bool tryParseHexColor(std::string_view input, Color& out);
+// Parses a CSS-style color string into out, returning false if it is not a color.
+// Accepts "#rgb[a]"/"#rrggbb[aa]" (literal '#' required), plus rgb()/rgba()/hsl()/hsla()
+// in either comma-separated (legacy) or space-separated (CSS Color 4, with '/' alpha) form.
+// Channels take number or percentage; hue takes an optional deg/grad/rad/turn unit.
+[[nodiscard]] bool tryParseCssColor(std::string_view text, Color& out);

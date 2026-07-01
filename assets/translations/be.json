@@ -357,9 +357,9 @@
       "audio": "Аўдыя",
       "bluetooth": "Bluetooth",
       "calendar": "Каляндар",
-      "display": "Манітор",
       "home": "Галоўная",
       "media": "Медыя",
+      "monitor": "Манітор",
       "network": "Сетка",
       "notifications": "Апавяшчэнні",
       "power": "Сілкаванне",
@@ -368,6 +368,14 @@
       "weather": "Надвор'е"
     },
     "weather": {
+      "daily": {
+        "tooltip": {
+          "high": "Макс.",
+          "low": "Мiн.",
+          "sunrise": "Усход",
+          "sunset": "Захад"
+        }
+      },
       "data-unavailable": "Дадзеныя аб надвор'і недаступныя",
       "details": {
         "elevation": "Уздым",
@@ -384,6 +392,12 @@
         "day": "Нядзеля",
         "description": "Надвор'е",
         "temperature": "10 / 4C"
+      },
+      "hourly": {
+        "tooltip": {
+          "humidity": "Вільг.",
+          "wind": "Вецер"
+        }
       },
       "location-unavailable": "Месцазнаходжанне недаступна",
       "refreshing": "Абнаўленне надвор'я...",

@@ -167,8 +167,13 @@ namespace settings {
           return "upload";
         }
       }
-      if (type == "volume" && config->getString("device", "output") == "input") {
-        return "microphone";
+      if (type == "volume") {
+        if (const std::string custom = config->getString("glyph", ""); !custom.empty()) {
+          return custom;
+        }
+        if (config->getString("device", "output") == "input") {
+          return "microphone";
+        }
       }
       return defaultWidgetGlyph(type);
     }
@@ -597,6 +602,11 @@ namespace settings {
         {"graph", "settings.widgets.options.graph"},
         {"text", "settings.widgets.options.text"},
     };
+    const std::vector<WidgetSettingSelectOption> networkSpeedUnits = {
+        {"auto", "settings.widgets.options.auto"},
+        {"kb", "settings.widgets.options.kilobytes"},
+        {"mb", "settings.widgets.options.megabytes"},
+    };
     const std::vector<WidgetSettingSelectOption> workspaceDisplay = {
         {"id", "settings.widgets.options.id"},
         {"name", "settings.widgets.options.name"},
@@ -787,6 +797,16 @@ namespace settings {
         interface.visibleWhen = WidgetSettingVisibility{"stat", {"net_rx", "net_tx"}};
         add(std::move(interface));
       }
+      {
+        auto unit = selectSpec("network_speed_unit", "auto", networkSpeedUnits);
+        unit.visibleWhen = WidgetSettingVisibility{"stat", {"net_rx", "net_tx"}};
+        add(std::move(unit));
+      }
+      {
+        auto compact = boolSpec("network_speed_compact", false);
+        compact.visibleWhen = WidgetSettingVisibility{"stat", {"net_rx", "net_tx"}};
+        add(std::move(compact));
+      }
       add(segmentedSpec("display", "gauge", sysmonDisplay));
       add(colorSpec("highlight_color", "error"));
       add(boolSpec("show_label", true));
@@ -920,6 +940,12 @@ namespace settings {
       }
     } else if (type == "volume") {
       add(segmentedSpec("device", "output", volumeDeviceOptions));
+      {
+        auto glyph = glyphSpec("glyph", "");
+        glyph.descriptionKey = "settings.widgets.settings.glyph.volume-description";
+        add(std::move(glyph));
+      }
+      add(glyphSpec("mute_glyph", ""));
       add(stepperIntSpec("scroll_step", 5, 1.0, 25.0, 1.0, "%"));
       add(boolSpec("show_label", true));
       add(colorSpec("mute_color", "error"));
@@ -928,6 +954,7 @@ namespace settings {
     } else if (type == "weather") {
       add(intSpec("max_length", 160, 40.0, 800.0, 1.0));
       add(boolSpec("show_condition", true));
+      add(boolSpec("show_temperature", true));
     } else if (type == "workspaces") {
       const WidgetSettingVisibility pillStyleOnly{{"minimal", {"false"}}};
       for (auto& spec : commonSpecs) {

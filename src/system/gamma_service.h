@@ -82,6 +82,8 @@ private:
   void restoreAll();
 
   void applyTarget(int kelvin);
+  [[nodiscard]] bool slowGammaUploads() const;
+  [[nodiscard]] std::chrono::milliseconds transitionTickInterval() const;
   void ensureTick();
   void tickGamma();
 

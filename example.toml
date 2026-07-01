@@ -151,6 +151,7 @@ offset_y           = 8              # absolute vertical margin from the screen e
 # play_sound      = true
 # allowed_urgencies = ["normal", "critical"]  # omit or list all three to allow every level
 # IPC examples:
+# noctalia msg notification-invoke-latest
 # noctalia msg notification-clear-active
 # noctalia msg notification-clear-history
 
@@ -449,6 +450,14 @@ battery_low_percent_threshold = 0   # set to e.g. 15 to enable battery_under_thr
 
 # [widget.notifications]
 # hide_when_no_unread = true
+
+# [widget.network_rx]
+# network_speed_unit = "mb"          # auto | kb | mb
+# network_speed_compact = true       # show "1.2M" instead of "1.2 MB/s"
+#
+# [widget.network_tx]
+# network_speed_unit = "mb"          # auto | kb | mb
+# network_speed_compact = true       # show "1.2M" instead of "1.2 MB/s"
 
 # [widget.keyboard_layout]
 # display                 = "short"    # "short" (e.g. "DE") or "full" (full layout name)

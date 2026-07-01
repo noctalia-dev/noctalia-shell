@@ -8,6 +8,7 @@
 #include "core/deferred_call.h"
 #include "core/keybind_matcher.h"
 #include "core/log.h"
+#include "core/process_fds.h"
 #include "ipc/ipc_service.h"
 #include "notification/notification.h"
 #include "notification/notification_manager.h"
@@ -218,6 +219,7 @@ namespace {
         }
         ::close(stdinPipe[0]);
         attachStdioToDevNull();
+        ProcessFds::resetOpenFileLimitForChild();
         // Restore default SIGPIPE handling for the spawned command.
         ::signal(SIGPIPE, SIG_DFL);
         pthread_sigmask(SIG_UNBLOCK, &pipeMask, nullptr);

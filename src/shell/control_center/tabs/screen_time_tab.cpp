@@ -1,6 +1,8 @@
-#include "shell/control_center/screen_time_tab.h"
+#include "shell/control_center/tabs/screen_time_tab.h"
 
 #include "i18n/i18n.h"
+#include "render/animation/animation.h"
+#include "render/animation/animation_manager.h"
 #include "render/core/color.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
@@ -13,6 +15,7 @@
 #include "system/screen_time_service.h"
 #include "time/time_format.h"
 #include "ui/builders.h"
+#include "ui/controls/scroll_view.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -127,6 +130,7 @@ std::unique_ptr<Flex> ScreenTimeTab::create() {
       .out = &m_root,
       .align = FlexAlign::Stretch,
       .gap = Style::spaceSm * scale,
+      .configure = [](Flex& column) { column.setClipChildren(true); },
   });
 
   m_rangeDays = 1;
@@ -146,14 +150,15 @@ std::unique_ptr<Flex> ScreenTimeTab::create() {
           .equalSegmentWidths = true,
           .onChange = [this](std::size_t idx) {
             static constexpr int kRanges[] = {1, 3, 14};
-            m_rangeDays = kRanges[std::min(idx, std::size_t{2})];
+            const int nextRange = kRanges[std::min(idx, std::size_t{2})];
             m_lastSnapshotKey.clear();
-            PanelManager::instance().refresh();
+            beginRangeSlideOut(nextRange);
           },
       })
   );
 
   auto scroll = ui::scrollView({
+      .out = &m_scroll,
       .scrollbarVisible = true,
       .flexGrow = 1.0f,
       .configure = [](ScrollView& scrollView) {
@@ -427,8 +432,108 @@ std::unique_ptr<Flex> ScreenTimeTab::create() {
   return tab;
 }
 
+void ScreenTimeTab::cancelRangeSlide() {
+  const bool wasAnimating = m_rangeSlideAnimId != 0;
+  if (wasAnimating && m_root != nullptr) {
+    AnimationManager* animations = m_root->animationManager();
+    if (animations != nullptr) {
+      animations->cancel(m_rangeSlideAnimId);
+    }
+    m_rangeSlideAnimId = 0;
+  }
+  m_startRangeSlideIn = false;
+  if (wasAnimating && m_scroll != nullptr) {
+    m_scroll->setPosition(m_scrollBaseX, m_scrollBaseY);
+    m_scroll->setOpacity(1.0f);
+  }
+}
+
+void ScreenTimeTab::applyRangeSlide(float progress, bool slidingIn) {
+  if (m_scroll == nullptr || m_root == nullptr) {
+    return;
+  }
+
+  const float travel = m_root->width();
+  if (travel <= 0.0f) {
+    return;
+  }
+
+  const auto direction = static_cast<float>(m_rangeSlideDirection);
+  const float baseX = m_scrollBaseX;
+  const float baseY = m_scrollBaseY;
+  if (slidingIn) {
+    m_scroll->setPosition(baseX + direction * travel * (1.0f - progress), baseY);
+    m_scroll->setOpacity(0.7f + 0.3f * progress);
+  } else {
+    m_scroll->setPosition(baseX - direction * travel * progress, baseY);
+    m_scroll->setOpacity(1.0f - 0.3f * progress);
+  }
+}
+
+void ScreenTimeTab::beginRangeSlideOut(int nextRangeDays) {
+  if (nextRangeDays == m_rangeDays) {
+    return;
+  }
+
+  cancelRangeSlide();
+
+  AnimationManager* animations = m_root != nullptr ? m_root->animationManager() : nullptr;
+  if (animations == nullptr || m_scroll == nullptr) {
+    m_rangeDays = nextRangeDays;
+    PanelManager::instance().refresh();
+    return;
+  }
+
+  m_scrollBaseX = m_scroll->x();
+  m_scrollBaseY = m_scroll->y();
+  m_rangeSlideDirection = nextRangeDays > m_rangeDays ? 1 : -1;
+  m_pendingRangeDays = nextRangeDays;
+
+  PanelManager::instance().requestFrameTick();
+  m_rangeSlideAnimId = animations->animate(
+      0.0f, 1.0f, static_cast<float>(Style::animFast), Easing::EaseOutCubic,
+      [this](float progress) {
+        applyRangeSlide(progress, false);
+        PanelManager::instance().requestRedraw();
+      },
+      [this]() {
+        m_rangeSlideAnimId = 0;
+        m_rangeDays = m_pendingRangeDays;
+        m_startRangeSlideIn = true;
+        PanelManager::instance().refresh();
+      },
+      m_root
+  );
+}
+
+void ScreenTimeTab::beginRangeSlideIn() {
+  AnimationManager* animations = m_root != nullptr ? m_root->animationManager() : nullptr;
+  if (animations == nullptr || m_scroll == nullptr) {
+    return;
+  }
+
+  applyRangeSlide(0.0f, true);
+  PanelManager::instance().requestFrameTick();
+  m_rangeSlideAnimId = animations->animate(
+      0.0f, 1.0f, static_cast<float>(Style::animFast), Easing::EaseOutCubic,
+      [this](float progress) {
+        applyRangeSlide(progress, true);
+        PanelManager::instance().requestRedraw();
+      },
+      [this]() {
+        m_rangeSlideAnimId = 0;
+        if (m_scroll != nullptr) {
+          m_scroll->setPosition(m_scrollBaseX, m_scrollBaseY);
+          m_scroll->setOpacity(1.0f);
+        }
+      },
+      m_root
+  );
+}
+
 void ScreenTimeTab::onClose() {
   m_root = nullptr;
+  m_scroll = nullptr;
   m_usageCard = nullptr;
   m_disabledLabel = nullptr;
   m_rangePicker = nullptr;
@@ -481,6 +586,13 @@ void ScreenTimeTab::doLayout(Renderer& renderer, float contentWidth, float bodyH
   if (m_root == nullptr) {
     return;
   }
+
+  const bool slidingOut = m_rangeSlideAnimId != 0 && !m_startRangeSlideIn;
+  if (slidingOut) {
+    m_root->layout(renderer);
+    return;
+  }
+
   syncContent(renderer);
   bindAppNameMaxWidths(renderer, contentWidth);
   m_root->setSize(contentWidth, bodyHeight);
@@ -488,12 +600,27 @@ void ScreenTimeTab::doLayout(Renderer& renderer, float contentWidth, float bodyH
   layoutChart(renderer);
   layoutAppRows(renderer);
   syncDayLabelHover();
+
+  if (m_startRangeSlideIn) {
+    m_startRangeSlideIn = false;
+    if (m_scroll != nullptr) {
+      m_scrollBaseX = m_scroll->x();
+      m_scrollBaseY = m_scroll->y();
+    }
+    beginRangeSlideIn();
+  }
 }
 
 void ScreenTimeTab::doUpdate(Renderer& renderer) {
   if (!m_active) {
     return;
   }
+
+  const bool slidingOut = m_rangeSlideAnimId != 0 && !m_startRangeSlideIn;
+  if (slidingOut) {
+    return;
+  }
+
   syncContent(renderer);
   bindAppNameMaxWidths(renderer, m_root != nullptr ? m_root->width() : 0.0f);
   if (m_root != nullptr) {

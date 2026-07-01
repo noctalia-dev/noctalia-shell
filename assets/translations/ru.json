@@ -357,9 +357,9 @@
       "audio": "Аудио",
       "bluetooth": "Bluetooth",
       "calendar": "Календарь",
-      "display": "Монитор",
       "home": "Главная",
       "media": "Медиа",
+      "monitor": "Монитор",
       "network": "Сеть",
       "notifications": "Уведомления",
       "power": "Питание",
@@ -368,6 +368,12 @@
       "weather": "Погода"
     },
     "weather": {
+      "daily": {
+        "tooltip": {
+          "sunrise": "Восход",
+          "sunset": "Закат"
+        }
+      },
       "data-unavailable": "Данные о погоде недоступны",
       "details": {
         "elevation": "Высота",
@@ -376,6 +382,7 @@
         "temp-max": "Макс. температура",
         "temp-min": "Мин. температура",
         "timezone": "Часовой пояс",
+        "uv-index": "УФ-индекс",
         "wind": "Ветер"
       },
       "disabled": "Включите [weather] в config.toml",
@@ -384,6 +391,12 @@
         "day": "Воскресенье",
         "description": "Погода",
         "temperature": "10 / 4C"
+      },
+      "hourly": {
+        "tooltip": {
+          "humidity": "Влажность",
+          "wind": "Ветер"
+        }
       },
       "location-unavailable": "Местоположение недоступно",
       "no-location-title": "Местоположение не задано",
@@ -458,6 +471,7 @@
         "secondary-color": "Вторичный цвет",
         "sensitivity": "Чувствительность",
         "shadow": "Тень",
+        "show-forecast": "Показать прогноз",
         "show-label": "Показать метку",
         "show-login-button": "Кнопка входа",
         "show-when-idle": "Показывать в режиме ожидания",
@@ -706,6 +720,11 @@
       "on": "Wi-Fi включён"
     }
   },
+  "plugins": {
+    "auto-disabled": {
+      "title": "Плагин отключен"
+    }
+  },
   "power": {
     "battery": {
       "states": {
@@ -754,6 +773,7 @@
     },
     "badges": {
       "advanced": "Расширенное",
+      "community": "Сообщество",
       "inherited": "Унаследовано",
       "monitor": "Монитор",
       "override": "Переопределение"
@@ -1226,6 +1246,7 @@
         "empty": "Плагины не найдены. Добавьте источник или проверьте соединение с интернетом",
         "loading": "Загрузка плагинов...",
         "refreshing": "Обновление плагинов...",
+        "remove": "Удалить плагин",
         "requires": "Требуются: {dependencies}",
         "requires-newer-noctalia": "требуется более новая версия Noctalia",
         "title": "Плагины"
@@ -1259,6 +1280,10 @@
         "title": "Источники",
         "update": "Обновить",
         "update-on-startup": "Обновить при запуске"
+      },
+      "store": {
+        "empty": "Плагины не найдены",
+        "incompatible": "Несовместим"
       }
     },
     "schema": {

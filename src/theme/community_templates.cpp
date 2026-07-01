@@ -580,6 +580,28 @@ namespace noctalia::theme {
       recordCachedFile(metadata, kTemplateToml, path);
     }
 
+    void appendTemplateOutputPaths(std::vector<std::string>& outputPaths, const toml::table& root) {
+      const toml::table* templates = root["templates"].as_table();
+      if (templates == nullptr)
+        return;
+      for (const auto& [idNode, node] : *templates) {
+        const toml::table* tpl = node.as_table();
+        if (tpl == nullptr)
+          continue;
+        const toml::node* op = tpl->get("output_path");
+        if (op == nullptr)
+          continue;
+        if (const auto str = op->as_string()) {
+          outputPaths.push_back(str->get());
+        } else if (const auto arr = op->as_array()) {
+          for (const auto& item : *arr) {
+            if (const auto itemStr = item.as_string())
+              outputPaths.push_back(itemStr->get());
+          }
+        }
+      }
+    }
+
     std::optional<AvailableTemplate> readTemplateTomlInfo(const std::filesystem::path& path, std::string_view cacheId) {
       if (!isSafeCommunityTemplateId(cacheId))
         return std::nullopt;
@@ -600,6 +622,7 @@ namespace noctalia::theme {
               "cached community template metadata {} does not contain catalog entry '{}'; using cache directory name",
               path.string(), cacheId
           );
+          appendTemplateOutputPaths(out.outputPaths, root);
           return out;
         }
 
@@ -609,9 +632,21 @@ namespace noctalia::theme {
           if (const auto category = info->get_as<std::string>("category"))
             out.category = category->get();
         }
+        appendTemplateOutputPaths(out.outputPaths, root);
         return out;
       } catch (const toml::parse_error&) {
         return std::nullopt;
+      }
+    }
+
+    void appendOutputPathsFromCacheToml(AvailableTemplate& t) {
+      const auto tomlPath = communityTemplateConfigPath(t.id);
+      if (!std::filesystem::exists(tomlPath))
+        return;
+      try {
+        const toml::table root = toml::parse_file(tomlPath.string());
+        appendTemplateOutputPaths(t.outputPaths, root);
+      } catch (const toml::parse_error&) {
       }
     }
 
@@ -752,6 +787,7 @@ namespace noctalia::theme {
       t.id = info.id;
       t.displayName = info.displayName.empty() ? info.id : info.displayName;
       t.category = info.category;
+      appendOutputPathsFromCacheToml(t);
       out.push_back(std::move(t));
     }
 

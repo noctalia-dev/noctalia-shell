@@ -1857,7 +1857,10 @@ void MprisService::applyPlayerSnapshot(
     const MprisPlayerInfo previous_info = existing->second;
 
     MprisPlayerInfo merged = info;
-    if (merged.artUrl.empty() && !previous_info.artUrl.empty()) {
+    const bool trackIdChanged = !info.trackId.empty()
+        && info.trackId != previous_info.trackId
+        && info.trackId != "/org/mpris/MediaPlayer2/TrackList/NoTrack";
+    if (!trackIdChanged && merged.artUrl.empty() && !previous_info.artUrl.empty()) {
       merged.artUrl = previous_info.artUrl;
     }
 

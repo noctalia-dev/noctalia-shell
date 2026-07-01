@@ -6,6 +6,7 @@
 #include "core/log.h"
 #include "core/process.h"
 #include "i18n/i18n.h"
+#include "shell/control_center/control_center_panel.h"
 #include "shell/control_center/shortcut_registry.h"
 #include "shell/settings/color_spec_picker.h"
 #include "shell/settings/font_weight_catalog.h"
@@ -193,10 +194,13 @@ namespace settings {
       );
     }
 
-    std::vector<SelectOption> controlCenterShortcutOptions() {
+    std::vector<SelectOption> controlCenterShortcutOptions(const Config& cfg) {
       std::vector<SelectOption> opts;
       opts.reserve(ShortcutRegistry::catalog().size());
       for (const auto& shortcut : ShortcutRegistry::catalog()) {
+        if (!ShortcutRegistry::isAvailable(shortcut.type, cfg)) {
+          continue;
+        }
         opts.push_back(
             SelectOption{
                 std::string(shortcut.type),
@@ -724,7 +728,14 @@ namespace settings {
       std::vector<SelectOption> templateOptions;
       templateOptions.reserve(availableTemplates.size());
       for (const auto& t : availableTemplates) {
-        templateOptions.push_back(SelectOption{.value = t.id, .label = t.displayName, .description = t.category});
+        templateOptions.push_back(
+            SelectOption{
+                .value = t.id,
+                .label = t.displayName,
+                .description = t.category,
+                .tooltip = noctalia::theme::formatTemplateTooltip(t)
+            }
+        );
       }
       auto e = makeEntry(
           SettingsSection::Templates, "built-in", tr("settings.schema.templates.builtin-ids.label"),
@@ -1024,10 +1035,28 @@ namespace settings {
         SettingsSection::ControlCenter, "general", tr("settings.schema.panels.home-shortcuts.label"),
         tr("settings.schema.panels.home-shortcuts.description"), {"control_center", "shortcuts"},
         ShortcutListSetting{
-            .items = cfg.controlCenter.shortcuts, .suggestedOptions = controlCenterShortcutOptions(), .maxItems = 6
+            .items = cfg.controlCenter.shortcuts, .suggestedOptions = controlCenterShortcutOptions(cfg), .maxItems = 6
         },
         "quick settings shortcuts toggles wifi bluetooth caffeine night light dnd power media weather clipboard"
     ));
+    {
+      MultiSelectSetting tabs;
+      const auto catalog = ControlCenterPanel::hideableTabCatalog();
+      tabs.options.reserve(catalog.size());
+      tabs.selectedValues.reserve(catalog.size());
+      for (const auto& tab : catalog) {
+        tabs.options.push_back(SelectOption{std::string(tab.key), tr(tab.titleKey)});
+        if (!std::ranges::contains(cfg.controlCenter.hiddenTabs, tab.key)) {
+          tabs.selectedValues.emplace_back(tab.key);
+        }
+      }
+      tabs.persistUnselected = true;
+      entries.push_back(makeEntry(
+          SettingsSection::ControlCenter, "general", tr("settings.schema.panels.control-center-tabs.label"),
+          tr("settings.schema.panels.control-center-tabs.description"), {"control_center", "hidden_tabs"},
+          std::move(tabs), "tabs sections visible hide show display brightness media audio network power"
+      ));
+    }
     entries.push_back(makeEntry(
         SettingsSection::Panels, "launcher", tr("settings.schema.panels.placement-launcher.label"),
         tr("settings.schema.panels.placement-launcher.description"), {"shell", "panel", "launcher_placement"},
@@ -1415,6 +1444,21 @@ namespace settings {
           tr("settings.schema.shell.launch-apps-as-systemd-services.description"),
           {"shell", "launch_apps_as_systemd_services"}, ToggleSetting{cfg.shell.launchAppsAsSystemdServices}
       ));
+    }
+    {
+      auto e = makeEntry(
+          SettingsSection::Shell, "general", tr("settings.schema.shell.launch-apps-custom-command.label"),
+          tr("settings.schema.shell.launch-apps-custom-command.description"), {"shell", "launch_apps_custom_command"},
+          TextSetting{
+              .value = cfg.shell.launchAppsCustomCommand,
+              .placeholder = tr("settings.schema.shell.launch-apps-custom-command.placeholder"),
+              .width = 320.0f,
+              .browseFileExtensions = {},
+          },
+          "app command custom launcher"
+      );
+      e.visibleWhen = SettingVisibility{{"shell", "launch_apps_as_systemd_services"}, {"false"}};
+      entries.push_back(std::move(e));
     }
     const SettingVisibility clipboardOn{{"shell", "clipboard_enabled"}, {"true"}};
     entries.push_back(makeEntry(
@@ -2199,6 +2243,11 @@ namespace settings {
         SettingsSection::Services, "brightness", tr("settings.schema.services.minimum-brightness.label"),
         tr("settings.schema.services.minimum-brightness.description"), {"brightness", "minimum_brightness"},
         sliderFor(cfg.brightness.minimumBrightness, noctalia::config::schema::kUnitRange, false), "floor clamp"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Services, "brightness", tr("settings.schema.services.sync-monitor-brightness.label"),
+        tr("settings.schema.services.sync-monitor-brightness.description"), {"brightness", "sync_all_monitors"},
+        ToggleSetting{.checked = cfg.brightness.syncBrightnessOfAllMonitors}, "monitor brightness"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Services, "media", tr("settings.schema.services.mpris-blacklist.label"),

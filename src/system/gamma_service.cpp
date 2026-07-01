@@ -1,5 +1,6 @@
 #include "system/gamma_service.h"
 
+#include "compositors/compositor_detect.h"
 #include "core/log.h"
 #include "ipc/ipc_service.h"
 #include "system/day_night_schedule.h"
@@ -18,15 +19,11 @@ namespace {
 
   constexpr Logger kLog("gamma");
 
-  // Schedule-follow cadence. Gamma uploads are not instant on every compositor (niri/smithay are
-  // slow and hitch a frame per upload), so while following a sunset/sunrise ramp we re-evaluate at
-  // this interval and push only when the rounded Kelvin actually changes — one upload per tick caps
-  // the rate at 5/s. Discrete toggles (enable/disable/force/reload) snap in a single upload rather
-  // than bursting many, so they do not stutter.
-  constexpr int kTickIntervalMs = 200;
+  constexpr auto kGammaTickInterval = std::chrono::seconds(5);
+  constexpr auto kSlowGammaTickInterval = std::chrono::seconds(30);
   // Clock-anchored sunset/sunrise ramp window. The displayed temperature is a function of how far
   // into this window the wall clock is, so it does not depend on when the app started.
-  constexpr float kRampDurationMs = 1200000.0f; // 20 min
+  constexpr float kRampDurationMs = 300000.0f; // 5 min
   constexpr auto kScheduleRecheckInterval = std::chrono::minutes(1);
 
   const zwlr_gamma_control_v1_listener kGammaControlListener = {
@@ -346,7 +343,7 @@ void GammaService::restoreAll() {
 // --- Schedule following ---
 
 // Upload the instantaneous target, pushing to the compositor only when the rounded Kelvin changed.
-// One upload per call caps the rate at 5/s while following a drifting schedule ramp.
+// The transition timer controls the maximum upload rate while following a drifting schedule ramp.
 void GammaService::applyTarget(int kelvin) {
   if (m_currentKelvin == kelvin) {
     return;
@@ -355,9 +352,18 @@ void GammaService::applyTarget(int kelvin) {
   applyGammaToAll(m_currentKelvin);
 }
 
+bool GammaService::slowGammaUploads() const { return compositors::isNiri(); }
+
+std::chrono::milliseconds GammaService::transitionTickInterval() const {
+  if (slowGammaUploads()) {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(kSlowGammaTickInterval);
+  }
+  return std::chrono::duration_cast<std::chrono::milliseconds>(kGammaTickInterval);
+}
+
 void GammaService::ensureTick() {
   if (!m_transitionTimer.active()) {
-    m_transitionTimer.startRepeating(std::chrono::milliseconds(kTickIntervalMs), [this]() { tickGamma(); });
+    m_transitionTimer.startRepeating(transitionTickInterval(), [this]() { tickGamma(); });
   }
 }
 

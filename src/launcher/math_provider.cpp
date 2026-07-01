@@ -54,6 +54,9 @@ void MathProvider::initialize() {
   // Load any cached rates before definitions so currency units pick them up.
   m_calc->loadExchangeRates();
   m_calc->loadGlobalDefinitions();
+  // Pre-warm internal state (GMP randstate) so the destructor path is safe.
+  m_calc->calculate("0");
+  m_calc->clearMessages();
   refreshExchangeRates();
 }
 

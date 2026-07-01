@@ -421,6 +421,7 @@ namespace settings {
           valueInputPtr->setValue(formatSliderValue(next, integerValue));
         },
     });
+    valueInputPtr->setValue(formatSliderValue(sliderPtr->value(), integerValue));
 
     // Helper: commit either via single setOverride or as an atomic batch when linkedCommit
     // returns extra overrides (cross-field constraints).
@@ -451,20 +452,20 @@ namespace settings {
       const auto parsed = parseDoubleInput(text);
       if (!parsed.has_value() || *parsed < minValue || *parsed > maxValue) {
         valueInputPtr->setInvalid(true);
-        return;
+        return false;
       }
       const double v = *parsed;
       valueInputPtr->setInvalid(false);
       sliderPtr->setValue(v);
-      if (!integerValue) {
-        valueInputPtr->setValue(formatSliderValue(sliderPtr->value(), false));
-      }
-      commit(v);
+      const double snapped = sliderPtr->value();
+      valueInputPtr->setValue(formatSliderValue(snapped, integerValue));
+      commit(snapped);
+      return true;
     };
 
     valueInput->setOnChange([valueInputPtr](const std::string& /*text*/) { valueInputPtr->setInvalid(false); });
-    valueInput->setOnSubmit([commitInputText](const std::string& text) { commitInputText(text); });
-    valueInput->setOnFocusLoss([commitInputText, valueInputPtr]() { commitInputText(valueInputPtr->value()); });
+    valueInput->setOnSubmit([commitInputText](const std::string& text) { (void)commitInputText(text); });
+    valueInput->setOnFocusLoss([commitInputText, valueInputPtr]() { (void)commitInputText(valueInputPtr->value()); });
 
     // Slider first, numeric value field on the right (reset from makeRow stays left of this cluster).
     wrap->addChild(std::move(slider));
@@ -524,6 +525,8 @@ namespace settings {
               highInputPtr->setValue(formatSliderValue(next, integerValue));
             },
     });
+    lowInputPtr->setValue(formatSliderValue(sliderPtr->lowValue(), integerValue));
+    highInputPtr->setValue(formatSliderValue(sliderPtr->highValue(), integerValue));
 
     const auto commitTo = [setOverride = ctx.setOverride,
                            integerValue](const std::vector<std::string>& path, double v) {
@@ -545,7 +548,7 @@ namespace settings {
       const auto parsed = parseDoubleInput(input->value());
       if (!parsed.has_value() || *parsed < minValue || *parsed > maxValue) {
         input->setInvalid(true);
-        return;
+        return false;
       }
       input->setInvalid(false);
       if (isLow) {
@@ -557,23 +560,24 @@ namespace settings {
         input->setValue(formatSliderValue(sliderPtr->highValue(), integerValue));
         commitTo(path, sliderPtr->highValue());
       }
+      return true;
     };
 
     const double minValue = setting.minValue;
     const double maxValue = setting.maxValue;
     lowInput->setOnChange([lowInputPtr](const std::string& /*text*/) { lowInputPtr->setInvalid(false); });
     lowInput->setOnSubmit([commitInput, lowInputPtr, lowPath, minValue, maxValue](const std::string& /*text*/) {
-      commitInput(lowInputPtr, lowPath, minValue, maxValue, true);
+      (void)commitInput(lowInputPtr, lowPath, minValue, maxValue, true);
     });
     lowInput->setOnFocusLoss([commitInput, lowInputPtr, lowPath, minValue, maxValue]() {
-      commitInput(lowInputPtr, lowPath, minValue, maxValue, true);
+      (void)commitInput(lowInputPtr, lowPath, minValue, maxValue, true);
     });
     highInput->setOnChange([highInputPtr](const std::string& /*text*/) { highInputPtr->setInvalid(false); });
     highInput->setOnSubmit([commitInput, highInputPtr, highPath, minValue, maxValue](const std::string& /*text*/) {
-      commitInput(highInputPtr, highPath, minValue, maxValue, false);
+      (void)commitInput(highInputPtr, highPath, minValue, maxValue, false);
     });
     highInput->setOnFocusLoss([commitInput, highInputPtr, highPath, minValue, maxValue]() {
-      commitInput(highInputPtr, highPath, minValue, maxValue, false);
+      (void)commitInput(highInputPtr, highPath, minValue, maxValue, false);
     });
 
     wrap->addChild(std::move(slider));

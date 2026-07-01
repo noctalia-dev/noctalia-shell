@@ -196,6 +196,10 @@ void ActiveWindowWidget::syncState(Renderer& renderer) {
     m_lastAppId = {};
     m_lastEmptyState = emptyState;
     m_lastIconPath = {};
+    m_lastTooltipTitle.clear();
+    if (m_area != nullptr) {
+      m_area->clearTooltip();
+    }
     if (m_icon != nullptr) {
       m_icon->clear(renderer);
     }
@@ -216,6 +220,18 @@ void ActiveWindowWidget::syncState(Renderer& renderer) {
   m_lastTitle = title;
   m_lastAppId = appId;
   m_lastEmptyState = emptyState;
+
+  const std::string tooltipText = emptyState ? std::string{} : title;
+  if (tooltipText != m_lastTooltipTitle) {
+    m_lastTooltipTitle = tooltipText;
+    if (m_area != nullptr) {
+      if (tooltipText.empty()) {
+        m_area->clearTooltip();
+      } else {
+        m_area->setTooltip(tooltipText);
+      }
+    }
+  }
 
   std::string iconPath = emptyState ? std::string{} : resolveIconPath(appId);
 

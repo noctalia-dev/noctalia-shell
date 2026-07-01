@@ -42,7 +42,7 @@ jobs:
             libglvnd freetype2 fontconfig \
             cairo pango harfbuzz \
             libxkbcommon glib2 \
-            sdbus-cpp libpipewire polkit \
+            sdbus-cpp libpipewire wireplumber polkit \
             pam curl libwebp librsvg \
             libqalculate libxml2 \
             jemalloc just clang

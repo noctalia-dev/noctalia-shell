@@ -357,9 +357,9 @@
       "audio": "Audio",
       "bluetooth": "Bluetooth",
       "calendar": "Calendario",
-      "display": "Monitor",
       "home": "Home",
       "media": "Media",
+      "monitor": "Monitor",
       "network": "Rete",
       "notifications": "Notifiche",
       "power": "Energia",
@@ -368,6 +368,15 @@
       "weather": "Meteo"
     },
     "weather": {
+      "daily": {
+        "tooltip": {
+          "condition": "Condizioni",
+          "high": "Massima",
+          "low": "Minima",
+          "sunrise": "Alba",
+          "sunset": "Tramonto"
+        }
+      },
       "data-unavailable": "Dati meteo non disponibili",
       "details": {
         "elevation": "Altitudine",
@@ -376,6 +385,7 @@
         "temp-max": "Temperatura max",
         "temp-min": "Temperatura min",
         "timezone": "Fuso orario",
+        "uv-index": "Indice UV",
         "wind": "Vento"
       },
       "disabled": "Abilita [weather] in config.toml",
@@ -384,6 +394,19 @@
         "day": "Domenica",
         "description": "Meteo",
         "temperature": "10 / 4C"
+      },
+      "forecast-view": {
+        "daily": "Giornaliero",
+        "hourly": "Orario"
+      },
+      "hourly": {
+        "summary": "{condition} / Pioggia {precip}%",
+        "tooltip": {
+          "condition": "Condizioni",
+          "humidity": "Umidità",
+          "rain": "Pioggia",
+          "wind": "Vento"
+        }
       },
       "location-unavailable": "Posizione non disponibile",
       "no-location-body": "Aggiungi il tuo indirizzo o attiva la localizzazione automatica nelle impostazioni di posizione.",
@@ -459,6 +482,11 @@
         "label-min-width": "Larghezza minima etichetta",
         "layout": "Layout",
         "mirrored": "Specchiato",
+        "network-speed-compact": "Velocità di rete compatta",
+        "network-speed-unit": "Unità di misura velocità rete",
+        "network-speed-unit-auto": "Auto",
+        "network-speed-unit-kilobytes": "kB/s",
+        "network-speed-unit-megabytes": "MB/s",
         "opacity": "Opacità",
         "primary-color": "Colore primario",
         "reset-defaults": "Ripristina predefiniti",
@@ -467,9 +495,12 @@
         "secondary-color": "Colore secondario",
         "sensitivity": "Sensibilità",
         "shadow": "Ombra",
+        "show-caps-lock": "Avviso Caps Lock",
         "show-forecast": "Più giorni",
+        "show-keyboard-layout": "Layout tastiera",
         "show-label": "Mostra etichette",
         "show-login-button": "Pulsante di login",
+        "show-password-hint": "Suggerimento password",
         "show-when-idle": "Mostra quando inattivo",
         "stat": "Statistica",
         "stat-cpu-temp": "Temp CPU",
@@ -620,6 +651,7 @@
   "lockscreen": {
     "authenticating": "Autenticazione...",
     "authentication-failed": "Autenticazione non riuscita",
+    "caps-lock-on": "Caps Lock attivo",
     "password-cleared": "Password cancellata",
     "password-placeholder": "Password",
     "ready": "Digita la password e premi Invio.",
@@ -724,6 +756,13 @@
     "wifi": {
       "off": "Wi-Fi disattivato",
       "on": "Wi-Fi attivato"
+    }
+  },
+  "plugins": {
+    "auto-disabled": {
+      "body-errors": "{plugin} ha generato troppi errori ed è stato disabilitato. Ricaricalo dopo aver risolto il problema.",
+      "body-timeouts": "{plugin} ha smesso di rispondere ed è stato disabilitato. Ricaricalo dopo aver risolto il problema.",
+      "title": "Plugin disabilitato"
     }
   },
   "power": {
@@ -1984,6 +2023,10 @@
           "description": "Quando si apre una scheda specifica (volume, media ecc.)",
           "label": "Barra laterale aprendo una scheda"
         },
+        "control-center-tabs": {
+          "description": "Scegli quali schede visualizzare nel centro di controllo; le schede non selezionate vengono nascoste",
+          "label": "Schede del Centro di controllo"
+        },
         "control-center-width": {
           "description": "Larghezza del pannello del centro di controllo in pixel (le modalità compatta e senza barra laterale si riducono rispetto a questo valore)",
           "label": "Larghezza Control Center"
@@ -2197,6 +2240,10 @@
           "description": "Ora manuale del tramonto in HH:MM, usata quando non è impostata alcuna posizione",
           "label": "Tramonto"
         },
+        "sync-monitor-brightness": {
+          "description": "Sincronizza la luminosità di tutti i monitor",
+          "label": "Sincronizza la luminosità dei monitor"
+        },
         "system-monitor": {
           "cpu-poll": {
             "description": "Secondi tra campioni di uso CPU, temperatura CPU e media carico (0 disabilita)",
@@ -2349,6 +2396,10 @@
           "description": "Formato data predefinito per la shell UI senza impostazione propria",
           "label": "Formato data"
         },
+        "greeter-sync-auto": {
+          "description": "Sincronizza automaticamente il Greeter ogni volta che cambiano lo sfondo, i colori o la modalità del tema",
+          "label": "Sincronizza Greeter in automatico"
+        },
         "greeter-sync-privilege-command": {
           "description": "Sostituisci pkexec/run0 per la sincronizzazione del greeter. Il percorso dell'helper e la directory di staging vengono aggiunti automaticamente. Esempio: ghostty -e pkexec",
           "label": "Comando privilegiato per il sync del greeter"
@@ -2356,6 +2407,11 @@
         "launch-apps-as-systemd-services": {
           "description": "Avvia le applicazioni in servizi systemd separati così non condividono il cgroup di Noctalia",
           "label": "Avvia app come servizi systemd"
+        },
+        "launch-apps-custom-command": {
+          "description": "Comando personalizzato utilizzato dal Launcher, sostituisce $CMD con il comando originale.",
+          "label": "Comando Launcher personalizzato",
+          "placeholder": "$CMD"
         },
         "middle-click-opens-widget-settings": {
           "description": "Apre le impostazioni di un widget barra dalla barra con click centrale",
@@ -2681,6 +2737,7 @@
       },
       "options": {
         "always": "Sempre",
+        "auto": "Auto",
         "cpu-temp": "Temperatura CPU",
         "cpu-usage": "Uso CPU",
         "disk-percent": "Percentuale disco",
@@ -2697,6 +2754,8 @@
         "id": "ID",
         "input": "Ingresso",
         "instance": "Per posizionamento",
+        "kilobytes": "kB/s",
+        "megabytes": "MB/s",
         "name": "Nome",
         "net-rx": "Rete RX",
         "net-tx": "Rete TX",
@@ -2850,6 +2909,12 @@
           "description": "Ruolo colore usato per il workspace con focus; sono supportati anche codici colore in formato esadecimale",
           "label": "Colore focus"
         },
+        "focused-output-only": {
+          "description": "Evidenzia solo l'area di lavoro attiva sul monitor focalizzato",
+          "label": "Evidenzia solo il monitor focalizzato",
+          "taskbar-description": "Utilizza il colore focalizzato solo per l'area di lavoro attiva sul monitor in focus tramite tastiera o puntatore; gli altri monitor utilizzano il colore per occupato",
+          "workspaces-description": "Evidenzia solo l'area di lavoro attiva sul monitor con il focus della tastiera o del puntatore; gli altri monitor mostrano invece lo spazio di lavoro attivo come occupato"
+        },
         "font-family": {
           "description": "Font per il widget; lasciare vuoto per editare quello della barra",
           "label": "Famiglia font"
@@ -2865,7 +2930,8 @@
         "glyph": {
           "description": "Nome glifo icona",
           "label": "Glifo",
-          "sysmon-description": "Glifo icona personalizzata. Lasciare vuoto per usare l'icona della metrica selezionata."
+          "sysmon-description": "Glifo icona personalizzata. Lasciare vuoto per usare l'icona della metrica selezionata.",
+          "volume-description": "Glifo personalizzato. Lascia vuoto per utilizzare le icone dinamiche integrate."
         },
         "group-by-workspace": {
           "description": "Raggruppa le icone della taskbar in capsule workspace quando i dati del compositor sono disponibili",
@@ -2882,6 +2948,10 @@
         "hidden": {
           "description": "ID elementi vassoio da nascondere",
           "label": "Elementi nascosti"
+        },
+        "hide-album-art": {
+          "description": "Nasconde la copertina dell'album",
+          "label": "Nascondi copertina album"
         },
         "hide-empty-workspaces": {
           "description": "Quando si raggruppa per workspace, omette le capsule senza finestre in esecuzione nell'elenco taskbar.",
@@ -3016,6 +3086,18 @@
           "description": "Colore usato per l'icona e l'etichetta quando in muto; sono supportati anche i codici colore in formato esadecimale",
           "label": "Colore muto"
         },
+        "mute-glyph": {
+          "description": "Glifo utilizzato quando l'audio è disattivato o allo 0% del volume. Lascia vuoto per utilizzare l'icona di disattivazione dell'audio incorporata.",
+          "label": "Glifo per muto"
+        },
+        "network-speed-compact": {
+          "description": "Utilizza suffissi di unità brevi come 1.2 M invece di 1.2 MB/s",
+          "label": "Velocità di rete compatta"
+        },
+        "network-speed-unit": {
+          "description": "Unità di misura utilizzata per le velocità di ricezione e trasmissione della rete; Auto commuta automaticamente tra B/s, kB/s, MB/s e GB/s",
+          "label": "Unità di misura velocità rete"
+        },
         "occupied-color": {
           "description": "Ruolo colore usato per workspace occupati; sono supportati anche codici colore in formato esadecimale",
           "label": "Colore occupato"
@@ -3104,6 +3186,10 @@
         "show-scroll-lock": {
           "description": "Mostra stato Scroll Lock",
           "label": "Mostra Scroll Lock"
+        },
+        "show-temperature": {
+          "description": "Mostra valore attuale della temperatura",
+          "label": "Mostra temperatura"
         },
         "show-when-idle": {
           "description": "Mantiene visibile il visualizzatore anche quando nessun media è in riproduzione",
@@ -3212,6 +3298,7 @@
       "reset-page": "Ripristina pagina",
       "reset-page-confirm": "Conferma ripristino",
       "search-placeholder": "Cerca impostazioni...",
+      "search-truncated": "Visualizzazione delle prime {count} corrispondenze. Perfeziona la ricerca per restringere i risultati.",
       "support-report": "Report di supporto",
       "support-report-saved": "Report di supporto salvato.",
       "support-report-title": "Salva report di supporto",

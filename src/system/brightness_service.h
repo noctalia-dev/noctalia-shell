@@ -40,6 +40,7 @@ public:
   [[nodiscard]] const BrightnessDisplay* findByOutput(wl_output* output) const;
   [[nodiscard]] bool available() const noexcept;
 
+  void setAllBrightness(float value);
   void setBrightness(const std::string& displayId, float value);
   void requestDdcRefresh();
   void reload(const BrightnessConfig& config);

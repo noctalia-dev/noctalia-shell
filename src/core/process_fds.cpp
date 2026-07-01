@@ -9,6 +9,7 @@
 #include <string>
 #include <string_view>
 #include <sys/resource.h>
+#include <sys/select.h>
 #include <unistd.h>
 #include <unordered_map>
 #include <vector>
@@ -26,6 +27,10 @@ namespace {
     }
     return true;
   }
+
+  // Soft RLIMIT_NOFILE captured before raiseOpenFileLimit() bumps it, so forked
+  // children can be reset to it before exec. 0 means "not captured yet".
+  rlim_t g_originalSoftNofile = 0;
 
   [[nodiscard]] std::string rlimitValue(rlim_t value) {
     if (value == RLIM_INFINITY) {
@@ -92,6 +97,7 @@ std::string ProcessFds::raiseOpenFileLimit() {
   }
 
   const rlim_t previous = limit.rlim_cur;
+  g_originalSoftNofile = previous;
   if (limit.rlim_cur >= limit.rlim_max) {
     return std::format("RLIMIT_NOFILE already at hard limit ({})", rlimitValue(previous));
   }
@@ -105,6 +111,20 @@ std::string ProcessFds::raiseOpenFileLimit() {
   }
 
   return std::format("RLIMIT_NOFILE soft limit raised {} -> {}", rlimitValue(previous), rlimitValue(limit.rlim_max));
+}
+
+void ProcessFds::resetOpenFileLimitForChild() noexcept {
+  rlimit limit{};
+  if (getrlimit(RLIMIT_NOFILE, &limit) != 0) {
+    return;
+  }
+  const rlim_t target =
+      std::min(g_originalSoftNofile != 0 ? g_originalSoftNofile : static_cast<rlim_t>(FD_SETSIZE), limit.rlim_max);
+  if (target == limit.rlim_cur) {
+    return;
+  }
+  limit.rlim_cur = target;
+  (void)setrlimit(RLIMIT_NOFILE, &limit);
 }
 
 std::string ProcessFds::describeOpenFileDescriptors(std::size_t maxTargets) {
