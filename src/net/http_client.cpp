@@ -289,6 +289,10 @@ void HttpClient::request(HttpRequest req, ResponseCallback cb) {
       curl_easy_setopt(easy, CURLOPT_UNRESTRICTED_AUTH, 1L);
     }
   }
+  if (req.freshConnection) {
+    curl_easy_setopt(easy, CURLOPT_FRESH_CONNECT, 1L);
+    curl_easy_setopt(easy, CURLOPT_FORBID_REUSE, 1L);
+  }
   if (!stored.basicUsername.empty() || !stored.basicPassword.empty()) {
     curl_easy_setopt(easy, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
     curl_easy_setopt(easy, CURLOPT_USERNAME, stored.basicUsername.c_str());

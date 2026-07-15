@@ -1,13 +1,13 @@
 #include "render/text/glyph_registry.h"
 
+#include "core/files/resource_paths.h"
 #include "core/log.h"
-#include "core/resource_paths.h"
 
 #include <charconv>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
 #include <string_view>

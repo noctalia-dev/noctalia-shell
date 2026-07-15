@@ -40,7 +40,7 @@ namespace {
 int main() {
   // Real override paths the settings registry emits — leaf, nested sub-table,
   // enum, named-map, and bar/monitor forms.
-  expectKnown({"shell", "ui_scale"});
+  expectKnown({"accessibility", "ui_scale"});
   expectKnown({"shell", "animation", "speed"});
   expectKnown({"shell", "panel", "control_center_placement"});
   expectKnown({"shell", "shadow", "alpha"});
@@ -63,6 +63,7 @@ int main() {
   expectKnown({"battery", "warning_threshold"});
   expectKnown({"calendar", "refresh_minutes"});
   expectKnown({"calendar", "account", "icloud", "provider"});
+  expectKnown({"control_center", "calendar", "show_events_card"});
   expectKnown({"nightlight", "temperature_day"});
   expectKnown({"location", "auto_locate"});
   expectKnown({"keybinds", "validate"});
@@ -70,14 +71,16 @@ int main() {
   expectKnown({"hooks", "wallpaper_changed"});
   // Bar: base field, container levels, and a resolved monitor-override field.
   expectKnown({"bar", "default", "thickness"});
+  expectKnown({"bar", "default", "concave_edge_corners"});
   expectKnown({"bar", "default", "position"});
   expectKnown({"bar", "default"});
   expectKnown({"bar", "default", "monitor", "DP-1", "thickness"});
+  expectKnown({"bar", "default", "monitor", "DP-1", "concave_edge_corners"});
 
   // Typos and bogus paths must NOT resolve.
   expectUnknown({"shell", "ui_scl"});                            // leaf typo
   expectUnknown({"shell", "panel", "control_center_palcement"}); // nested typo
-  expectUnknown({"shel", "ui_scale"});                           // section typo
+  expectUnknown({"accessibilit", "ui_scale"});                   // section typo
   expectUnknown({"shell"});                                      // bare section
   expectUnknown({"dock", "radius_top_typo"});
   expectUnknown({"desktop_widgets", "enabeld"});

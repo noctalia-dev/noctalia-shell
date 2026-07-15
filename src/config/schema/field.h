@@ -3,6 +3,7 @@
 #include "config/config_types.h"
 #include "config/schema/diagnostics.h"
 #include "core/toml.h"
+#include "util/file_utils.h"
 #include "util/string_utils.h"
 
 #include <cmath>
@@ -167,6 +168,22 @@ namespace noctalia::config::schema {
     };
   }
 
+  template <typename Struct> Field<Struct> field(std::optional<std::int32_t> Struct::* member, std::string_view key) {
+    return Field<Struct>{
+        key,
+        [member, key](const toml::table& tbl, Struct& out, std::string_view, Diagnostics&) {
+          if (auto v = tbl[key].value<std::int64_t>()) {
+            out.*member = static_cast<std::int32_t>(*v);
+          }
+        },
+        [member, key](toml::table& tbl, const Struct& in) {
+          if ((in.*member).has_value()) {
+            tbl.insert_or_assign(key, static_cast<std::int64_t>(*(in.*member)));
+          }
+        },
+    };
+  }
+
   template <typename Struct> Field<Struct> field(std::vector<std::string> Struct::* member, std::string_view key) {
     return Field<Struct>{
         key,
@@ -200,6 +217,36 @@ namespace noctalia::config::schema {
       std::function<void(toml::table& tbl, const Struct& in)> write
   ) {
     return Field<Struct>{key, std::move(read), std::move(write)};
+  }
+
+  // String holding a filesystem path: ~ and $VARS expand on read, emitted raw.
+  template <typename Struct> Field<Struct> pathStringField(std::string Struct::* member, std::string_view key) {
+    return custom<Struct>(
+        key,
+        [member, key](const toml::table& tbl, Struct& out, std::string_view, Diagnostics&) {
+          if (auto v = tbl[key].value<std::string>()) {
+            out.*member = v->empty() ? *v : FileUtils::expandUserPath(*v).string();
+          }
+        },
+        [member, key](toml::table& tbl, const Struct& in) { tbl.insert_or_assign(key, in.*member); }
+    );
+  }
+
+  template <typename Struct>
+  Field<Struct> optionalPathStringField(std::optional<std::string> Struct::* member, std::string_view key) {
+    return custom<Struct>(
+        key,
+        [member, key](const toml::table& tbl, Struct& out, std::string_view, Diagnostics&) {
+          if (auto v = tbl[key].value<std::string>()) {
+            out.*member = v->empty() ? *v : FileUtils::expandUserPath(*v).string();
+          }
+        },
+        [member, key](toml::table& tbl, const Struct& in) {
+          if ((in.*member).has_value()) {
+            tbl.insert_or_assign(key, *(in.*member));
+          }
+        }
+    );
   }
 
   // A keyless field that runs cross-field logic after all leaf reads (enforcing

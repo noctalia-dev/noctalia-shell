@@ -37,9 +37,9 @@ namespace {
     if (config == nullptr) {
       return 1.0f;
     }
-    const auto& shell = config->config().shell;
+    const auto& accessibility = config->config().accessibility;
     const auto& osd = config->config().osd;
-    return std::max(0.1f, shell.uiScale * osd.scale);
+    return std::max(0.1f, accessibility.uiScale * osd.scale);
   }
 
   [[nodiscard]] bool isOsdKindEnabled(const OsdKindsConfig& kinds, OsdKind kind) {
@@ -228,6 +228,12 @@ void OsdOverlay::show(const OsdContent& content) {
     inst->showPending = true;
     inst->surface->requestUpdate();
   }
+}
+
+bool OsdOverlay::isVisible() const {
+  return std::ranges::any_of(m_instances, [](const auto& inst) {
+    return inst->visible || inst->showPending || inst->showAnimId != 0;
+  });
 }
 
 OsdOverlay::SurfaceMargins OsdOverlay::surfaceMarginsForPosition(const std::string& position) const {
@@ -599,10 +605,10 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
       .out = &inst.value,
       .text = "100%",
       .fontSize = valueFontSize(s),
+      .fontWeight = FontWeight::Bold,
       .color = colorSpecFromRole(ColorRole::OnSurface),
       .maxWidth = vertical ? cw - pad * 2.0f : 0.0f,
       .maxLines = 1,
-      .fontWeight = FontWeight::Bold,
       .textAlign = vertical ? TextAlign::Center : TextAlign::End,
       .configure = [](Label& label) { label.setZIndex(1); },
   });

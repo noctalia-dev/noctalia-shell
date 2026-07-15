@@ -41,6 +41,9 @@ namespace settings {
     if (key == "auto_hide") {
       return override->autoHide.has_value();
     }
+    if (key == "smart_auto_hide") {
+      return override->smartAutoHide.has_value();
+    }
     if (key == "show_on_workspace_switch") {
       return override->showOnWorkspaceSwitch.has_value();
     }
@@ -79,6 +82,9 @@ namespace settings {
     }
     if (key == "radius_bottom_right") {
       return override->radiusBottomRight.has_value();
+    }
+    if (key == "concave_edge_corners") {
+      return override->concaveEdgeCorners.has_value();
     }
     if (key == "background_opacity") {
       return override->backgroundOpacity.has_value();
@@ -159,9 +165,60 @@ namespace settings {
     return ui::label({
         .text = std::string(text),
         .fontSize = fontSize,
-        .color = color,
         .fontWeight = fontWeight,
+        .color = color,
     });
+  }
+
+  void updateSettingsStatusBanner(Flex& banner, Label& message, std::string_view text, bool error) {
+    message.setText(std::string(text));
+    message.setColor(colorSpecFromRole(error ? ColorRole::Error : ColorRole::Secondary));
+    banner.setFill(colorSpecFromRole(error ? ColorRole::Error : ColorRole::Secondary, 0.14f));
+    banner.setBorder(colorSpecFromRole(error ? ColorRole::Error : ColorRole::Secondary, 0.45f), Style::borderWidth);
+    banner.setVisible(!text.empty());
+  }
+
+  std::unique_ptr<Flex> makeSettingsStatusBanner(SettingsStatusBannerProps props) {
+    const float scale = props.scale;
+    const bool error = props.error;
+    auto banner = ui::row({
+        .out = props.out,
+        .align = FlexAlign::Center,
+        .gap = Style::spaceSm * scale,
+        .visible = !props.message.empty(),
+        .configure = [scale, error](Flex& row) {
+          row.setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+          row.setRadius(Style::scaledRadiusMd(scale));
+          row.setFill(colorSpecFromRole(error ? ColorRole::Error : ColorRole::Secondary, 0.14f));
+          row.setBorder(colorSpecFromRole(error ? ColorRole::Error : ColorRole::Secondary, 0.45f), Style::borderWidth);
+        },
+    });
+    banner->addChild(
+        ui::label({
+            .out = props.messageOut,
+            .text = std::move(props.message),
+            .fontSize = Style::fontSizeCaption * scale,
+            .fontWeight = FontWeight::Bold,
+            .color = colorSpecFromRole(error ? ColorRole::Error : ColorRole::Secondary),
+            .maxLines = 3,
+            .flexGrow = 1.0f,
+        })
+    );
+    if (props.onDismiss) {
+      banner->addChild(
+          ui::button({
+              .glyph = "close",
+              .glyphSize = Style::fontSizeCaption * scale,
+              .variant = ButtonVariant::Ghost,
+              .minWidth = Style::controlHeightSm * scale,
+              .minHeight = Style::controlHeightSm * scale,
+              .padding = Style::spaceXs * scale,
+              .radius = Style::scaledRadiusSm(scale),
+              .onClick = std::move(props.onDismiss),
+          })
+      );
+    }
+    return banner;
   }
 
   std::unique_ptr<Label> makeSettingSubtitleLabel(std::string_view text, float scale) {

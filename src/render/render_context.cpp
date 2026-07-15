@@ -1,8 +1,7 @@
 #include "render/render_context.h"
 
+#include "core/files/resource_paths.h"
 #include "core/log.h"
-
-#include "core/resource_paths.h"
 #include "core/ui_phase.h"
 #include "render/backend/render_backend.h"
 #include "render/core/texture_handle.h"
@@ -123,19 +122,39 @@ void RenderContext::initialize(GlSharedContext& shared) {
   m_glyphRenderer.initialize(
       paths::assetPath("fonts/tabler.ttf").string(), m_backend.get(), &m_backend->textureManager()
   );
-  m_textFontFamily = "sans-serif";
+  m_textRenderer.setFontFamily(m_textFontFamily);
   ++m_textMetricsGeneration;
+  m_graphicsResetPending = false;
+}
+
+void RenderContext::restoreAfterGraphicsReset(GlSharedContext& shared) {
+  if (m_backend == nullptr) {
+    throw std::runtime_error("cannot restore an uninitialized render context");
+  }
+  m_backend->initialize(shared);
+  m_backend->textureManager().probeExtensions();
+  invalidateGpuResourcesNextFrame();
+}
+
+void RenderContext::prepareForGraphicsReset() {
+  if (m_backend == nullptr) {
+    return;
+  }
+
+  m_textRenderer.abandonGlyphTextures();
+  m_glyphRenderer.abandonGlyphTextures();
+  m_backend->abandonAfterGraphicsReset();
 }
 
 bool RenderContext::makeCurrentNoSurface() {
-  if (m_backend == nullptr) {
+  if (m_backend == nullptr || m_graphicsResetPending) {
     return false;
   }
   return m_backend->makeCurrentNoSurface();
 }
 
 bool RenderContext::makeCurrent(RenderTarget& target) {
-  if (m_backend == nullptr || !m_backend->makeCurrent(target)) {
+  if (m_backend == nullptr || m_graphicsResetPending || !m_backend->makeCurrent(target)) {
     return false;
   }
   // Sync the shared text/glyph renderer to this target's buffer/logical ratio
@@ -175,7 +194,7 @@ void RenderContext::notifyFontConfigChanged() {
 }
 
 void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
-  if (m_backend == nullptr) {
+  if (m_backend == nullptr || m_graphicsResetPending) {
     return;
   }
   const auto totalStart = std::chrono::steady_clock::now();
@@ -265,6 +284,13 @@ void RenderContext::measureTextCursorStops(
   m_textRenderer.measureCursorStops(text, fontSize, byteOffsets, outStops, fontWeight);
 }
 
+void RenderContext::measureTextCursorStopsWrapped(
+    std::string_view text, float fontSize, const std::vector<std::size_t>& byteOffsets, float maxWidth,
+    std::vector<TextCursorStop>& outStops, FontWeight fontWeight
+) {
+  m_textRenderer.measureCursorStopsWrapped(text, fontSize, byteOffsets, maxWidth, outStops, fontWeight);
+}
+
 TextMetrics RenderContext::measureGlyph(char32_t codepoint, float fontSize) {
   auto m = m_glyphRenderer.measureGlyph(codepoint, fontSize);
   return TextMetrics{
@@ -291,14 +317,11 @@ void RenderContext::invalidateGpuResourcesNextFrame() noexcept {
 }
 
 void RenderContext::handleGraphicsReset(RenderGraphicsResetStatus status) {
-  kLog.warn("graphics reset detected: {}; rebuilding GPU resources", graphicsResetStatusName(status));
-  invalidateGpuResourcesNextFrame();
-  if (m_backend != nullptr) {
-    m_backend->invalidateGpuResources();
+  if (m_graphicsResetPending) {
+    return;
   }
-  m_textRenderer.invalidateGlyphTextures();
-  m_glyphRenderer.invalidateGlyphTextures();
-  m_glyphTexturesDirty = false;
+  kLog.warn("graphics reset detected: {}; scheduling context recovery", graphicsResetStatusName(status));
+  m_graphicsResetPending = true;
   if (m_graphicsResetCallback) {
     m_graphicsResetCallback(status);
   }

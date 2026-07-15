@@ -36,10 +36,10 @@ void WeatherWidget::create() {
       ui::label({
           .out = &m_label,
           .fontSize = Style::fontSizeBody * m_contentScale,
+          .fontWeight = labelFontWeight(),
           .fontFamily = labelFontFamily(),
           .maxWidth = m_maxWidth * m_contentScale,
           .maxLines = 1,
-          .fontWeight = labelFontWeight(),
       })
   );
 

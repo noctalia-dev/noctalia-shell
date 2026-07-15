@@ -215,10 +215,7 @@ tests/              Unit tests and config validation fixtures
 tools/              Developer and translation helper scripts
 nix/                Nix package, module, and dev shell definitions
 third_party/
-  tomlplusplus/   TOML parser (vendored)
   wuffs/          Raster image decoding (vendored)
-  stb/            Image resizing (vendored)
-  nlohmann/       JSON parser (vendored, header-only)
   dr_wav/         WAV decoder (vendored)
   fzy/            Fuzzy matching (vendored)
   luau/           Plugin scripting runtime (vendored)

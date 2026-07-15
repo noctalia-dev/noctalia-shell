@@ -1,6 +1,6 @@
 #include "ui/controls/stepper.h"
 
-#include "core/key_symbols.h"
+#include "core/input/key_symbols.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "render/core/render_styles.h"
 #include "render/core/renderer.h"

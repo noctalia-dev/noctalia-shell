@@ -103,8 +103,8 @@ void PowerTab::buildStatusCard(Flex& root, float scale) {
           .out = &m_percentLabel,
           .text = "--",
           .fontSize = Style::fontSizeTitle * scale,
-          .color = colorSpecFromRole(ColorRole::OnSurface),
           .fontWeight = FontWeight::Bold,
+          .color = colorSpecFromRole(ColorRole::OnSurface),
       }),
       ui::label({
           .out = &m_stateLabel,
@@ -250,8 +250,8 @@ void PowerTab::buildHealthCard(Flex& root, float scale) {
           .out = &m_healthLabel,
           .text = "--",
           .fontSize = Style::fontSizeBody * scale,
-          .color = colorSpecFromRole(ColorRole::OnSurface),
           .fontWeight = FontWeight::Bold,
+          .color = colorSpecFromRole(ColorRole::OnSurface),
       })
   );
   card->addChild(std::move(header));

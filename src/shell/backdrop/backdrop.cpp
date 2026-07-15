@@ -53,9 +53,6 @@ bool Backdrop::initialize(
     return true;
   }
 
-  if (shouldHaveInstances()) {
-    syncInstances();
-  }
   cacheReloadBaseline();
   return true;
 }
@@ -174,6 +171,31 @@ void Backdrop::onGpuResourcesInvalidated() {
     updateRendererState(*inst);
     if (inst->surface != nullptr) {
       inst->surface->requestRedraw();
+    }
+  }
+}
+
+void Backdrop::prepareForGraphicsReset() noexcept {
+  for (auto& inst : m_instances) {
+    if (inst->surface != nullptr) {
+      inst->surface->prepareForGraphicsReset();
+    }
+    inst->currentTexture = {};
+  }
+}
+
+void Backdrop::restoreAfterGraphicsReset() {
+  for (auto& inst : m_instances) {
+    if (inst->surface != nullptr) {
+      inst->surface->restoreAfterGraphicsReset();
+    }
+  }
+}
+
+void Backdrop::finishGraphicsResetRecovery() noexcept {
+  for (auto& inst : m_instances) {
+    if (inst->surface != nullptr) {
+      inst->surface->finishGraphicsResetRecovery();
     }
   }
 }

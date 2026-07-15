@@ -70,10 +70,17 @@ void ScreenCorners::onConfigReload() {
 }
 
 void ScreenCorners::onOutputChange() {
-  if (m_config == nullptr || !m_config->config().shell.screenCorners.enabled) {
+  if (m_config == nullptr) {
     return;
   }
+  const auto& cfg = m_config->config().shell.screenCorners;
+  m_lastEnabled = cfg.enabled;
+  m_lastSize = cfg.size;
+
   destroySurfaces();
+  if (!cfg.enabled) {
+    return;
+  }
   ensureSurfaces();
 }
 

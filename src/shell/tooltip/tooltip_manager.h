@@ -11,6 +11,7 @@ class InputArea;
 class Node;
 class PopupSurface;
 class RenderContext;
+class ConfigService;
 class WaylandConnection;
 struct wl_output;
 struct xdg_surface;
@@ -20,7 +21,7 @@ class TooltipManager {
 public:
   static TooltipManager& instance();
 
-  void initialize(WaylandConnection& wayland, RenderContext* renderContext);
+  void initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext);
   void shutdown();
 
   void onHoverChange(InputArea* area, zwlr_layer_surface_v1* parentLayerSurface, wl_output* output);
@@ -53,6 +54,7 @@ private:
   void prepareFrame(bool needsUpdate, bool needsLayout);
 
   WaylandConnection* m_wayland = nullptr;
+  ConfigService* m_config = nullptr;
   RenderContext* m_renderContext = nullptr;
 
   State m_state = State::Idle;

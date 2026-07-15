@@ -47,8 +47,11 @@ public:
   [[nodiscard]] virtual bool reservesMiddleClick() const noexcept { return false; }
 
   [[nodiscard]] virtual bool noGapAroundMe() const noexcept { return false; }
-  // Layout-only bar widgets (spacers): clicks pass through to bar dead-zone handlers.
-  [[nodiscard]] virtual bool isBarClickThrough() const noexcept { return false; }
+  // Layout-only or non-interactive bar widgets: clicks pass through to bar dead-zone handlers.
+  [[nodiscard]] virtual bool isBarClickThrough() const noexcept { return m_nonInteractive; }
+  // Widgets with interactive sub-items (workspaces, taskbar, tray) manage hover per item and
+  // opt out of the bar's generic whole-widget hover highlight.
+  [[nodiscard]] virtual bool wantsBarHoverHighlight() const noexcept { return !m_nonInteractive; }
 
   [[nodiscard]] Node* root() const noexcept { return m_root ? m_root.get() : m_rootPtr; }
   [[nodiscard]] float width() const noexcept;
@@ -75,10 +78,16 @@ public:
   void setBarCapsuleSpec(WidgetBarCapsuleSpec spec) noexcept { m_barCapsuleSpec = std::move(spec); }
   void setWidgetForeground(std::optional<ColorSpec> color) noexcept { m_widgetForeground = color; }
   void setWidgetIconColor(std::optional<ColorSpec> color) noexcept { m_widgetIconColor = color; }
+  void setNonInteractive(bool nonInteractive) noexcept;
+  [[nodiscard]] bool nonInteractive() const noexcept { return m_nonInteractive; }
   [[nodiscard]] const WidgetBarCapsuleSpec& barCapsuleSpec() const noexcept { return m_barCapsuleSpec; }
   void setBarCapsuleScene(Node* shell, Box* box) noexcept;
   [[nodiscard]] Node* barCapsuleShell() const noexcept { return m_capsuleShell; }
   [[nodiscard]] Box* barCapsuleBox() const noexcept { return m_capsuleBox; }
+  void setBarHoverBox(Box* box) noexcept { m_hoverBox = box; }
+  [[nodiscard]] Box* barHoverBox() const noexcept { return m_hoverBox; }
+  void setBarHoverProgress(float progress) noexcept { m_hoverProgress = progress; }
+  [[nodiscard]] float barHoverProgress() const noexcept { return m_hoverProgress; }
   // Outermost node for flex layout / anchor alignment (capsule shell when enabled).
   [[nodiscard]] Node* layoutBoundsNode() const noexcept { return m_capsuleShell != nullptr ? m_capsuleShell : root(); }
   [[nodiscard]] float resolvedBarCapsuleRadius(float width, float height) const noexcept;
@@ -101,7 +110,7 @@ protected:
       std::string_view panelId, std::string_view context = {}, std::optional<float> anchorSurfaceX = std::nullopt,
       std::optional<float> anchorSurfaceY = std::nullopt
   );
-  void setRoot(std::unique_ptr<Node> root) { m_root = std::move(root); }
+  void setRoot(std::unique_ptr<Node> root);
   void clearReleasedRoot() noexcept { m_rootPtr = nullptr; }
   virtual void doLayout(Renderer& renderer, float containerWidth, float containerHeight) = 0;
   virtual void doUpdate(Renderer& renderer) { (void)renderer; }
@@ -119,8 +128,11 @@ protected:
   WidgetBarCapsuleSpec m_barCapsuleSpec{};
   std::optional<ColorSpec> m_widgetForeground;
   std::optional<ColorSpec> m_widgetIconColor;
+  bool m_nonInteractive = false;
   Node* m_capsuleShell = nullptr;
   Box* m_capsuleBox = nullptr;
+  Box* m_hoverBox = nullptr;
+  float m_hoverProgress = 0.0f;
 
 private:
   std::unique_ptr<Node> m_root;

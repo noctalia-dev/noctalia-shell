@@ -1,6 +1,7 @@
 #pragma once
 
 #include "shell/bar/widget.h"
+#include "shell/bar/widget_custom_image.h"
 
 #include <cstdint>
 #include <string>
@@ -8,6 +9,7 @@
 struct Config;
 class EasyEffectsService;
 class Glyph;
+class Image;
 class Label;
 class PipeWireService;
 struct wl_output;
@@ -22,7 +24,7 @@ public:
   VolumeWidget(
       PipeWireService* audio, EasyEffectsService* easyEffects, const Config* config, wl_output* output, bool showLabel,
       VolumeWidgetTarget target, int scrollStepPercent, ColorSpec muteColor, std::string glyphOverride,
-      std::string muteGlyphOverride
+      std::string muteGlyphOverride, WidgetCustomImage customImage = {}
   );
 
   void create() override;
@@ -42,7 +44,9 @@ private:
   ColorSpec m_muteColor;
   std::string m_glyphOverride;
   std::string m_muteGlyphOverride;
+  WidgetCustomImage m_customImage;
   Glyph* m_glyph = nullptr;
+  Image* m_image = nullptr;
   Label* m_label = nullptr;
   float m_lastVolume = -1.0f;
   std::string m_lastEffectsProfile;

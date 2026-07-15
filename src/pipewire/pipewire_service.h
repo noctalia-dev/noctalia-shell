@@ -1,5 +1,7 @@
 #pragma once
 
+#include "pipewire/audio_glyphs.h"
+
 #include <chrono>
 #include <cstdint>
 #include <functional>
@@ -34,10 +36,13 @@ struct AudioNode {
   std::uint32_t channelCount = 0;
   bool isDefault = false;
   bool available = true; // false for a device whose active route is unavailable (e.g. unplugged HDMI)
-  std::string portName;  // active route's port/profile name, when it has one
 
   bool operator==(const AudioNode&) const = default;
 };
+
+// User-facing label for a sink/source: PipeWire's human-readable node description, falling back to
+// the node name.
+[[nodiscard]] std::string audioDeviceLabel(const AudioNode& node);
 
 struct AudioState {
   std::vector<AudioNode> sinks;
@@ -131,7 +136,6 @@ public:
     std::int32_t priority = 0;
     std::uint32_t available = SPA_PARAM_AVAILABILITY_unknown;
     bool muted = false;
-    std::string description; // port/profile name, e.g. "Speaker", "HDMI / DisplayPort 3"
   };
   struct NodeData {
     PipeWireService* service = nullptr;
@@ -183,7 +187,6 @@ public:
   struct DeviceData {
     PipeWireService* service = nullptr;
     std::uint32_t id = 0;
-    std::string description; // card name, e.g. "Alder Lake ... Audio Controller"
     struct pw_device* proxy = nullptr;
     spa_hook* listener = nullptr;
     std::vector<DeviceRouteData> routes;
@@ -220,13 +223,15 @@ private:
   void setNodeVolume(std::uint32_t id, float volume);
   void setNodeMuted(std::uint32_t id, bool muted);
 
-  // Volume delta for one relative-adjust event: the base step for a tap, or a repeat-rate-independent
-  // velocity ramp while held. `gesture` identifies the control and direction (e.g. sink-up vs
-  // mic-down) so switching gesture restarts the ramp.
-  [[nodiscard]] float relativeAdjustDelta(int gesture, float baseStep);
+  // Target volume for one relative-adjust event: current + base step for a tap, or a
+  // repeat-rate-independent velocity ramp accumulated on a gesture-local target while held.
+  // `gesture` identifies the control and direction (e.g. sink-up vs mic-down) so switching gesture
+  // restarts the ramp from `current`.
+  [[nodiscard]] float
+  relativeAdjustTarget(int gesture, float baseStep, float direction, float current, float maxVolume);
   struct RelativeAdjust {
-    std::chrono::steady_clock::time_point startAt;
     std::chrono::steady_clock::time_point lastAt;
+    float target = 0.0f;
     int gesture = 0;
   };
   RelativeAdjust m_relativeAdjust;

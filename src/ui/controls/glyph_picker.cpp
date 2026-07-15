@@ -155,8 +155,8 @@ GlyphPicker::GlyphPicker(float chromeScale) : m_chromeScale(std::max(0.1f, chrom
               .out = &m_title,
               .text = i18n::tr("ui.dialogs.glyph-picker.title"),
               .fontSize = Style::fontSizeTitle * m_chromeScale,
-              .color = colorSpecFromRole(ColorRole::Primary),
               .fontWeight = FontWeight::Bold,
+              .color = colorSpecFromRole(ColorRole::Primary),
           }),
           ui::spacer(),
           ui::button({

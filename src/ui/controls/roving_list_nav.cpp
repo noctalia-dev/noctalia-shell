@@ -1,7 +1,7 @@
 #include "ui/controls/roving_list_nav.h"
 
-#include "core/key_symbols.h"
-#include "core/keybind_matcher.h"
+#include "core/input/key_symbols.h"
+#include "core/input/keybind_matcher.h"
 #include "render/scene/input_area.h"
 #include "ui/controls/button.h"
 

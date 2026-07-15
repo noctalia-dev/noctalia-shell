@@ -9,7 +9,7 @@
 #include "compositors/workspace_alert_service.h"
 #include "config/config_poll_source.h"
 #include "config/config_service.h"
-#include "core/file_watcher.h"
+#include "core/files/file_watcher.h"
 #include "core/timer_manager.h"
 #include "dbus/notification/notification_poll_source.h"
 #include "hooks/battery_hook_state.h"
@@ -108,6 +108,7 @@ class BrightnessService;
 class DebugService;
 class EasyEffectsService;
 class INetworkService;
+class IwdSecretAgent;
 class LogindService;
 class MainLoop;
 class MprisService;
@@ -149,7 +150,7 @@ public:
   // Public for signal handler
   static std::atomic<bool> s_shutdownRequested;
 
-  bool runUserCommand(const std::string& command);
+  bool runShellCommand(const std::string& command);
   void triggerShellAction(const std::string& action, wl_output* output = nullptr);
   // Highest layer-shell layer occupied by any bar on the given output. Hot
   // corners place their trigger surfaces on this layer.
@@ -173,6 +174,10 @@ private:
   void initNotificationAndOsd();
   void initBarDockAndLayout();
   void initWidgetControllersAndCallbacks();
+  // Single source of truth for surface (re)creation order: (re)builds every
+  // per-output layer surface bottom-to-top. Called once after initUi() wiring
+  // and on every output change so first-run stacking matches hot reload.
+  void reconcileOutputSurfaces();
   void initIpc();
   // (Re)register plugin-backed launcher providers from the enabled plugin set.
   void reloadPluginLauncherProviders();
@@ -193,10 +198,11 @@ private:
   void syncScreenTimeService();
   void performGreeterSync(bool quiet = false);
   void scheduleGreeterAutoSync();
-  bool runUserCommandBlocking(const std::string& command);
+  bool runShellCommandBlocking(const std::string& command);
   bool runIdleAction(const IdleActionRequest& action);
   void onIconThemeChanged();
   void onGraphicsReset(RenderGraphicsResetStatus status);
+  void recoverGraphicsAfterReset();
   void requestAllSurfacesRedraw();
   void onUpowerStateChangedForHooks();
   void onNetworkStateChangedForEvents(const NetworkState& state, NetworkChangeOrigin origin);
@@ -244,6 +250,7 @@ private:
   std::unique_ptr<PowerProfilesService> m_powerProfilesService;
   std::unique_ptr<INetworkService> m_networkService;
   std::unique_ptr<NetworkSecretAgent> m_networkSecretAgent;
+  std::unique_ptr<IwdSecretAgent> m_iwdSecretAgent;
   std::unique_ptr<BluetoothService> m_bluetoothService;
   std::unique_ptr<BluetoothAgent> m_bluetoothAgent;
   Timer m_bluetoothResumeTimer;
@@ -349,7 +356,10 @@ private:
   Timer m_greeterAutoSyncTimer;
   Timer m_clipboardAutoPasteTimer;
   Timer m_pluginAutoUpdateTimer;
+  Timer m_graphicsRecoveryTimer;
   std::uint64_t m_greeterSyncGeneration = 0;
+  int m_graphicsRecoveryAttempts = 0;
+  bool m_graphicsRecoveryScheduled = false;
 
   std::unique_ptr<MainLoop> m_mainLoop;
 };

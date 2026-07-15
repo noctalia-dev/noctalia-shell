@@ -3,6 +3,7 @@
 #include "capture/screenshot_service.h"
 #include "config/config_types.h"
 #include "shell/bar/widget.h"
+#include "shell/bar/widget_custom_image.h"
 
 #include <memory>
 #include <string>
@@ -11,6 +12,7 @@ class CompositorPlatform;
 class ConfigService;
 class ContextMenuPopup;
 class Glyph;
+class Image;
 class InputArea;
 class RenderContext;
 struct wl_output;
@@ -20,7 +22,7 @@ public:
   ScreenshotWidget(
       wl_output* output, std::string barGlyphId, ScreenshotService& screenshots, ConfigService& configService,
       CompositorPlatform& platform, RenderContext& renderContext, const ShellConfig::ShadowConfig& shadow,
-      std::string barPosition = "top"
+      std::string barPosition = "top", WidgetCustomImage customImage = {}
   );
   ~ScreenshotWidget() override;
 
@@ -42,7 +44,9 @@ private:
   RenderContext& m_renderContext;
   ShellConfig::ShadowConfig m_shadowConfig;
   std::string m_barPosition;
+  WidgetCustomImage m_customImage;
   Glyph* m_glyph = nullptr;
+  Image* m_image = nullptr;
   InputArea* m_hitArea = nullptr;
   std::unique_ptr<ContextMenuPopup> m_menuPopup;
 };

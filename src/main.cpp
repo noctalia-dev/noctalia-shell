@@ -3,7 +3,7 @@
 #include "config/cli.h"
 #include "core/build_info.h"
 #include "core/log.h"
-#include "core/process_fds.h"
+#include "core/process/process_fds.h"
 #include "ipc/cli.h"
 #include "launcher/dmenu_cli.h"
 #include "scripting/plugin_lint.h"
@@ -234,7 +234,7 @@ namespace {
     // driver leaks internal sync_file fences slowly across a session; the default
     // 1024 soft cap can be exhausted in a long-running session, after which the
     // Wayland connection fails fatally.
-    logInfo("{}", ProcessFds::raiseOpenFileLimit());
+    ProcessFds::raiseOpenFileLimit();
 
     // Claim the single-instance lock before any shell/Wayland init so the answer
     // is settled before bars or surfaces are created. Held for the process lifetime.

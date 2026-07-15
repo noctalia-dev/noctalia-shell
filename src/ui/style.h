@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ui/signal.h"
+
 namespace Style {
 
   inline constexpr int barThicknessDefault = 34;
@@ -64,6 +66,10 @@ namespace Style {
 
   [[nodiscard]] float cornerRadiusScale() noexcept;
   void setCornerRadiusScale(float scale) noexcept;
+
+  [[nodiscard]] bool buttonBordersEnabled() noexcept;
+  void setButtonBordersEnabled(bool enabled);
+  Signal<>& buttonBordersChanged();
 
   [[nodiscard]] float scaledRadius(float radius, float localScale = 1.0f) noexcept;
   [[nodiscard]] float scaledRadiusSm(float localScale = 1.0f) noexcept;

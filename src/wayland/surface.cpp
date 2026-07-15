@@ -743,6 +743,21 @@ std::vector<InputRect> Surface::tessellateShape(
   }
   stripPx = std::max(stripPx, 1);
 
+  // All-convex with no inset reduces to a plain rounded rect; take the cheap path
+  // (corner bands + one middle rect) instead of walking every row. This is the
+  // common case on per-frame blur updates.
+  const bool anyConcave = corners.tl == CornerShape::Concave
+      || corners.tr == CornerShape::Concave
+      || corners.br == CornerShape::Concave
+      || corners.bl == CornerShape::Concave;
+  if (!anyConcave
+      && logicalInset.left <= 0.0f
+      && logicalInset.top <= 0.0f
+      && logicalInset.right <= 0.0f
+      && logicalInset.bottom <= 0.0f) {
+    return tessellateRoundedRect(x, y, w, h, radii.tl, radii.tr, radii.br, radii.bl, stripPx);
+  }
+
   // (x, y, w, h) is the body rect. Expand outward by logicalInset to obtain the
   // visual rect that hosts concave-corner bulges; the body sits inside it offset
   // by logicalInset.left / .top.
@@ -1330,11 +1345,23 @@ void Surface::processQueuedFrameWork() {
 void Surface::queueRenderIfNeeded() {
   const bool invalidated = m_sceneRoot != nullptr && (m_sceneRoot->paintDirty() || m_sceneRoot->layoutDirty());
   const bool animating = m_animationManager != nullptr && m_animationManager->hasActive();
-  if (animating) {
-    m_nextFrameCallbackShouldTick = true;
-  }
-  if (m_redrawRequested || invalidated || animating) {
+  if (m_redrawRequested || invalidated) {
     queueRender();
+  } else if (animating) {
+    continueAnimationFrameLoop();
+  }
+}
+
+void Surface::continueAnimationFrameLoop() {
+  if (m_surface == nullptr || m_frameCallback != nullptr) {
+    return;
+  }
+
+  // A frame callback becomes active on commit. With no changed pixels, commit
+  // only the callback state and retain the current buffer instead of repainting it.
+  requestFrame();
+  if (m_frameCallback != nullptr) {
+    wl_surface_commit(m_surface);
   }
 }
 
@@ -1365,8 +1392,7 @@ void Surface::renderQueuedFrame() {
 
   preparePendingFrame();
   const bool invalidated = m_sceneRoot != nullptr && (m_sceneRoot->paintDirty() || m_sceneRoot->layoutDirty());
-  const bool animating = m_animationManager != nullptr && m_animationManager->hasActive();
-  if (m_redrawRequested || invalidated || animating) {
+  if (m_redrawRequested || invalidated) {
     render();
   }
 }

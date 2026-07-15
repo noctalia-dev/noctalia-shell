@@ -726,15 +726,6 @@ namespace {
     }
   }
 
-  // Prefer the short port/profile name ("Speaker", "HDMI / DisplayPort 3") over the long full
-  // description, which shares a common prefix across a card's ports and truncates to look identical.
-  [[nodiscard]] std::string audioDeviceLabel(const AudioNode& node) {
-    if (!node.portName.empty()) {
-      return node.portName;
-    }
-    return !node.description.empty() ? node.description : node.name;
-  }
-
   // Hide devices whose active route is unavailable (e.g. an HDMI port with nothing plugged in), but
   // always keep the current default so the active selection is never hidden.
   [[nodiscard]] std::vector<AudioNode> availableDevices(std::span<const AudioNode> devices, std::uint32_t defaultId) {
@@ -775,8 +766,10 @@ namespace {
           ui::label({
               .out = &m_title,
               .fontSize = Style::fontSizeBody * scale,
-              .color = colorSpecFromRole(ColorRole::OnSurface),
               .fontWeight = FontWeight::Bold,
+              .color = colorSpecFromRole(ColorRole::OnSurface),
+              .maxLines = 1,
+              .ellipsize = TextEllipsize::Middle,
               .flexGrow = 1.0f,
           })
       );
@@ -925,9 +918,9 @@ namespace {
                           ui::label({
                               .out = &m_appNameLabel,
                               .fontSize = Style::fontSizeBody * scale,
+                              .fontWeight = FontWeight::Bold,
                               .color = colorSpecFromRole(ColorRole::OnSurface),
                               .maxLines = 1,
-                              .fontWeight = FontWeight::Bold,
                           }),
                           ui::label({
                               .out = &m_subtitleLabel,
@@ -941,8 +934,8 @@ namespace {
                           .out = &m_valueLabel,
                           .text = "0%",
                           .fontSize = Style::fontSizeBody * scale,
-                          .minWidth = m_valueLabelMinWidth,
                           .fontWeight = FontWeight::Bold,
+                          .minWidth = m_valueLabelMinWidth,
                           .textAlign = TextAlign::End,
                       })
                   ),
@@ -1277,8 +1270,8 @@ namespace {
             ui::label({
                 .text = title,
                 .fontSize = Style::fontSizeBody * scale,
-                .color = colorSpecFromRole(ColorRole::OnSurface),
                 .fontWeight = FontWeight::Bold,
+                .color = colorSpecFromRole(ColorRole::OnSurface),
             }),
             ui::label({
                 .text = body,
@@ -1299,8 +1292,6 @@ namespace {
       key += device.available ? '1' : '0';
       key.push_back(':');
       key += device.name;
-      key.push_back(':');
-      key += device.portName;
       key.push_back(':');
       key += device.description;
       key.push_back('\n');
@@ -1340,7 +1331,8 @@ void AudioTab::openDeviceMenu(DeviceVolumeCardState& card, const DeviceMenuModel
                        .label = std::format("{}{}", selectedPrefix, audioDeviceLabel(node)),
                        .enabled = true,
                        .separator = false,
-                       .hasSubmenu = false
+                       .hasSubmenu = false,
+                       .ellipsize = TextEllipsize::Middle,
                    };
                  })
       | std::ranges::to<std::vector>();
@@ -1448,24 +1440,27 @@ std::unique_ptr<Flex> AudioTab::createDeviceVolumeCard(DeviceVolumeCardSpec card
               .justify = FlexJustify::SpaceBetween,
               .gap = Style::spaceXs * scale,
           },
-          ui::row(
+          ui::column(
               {
-                  .align = FlexAlign::Center,
-                  .gap = Style::spaceSm * scale,
+                  .align = FlexAlign::Stretch,
+                  .justify = FlexJustify::Center,
+                  .gap = 0.0f,
                   .flexGrow = 1.0f,
               },
               ui::label({
                   .text = i18n::tr(card.devicePrefixKey),
                   .fontSize = Style::fontSizeTitle * scale,
-                  .color = colorSpecFromRole(ColorRole::OnSurface),
                   .fontWeight = FontWeight::Bold,
+                  .color = colorSpecFromRole(ColorRole::OnSurface),
+                  .maxLines = 1,
               }),
               ui::label({
                   .out = &card.state.deviceLabel,
                   .text = i18n::tr(card.noDeviceKey),
-                  .fontSize = Style::fontSizeBody * scale,
+                  .fontSize = Style::fontSizeCaption * scale,
                   .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
                   .maxLines = 1,
+                  .ellipsize = TextEllipsize::Middle,
                   .flexGrow = 1.0f,
               })
           ),
@@ -1536,8 +1531,8 @@ std::unique_ptr<Flex> AudioTab::createDeviceVolumeCard(DeviceVolumeCardSpec card
                   .out = &card.state.valueLabel,
                   .text = "0%",
                   .fontSize = Style::fontSizeBody * scale,
-                  .minWidth = kValueLabelWidth * scale,
                   .fontWeight = FontWeight::Bold,
+                  .minWidth = kValueLabelWidth * scale,
                   .textAlign = TextAlign::End,
               }),
               ui::button({

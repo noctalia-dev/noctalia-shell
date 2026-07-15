@@ -34,17 +34,6 @@ namespace {
 
   constexpr auto kMprisRefreshMinInterval = std::chrono::milliseconds(750);
 
-  [[nodiscard]] float normalizedScrollDelta(const InputArea::PointerData& data) {
-    float delta = data.scrollDelta(1.0f);
-    if (delta == 0.0f && data.axisValue120 != 0) {
-      delta = static_cast<float>(data.axisValue120) / 120.0f;
-    }
-    if (delta == 0.0f && data.axisDiscrete != 0) {
-      delta = static_cast<float>(data.axisDiscrete);
-    }
-    return delta;
-  }
-
 } // namespace
 
 ControlCenterPanel::ControlCenterPanel(const ControlCenterServices& services) {
@@ -66,7 +55,8 @@ ControlCenterPanel::ControlCenterPanel(const ControlCenterServices& services) {
   m_tabs[tabIndex(TabId::Weather)] = std::make_unique<WeatherTab>(services.weather, services.config);
   m_tabs[tabIndex(TabId::Calendar)] = std::make_unique<CalendarTab>(services.config, services.calendar);
   m_tabs[tabIndex(TabId::Notifications)] = std::make_unique<NotificationsTab>(services.notifications);
-  m_tabs[tabIndex(TabId::Network)] = std::make_unique<NetworkTab>(services.network, services.networkSecrets);
+  m_tabs[tabIndex(TabId::Network)] =
+      std::make_unique<NetworkTab>(services.network, services.networkSecrets, services.httpClient, services.config);
   m_tabs[tabIndex(TabId::Bluetooth)] = std::make_unique<BluetoothTab>(services.bluetooth, services.bluetoothAgent);
   m_tabs[tabIndex(TabId::Monitor)] = std::make_unique<MonitorTab>(services.brightness, services.config);
   m_tabs[tabIndex(TabId::System)] = std::make_unique<SystemTab>(services.sysmon);
@@ -252,8 +242,8 @@ void ControlCenterPanel::create() {
           .out = &m_contentTitle,
           .text = i18n::tr("control-center.tabs.home"),
           .fontSize = Style::fontSizeTitle * scale,
-          .color = colorSpecFromRole(ColorRole::Primary),
           .fontWeight = FontWeight::Bold,
+          .color = colorSpecFromRole(ColorRole::Primary),
           .flexGrow = 1.0f,
       })
   );
@@ -735,11 +725,11 @@ void ControlCenterPanel::wireSidebarScroll(InputArea* area) {
     if (data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL) {
       return;
     }
-    const float delta = normalizedScrollDelta(data);
-    if (delta == 0.0f) {
+    const float steps = data.scrollSteps();
+    if (steps == 0.0f) {
       return;
     }
-    selectAdjacentVisibleTab(delta > 0.0f ? 1 : -1);
+    selectAdjacentVisibleTab(steps > 0.0f ? 1 : -1);
   });
 }
 

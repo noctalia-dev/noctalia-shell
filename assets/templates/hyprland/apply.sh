@@ -53,11 +53,6 @@ require("noctalia").apply_theme()'
     return
   fi
 
-  # Migrate the legacy bare include to the apply_theme() form.
-  # Only matches a line that is *exactly* require("noctalia"), so user code
-  # like require("noctalia").colors.primary is left untouched.
-  sed -i 's/^[[:space:]]*require("noctalia")[[:space:]]*$/require("noctalia").apply_theme()/' "$lua_config_file"
-
   # Append only if there is no Noctalia include at all
   if ! grep -qF 'require("noctalia")' "$lua_config_file"; then
     printf '\n%s\n' "$include_line" >>"$lua_config_file"

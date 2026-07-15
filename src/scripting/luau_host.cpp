@@ -3,17 +3,23 @@
 #include "compositors/compositor_platform.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
-#include "core/process.h"
+#include "core/process/process.h"
 #include "lua.h"
 #include "luacode.h"
 #include "lualib.h"
 #include "net/http_client.h"
 #include "notification/notifications.h"
+#include "render/core/color.h"
+#include "render/text/font_registry.h"
 #include "scripting/plugin_bindings.h"
 #include "scripting/plugin_state_store.h"
 #include "scripting/script_api_context.h"
+#include "system/app_identity.h"
+#include "system/desktop_entry.h"
+#include "system/icon_resolver.h"
 #include "system/terminal_launch.h"
 #include "time/time_format.h"
+#include "ui/dialogs/color_picker_dialog.h"
 #include "util/file_utils.h"
 #include "util/fuzzy_match.h"
 #include "util/string_utils.h"
@@ -26,13 +32,15 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <system_error>
 #include <thread>
+#include <type_traits>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 namespace {
@@ -320,6 +328,37 @@ namespace {
     return 1;
   }
 
+  // appIconPath(appIdOrIconName, sizePx?) -> absolute icon file path or nil.
+  // Same resolution the native taskbar uses: desktop-entry lookup (id /
+  // StartupWMClass) for the icon name, then the XDG icon-theme resolver.
+  // Unmatched inputs are treated as raw icon names so plugins can also
+  // resolve themed icons directly.
+  int luau_appIconPath(lua_State* L) {
+    size_t len = 0;
+    const char* appId = luaL_checklstring(L, 1, &len);
+    const int targetSize = luaL_optinteger(L, 2, 0);
+
+    std::string iconName;
+    const auto entries = desktopEntriesSnapshot();
+    if (const auto entry = app_identity::findDesktopEntry(std::string_view(appId, len), *entries);
+        entry.has_value() && !entry->icon.empty()) {
+      iconName = entry->icon;
+    } else {
+      iconName.assign(appId, len);
+    }
+
+    // One resolver (and icon-path cache) per script worker thread; the theme
+    // plan it reads is shared across threads and mutex-guarded in IconResolver.
+    static thread_local IconResolver resolver;
+    const std::string& path = resolver.resolve(iconName, targetSize);
+    if (path.empty()) {
+      lua_pushnil(L);
+      return 1;
+    }
+    lua_pushlstring(L, path.data(), path.size());
+    return 1;
+  }
+
   int luau_setWallpaperEnabled(lua_State* L) {
     size_t len = 0;
     const char* connector = luaL_checklstring(L, 1, &len);
@@ -453,6 +492,20 @@ namespace {
     return 1;
   }
 
+  int luau_clipboardText(lua_State* L) {
+    auto* host = hostForState(L);
+    if (host == nullptr) {
+      lua_pushnil(L);
+      return 1;
+    }
+    if (const auto text = host->api().clipboardText(); text.has_value()) {
+      lua_pushlstring(L, text->data(), text->size());
+    } else {
+      lua_pushnil(L);
+    }
+    return 1;
+  }
+
   int luau_getenv(lua_State* L) {
     const char* name = luaL_checkstring(L, 1);
     const char* val = std::getenv(name);
@@ -536,6 +589,25 @@ namespace {
     return 1;
   }
 
+  int luau_loadFont(lua_State* L) {
+    size_t len = 0;
+    const char* path = luaL_checklstring(L, 1, &len);
+    auto* host = hostForState(L);
+    if (host == nullptr) {
+      lua_pushnil(L);
+      lua_pushstring(L, "no host");
+      return 2;
+    }
+    const std::string family = text::registerFontFile(resolveHostPath(host, std::string_view(path, len)));
+    if (family.empty()) {
+      lua_pushnil(L);
+      lua_pushstring(L, "failed to load font");
+      return 2;
+    }
+    lua_pushlstring(L, family.data(), family.size());
+    return 1;
+  }
+
   int luau_writeFile(lua_State* L) {
     size_t pathLen = 0;
     const char* path = luaL_checklstring(L, 1, &pathLen);
@@ -555,6 +627,122 @@ namespace {
     }
     file.write(data, static_cast<std::streamsize>(dataLen));
     lua_pushboolean(L, file.good() ? 1 : 0);
+    return 1;
+  }
+
+  int luau_mkdirAll(lua_State* L) {
+    size_t len = 0;
+    const char* path = luaL_checklstring(L, 1, &len);
+    auto* host = hostForState(L);
+    if (host == nullptr) {
+      lua_pushboolean(L, 0);
+      lua_pushstring(L, "no host");
+      return 2;
+    }
+    const std::filesystem::path dir = resolveHostPath(host, std::string_view(path, len));
+    std::error_code ec;
+    std::filesystem::create_directories(dir, ec);
+    if (ec) {
+      lua_pushboolean(L, 0);
+      lua_pushstring(L, ec.message().c_str());
+      return 2;
+    }
+    if (!std::filesystem::is_directory(dir, ec)) {
+      lua_pushboolean(L, 0);
+      lua_pushstring(L, "path exists and is not a directory");
+      return 2;
+    }
+    lua_pushboolean(L, 1);
+    return 1;
+  }
+
+  int luau_removeFile(lua_State* L) {
+    size_t len = 0;
+    const char* path = luaL_checklstring(L, 1, &len);
+    auto* host = hostForState(L);
+    if (host == nullptr) {
+      lua_pushboolean(L, 0);
+      lua_pushstring(L, "no host");
+      return 2;
+    }
+    const std::filesystem::path file = resolveHostPath(host, std::string_view(path, len));
+    std::error_code ec;
+    if (std::filesystem::is_directory(file, ec)) {
+      lua_pushboolean(L, 0);
+      lua_pushstring(L, "is a directory");
+      return 2;
+    }
+    if (!std::filesystem::remove(file, ec)) {
+      lua_pushboolean(L, 0);
+      lua_pushstring(L, ec ? ec.message().c_str() : "no such file");
+      return 2;
+    }
+    lua_pushboolean(L, 1);
+    return 1;
+  }
+
+  int luau_renameFile(lua_State* L) {
+    size_t fromLen = 0;
+    const char* from = luaL_checklstring(L, 1, &fromLen);
+    size_t toLen = 0;
+    const char* to = luaL_checklstring(L, 2, &toLen);
+    auto* host = hostForState(L);
+    if (host == nullptr) {
+      lua_pushboolean(L, 0);
+      lua_pushstring(L, "no host");
+      return 2;
+    }
+    std::error_code ec;
+    std::filesystem::rename(
+        resolveHostPath(host, std::string_view(from, fromLen)), resolveHostPath(host, std::string_view(to, toLen)), ec
+    );
+    if (ec) {
+      lua_pushboolean(L, 0);
+      lua_pushstring(L, ec.message().c_str());
+      return 2;
+    }
+    lua_pushboolean(L, 1);
+    return 1;
+  }
+
+  int luau_fileInfo(lua_State* L) {
+    size_t len = 0;
+    const char* path = luaL_checklstring(L, 1, &len);
+    auto* host = hostForState(L);
+    if (host == nullptr) {
+      lua_pushnil(L);
+      lua_pushstring(L, "no host");
+      return 2;
+    }
+    const std::filesystem::path target = resolveHostPath(host, std::string_view(path, len));
+    std::error_code ec;
+    const auto status = std::filesystem::status(target, ec);
+    if (ec || !std::filesystem::exists(status)) {
+      lua_pushnil(L);
+      lua_pushstring(L, "no such path");
+      return 2;
+    }
+    const bool isDir = std::filesystem::is_directory(status);
+    double size = 0.0;
+    if (!isDir) {
+      if (const auto bytes = std::filesystem::file_size(target, ec); !ec) {
+        size = static_cast<double>(bytes);
+      }
+    }
+    double mtime = 0.0;
+    if (const auto writeTime = std::filesystem::last_write_time(target, ec); !ec) {
+      const auto sysTime = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+          writeTime - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now()
+      );
+      mtime = std::chrono::duration<double>(sysTime.time_since_epoch()).count();
+    }
+    lua_createtable(L, 0, 3);
+    lua_pushnumber(L, size);
+    lua_setfield(L, -2, "size");
+    lua_pushnumber(L, mtime);
+    lua_setfield(L, -2, "mtime");
+    lua_pushboolean(L, isDir ? 1 : 0);
+    lua_setfield(L, -2, "isDir");
     return 1;
   }
 
@@ -607,6 +795,30 @@ namespace {
       return 1;
     }
     const std::string dir = host->pluginDir().string();
+    lua_pushlstring(L, dir.data(), dir.size());
+    return 1;
+  }
+
+  int luau_pluginDataDir(lua_State* L) {
+    auto* host = hostForState(L);
+    if (host == nullptr) {
+      lua_pushnil(L);
+      lua_pushstring(L, "no host");
+      return 2;
+    }
+    const std::string dir = FileUtils::pluginDataDir(host->pluginId());
+    if (dir.empty()) {
+      lua_pushnil(L);
+      lua_pushstring(L, "no state directory");
+      return 2;
+    }
+    std::error_code ec;
+    std::filesystem::create_directories(dir, ec);
+    if (ec) {
+      lua_pushnil(L);
+      lua_pushstring(L, ec.message().c_str());
+      return 2;
+    }
     lua_pushlstring(L, dir.data(), dir.size());
     return 1;
   }
@@ -749,6 +961,40 @@ namespace {
     const std::string destPath = resolveHostPath(host, std::string_view(dest, destLen)).string();
     const int callbackRef = lua_ref(L, 3);
     const bool ok = host->startAsyncDownload(std::string(url, urlLen), destPath, callbackRef);
+    if (!ok) {
+      lua_unref(L, callbackRef);
+    }
+    lua_pushboolean(L, ok ? 1 : 0);
+    return 1;
+  }
+
+  int luau_openColorPicker(lua_State* L) {
+    size_t colorLen = 0;
+    const char* colorText = luaL_checklstring(L, 1, &colorLen);
+    luaL_checktype(L, 2, LUA_TFUNCTION);
+
+    const std::string_view colorValue(colorText, colorLen);
+    if (colorValue.size() != 7 || colorValue.front() != '#') {
+      luaL_argerror(L, 1, "expected a color in #RRGGBB format");
+      return 0;
+    }
+
+    Color initialColor;
+    try {
+      initialColor = hex(colorValue);
+    } catch (const std::invalid_argument&) {
+      luaL_argerror(L, 1, "expected a color in #RRGGBB format");
+      return 0;
+    }
+
+    auto* host = hostForState(L);
+    if (host == nullptr) {
+      lua_pushboolean(L, 0);
+      return 1;
+    }
+
+    const int callbackRef = lua_ref(L, 2);
+    const bool ok = host->startColorPicker(initialColor, callbackRef);
     if (!ok) {
       lua_unref(L, callbackRef);
     }
@@ -987,6 +1233,7 @@ namespace {
       {"portalAvailable", luau_portalAvailable},
       {"focusedOutputName", luau_focusedOutputName},
       {"outputs", luau_outputs},
+      {"appIconPath", luau_appIconPath},
       {"setWallpaperEnabled", luau_setWallpaperEnabled},
       {"setWallpaper", luau_setWallpaper},
       {"togglePanel", luau_togglePanel},
@@ -995,19 +1242,27 @@ namespace {
       {"notify", luau_notify},
       {"notifyError", luau_notifyError},
       {"copyToClipboard", luau_copyToClipboard},
+      {"clipboardText", luau_clipboardText},
       {"getenv", luau_getenv},
       {"expandPath", luau_expandPath},
       {"formatTime", luau_formatTime},
       {"setUpdateInterval", luau_setUpdateInterval},
       {"readFile", luau_readFile},
+      {"loadFont", luau_loadFont},
       {"writeFile", luau_writeFile},
+      {"mkdirAll", luau_mkdirAll},
+      {"removeFile", luau_removeFile},
+      {"renameFile", luau_renameFile},
       {"fileExists", luau_fileExists},
+      {"fileInfo", luau_fileInfo},
       {"listDir", luau_listDir},
       {"pluginDir", luau_pluginDir},
+      {"pluginDataDir", luau_pluginDataDir},
       {"tr", luau_tr},
       {"trp", luau_trp},
       {"http", luau_http},
       {"download", luau_download},
+      {"openColorPicker", luau_openColorPicker},
       {"fuzzyScore", luau_fuzzyScore},
       {"getConfig", scripting::luau_getConfig},
       {nullptr, nullptr},
@@ -1094,6 +1349,10 @@ LuauHost::~LuauHost() {
         lua_unref(m_T, callbackRef);
       }
       m_streamCallbackRefs.clear();
+      for (int callbackRef : m_colorPickerCallbackRefs) {
+        lua_unref(m_T, callbackRef);
+      }
+      m_colorPickerCallbackRefs.clear();
     }
     if (m_threadRef != -1)
       lua_unref(m_L, m_threadRef);
@@ -1199,6 +1458,61 @@ bool LuauHost::hasAsyncProcessMatchCallback(int callbackRef) const {
 }
 
 bool LuauHost::hasAsyncHttpCallback(int callbackRef) const { return m_asyncHttpCallbackRefs.contains(callbackRef); }
+
+bool LuauHost::hasColorPickerCallback(int callbackRef) const { return m_colorPickerCallbackRefs.contains(callbackRef); }
+
+bool LuauHost::startColorPicker(const Color& initialColor, int callbackRef) {
+  if (callbackRef <= LUA_REFNIL || !m_colorPickerCallbackRefs.empty()) {
+    return false;
+  }
+  auto handler = m_colorPickerResultHandler;
+  if (!handler) {
+    return false;
+  }
+
+  m_colorPickerCallbackRefs.insert(callbackRef);
+  DeferredCall::callLater([hostId = m_hostId, callbackRef, initialColor, handler = std::move(handler)]() mutable {
+    ColorPickerDialogOptions options;
+    options.initialColor = initialColor;
+    (void)ColorPickerDialog::open(
+        std::move(options), [hostId, callbackRef, handler = std::move(handler)](std::optional<Color> result) mutable {
+          std::optional<std::string> color;
+          if (result.has_value()) {
+            color = formatRgbHex(*result);
+          }
+          handler(hostId, callbackRef, std::move(color));
+        }
+    );
+  });
+  return true;
+}
+
+bool LuauHost::callColorPickerCallback(
+    int callbackRef, const std::optional<std::string>& color, std::chrono::milliseconds budget
+) {
+  if (m_T == nullptr) {
+    return false;
+  }
+  const auto it = m_colorPickerCallbackRefs.find(callbackRef);
+  if (it == m_colorPickerCallbackRefs.end()) {
+    return false;
+  }
+  m_colorPickerCallbackRefs.erase(it);
+
+  lua_getref(m_T, callbackRef);
+  lua_unref(m_T, callbackRef);
+  if (!lua_isfunction(m_T, -1)) {
+    lua_pop(m_T, 1);
+    return false;
+  }
+
+  if (color.has_value()) {
+    lua_pushlstring(m_T, color->data(), color->size());
+  } else {
+    lua_pushnil(m_T);
+  }
+  return callWithBudget("color picker callback", 1, 0, budget);
+}
 
 bool LuauHost::startAsyncHttp(HttpRequest request, int callbackRef) {
   if (m_httpClient == nullptr || callbackRef <= LUA_REFNIL || m_asyncHttpCallbackRefs.size() >= kMaxAsyncHttpPerHost) {
@@ -1617,35 +1931,30 @@ bool LuauHost::callGlobalWithBudget(const char* name, std::chrono::milliseconds 
   return callGlobalInternal(name, 0, budget);
 }
 
-bool LuauHost::callGlobalWithBool(const char* name, bool value) {
-  return callGlobalWithBoolAndBudget(name, value, std::chrono::milliseconds(25));
-}
-
-bool LuauHost::callGlobalWithBoolAndBudget(const char* name, bool value, std::chrono::milliseconds budget) {
-  lua_getglobal(m_T, name);
-  if (!lua_isfunction(m_T, -1)) {
-    lua_pop(m_T, 1);
-    return false;
-  }
-  lua_pushboolean(m_T, value ? 1 : 0);
-  return callGlobalInternal(name, 1, budget);
-}
-
-bool LuauHost::callGlobalWithStrings(const char* name, std::string_view first, std::string_view second) {
-  return callGlobalWithStringsAndBudget(name, first, second, std::chrono::milliseconds(25));
-}
-
-bool LuauHost::callGlobalWithStringsAndBudget(
-    const char* name, std::string_view first, std::string_view second, std::chrono::milliseconds budget
+bool LuauHost::callGlobalWithArgsAndBudget(
+    const char* name, std::span<const scripting::ScriptArg> args, std::chrono::milliseconds budget
 ) {
   lua_getglobal(m_T, name);
   if (!lua_isfunction(m_T, -1)) {
     lua_pop(m_T, 1);
     return false;
   }
-  lua_pushlstring(m_T, first.data(), first.size());
-  lua_pushlstring(m_T, second.data(), second.size());
-  return callGlobalInternal(name, 2, budget);
+  for (const auto& arg : args) {
+    std::visit(
+        [this](const auto& value) {
+          using T = std::decay_t<decltype(value)>;
+          if constexpr (std::is_same_v<T, bool>) {
+            lua_pushboolean(m_T, value ? 1 : 0);
+          } else if constexpr (std::is_same_v<T, double>) {
+            lua_pushnumber(m_T, value);
+          } else {
+            lua_pushlstring(m_T, value.data(), value.size());
+          }
+        },
+        arg
+    );
+  }
+  return callGlobalInternal(name, static_cast<int>(args.size()), budget);
 }
 
 std::optional<std::string> LuauHost::callGlobalReturningString(const char* name) {

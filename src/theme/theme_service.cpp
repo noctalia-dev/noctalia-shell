@@ -13,6 +13,7 @@
 #include "theme/fixed_palette.h"
 #include "theme/image_loader.h"
 #include "theme/palette_generator.h"
+#include "theme/palette_transform.h"
 #include "theme/scheme.h"
 #include "ui/app_icon_colorization.h"
 #include "util/checksum.h"
@@ -24,7 +25,7 @@
 #include <exception>
 #include <filesystem>
 #include <fstream>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -500,6 +501,24 @@ namespace noctalia::theme {
     }
     if (!resolved.has_value()) {
       resolved = resolveBuiltin(cfg, mode);
+    }
+
+    // Every source funnels through here, so the transform covers wallpaper-generated,
+    // builtin, community and custom palettes alike. It runs after the wallpaper cache,
+    // which keeps storing the untransformed palette — toggling this cannot serve a stale one.
+    if (cfg.pureBlackDark) {
+      applyPureBlackDark(resolved->generated);
+    }
+    if (m_config.config().accessibility.highContrast) {
+      applyHighContrast(resolved->generated);
+    }
+
+    if (cfg.pureBlackDark || m_config.config().accessibility.highContrast) {
+      if (resolved->mode != "light") {
+        resolved->palette = mapGeneratedPaletteMode(resolved->generated.dark);
+      } else {
+        resolved->palette = mapGeneratedPaletteMode(resolved->generated.light);
+      }
     }
 
     queueResolvedCallback(resolved->generated, resolved->mode);

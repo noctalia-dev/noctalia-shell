@@ -21,12 +21,14 @@ namespace capture {
   class ScreenshotRegionOverlay {
   public:
     using CompleteCallback = std::function<void(std::optional<LogicalRect>, wl_output* output)>;
+    using FailureCallback = std::function<void(const std::string& message)>;
 
     ScreenshotRegionOverlay();
     ~ScreenshotRegionOverlay();
 
     void initialize(WaylandConnection& wayland, RenderContext* renderContext);
     void setCompleteCallback(CompleteCallback callback);
+    void setFailureCallback(FailureCallback callback);
     void setFrozenScreenshots(std::vector<FrozenScreenshot> screenshots);
     [[nodiscard]] std::vector<FrozenScreenshot> takeFrozenScreenshots();
     void begin(bool freezeScreen, bool fullscreenPick = false, bool confirmRegion = false);
@@ -45,6 +47,7 @@ namespace capture {
     void destroySurfaces();
     [[nodiscard]] bool surfacesMatchOutputs() const;
     void prepareFrame(Instance& instance, bool needsUpdate, bool needsLayout);
+    void abortWithError(const std::string& message);
     void updateSelectionVisuals();
     void completeSelection();
     void confirmPendingSelection();
@@ -53,6 +56,7 @@ namespace capture {
     WaylandConnection* m_wayland = nullptr;
     RenderContext* m_renderContext = nullptr;
     CompleteCallback m_onComplete;
+    FailureCallback m_onFailure;
     std::vector<std::unique_ptr<Instance>> m_instances;
     std::vector<FrozenScreenshot> m_frozenScreenshots;
     bool m_active = false;

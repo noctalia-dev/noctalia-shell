@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <string>
+#include <string_view>
 
 namespace {
 
@@ -25,6 +26,17 @@ namespace {
       }
     }
     return nullptr;
+  }
+
+  // Per-widget layer-shell namespace so compositor rules can target individual widgets.
+  // The id already carries the "desktop-widget-" prefix; strip it to avoid doubling.
+  std::string desktopWidgetNamespace(const DesktopWidgetState& state) {
+    constexpr std::string_view kIdPrefix = "desktop-widget-";
+    std::string_view uid = state.id;
+    if (uid.starts_with(kIdPrefix)) {
+      uid.remove_prefix(kIdPrefix.size());
+    }
+    return "noctalia-desktop-widget-" + state.type + "-" + std::string(uid);
   }
 
 } // namespace
@@ -166,7 +178,7 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
     return;
   }
 
-  const float baseUiScale = m_config != nullptr ? m_config->config().shell.uiScale : 1.0f;
+  const float baseUiScale = m_config != nullptr ? m_config->config().accessibility.uiScale : 1.0f;
   auto widget = m_factory->create(state.type, state.settings, desktop_widgets::widgetContentScale(baseUiScale));
   if (widget == nullptr) {
     return;
@@ -192,7 +204,7 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
   );
 
   auto surfaceConfig = LayerSurfaceConfig{
-      .nameSpace = "noctalia-desktop-widget",
+      .nameSpace = desktopWidgetNamespace(clampedState),
       .layer = LayerShellLayer::Bottom,
       .anchor = LayerShellAnchor::Top | LayerShellAnchor::Left,
       .width = geometry.surfaceWidth,
@@ -298,7 +310,7 @@ void DesktopWidgetsHost::prepareFrame(DesktopWidgetInstance& instance, bool need
 
   buildScene(instance);
 
-  const float baseUiScale = m_config != nullptr ? m_config->config().shell.uiScale : 1.0f;
+  const float baseUiScale = m_config != nullptr ? m_config->config().accessibility.uiScale : 1.0f;
   instance.widget->setContentScale(desktop_widgets::widgetContentScale(baseUiScale));
   instance.widget->setBox(instance.state.boxWidth, instance.state.boxHeight);
 

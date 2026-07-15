@@ -13,8 +13,8 @@
 #include <fcntl.h>
 #include <filesystem>
 #include <fstream>
-#include <json.hpp>
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <poll.h>
 #include <stdexcept>
 #include <string_view>

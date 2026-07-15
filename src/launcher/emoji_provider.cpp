@@ -1,6 +1,6 @@
 #include "launcher/emoji_provider.h"
 
-#include "core/resource_paths.h"
+#include "core/files/resource_paths.h"
 #include "i18n/i18n.h"
 #include "util/string_utils.h"
 #include "wayland/clipboard_service.h"
@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <string_view>
 

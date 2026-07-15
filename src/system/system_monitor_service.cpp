@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "system/cpu_temp_sensor.h"
 #include "system/format_units.h"
+#include "system/intel_gpu.h"
 #include "util/file_utils.h"
 #include "util/string_utils.h"
 
@@ -925,6 +926,48 @@ private:
   NvmlDeviceGetMemoryInfoFn m_getMemoryInfo = nullptr;
 };
 
+// Intel exposes no device-wide busy counter, so usage is summed from each DRM client's fdinfo and
+// needs the previous scan kept between polls.
+struct SystemMonitorService::IntelGpuReader {
+  IntelGpuReader() {
+    m_devices = noctalia::system::intel_gpu::findDevices();
+    // A discrete card is the one that reports VRAM; order it ahead of an integrated GPU so the
+    // stats describe the card the user cares about.
+    std::ranges::stable_partition(m_devices, [](const noctalia::system::intel_gpu::Device& device) {
+      return noctalia::system::intel_gpu::readVram(device).has_value();
+    });
+  }
+
+  [[nodiscard]] bool ready() const { return !m_devices.empty(); }
+
+  // The first scan only baselines the counters, so name the source before it can report a value.
+  [[nodiscard]] std::string usageSource() const {
+    return m_devices.empty() ? std::string{} : noctalia::system::intel_gpu::usageSource(m_devices.front());
+  }
+
+  [[nodiscard]] std::optional<noctalia::system::intel_gpu::UsageReading> readUsage() {
+    for (const auto& device : m_devices) {
+      if (const auto reading = m_samplers[device.pciSlot].sample(device); reading.has_value()) {
+        return reading;
+      }
+    }
+    return std::nullopt;
+  }
+
+  [[nodiscard]] std::optional<noctalia::system::intel_gpu::VramReading> readVram() const {
+    for (const auto& device : m_devices) {
+      if (const auto reading = noctalia::system::intel_gpu::readVram(device); reading.has_value()) {
+        return reading;
+      }
+    }
+    return std::nullopt;
+  }
+
+private:
+  std::vector<noctalia::system::intel_gpu::Device> m_devices;
+  std::unordered_map<std::string, noctalia::system::intel_gpu::UsageSampler> m_samplers;
+};
+
 SystemMonitorService::SystemMonitorService(const SystemConfig::MonitorConfig& config) {
   m_latest = makeInitialHistoryStats();
   m_history.fill(m_latest);
@@ -1098,6 +1141,9 @@ void SystemMonitorService::logDetectedSources() {
   const auto gpuUsage = readGpuUsageData(nvidiaDisplayState);
   if (gpuUsage.percent.has_value()) {
     kLog.info("detected GPU usage source: {} ({:.0f}%)", gpuUsage.source, *gpuUsage.percent);
+  } else if (!gpuUsage.source.empty()) {
+    // Counter-delta sources have nothing to report until their second sample.
+    kLog.info("detected GPU usage source: {} (awaiting first sample)", gpuUsage.source);
   } else {
     kLog.info("detected GPU usage source: unavailable");
   }
@@ -1467,6 +1513,13 @@ SystemMonitorService::AmdRsmiReader& SystemMonitorService::ensureAmdRsmiReader()
   return *m_amdRsmiReader;
 }
 
+SystemMonitorService::IntelGpuReader& SystemMonitorService::ensureIntelGpuReader() {
+  if (m_intelGpuReader == nullptr) {
+    m_intelGpuReader = std::make_unique<IntelGpuReader>();
+  }
+  return *m_intelGpuReader;
+}
+
 SystemMonitorService::GpuTempData SystemMonitorService::readGpuTempData(NvidiaDisplayDeviceState nvidiaDisplayState) {
   switch (nvidiaDisplayState) {
   case NvidiaDisplayDeviceState::Active: {
@@ -1562,7 +1615,8 @@ SystemMonitorService::GpuUsageData SystemMonitorService::readGpuUsageData(Nvidia
     if (const auto sysfs = readAmdGpuSysfsUsage(); sysfs.has_value()) {
       return GpuUsageData{.percent = sysfs->percent, .source = sysfs->source};
     }
-    return GpuUsageData{};
+    // An Optimus laptop with the discrete GPU asleep renders on the Intel integrated GPU.
+    return readIntelGpuUsageData();
   }
   case NvidiaDisplayDeviceState::None:
     break;
@@ -1586,7 +1640,30 @@ SystemMonitorService::GpuUsageData SystemMonitorService::readGpuUsageData(Nvidia
     return GpuUsageData{.percent = gpuUsage, .source = "nvml"};
   }
 
-  return GpuUsageData{};
+  return readIntelGpuUsageData();
+}
+
+SystemMonitorService::GpuUsageData SystemMonitorService::readIntelGpuUsageData() {
+  IntelGpuReader& reader = ensureIntelGpuReader();
+  if (!reader.ready()) {
+    return GpuUsageData{};
+  }
+  if (const auto usage = reader.readUsage(); usage.has_value()) {
+    return GpuUsageData{.percent = usage->percent, .source = usage->source};
+  }
+  return GpuUsageData{.percent = std::nullopt, .source = reader.usageSource()};
+}
+
+std::optional<SystemMonitorService::GpuVramData> SystemMonitorService::readIntelGpuVram() {
+  IntelGpuReader& reader = ensureIntelGpuReader();
+  if (!reader.ready()) {
+    return std::nullopt;
+  }
+  const auto vram = reader.readVram();
+  if (!vram.has_value()) {
+    return std::nullopt;
+  }
+  return GpuVramData{.usedBytes = vram->usedBytes, .totalBytes = vram->totalBytes, .source = vram->source};
 }
 
 std::optional<SystemMonitorService::GpuVramData>
@@ -1601,6 +1678,13 @@ SystemMonitorService::readGpuVramData(NvidiaDisplayDeviceState nvidiaDisplayStat
   }
   case NvidiaDisplayDeviceState::InactiveOnly: {
     std::optional<GpuVramReading> combined = readAmdGpuVram();
+    if (!combined.has_value()) {
+      if (const auto intel = readIntelGpuVram(); intel.has_value()) {
+        combined = GpuVramReading{
+            .usedBytes = intel->usedBytes, .totalBytes = intel->totalBytes, .source = intel->source, .isNvidia = false
+        };
+      }
+    }
     if (!combined.has_value() || !hasUsableVram(*combined)) {
       return std::nullopt;
     }
@@ -1620,6 +1704,17 @@ SystemMonitorService::readGpuVramData(NvidiaDisplayDeviceState nvidiaDisplayStat
       mergeGpuVram(*combined, *nvml);
     } else {
       combined = nvml;
+    }
+  }
+
+  if (const auto intel = readIntelGpuVram(); intel.has_value()) {
+    const GpuVramReading reading{
+        .usedBytes = intel->usedBytes, .totalBytes = intel->totalBytes, .source = intel->source, .isNvidia = false
+    };
+    if (combined.has_value()) {
+      mergeGpuVram(*combined, reading);
+    } else {
+      combined = reading;
     }
   }
 

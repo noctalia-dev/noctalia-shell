@@ -75,19 +75,41 @@ namespace {
     int second = 0;
   };
 
-  [[nodiscard]] LocalTimeParts currentLocalTimeParts() {
-    const auto now = std::chrono::system_clock::now();
-    const std::time_t timestamp = std::chrono::system_clock::to_time_t(now);
-    std::tm localTime{};
+  [[nodiscard]] LocalTimeParts currentLocalTimeParts(const std::string& tzName) {
+    using namespace std::chrono;
+    const auto now = floor<seconds>(system_clock::now());
+    if (tzName.empty()) {
+      const std::time_t timestamp = system_clock::to_time_t(now);
+      std::tm localTime{};
 #if defined(_WIN32)
-    localtime_s(&localTime, &timestamp);
+      localtime_s(&localTime, &timestamp);
 #else
-    localtime_r(&timestamp, &localTime);
+      localtime_r(&timestamp, &localTime);
 #endif
+      return {
+          .hour = localTime.tm_hour,
+          .minute = localTime.tm_min,
+          .second = localTime.tm_sec,
+      };
+    }
+
+    const time_zone* tz = nullptr;
+    try {
+      tz = locate_zone(tzName);
+    } catch (...) {
+    }
+
+    if (tz == nullptr) {
+      return currentLocalTimeParts("");
+    }
+
+    const auto local = tz->to_local(now);
+    const auto localDays = floor<days>(local);
+    hh_mm_ss time{floor<seconds>(local - localDays)};
     return {
-        .hour = localTime.tm_hour,
-        .minute = localTime.tm_min,
-        .second = localTime.tm_sec,
+        .hour = static_cast<int>(time.hours().count()),
+        .minute = static_cast<int>(time.minutes().count()),
+        .second = static_cast<int>(time.seconds().count()),
     };
   }
 
@@ -186,7 +208,7 @@ DesktopClockWidget::Style DesktopClockWidget::styleFromSetting(std::string_view 
 
 DesktopClockWidget::DesktopClockWidget(Options options)
     : m_style(options.style), m_format(std::move(options.format)), m_color(options.color), m_shadow(options.shadow),
-      m_showCircle(options.showCircle), m_centerText(options.centerText),
+      m_showCircle(options.showCircle), m_timezone(std::move(options.timezone)), m_centerText(options.centerText),
       m_showsSeconds(m_style == Style::Analog || formatShowsSeconds(m_format)) {}
 
 void DesktopClockWidget::create() {
@@ -197,8 +219,8 @@ void DesktopClockWidget::create() {
   auto label = ui::label({
       .out = &m_label,
       .fontSize = clockFontSize(contentScale()),
-      .color = m_color,
       .fontWeight = FontWeight::Bold,
+      .color = m_color,
   });
   m_digitalRoot->addChild(std::move(label));
   rootNode->addChild(std::move(digitalRoot));
@@ -261,7 +283,12 @@ void DesktopClockWidget::create() {
 
 bool DesktopClockWidget::wantsSecondTicks() const { return m_showsSeconds; }
 
-std::string DesktopClockWidget::formatText() const { return formatLocalTime(m_format.c_str()); }
+std::string DesktopClockWidget::formatText() const {
+  if (!m_timezone.empty()) {
+    return formatTimezoneTime(m_format.c_str(), m_timezone);
+  }
+  return formatLocalTime(m_format.c_str());
+}
 
 void DesktopClockWidget::syncStyleVisibility() {
   if (m_digitalRoot != nullptr) {
@@ -398,7 +425,7 @@ void DesktopClockWidget::layoutDigital(Renderer& renderer) {
 }
 
 void DesktopClockWidget::updateAnalogHands() {
-  const LocalTimeParts time = currentLocalTimeParts();
+  const LocalTimeParts time = currentLocalTimeParts(m_timezone);
   if (time.hour == m_lastHour && time.minute == m_lastMinute && time.second == m_lastSecond) {
     return;
   }
@@ -441,6 +468,16 @@ bool DesktopClockWidget::applySetting(
       requestLayout();
       (void)allSettings;
       (void)renderer;
+      return true;
+    }
+    return false;
+  }
+  if (key == "timezone") {
+    if (const auto* v = std::get_if<std::string>(&value)) {
+      m_timezone = *v;
+      m_lastText.clear();
+      m_lastHour = m_lastMinute = m_lastSecond = -1;
+      requestUpdate();
       return true;
     }
     return false;

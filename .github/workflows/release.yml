@@ -1,0 +1,68 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # needed so git describe/git log can see full history and tags
+
+      - name: Create release archive
+        run: |
+          mkdir -p ../noctalia-release
+          rsync -av \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='nix' \
+            --exclude='flake.nix' \
+            --exclude='flake.lock' \
+            --exclude='result*' \
+            ./ ../noctalia-release/
+          cd ..
+          tar -czf noctalia-${{ github.ref_name }}.tar.gz noctalia-release/
+          cp noctalia-${{ github.ref_name }}.tar.gz noctalia-latest.tar.gz
+          mv *.tar.gz ${{ github.workspace }}/
+
+      - name: Generate release notes
+        run: |
+          set -euo pipefail
+          # Find previous tag. Prefer the one before the current tag on the same history; fallback to the next most recent tag.
+          PREV_TAG=$(git describe --tags --abbrev=0 "${GITHUB_REF}^" 2>/dev/null || true)
+          if [ -z "${PREV_TAG:-}" ]; then
+            PREV_TAG=$(git tag --sort=-version:refname | grep -v "^${GITHUB_REF_NAME}$" | head -n1 || true)
+          fi
+          if [ -z "${PREV_TAG:-}" ]; then
+            RANGE="$(git rev-list --max-parents=0 HEAD)..${GITHUB_REF_NAME}"
+            SINCE_LABEL="project start"
+          else
+            RANGE="${PREV_TAG}..${GITHUB_REF_NAME}"
+            SINCE_LABEL="${PREV_TAG}"
+          fi
+          echo "# Release ${GITHUB_REF_NAME}" > release_notes.md
+          echo "" >> release_notes.md
+          echo "## Changes since ${SINCE_LABEL}" >> release_notes.md
+          echo "" >> release_notes.md
+          git log ${RANGE} --pretty=format:"- %s ([%h](https://github.com/${GITHUB_REPOSITORY}/commit/%H)) by %an" >> release_notes.md
+          echo "" >> release_notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            noctalia-${{ github.ref_name }}.tar.gz
+            noctalia-latest.tar.gz
+          body_path: release_notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -37,7 +37,7 @@ PluginPanel::PluginPanel(scripting::PluginRuntimeContext context, PluginPanelOpt
       m_fileWatcher(context.fileWatcher), m_httpClient(context.httpClient), m_clipboard(context.clipboard),
       m_preferredWidth(options.width > 0.0 ? static_cast<float>(options.width) : kDefaultPanelWidth),
       m_preferredHeight(options.height > 0.0 ? static_cast<float>(options.height) : kDefaultPanelHeight),
-      m_shellConfig(options.shellConfig) {
+      m_widthFill(options.widthFill), m_heightFill(options.heightFill), m_shellConfig(options.shellConfig) {
   scripting::PluginIpcRouter::instance().registerEndpoint(this);
 }
 
@@ -76,6 +76,8 @@ void PluginPanel::create() {
     }
   });
   m_reconciler.setPathResolver([this](const std::string& path) { return resolvePluginPath(path); });
+  m_pendingFocusArea = nullptr;
+  m_reconciler.setFocusRequestSink([this](InputArea* area) { m_pendingFocusArea = area; });
 
   // The runtime and file watch are set up once and persist across open/close, so
   // plugin state survives reopening and watches aren't duplicated.

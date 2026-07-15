@@ -1,6 +1,6 @@
 #include "render/scene/input_dispatcher.h"
 
-#include "core/keybind_matcher.h"
+#include "core/input/keybind_matcher.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "wayland/text_input_service.h"

@@ -198,6 +198,7 @@ std::unique_ptr<DesktopWidget> DesktopWidgetFactory::create(
         .shadow = getBoolSetting(settings, "shadow", true),
         .showCircle = getBoolSetting(settings, "circle", true),
         .centerText = getBoolSetting(settings, "center_text", false),
+        .timezone = getStringSetting(settings, "timezone", ""),
     });
     applyCommonSettings(*widget, settings);
     widget->setContentScale(contentScale);

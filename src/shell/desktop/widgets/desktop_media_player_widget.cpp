@@ -48,9 +48,9 @@ void DesktopMediaPlayerWidget::create() {
 
   auto title = ui::label({
       .out = &m_title,
+      .fontWeight = FontWeight::Bold,
       .color = m_color,
       .maxLines = 1,
-      .fontWeight = FontWeight::Bold,
   });
   rootNode->addChild(std::move(title));
 

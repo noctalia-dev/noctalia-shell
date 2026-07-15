@@ -1,6 +1,7 @@
 #include "shell/bar/widgets/volume_widget.h"
 
 #include "config/config_types.h"
+#include "core/log.h"
 #include "i18n/i18n.h"
 #include "pipewire/pipewire_service.h"
 #include "render/scene/input_area.h"
@@ -13,34 +14,22 @@
 #include <algorithm>
 #include <cmath>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace {
-
-  const char* volumeGlyphName(float volume, bool muted, VolumeWidgetTarget target) {
-    if (target == VolumeWidgetTarget::Input) {
-      return muted ? "microphone-mute" : "microphone";
-    }
-
-    if (muted || volume <= 0.0f) {
-      return "volume-mute";
-    }
-    if (volume < 0.4f) {
-      return "volume-low";
-    }
-    return "volume-high";
-  }
-
+  constexpr Logger kLog("volume_widget");
 } // namespace
 
 VolumeWidget::VolumeWidget(
     PipeWireService* audio, EasyEffectsService* easyEffects, const Config* config, wl_output* /*output*/,
     bool showLabel, VolumeWidgetTarget target, int scrollStepPercent, ColorSpec muteColor, std::string glyphOverride,
-    std::string muteGlyphOverride
+    std::string muteGlyphOverride, WidgetCustomImage customImage
 )
     : m_audio(audio), m_easyEffects(easyEffects), m_config(config), m_showLabel(showLabel),
       m_scrollStep(static_cast<float>(scrollStepPercent) / 100.0f), m_target(target), m_muteColor(muteColor),
-      m_glyphOverride(std::move(glyphOverride)), m_muteGlyphOverride(std::move(muteGlyphOverride)) {}
+      m_glyphOverride(std::move(glyphOverride)), m_muteGlyphOverride(std::move(muteGlyphOverride)),
+      m_customImage(std::move(customImage)) {}
 
 void VolumeWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -71,9 +60,12 @@ void VolumeWidget::create() {
     if (node == nullptr) {
       return;
     }
-    const float delta = data.scrollDelta(1.0f) > 0 ? -m_scrollStep : m_scrollStep;
+    const float steps = data.scrollSteps();
+    if (steps == 0.0f) {
+      return;
+    }
     const float maxVolume = (m_config != nullptr && m_config->audio.enableOverdrive) ? 1.5f : 1.0f;
-    const float newValue = std::clamp(node->volume + delta, 0.0f, maxVolume);
+    const float newValue = std::clamp(node->volume - steps * m_scrollStep, 0.0f, maxVolume);
     if (m_target == VolumeWidgetTarget::Input) {
       m_audio->setSourceVolume(node->id, newValue);
     } else {
@@ -81,21 +73,25 @@ void VolumeWidget::create() {
     }
   });
 
-  area->addChild(
-      ui::glyph({
-          .out = &m_glyph,
-          .glyph = glyphName(1.0f, false),
-          .glyphSize = Style::baseGlyphSize * m_contentScale,
-          .color = widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)),
-      })
-  );
+  if (m_customImage.enabled()) {
+    area->addChild(ui::image({.out = &m_image, .fit = ImageFit::Contain}));
+  } else {
+    area->addChild(
+        ui::glyph({
+            .out = &m_glyph,
+            .glyph = glyphName(1.0f, false),
+            .glyphSize = Style::baseGlyphSize * m_contentScale,
+            .color = widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)),
+        })
+    );
+  }
 
   area->addChild(
       ui::label({
           .out = &m_label,
           .fontSize = Style::fontSizeBody * m_contentScale,
-          .fontFamily = labelFontFamily(),
           .fontWeight = labelFontWeight(),
+          .fontFamily = labelFontFamily(),
           .visible = m_showLabel,
       })
   );
@@ -105,29 +101,38 @@ void VolumeWidget::create() {
 
 void VolumeWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   auto* rootNode = root();
-  if (m_glyph == nullptr || m_label == nullptr || rootNode == nullptr) {
+  if ((m_glyph == nullptr && m_image == nullptr) || m_label == nullptr || rootNode == nullptr) {
     return;
   }
   m_isVertical = containerHeight > containerWidth;
   syncState(renderer);
 
-  m_glyph->measure(renderer);
+  const float iconW = m_image != nullptr ? m_image->width() : m_glyph->width();
+  const float iconH = m_image != nullptr ? m_image->height() : m_glyph->height();
   if (m_label->visible()) {
     m_label->measure(renderer);
   }
 
   const bool labelVisible = m_label->visible();
   if (m_isVertical && labelVisible) {
-    const float w = std::max(m_glyph->width(), m_label->width());
-    m_glyph->setPosition(std::round((w - m_glyph->width()) * 0.5f), 0.0f);
-    m_label->setPosition(std::round((w - m_label->width()) * 0.5f), m_glyph->height());
-    rootNode->setSize(w, m_glyph->height() + m_label->height());
+    const float w = std::max(iconW, m_label->width());
+    if (m_image != nullptr) {
+      m_image->setPosition(std::round((w - iconW) * 0.5f), 0.0f);
+    } else {
+      m_glyph->setPosition(std::round((w - iconW) * 0.5f), 0.0f);
+    }
+    m_label->setPosition(std::round((w - m_label->width()) * 0.5f), iconH);
+    rootNode->setSize(w, iconH + m_label->height());
   } else {
-    const float h = labelVisible ? std::max(m_glyph->height(), m_label->height()) : m_glyph->height();
-    m_glyph->setPosition(0.0f, std::round((h - m_glyph->height()) * 0.5f));
-    float totalWidth = m_glyph->width();
+    const float h = labelVisible ? std::max(iconH, m_label->height()) : iconH;
+    if (m_image != nullptr) {
+      m_image->setPosition(0.0f, std::round((h - iconH) * 0.5f));
+    } else {
+      m_glyph->setPosition(0.0f, std::round((h - iconH) * 0.5f));
+    }
+    float totalWidth = iconW;
     if (labelVisible) {
-      m_label->setPosition(m_glyph->width() + Style::spaceXs, std::round((h - m_label->height()) * 0.5f));
+      m_label->setPosition(iconW + Style::spaceXs, std::round((h - m_label->height()) * 0.5f));
       totalWidth = m_label->x() + m_label->width();
     }
     rootNode->setSize(totalWidth, h);
@@ -137,7 +142,7 @@ void VolumeWidget::doLayout(Renderer& renderer, float containerWidth, float cont
 void VolumeWidget::doUpdate(Renderer& renderer) { syncState(renderer); }
 
 void VolumeWidget::syncState(Renderer& renderer) {
-  if (m_audio == nullptr || m_glyph == nullptr || m_label == nullptr) {
+  if (m_audio == nullptr || (m_glyph == nullptr && m_image == nullptr) || m_label == nullptr) {
     return;
   }
 
@@ -161,10 +166,24 @@ void VolumeWidget::syncState(Renderer& renderer) {
   m_lastVertical = m_isVertical;
   m_lastEffectsProfile = effectsProfile;
 
-  m_glyph->setGlyph(glyphName(volume, muted));
-  m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
-  m_glyph->setColor(muted ? m_muteColor : widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)));
-  m_glyph->measure(renderer);
+  if (m_target == VolumeWidgetTarget::Output) {
+    kLog.debug(
+        "sync vol {:.6f} muted {} glyph {} node {}", volume, muted, glyphName(volume, muted),
+        node != nullptr ? node->id : 0
+    );
+  }
+
+  if (m_image != nullptr) {
+    widget_custom_image::sync(
+        *m_image, renderer, m_customImage, m_contentScale,
+        muted ? m_muteColor : widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface))
+    );
+  } else {
+    m_glyph->setGlyph(glyphName(volume, muted));
+    m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
+    m_glyph->setColor(muted ? m_muteColor : widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)));
+    m_glyph->measure(renderer);
+  }
 
   m_label->setVisible(m_showLabel);
   if (m_showLabel) {
@@ -184,8 +203,8 @@ void VolumeWidget::syncState(Renderer& renderer) {
           {i18n::tr(m_target == VolumeWidgetTarget::Input ? "bar.widgets.volume.mic" : "bar.widgets.volume.volume"),
            std::to_string(pct) + "%"}
       );
-      if (!node->description.empty()) {
-        rows.push_back({i18n::tr("bar.widgets.volume.device"), node->description});
+      if (std::string deviceLabel = audioDeviceLabel(*node); !deviceLabel.empty()) {
+        rows.push_back({i18n::tr("bar.widgets.volume.device"), std::move(deviceLabel), TextEllipsize::Middle});
       }
       if (!effectsProfile.empty()) {
         rows.push_back({i18n::tr("control-center.audio.effects-profile"), effectsProfile});
@@ -200,13 +219,14 @@ void VolumeWidget::syncState(Renderer& renderer) {
 }
 
 std::string VolumeWidget::glyphName(float volume, bool muted) const {
-  if (muted || volume <= 0.0f) {
-    if (!m_muteGlyphOverride.empty()) {
-      return m_muteGlyphOverride;
-    }
-  } else if (!m_glyphOverride.empty()) {
+  const char* dynamicGlyph = audioVolumeGlyph(volume, muted, m_target == VolumeWidgetTarget::Input);
+  const std::string_view muteGlyph = m_target == VolumeWidgetTarget::Input ? "microphone-mute" : "volume-mute";
+  const bool usingMuteGlyph = std::string_view{dynamicGlyph} == muteGlyph;
+  if (usingMuteGlyph && !m_muteGlyphOverride.empty()) {
+    return m_muteGlyphOverride;
+  }
+  if (!usingMuteGlyph && !m_glyphOverride.empty()) {
     return m_glyphOverride;
   }
-
-  return volumeGlyphName(volume, muted, m_target);
+  return dynamicGlyph;
 }

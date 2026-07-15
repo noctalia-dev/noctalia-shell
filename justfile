@@ -31,7 +31,7 @@ _ensure-configured m=mode:
         just configure {{m}}
         exit 0
     fi
-    current_cpp_std="$(meson configure "build-{{m}}" | awk '$1 == "cpp_std" { print $2; exit }')"
+    current_cpp_std="$(meson configure "build-{{m}}" | awk '$1 == "cpp_std" { print $2; found=1 } END { if (!found) exit 1 }')"
     if [[ "$current_cpp_std" != "{{cpp-std}}" ]]; then
         meson configure "build-{{m}}" -Dcpp_std={{cpp-std}}
     fi
@@ -90,10 +90,10 @@ _clang_tidy m=mode *args:
     # ../src/ also excludes vendored third_party/*/src/* headers.
     run-clang-tidy -quiet -use-color -p "$cdb_dir" -j "$(nproc)" -header-filter='\.\./src/.*' {{args}} "^${src_root}/.*"
 
-lint m=mode: (configure m)
+lint m=mode: (_ensure-configured m)
     just _clang_tidy {{m}} '-warnings-as-errors=*'
 
-fix m=mode: (configure m)
+fix m=mode: (_ensure-configured m)
     just _clang_tidy {{m}} -fix
     just format
 

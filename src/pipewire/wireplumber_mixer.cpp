@@ -55,10 +55,18 @@ struct WirePlumberMixer::Impl {
 
     context = g_main_context_new();
     cancellable = g_cancellable_new();
+
+    // Run all WirePlumber setup with our private context pushed as the thread-default. The GTasks that
+    // wp_core_load_component / wp_object_activate create capture whatever context is thread-default at
+    // call time; without this they capture the global default context, which the poll bridge never
+    // pumps, so their completion callbacks never fire and the mixer silently never activates.
+    g_main_context_push_thread_default(context);
+
     core = wp_core_new(context, nullptr, nullptr);
 
     if (wp_core_connect(core) == FALSE) {
       kLog.warn("could not connect to PipeWire; device volume control unavailable");
+      g_main_context_pop_thread_default(context);
       return;
     }
 
@@ -69,6 +77,8 @@ struct WirePlumberMixer::Impl {
     wp_object_manager_request_object_features(nodesOm, WP_TYPE_NODE, WP_PIPEWIRE_OBJECT_FEATURES_MINIMAL);
     wp_core_install_object_manager(core, nodesOm);
 
+    kLog.info("connected; loading mixer-api / default-nodes-api modules");
+
     wp_core_load_component(
         core, "libwireplumber-module-mixer-api", "module", nullptr, nullptr, cancellable, &Impl::onMixerLoaded, this
     );
@@ -76,6 +86,15 @@ struct WirePlumberMixer::Impl {
         core, "libwireplumber-module-default-nodes-api", "module", nullptr, nullptr, cancellable,
         &Impl::onDefaultNodesLoaded, this
     );
+
+    // If neither module reports ready within a few seconds, device volume/mute is silently dead
+    // (every write no-ops until the mixer activates). Surface it so users have something to report.
+    GSource* watchdog = g_timeout_source_new_seconds(5);
+    g_source_set_callback(watchdog, &Impl::onReadyWatchdog, this, nullptr);
+    g_source_attach(watchdog, context);
+    g_source_unref(watchdog);
+
+    g_main_context_pop_thread_default(context);
   }
 
   ~Impl() {
@@ -99,6 +118,18 @@ struct WirePlumberMixer::Impl {
     if (context != nullptr) {
       g_main_context_unref(context);
     }
+  }
+
+  static gboolean onReadyWatchdog(gpointer data) noexcept {
+    auto* self = static_cast<Impl*>(data);
+    if (!self->ready || !self->defaultNodesReady) {
+      kLog.warn(
+          "device volume control unavailable after 5s (mixer-api {}, default-nodes-api {}); volume/mute "
+          "changes are being ignored — WirePlumber modules did not load or activate",
+          self->ready ? "ready" : "not ready", self->defaultNodesReady ? "ready" : "not ready"
+      );
+    }
+    return G_SOURCE_REMOVE;
   }
 
   static void onMixerLoaded(GObject* /*source*/, GAsyncResult* res, gpointer data) noexcept {
@@ -332,12 +363,18 @@ struct WirePlumberMixer::Impl {
     g_main_context_wakeup(context);
   }
 
+  mutable bool acquireWarned = false;
+
   void addPollFds(std::vector<pollfd>& fds) const {
     glibPollFds.clear();
     glibMaxPriority = G_PRIORITY_DEFAULT;
     glibPollTimeoutMs = -1;
 
     if (g_main_context_acquire(context) == FALSE) {
+      if (!acquireWarned) {
+        acquireWarned = true;
+        kLog.warn("could not acquire mixer GLib context; module-load events will not be pumped");
+      }
       return;
     }
 
@@ -360,6 +397,9 @@ struct WirePlumberMixer::Impl {
     if (g_main_context_acquire(context) == FALSE) {
       return;
     }
+    // Keep our context thread-default while dispatching so async work started from callbacks (e.g.
+    // wp_object_activate) captures it rather than the global default context (see the constructor).
+    g_main_context_push_thread_default(context);
     for (std::size_t i = 0; i < glibPollFds.size(); ++i) {
       const std::size_t pollIndex = startIdx + i;
       glibPollFds[i].revents =
@@ -370,6 +410,7 @@ struct WirePlumberMixer::Impl {
     if (ready_ != FALSE) {
       g_main_context_dispatch(context);
     }
+    g_main_context_pop_thread_default(context);
     g_main_context_release(context);
   }
 };

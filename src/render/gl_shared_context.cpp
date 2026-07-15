@@ -129,6 +129,7 @@ void GlSharedContext::initialize(wl_display* display, bool createSharedContext) 
 
   buildContextAttributes();
 
+  m_sharedContextEnabled = createSharedContext;
   if (createSharedContext) {
     // Use the same attribute path as child contexts so the share group is
     // uniform — mixing robust/non-robust contexts causes EGL_BAD_MATCH on
@@ -159,6 +160,21 @@ void GlSharedContext::initialize(wl_display* display, bool createSharedContext) 
     kLog.info("initialized EGL {}.{} with shared root context (GLES{})", major, minor, m_clientVersion);
   } else {
     kLog.info("initialized EGL {}.{} without shared context (isolated GPU contexts)", major, minor);
+  }
+}
+
+void GlSharedContext::recreateRootContext() {
+  if (m_display == EGL_NO_DISPLAY) {
+    throw std::runtime_error("cannot recreate EGL root context before initialization");
+  }
+
+  eglMakeCurrent(m_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+  if (m_rootContext != EGL_NO_CONTEXT) {
+    eglDestroyContext(m_display, m_rootContext);
+    m_rootContext = EGL_NO_CONTEXT;
+  }
+  if (m_sharedContextEnabled) {
+    m_rootContext = createContext(EGL_NO_CONTEXT, "root recovery");
   }
 }
 

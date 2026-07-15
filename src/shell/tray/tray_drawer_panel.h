@@ -22,11 +22,13 @@ public:
   [[nodiscard]] float preferredHeight() const override;
   [[nodiscard]] PanelPlacement panelPlacement() const noexcept override;
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::OnDemand; }
+  void setAnimationManager(AnimationManager* mgr) noexcept override;
 
 private:
   void doLayout(Renderer& renderer, float width, float height) override;
   void doUpdate(Renderer& renderer) override;
   [[nodiscard]] std::size_t currentDrawerColumns() const;
+  [[nodiscard]] std::optional<float> currentDrawerItemSize() const;
   [[nodiscard]] std::vector<std::string> currentHiddenItems() const;
   [[nodiscard]] std::vector<std::string> currentPinnedItems() const;
   [[nodiscard]] std::size_t visibleItemCount() const;

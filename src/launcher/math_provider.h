@@ -14,7 +14,8 @@ public:
   MathProvider(ClipboardService* clipboard, ConfigService* config, HttpClient* httpClient);
   ~MathProvider() override;
 
-  [[nodiscard]] std::string_view prefix() const override { return ""; }
+  [[nodiscard]] std::string_view defaultPrefix() const override { return ""; }
+  [[nodiscard]] bool defaultIncludeInGlobalSearch() const override { return true; }
   [[nodiscard]] std::string_view id() const override { return "Calculator"; }
   [[nodiscard]] std::string displayName() const override;
   [[nodiscard]] std::string_view defaultGlyphName() const override { return "calculator"; }

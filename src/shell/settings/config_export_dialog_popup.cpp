@@ -145,9 +145,9 @@ namespace settings {
             ui::label({
                 .text = title,
                 .fontSize = Style::fontSizeBody * m_scale,
+                .fontWeight = FontWeight::Bold,
                 .color = colorSpecFromRole(ColorRole::OnSurface),
                 .maxLines = 1,
-                .fontWeight = FontWeight::Bold,
             }),
             ui::label({
                 .text = description,
@@ -187,8 +187,8 @@ namespace settings {
             ui::label({
                 .text = i18n::tr("settings.export-config.title"),
                 .fontSize = Style::fontSizeTitle * m_scale,
-                .color = colorSpecFromRole(ColorRole::OnSurface),
                 .fontWeight = FontWeight::Bold,
+                .color = colorSpecFromRole(ColorRole::OnSurface),
                 .flexGrow = 1.0f,
             }),
             ui::button({

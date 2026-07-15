@@ -2,7 +2,7 @@
 
 #include "compositors/compositor_detect.h"
 #include "core/log.h"
-#include "core/process_fds.h"
+#include "core/process/process_fds.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "dwl-ipc-unstable-v2-client-protocol.h"
 #include "ext-background-effect-v1-client-protocol.h"

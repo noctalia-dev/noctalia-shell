@@ -170,7 +170,8 @@ TrayWidget::TrayWidget(ConfigService& config, TrayService* tray, TrayWidgetOptio
       m_itemActivated(std::move(options.itemActivated)), m_barPosition(std::move(options.barPosition)),
       m_panelGridMode(options.panelGridMode),
       m_panelGridColumns(std::clamp<std::size_t>(options.panelGridColumns, 1U, 5U)),
-      m_inlineEntryGap(std::max(0.0f, options.inlineEntryGap)), m_matchAdjacentSpacing(options.matchAdjacentSpacing) {
+      m_inlineEntryGap(std::max(0.0f, options.inlineEntryGap)), m_matchAdjacentSpacing(options.matchAdjacentSpacing),
+      m_customItemSize(options.customItemSize) {
   auto normalizeTokens = [](std::vector<std::string>& tokens) {
     std::vector<std::string> normalized;
     normalized.reserve(tokens.size());
@@ -455,6 +456,71 @@ void TrayWidget::rebuild(Renderer& renderer) {
     m_container->removeChild(m_container->children().back().get());
   }
 
+  auto attachHover = [this](InputArea& area, float size) {
+    if (!barCapsuleSpec().hoverHighlight) {
+      return;
+    }
+    Box* hoverBoxPtr = nullptr;
+    ColorSpec hoverFill = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface));
+    hoverFill.alpha = 0.0f;
+    const float padding = Style::spaceXs * m_contentScale;
+    area.addChild(
+        ui::box({
+            .out = &hoverBoxPtr,
+            .fill = hoverFill,
+            .radius = resolvedBarCapsuleRadius(size + padding * 2.0f, size + padding * 2.0f),
+            .width = size + padding * 2.0f,
+            .height = size + padding * 2.0f,
+            .configure = [padding](Box& box) {
+              box.setZIndex(-1);
+              box.setHitTestVisible(false);
+              box.setPosition(-padding, -padding);
+            },
+        })
+    );
+
+    auto progress = std::make_shared<float>(0.0f);
+    area.setOnEnter([this, hoverBoxPtr, progress](const InputArea::PointerData&) {
+      if (m_animations == nullptr)
+        return;
+      m_animations->cancelForOwner(hoverBoxPtr);
+      const ColorSpec fill = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface));
+      m_animations->animate(
+          *progress, 1.0f, Style::animFast, Easing::EaseOutCubic,
+          [this, hoverBoxPtr, fill, progress](float p) {
+            *progress = p;
+            hoverBoxPtr->setVisible(p > 0.001f);
+            ColorSpec c = fill;
+            c.alpha = 0.1f * p;
+            hoverBoxPtr->setFill(c);
+            requestRedraw();
+          },
+          {}, hoverBoxPtr
+      );
+      requestFrameTick();
+    });
+
+    area.setOnLeave([this, hoverBoxPtr, progress]() {
+      if (m_animations == nullptr)
+        return;
+      m_animations->cancelForOwner(hoverBoxPtr);
+      const ColorSpec fill = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface));
+      m_animations->animate(
+          *progress, 0.0f, Style::animFast, Easing::EaseOutCubic,
+          [this, hoverBoxPtr, fill, progress](float p) {
+            *progress = p;
+            hoverBoxPtr->setVisible(p > 0.001f);
+            ColorSpec c = fill;
+            c.alpha = 0.1f * p;
+            hoverBoxPtr->setFill(c);
+            requestRedraw();
+          },
+          {}, hoverBoxPtr
+      );
+      requestFrameTick();
+    });
+  };
+
   if (m_drawerMode) {
     m_drawerTrigger = nullptr;
     m_drawerChevron = nullptr;
@@ -468,7 +534,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
       break;
     }
     if (hasDrawerItems) {
-      const float itemSize = Style::baseGlyphSize * m_contentScale;
+      const float itemSize = m_customItemSize.value_or(Style::baseGlyphSize) * m_contentScale;
       auto triggerArea = std::make_unique<InputArea>();
       auto* triggerPtr = triggerArea.get();
       m_drawerTrigger = triggerPtr;
@@ -508,6 +574,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
       );
       m_drawerChevron = glyph.get();
       triggerArea->addChild(std::move(glyph));
+      attachHover(*triggerArea, itemSize);
       m_container->addChild(std::move(triggerArea));
     }
   }
@@ -525,7 +592,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
       continue;
     }
     const std::string iconPath = resolveIconPath(item);
-    const float itemSize = Style::baseGlyphSize * m_contentScale;
+    const float itemSize = m_customItemSize.value_or(Style::baseGlyphSize) * m_contentScale;
     const float iconSize = itemSize;
     const int iconRequestSize = std::max(32, static_cast<int>(std::round(iconSize * 2.0f)));
 
@@ -722,6 +789,8 @@ void TrayWidget::rebuild(Renderer& renderer) {
       area->setTooltip(tooltipText);
     }
 
+    attachHover(*area, itemSize);
+
     if (m_panelGridMode) {
       if (gridRow == nullptr || gridCol >= m_panelGridColumns) {
         gridRow = static_cast<Flex*>(m_container->addChild(
@@ -853,7 +922,9 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
   }
 
   // Match the on-screen request size used when the icon is loaded (see rebuild).
-  const int iconTargetSize = std::max(32, static_cast<int>(std::round(Style::baseGlyphSize * m_contentScale * 2.0f)));
+  const int iconTargetSize = std::max(
+      32, static_cast<int>(std::round(m_customItemSize.value_or(Style::baseGlyphSize) * m_contentScale * 2.0f))
+  );
 
   auto resolveMapped = [this, iconTargetSize](const std::string& name) -> std::string {
     if (name.empty()) {

@@ -297,6 +297,17 @@ namespace FileUtils {
     return base + "/plugins/materialized";
   }
 
+  // Persistent per-plugin data directory. Survives plugin updates (unlike the
+  // materialized runtime dir) and honors the NOCTALIA_STATE_HOME override.
+  // Caller is responsible for creating it. Empty if no state home resolves.
+  [[nodiscard]] inline std::string pluginDataDir(const std::string& pluginId) {
+    const std::string base = stateDir();
+    if (base.empty() || pluginId.empty()) {
+      return {};
+    }
+    return base + "/plugins/data/" + pluginId;
+  }
+
   [[nodiscard]] inline std::vector<std::uint8_t> readBinaryFile(const std::string& path) {
     if (path.empty()) {
       return {};

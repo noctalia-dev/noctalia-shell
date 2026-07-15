@@ -77,6 +77,8 @@ public:
   void requestRedraw();
   void onExternalOptionsChanged();
   void onPluginsChanged();
+  // Drop cached plugin-store files for a source that just advanced its git revision.
+  void invalidatePluginSourceCache(const std::string& sourceName);
   void setOpenDesktopWidgetEditor(std::function<void()> callback) { m_openDesktopWidgetEditor = std::move(callback); }
   void setOpenLockscreenWidgetEditor(std::function<void()> callback) {
     m_openLockscreenWidgetEditor = std::move(callback);
@@ -97,6 +99,7 @@ public:
   void onIdleLiveStatusChanged();
   void markSettingsWriteSuccess(bool requestRebuild = true);
   void markSettingsWriteError(std::string message);
+  void warnOnUnusableCustomSchedule(const std::vector<std::string>& path);
   void showTransientStatus(std::string message, bool isError = false);
 
 private:
@@ -243,6 +246,9 @@ private:
   bool m_focusSearchOnRebuild = false;
   Input* m_settingsSearchInput = nullptr;
   bool m_scrollToPendingContentTarget = false;
+  // While restoring focus after a content rebuild, defer scroll-into-view until the scene is laid
+  // out; applying it against un-positioned nodes would collapse the scroll offset to the top.
+  bool m_deferFocusScrollToLayout = false;
   Node* m_pendingContentScrollTarget = nullptr;
   std::string m_searchQuery;
   Timer m_searchDebounceTimer;
@@ -268,6 +274,7 @@ private:
   std::string m_renamingMonitorOverrideMatch;
   std::string m_pendingDeleteMonitorOverrideBarName;
   std::string m_pendingDeleteMonitorOverrideMatch;
+  std::string m_pendingDeletePluginId;
   std::string m_selectedBarName;
   std::string m_selectedMonitorOverride;
   std::string m_selectedSection;

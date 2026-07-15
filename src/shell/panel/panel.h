@@ -50,10 +50,20 @@ public:
 
   [[nodiscard]] virtual float preferredWidth() const = 0;
   [[nodiscard]] virtual float preferredHeight() const = 0;
+  // Span the output's available extent on this axis (floating panels only). The
+  // surface is dual-anchored with a requested size of 0 so the compositor
+  // assigns the size, subtracting every exclusive zone on the output; the
+  // preferred size is then only the fallback if no size is ever assigned.
+  [[nodiscard]] virtual bool fillsWidth() const noexcept { return false; }
+  [[nodiscard]] virtual bool fillsHeight() const noexcept { return false; }
   [[nodiscard]] virtual bool hasDecoration() const { return true; }
   [[nodiscard]] virtual LayerShellLayer layer() const { return LayerShellLayer::Top; }
   [[nodiscard]] virtual LayerShellKeyboard keyboardMode() const { return LayerShellKeyboard::OnDemand; }
   [[nodiscard]] virtual InputArea* initialFocusArea() const { return nullptr; }
+  // Dynamic focus: consumed (returned once, then cleared) by PanelManager after
+  // each update/layout pass. Lets content that arrives or changes after the
+  // scene build request keyboard focus (e.g. a plugin input with focus = true).
+  [[nodiscard]] virtual InputArea* takePendingFocusArea() { return nullptr; }
   // Panel placement policy. `Attached` merges with the bar when a suitable host
   // exists, `Floating` opens detached near the bar, and `Centered` opens in the
   // middle of the target output.
@@ -102,7 +112,7 @@ public:
     return std::move(m_root);
   }
 
-  void setAnimationManager(AnimationManager* mgr) noexcept { m_animations = mgr; }
+  virtual void setAnimationManager(AnimationManager* mgr) noexcept { m_animations = mgr; }
 
 protected:
   [[nodiscard]] float scaled(float value) const noexcept { return value * m_contentScale; }

@@ -5,6 +5,7 @@
 namespace {
 
   float g_cornerRadiusScale = 1.0f;
+  bool g_buttonBordersEnabled = true;
 
 } // namespace
 
@@ -13,6 +14,21 @@ namespace Style {
   float cornerRadiusScale() noexcept { return g_cornerRadiusScale; }
 
   void setCornerRadiusScale(float scale) noexcept { g_cornerRadiusScale = std::clamp(scale, 0.0f, 2.0f); }
+
+  bool buttonBordersEnabled() noexcept { return g_buttonBordersEnabled; }
+
+  void setButtonBordersEnabled(bool enabled) {
+    if (g_buttonBordersEnabled == enabled) {
+      return;
+    }
+    g_buttonBordersEnabled = enabled;
+    buttonBordersChanged().emit();
+  }
+
+  Signal<>& buttonBordersChanged() {
+    static Signal<> signal;
+    return signal;
+  }
 
   float scaledRadius(float radius, float localScale) noexcept { return radius * localScale * g_cornerRadiusScale; }
 

@@ -1,10 +1,10 @@
 #include "compositors/sway/sway_keyboard_backend.h"
 
 #include "compositors/sway/sway_runtime.h"
-#include "core/process.h"
+#include "core/process/process.h"
 
 #include <chrono>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>

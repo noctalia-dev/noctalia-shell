@@ -6,9 +6,8 @@
 #include "config/config_service.h"
 #include "config/config_types.h"
 #include "core/deferred_call.h"
-#include "core/keybind_matcher.h"
+#include "core/input/keybind_matcher.h"
 #include "core/log.h"
-#include "core/process_fds.h"
 #include "ipc/ipc_service.h"
 #include "notification/notification.h"
 #include "notification/notification_manager.h"
@@ -33,7 +32,7 @@
 #include <fcntl.h>
 #include <filesystem>
 #include <fstream>
-#include <stb_image_resize2.h>
+#include <stb/stb_image_resize2.h>
 #include <sys/wait.h>
 #include <thread>
 #include <unistd.h>
@@ -41,6 +40,7 @@
 namespace {
 
   constexpr Logger kLog("screenshot");
+  constexpr const char* kScreenshotPathEnv = "NOCTALIA_SCREENSHOT_PATH";
 
   [[nodiscard]] std::string defaultFilenamePattern() { return "screenshot_%Y%m%d_%H%M%S"; }
 
@@ -66,6 +66,10 @@ namespace {
 
   [[nodiscard]] bool hasAnyOutput(const ScreenshotService::OutputOptions& options) {
     return options.saveToFile || options.copyToClipboard || (options.pipeToCommand && !options.pipeCommand.empty());
+  }
+
+  [[nodiscard]] bool needsScreenshotPath(const ScreenshotService::OutputOptions& options) {
+    return options.saveToFile || (options.pipeToCommand && !options.pipeCommand.empty());
   }
 
   [[nodiscard]] const WaylandOutput* findOutput(const WaylandConnection& wayland, wl_output* output) {
@@ -185,12 +189,16 @@ namespace {
     return true;
   }
 
-  void pipePngToCommandAsync(std::string command, std::vector<std::uint8_t> png) {
+  void pipePngToCommandAsync(
+      std::string command, std::vector<std::uint8_t> png, const std::optional<std::filesystem::path>& screenshotPath
+  ) {
     if (command.empty() || png.empty()) {
       return;
     }
+    std::string screenshotPathString = screenshotPath.has_value() ? screenshotPath->string() : std::string{};
 
-    std::thread([command = std::move(command), png = std::move(png)]() {
+    std::thread([command = std::move(command), png = std::move(png),
+                 screenshotPathString = std::move(screenshotPathString)]() {
       // Block SIGPIPE on this thread so a command that stops reading stdin makes
       // write() fail with EPIPE instead of terminating the whole process.
       sigset_t pipeMask;
@@ -219,7 +227,11 @@ namespace {
         }
         ::close(stdinPipe[0]);
         attachStdioToDevNull();
-        ProcessFds::resetOpenFileLimitForChild();
+        if (screenshotPathString.empty()) {
+          ::unsetenv(kScreenshotPathEnv);
+        } else if (::setenv(kScreenshotPathEnv, screenshotPathString.c_str(), 1) != 0) {
+          ::_exit(126);
+        }
         // Restore default SIGPIPE handling for the spawned command.
         ::signal(SIGPIPE, SIG_DFL);
         pthread_sigmask(SIG_UNBLOCK, &pipeMask, nullptr);
@@ -720,6 +732,11 @@ void ScreenshotService::ensureRegionOverlay() {
     m_regionOverlay = std::make_unique<capture::ScreenshotRegionOverlay>();
   }
   m_regionOverlay->initialize(m_wayland, m_regionRenderContext);
+  m_regionOverlay->setFailureCallback([this](const std::string& message) {
+    m_frozenScreenshots.clear();
+    m_regionFullscreenPick = false;
+    notifyError(message);
+  });
   m_regionOverlay->setCompleteCallback([this](std::optional<LogicalRect> region, wl_output* output) {
     if (!region.has_value()) {
       m_frozenScreenshots.clear();
@@ -909,7 +926,7 @@ void ScreenshotService::deliverFrozenGlobalRegion(LogicalRect globalRegion, cons
   }
 
   const std::optional<std::filesystem::path> destPath =
-      options.saveToFile ? std::optional(makeScreenshotPath(options, "region")) : std::nullopt;
+      needsScreenshotPath(options) ? std::optional(makeScreenshotPath(options, "region")) : std::nullopt;
   deliverCaptureResult(std::move(*composed), options, destPath);
 }
 
@@ -1045,7 +1062,7 @@ void ScreenshotService::finishGlobalRegionBatch() {
   }
 
   const std::optional<std::filesystem::path> destPath =
-      batch.options.saveToFile ? std::optional(makeScreenshotPath(batch.options, "region")) : std::nullopt;
+      needsScreenshotPath(batch.options) ? std::optional(makeScreenshotPath(batch.options, "region")) : std::nullopt;
   deliverCaptureResult(std::move(*composed), batch.options, destPath);
 }
 
@@ -1068,7 +1085,7 @@ void ScreenshotService::deliverFrozenRegion(LogicalRect region, wl_output* outpu
   }
 
   const std::optional<std::filesystem::path> destPath =
-      options.saveToFile ? std::optional(makeScreenshotPath(options, "region")) : std::nullopt;
+      needsScreenshotPath(options) ? std::optional(makeScreenshotPath(options, "region")) : std::nullopt;
   deliverCaptureResult(std::move(*cropped), options, destPath);
 }
 
@@ -1112,7 +1129,8 @@ void ScreenshotService::captureOutput(
       .output = output,
       .region = region,
       .outputOptions = options,
-      .destPath = options.saveToFile ? std::optional(makeScreenshotPath(options, labelBase, pathSuffix)) : std::nullopt,
+      .destPath = needsScreenshotPath(options) ? std::optional(makeScreenshotPath(options, labelBase, pathSuffix))
+                                               : std::nullopt,
   };
   if (m_capture.busy()) {
     m_captureQueue.push_back(std::move(pending));
@@ -1268,7 +1286,7 @@ void ScreenshotService::finishAllOutputsBatch() {
   }
 
   const std::optional<std::filesystem::path> destPath =
-      batch.options.saveToFile ? std::optional(makeScreenshotPath(batch.options, "desktop")) : std::nullopt;
+      needsScreenshotPath(batch.options) ? std::optional(makeScreenshotPath(batch.options, "desktop")) : std::nullopt;
   deliverCaptureResult(std::move(*stitched), batch.options, destPath);
 }
 
@@ -1291,9 +1309,15 @@ void ScreenshotService::deliverCaptureResult(
   bool delivered = false;
   std::string failureMessage;
 
-  if (options.saveToFile && destPath.has_value()) {
+  if (destPath.has_value()) {
     std::error_code ec;
     std::filesystem::create_directories(destPath->parent_path(), ec);
+    if (ec) {
+      kLog.warn("screenshot directory create failed: {}", destPath->parent_path().string());
+    }
+  }
+
+  if (options.saveToFile && destPath.has_value()) {
     std::ofstream out(*destPath, std::ios::binary | std::ios::trunc);
     out.write(reinterpret_cast<const char*>(png.data()), static_cast<std::streamsize>(png.size()));
     if (!out) {
@@ -1322,7 +1346,7 @@ void ScreenshotService::deliverCaptureResult(
   }
 
   if (options.pipeToCommand && !options.pipeCommand.empty()) {
-    pipePngToCommandAsync(options.pipeCommand, png);
+    pipePngToCommandAsync(options.pipeCommand, png, destPath);
     delivered = true;
   }
 

@@ -31,21 +31,25 @@ namespace {
   }
 
   std::string formatDisplayInfo(const BrightnessDisplay& display) {
-    const int width = display.logicalWidth > 0 ? display.logicalWidth : display.physicalWidth;
-    const int height = display.logicalHeight > 0 ? display.logicalHeight : display.physicalHeight;
+    // Show the native hardware resolution; the fractionally-scaled logical size confuses
+    // users who expect the panel's real pixel count. The scale is surfaced separately below.
+    const int physicalWidth = display.physicalWidth;
+    const int physicalHeight = display.physicalHeight;
+    const int width = physicalWidth > 0 ? physicalWidth : display.logicalWidth;
+    const int height = physicalHeight > 0 ? physicalHeight : display.logicalHeight;
     std::string resolutionText = i18n::tr("control-center.display.unknown-resolution");
     if (width > 0 && height > 0) {
       resolutionText = std::to_string(width) + "x" + std::to_string(height);
     }
 
-    const int physicalWidth = display.physicalWidth;
-    const int physicalHeight = display.physicalHeight;
-    if (physicalWidth <= 0 || physicalHeight <= 0 || width <= 0 || height <= 0) {
+    const int logicalWidth = display.logicalWidth;
+    const int logicalHeight = display.logicalHeight;
+    if (physicalWidth <= 0 || physicalHeight <= 0 || logicalWidth <= 0 || logicalHeight <= 0) {
       return resolutionText;
     }
 
-    const double scaleX = static_cast<double>(physicalWidth) / static_cast<double>(width);
-    const double scaleY = static_cast<double>(physicalHeight) / static_cast<double>(height);
+    const double scaleX = static_cast<double>(physicalWidth) / static_cast<double>(logicalWidth);
+    const double scaleY = static_cast<double>(physicalHeight) / static_cast<double>(logicalHeight);
     const double scale = std::max(0.01, (scaleX + scaleY) * 0.5);
     const int scalePercent = static_cast<int>(std::lround(scale * 100.0));
     return resolutionText + " @ " + std::to_string(scalePercent) + "%";
@@ -259,8 +263,8 @@ void MonitorTab::rebuildCards(Renderer& /*renderer*/) {
             .out = &nameLabelPtr,
             .text = display.label,
             .fontSize = Style::fontSizeBody * scale,
-            .color = colorSpecFromRole(ColorRole::OnSurface),
             .fontWeight = FontWeight::Bold,
+            .color = colorSpecFromRole(ColorRole::OnSurface),
             .flexGrow = 1.0f,
         })
     );

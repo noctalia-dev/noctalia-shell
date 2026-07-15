@@ -4,6 +4,7 @@
 #include "ui/controls/label.h"
 
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -12,8 +13,19 @@
 
 namespace settings {
 
+  struct SettingsStatusBannerProps {
+    std::string message;
+    bool error = false;
+    float scale = 1.0f;
+    std::function<void()> onDismiss;
+    Flex** out = nullptr;
+    Label** messageOut = nullptr;
+  };
+
   [[nodiscard]] std::unique_ptr<Label>
   makeLabel(std::string_view text, float fontSize, const ColorSpec& color, FontWeight fontWeight = FontWeight::Normal);
+  [[nodiscard]] std::unique_ptr<Flex> makeSettingsStatusBanner(SettingsStatusBannerProps props);
+  void updateSettingsStatusBanner(Flex& banner, Label& message, std::string_view text, bool error);
 
   [[nodiscard]] std::optional<std::size_t>
   optionIndex(const std::vector<SelectOption>& options, std::string_view value);

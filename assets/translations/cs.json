@@ -166,7 +166,7 @@
       "application-volumes": "Hlasitost aplikací",
       "choose-effects-profile": "Vyberte profil",
       "effects-profile": "Efekty",
-      "input-device-prefix": "Vstup:",
+      "input-device-prefix": "Vstup",
       "no-application-audio": "Žádný zvuk z aplikací",
       "no-application-audio-body": "Momentálně nejsou k dispozici žádné přehrávací streamy aplikací.",
       "no-input-devices": "Žádná vstupní zařízení",
@@ -175,7 +175,7 @@
       "no-output-devices": "Žádná výstupní zařízení",
       "no-output-devices-body": "Momentálně nejsou k dispozici žádné výstupní cíle přehrávání.",
       "no-output-selected": "Není vybráno žádné výstupní zařízení",
-      "output-device-prefix": "Výstup:",
+      "output-device-prefix": "Výstup",
       "unavailable-body": "PipeWire není aktivní.",
       "unavailable-title": "Zvuk není k dispozici"
     },
@@ -368,6 +368,15 @@
       "weather": "Počasí"
     },
     "weather": {
+      "daily": {
+        "tooltip": {
+          "condition": "Podmínky",
+          "high": "Nejvyšší",
+          "low": "Nejnižší",
+          "sunrise": "Východ slunce",
+          "sunset": "Západ slunce"
+        }
+      },
       "data-unavailable": "Údaje o počasí nejsou k dispozici",
       "details": {
         "elevation": "Nadmořská výška",
@@ -376,6 +385,7 @@
         "temp-max": "Maximální teplota",
         "temp-min": "Minimální teplota",
         "timezone": "Časové pásmo",
+        "uv-index": "UV index",
         "wind": "Vítr"
       },
       "disabled": "Povolte [weather] v config.toml",
@@ -384,6 +394,19 @@
         "day": "Neděle",
         "description": "Počasí",
         "temperature": "10 / 4 °C"
+      },
+      "forecast-view": {
+        "daily": "Denně",
+        "hourly": "Hodinově"
+      },
+      "hourly": {
+        "summary": "{condition} / Déšť {precip}%",
+        "tooltip": {
+          "condition": "Podmínky",
+          "humidity": "Vlhkost",
+          "rain": "Déšť",
+          "wind": "Vítr"
+        }
       },
       "location-unavailable": "Poloha není k dispozici",
       "no-location-body": "Přidej svou adresu nebo povol automatické určení polohy v nastavení Polohy.",
@@ -459,6 +482,11 @@
         "label-min-width": "Min. šířka popisu",
         "layout": "Rozvržení",
         "mirrored": "Zrcadlené",
+        "network-speed-compact": "Kompaktní rychlost sítě",
+        "network-speed-unit": "Jednotka rychlosti sítě",
+        "network-speed-unit-auto": "Automaticky",
+        "network-speed-unit-kilobytes": "kB/s",
+        "network-speed-unit-megabytes": "MB/s",
         "opacity": "Průhlednost",
         "primary-color": "Primární barva",
         "reset-defaults": "Obnovit výchozí",
@@ -467,9 +495,12 @@
         "secondary-color": "Sekundární barva",
         "sensitivity": "Citlivost",
         "shadow": "Stín",
+        "show-caps-lock": "Varování Caps Lock",
         "show-forecast": "Zobrazit předpověď",
+        "show-keyboard-layout": "Rozložení klávesnice",
         "show-label": "Zobrazit popisek",
         "show-login-button": "Tlačítko přihlášení",
+        "show-password-hint": "Nápověda hesla",
         "show-when-idle": "Zobrazit při nečinnosti",
         "stat": "Statistika",
         "stat-cpu-temp": "Teplota CPU",
@@ -620,6 +651,7 @@
   "lockscreen": {
     "authenticating": "Ověřování…",
     "authentication-failed": "Ověření selhalo",
+    "caps-lock-on": "Caps Lock je zapnutý",
     "password-cleared": "Heslo vymazáno",
     "password-placeholder": "Heslo",
     "ready": "Zadejte heslo a stiskněte Enter.",
@@ -709,11 +741,28 @@
     },
     "nightlight": {
       "forced": "Vždy zapnuto",
-      "off": "Night Light vypnutý"
+      "off": "Night Light vypnutý",
+      "running": "Aktivní",
+      "scheduled": "Naplánováno"
+    },
+    "privacy": {
+      "camera-off": "Kamera zastavena",
+      "camera-on": "Kamera aktivní",
+      "mic-off": "Mikrofon zastaven",
+      "mic-on": "Mikrofon aktivní",
+      "screen-off": "Sdílení obrazovky zastaveno",
+      "screen-on": "Sdílení obrazovky aktivní"
     },
     "wifi": {
       "off": "Wi‑Fi vypnuta",
       "on": "Wi‑Fi zapnuta"
+    }
+  },
+  "plugins": {
+    "auto-disabled": {
+      "body-errors": "{plugin} narazil na příliš mnoho chyb a byl zakázán. Po opravě problému jej znovu načtěte.",
+      "body-timeouts": "{plugin} přestal reagovat a byl zakázán. Po opravě problému jej znovu načtěte.",
+      "title": "Plugin zakázán"
     }
   },
   "power": {
@@ -727,11 +776,14 @@
         "plugged-in": "Připojeno k napájení"
       },
       "tooltip": {
+        "device": "Baterie",
+        "device-numbered": "Baterie {index}",
         "health": "Stav",
         "rate": "Rychlost",
         "status": "Stav",
         "time-left": "Zbývající čas",
-        "time-to-full": "Čas do plného nabití"
+        "time-to-full": "Čas do plného nabití",
+        "unknown-device": "Neznámé zařízení"
       }
     },
     "profiles": {
@@ -761,6 +813,7 @@
     },
     "badges": {
       "advanced": "Pokročilé",
+      "community": "Komunita",
       "inherited": "Zděděno",
       "monitor": "Monitor",
       "official": "Oficiální",
@@ -941,6 +994,8 @@
       "reset-page": "Nepodařilo se resetovat některá nastavení.",
       "support-report": "Nepodařilo se uložit podpůrnou zprávu.",
       "sync-greeter": "Nepodařilo se synchronizovat vzhled s Noctalia Greeter.",
+      "sync-greeter-timeout": "Synchronizace uvítací obrazovky stále čeká na schválení správcem. Zkontrolujte TTY nebo konzoli, zda se nezobrazila výzva polkit, povolte agenta polkit v nastavení Zabezpečení, nebo spusťte pkexec ručně.",
+      "sync-greeter-timeout-manual": "Synchronizace uvítací obrazovky stále vyžaduje schválení správcem. Spusťte v terminálu: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "widget": {
         "rename": "Nepodařilo se přejmenovat pojmenovaný widget."
       },
@@ -955,6 +1010,2472 @@
       "merged-user-save-title": "Uložit sloučenou uživatelskou konfiguraci",
       "merged-user-title": "Sloučená uživatelská konfigurace (doporučeno)",
       "title": "Export konfigurace"
+    },
+    "idle": {
+      "behavior": {
+        "add": "Přidat chování",
+        "command-label": "Příkaz při nečinnosti",
+        "command-placeholder": "notify-send \"Nečinnost\"",
+        "kind": {
+          "custom": "Vlastní",
+          "lock": "Zamknout",
+          "lock-and-suspend": "Zamknout a uspat",
+          "screen-off": "Vypnout obrazovku",
+          "suspend": "Uspat"
+        },
+        "kind-section-label": "Akce",
+        "name-label": "Název",
+        "name-placeholder": "chovani-necinnosti",
+        "resume-command-label": "Příkaz při obnovení",
+        "resume-command-placeholder": "",
+        "summary": "{name} · {seconds}s",
+        "summary-disabled-timeout": "{name} · časový limit zakázán",
+        "timeout-label": "Časový limit (sekundy)",
+        "unnamed": "Nepojmenované chování"
+      },
+      "live-status": {
+        "active": "Aktivní",
+        "idle-for-one": "Neaktivní 1 sekundu",
+        "idle-for-seconds": "Neaktivní {seconds} sekund"
+      }
+    },
+    "navigation": {
+      "groups": {
+        "audio": "Zvuk",
+        "automation": "Automatizace",
+        "backdrop": "Pozadí za panelem",
+        "background": "Pozadí",
+        "battery": "Baterie",
+        "behavior": "Chování",
+        "brightness": "Jas",
+        "built-in": "Vestavěné",
+        "calendar": "Kalendář",
+        "capsules": "Kapsle",
+        "clipboard": "Schránka",
+        "community": "Komunita",
+        "control-center": "Ovládací centrum",
+        "dead-zone": "Mrtvá zóna",
+        "directories": "Složky",
+        "effects": "Efekty",
+        "filtering": "Filtrování",
+        "focus-styling": "Styl zaměření",
+        "formats": "Formáty",
+        "general": "Obecné",
+        "grouping": "Seskupování",
+        "home": "Domů",
+        "hot-corners": "Aktivní rohy",
+        "idle": "Nečinnost",
+        "interface": "Rozhraní",
+        "keybinds": "Klávesové zkratky",
+        "kinds": "Typy",
+        "launcher": "Spouštěč",
+        "layout": "Rozvržení",
+        "lifecycle": "Životní cyklus",
+        "location": "Poloha",
+        "lock-screen": "Uzamykací obrazovka",
+        "media": "Média",
+        "monitor": "Sledování systému",
+        "monitor-polling": "Intervaly kontroly",
+        "monitor-thresholds": "Prahy zvýraznění",
+        "monitors": "Monitory",
+        "motion": "Pohyb",
+        "network": "Síť",
+        "night-light": "Noční režim",
+        "notifications": "Oznámení",
+        "osd": "OSD",
+        "overview": "Přehled",
+        "pinned-apps": "Připnuté aplikace",
+        "polkit": "Polkit",
+        "power": "Napájení",
+        "profile": "Profil",
+        "screen-corners": "Zaoblené rohy obrazovky",
+        "screen-time": "Doba u obrazovky",
+        "screenshot": "Snímek obrazovky",
+        "security": "Zabezpečení",
+        "session-panel": "Relace",
+        "shape": "Tvar",
+        "system": "Systém",
+        "theme": "Motiv",
+        "toasts": "Bubliny oznámení",
+        "transition": "Přechod",
+        "user": "Uživatel",
+        "wallpaper": "Tapeta",
+        "weather": "Počasí",
+        "widget-list": "Seznam widgetů",
+        "widgets": "Widgety"
+      },
+      "sections": {
+        "appearance": "Vzhled",
+        "backdrop": "Pozadí za panelem",
+        "bar": "Lišta",
+        "control-center": "Ovládací centrum",
+        "desktop": "Plocha",
+        "dock": "Dock",
+        "hooks": "Háčky",
+        "keybinds": "Klávesové zkratky",
+        "location": "Poloha",
+        "niri": "Niri",
+        "notifications": "Oznámení",
+        "osd": "OSD",
+        "panels": "Panely",
+        "plugins": "Pluginy",
+        "popups": "Vyskakovací okna",
+        "power": "Napájení",
+        "security": "Zabezpečení",
+        "services": "Služby",
+        "shell": "Shell",
+        "system": "Systém",
+        "templates": "Šablony",
+        "wallpaper": "Tapeta"
+      }
+    },
+    "notifications": {
+      "filter": {
+        "add": "Přidat filtr",
+        "add-title": "Přidat filtr oznámení",
+        "allow-permanent": "Povolit trvalé",
+        "allowed-urgencies-label": "Povolené úrovně naléhavosti",
+        "flag": {
+          "history": "historie",
+          "permanent": "trvalé",
+          "sound": "zvuk",
+          "toast": "bublina"
+        },
+        "flags-label": "Při shodě",
+        "match-label": "Aplikace",
+        "match-placeholder": "Název aplikace, desktop entry nebo kategorie…",
+        "play-sound": "Přehrát zvuk",
+        "save-history": "Uložit do historie",
+        "show-toast": "Zobrazit bublinu",
+        "summary": "{match} · {flags}",
+        "summary-blocked": "{match} · blokováno",
+        "summary-disabled": "{match} · zakázáno",
+        "unnamed": "Nepojmenovaný filtr"
+      }
+    },
+    "options": {
+      "clipboard": {
+        "auto-paste": {
+          "ctrl-shift-v": "Ctrl+Shift+V",
+          "ctrl-v": "Ctrl+V",
+          "shift-insert": "Shift+Insert"
+        }
+      },
+      "control-center": {
+        "sidebar": {
+          "compact": "Kompaktní",
+          "full": "Plný",
+          "none": "Žádný"
+        }
+      },
+      "dock-launcher-position": {
+        "end": "Konec",
+        "none": "Žádná",
+        "start": "Začátek"
+      },
+      "edge": {
+        "bottom": "Dole",
+        "left": "Vlevo",
+        "right": "Vpravo",
+        "top": "Nahoře"
+      },
+      "font-weight": {
+        "bold": "Tučné",
+        "book": "Book",
+        "default": "Výchozí (lišta)",
+        "heavy": "Heavy",
+        "light": "Light",
+        "medium": "Medium",
+        "regular": "Regular",
+        "semi-bold": "Semi Bold",
+        "semi-light": "Semi Light",
+        "thin": "Thin",
+        "ultra-bold": "Ultra Bold",
+        "ultra-heavy": "Ultra Heavy",
+        "ultra-light": "Ultra Light"
+      },
+      "hot-corners": {
+        "command": "Spustit příkaz",
+        "control-center": "Ovládací centrum",
+        "launcher": "Spouštěč",
+        "none": "Žádná",
+        "window-switcher": "Přepínač oken"
+      },
+      "layer": {
+        "overlay": "Overlay",
+        "top": "Top"
+      },
+      "notification-urgency": {
+        "critical": "Kritická",
+        "low": "Nízká",
+        "normal": "Normální"
+      },
+      "orientation": {
+        "horizontal": "Vodorovně",
+        "vertical": "Svisle"
+      },
+      "panel-position": {
+        "auto": "Sledovat lištu"
+      },
+      "screen-position": {
+        "bottom-center": "Dole uprostřed",
+        "bottom-left": "Dole vlevo",
+        "bottom-right": "Dole vpravo",
+        "center": "Uprostřed",
+        "center-left": "Uprostřed vlevo",
+        "center-right": "Uprostřed vpravo",
+        "top-center": "Nahoře uprostřed",
+        "top-left": "Nahoře vlevo",
+        "top-right": "Nahoře vpravo"
+      },
+      "shell": {
+        "panel-placement": {
+          "attached": "Připojeno",
+          "floating": "Plovoucí"
+        },
+        "panel-transparency": {
+          "glass": "Sklo",
+          "soft": "Jemné",
+          "solid": "Plné"
+        },
+        "password-style": {
+          "filled-circles": "Vyplněné kruhy",
+          "random-icons": "Náhodné ikony"
+        },
+        "shadow-direction": {
+          "center": "Uprostřed",
+          "down": "Dolů",
+          "down-left": "Dolů vlevo",
+          "down-right": "Dolů vpravo",
+          "left": "Vlevo",
+          "right": "Vpravo",
+          "up": "Nahoru",
+          "up-left": "Nahoru vlevo",
+          "up-right": "Nahoru vpravo"
+        }
+      },
+      "theme": {
+        "mode": {
+          "dark": "Tmavý",
+          "light": "Světlý"
+        },
+        "source": {
+          "built-in": "Vestavěná",
+          "community": "Komunitní",
+          "custom": "Vlastní",
+          "wallpaper": "Tapeta"
+        }
+      },
+      "theme-role": {
+        "custom": "Vlastní…",
+        "default": "Výchozí"
+      },
+      "wallpaper": {
+        "fill": {
+          "center": "Na střed",
+          "crop": "Oříznout",
+          "fit": "Přizpůsobit",
+          "repeat": "Opakovat",
+          "span": "Roztáhnout přes monitory",
+          "stretch": "Roztáhnout"
+        },
+        "order": {
+          "alphabetical": "Abecedně",
+          "random": "Náhodně"
+        },
+        "transition": {
+          "disc": "Disk",
+          "fade": "Prolnutí",
+          "honeycomb": "Plástev",
+          "stripes": "Pruhy",
+          "wipe": "Setření",
+          "zoom": "Přiblížení"
+        }
+      },
+      "weather": {
+        "unit": {
+          "imperial": "Imperiální",
+          "metric": "Metrické"
+        }
+      }
+    },
+    "plugins": {
+      "browse-store": "Procházet pluginy",
+      "panels": {
+        "open-near-click": {
+          "description": "Otevřít panel poblíž widgetu lišty, který jej přepnul",
+          "label": "Otevřít u kliknutí"
+        },
+        "placement": {
+          "description": "Připojit panel k liště nebo jej vznášet poblíž jejího okraje",
+          "label": "Umístění"
+        },
+        "position": {
+          "description": "Pozice na obrazovce, když panel plovoucí",
+          "label": "Pozice"
+        }
+      },
+      "plugins": {
+        "configure": "Konfigurovat",
+        "deprecated": "zastaralé",
+        "empty": "Žádné povolené pluginy.",
+        "loading": "Načítání pluginů...",
+        "refreshing": "Obnovování pluginů...",
+        "remove": "Odebrat plugin",
+        "requires": "Vyžaduje: {dependencies}",
+        "requires-newer-noctalia": "vyžaduje novější Noctalii",
+        "title": "Pluginy"
+      },
+      "settings": {
+        "empty": "Nejsou k dispozici žádná nastavení."
+      },
+      "sources": {
+        "add": "Přidat zdroj",
+        "add-title": "Přidat zdroj pluginů",
+        "edit": "Upravit zdroj",
+        "edit-title": "Upravit zdroj pluginů",
+        "empty": "Nejsou nakonfigurovány žádné zdroje.",
+        "errors": {
+          "duplicate-name": "Zdroj s tímto ID již existuje.",
+          "invalid-name": "ID zdroje musí obsahovat písmena, číslice, '.', '_' nebo '-' a začínat písmenem nebo číslicí.",
+          "location-required": "Umístění zdroje je povinné."
+        },
+        "kind": {
+          "git": "Git",
+          "path": "Cesta"
+        },
+        "kind-label": "Typ",
+        "location-label": "Umístění",
+        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
+        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "name-label": "ID zdroje",
+        "name-placeholder": "moje-pluginy",
+        "precedence-hint": "Zdroje níže přepisují zdroje výše, pokud nabízejí stejný plugin.",
+        "remove": "Odebrat zdroj",
+        "save": "Uložit",
+        "title": "Zdroje",
+        "update": "Aktualizovat",
+        "update-on-startup": "Aktualizovat při spuštění"
+      },
+      "store": {
+        "add": "Přidat do Noctalie",
+        "category-all": "Vše",
+        "empty": "Nebyly nalezeny žádné pluginy",
+        "incompatible": "Nekompatibilní",
+        "loading": "Načítání katalogu...",
+        "no-readme": "Popis není k dispozici.",
+        "results-count": "{count} pluginů",
+        "search-placeholder": "Hledat pluginy...",
+        "title": "Obchod s pluginy"
+      }
+    },
+    "schema": {
+      "appearance": {
+        "animation-speed": {
+          "description": "Násobič rychlosti pro všechny animace",
+          "label": "Rychlost animací"
+        },
+        "animations": {
+          "description": "Povolit nebo zakázat animace rozhraní",
+          "label": "Animace"
+        },
+        "app-icon-color": {
+          "description": "Barva palety použitá při obarvování ikon aplikací",
+          "label": "Barva ikon aplikací"
+        },
+        "app-icon-colorize": {
+          "description": "Přebarvit ikony aplikací v celém shellu tak, aby odpovídaly aktivní paletě",
+          "label": "Obarvit ikony aplikací"
+        },
+        "builtin-palette": {
+          "description": "Vybrat paletu z vestavěného katalogu",
+          "label": "Vestavěná paleta"
+        },
+        "community-palette": {
+          "description": "Vybrat paletu z komunitního katalogu",
+          "label": "Komunitní paleta",
+          "search-placeholder": "Hledat palety..."
+        },
+        "corner-roundness": {
+          "description": "Škálovat poloměr rohů napříč kontejnery a ovládacími prvky rozhraní shellu",
+          "label": "Zaoblení rohů"
+        },
+        "custom-palette": {
+          "description": "Vybrat paletu z ~/.config/noctalia/palettes/",
+          "label": "Vlastní paleta",
+          "search-placeholder": "Hledat vlastní palety..."
+        },
+        "export-wallpaper-palette": {
+          "button": "Uložit jako vlastní paletu",
+          "description": "Uložit aktuální paletu vygenerovanou z tapety jako znovupoužitelný soubor vlastní palety",
+          "label": "Exportovat paletu tapety"
+        },
+        "font-family": {
+          "description": "Rodina písma pro rozhraní shellu",
+          "label": "Rodina písma"
+        },
+        "global-shadow-alpha": {
+          "description": "Průhlednost globálního stínu povrchu"
+        },
+        "global-shadow-direction": {
+          "description": "Směr, ve kterém stín dopadá z povrchů"
+        },
+        "language": {
+          "description": "Přepsat automatickou detekci jazyka",
+          "label": "Jazyk"
+        },
+        "palette-source": {
+          "description": "Odkud odvodit barevnou paletu",
+          "label": "Zdroj palety"
+        },
+        "theme-mode": {
+          "description": "Vybrat tmavý, světlý nebo automatický režim podle denní doby",
+          "label": "Režim motivu"
+        },
+        "ui-scale": {
+          "description": "Zvětšit nebo zmenšit celé rozhraní",
+          "label": "Měřítko rozhraní"
+        },
+        "wallpaper-generation-scheme": {
+          "description": "Vybrat, jak se barvy tapety převádějí na paletu",
+          "label": "Schéma generování z tapety"
+        }
+      },
+      "backdrop": {
+        "blur-intensity": {
+          "description": "Intenzita rozostření pozadí za panelem",
+          "label": "Intenzita rozostření"
+        },
+        "enabled": {
+          "description": "Povolit pozadí za panelem"
+        },
+        "tint-intensity": {
+          "description": "Intenzita zabarvení pozadí za panelem",
+          "label": "Intenzita zabarvení"
+        }
+      },
+      "bar": {
+        "auto-hide": {
+          "description": "Automaticky skrýt lištu, když se nepoužívá"
+        },
+        "background-opacity": {
+          "description": "Průhlednost pozadí lišty"
+        },
+        "border": {
+          "description": "Barevná role pro obrys lišty; podporovány jsou i pevné hex barvy",
+          "label": "Obrys"
+        },
+        "border-width": {
+          "description": "Šířka vnitřního obrysu lišty",
+          "label": "Šířka obrysu"
+        },
+        "capsule-border": {
+          "description": "Výchozí barevná role obrysu kapsle; podporovány jsou i pevné hex barvy",
+          "label": "Obrys kapsle"
+        },
+        "capsule-fill": {
+          "description": "Výchozí barevná role pozadí kapsle; podporovány jsou i pevné hex barvy",
+          "label": "Výplň kapsle"
+        },
+        "capsule-foreground": {
+          "description": "Výchozí barevná role ikony a popisku uvnitř kapslí; podporovány jsou i pevné hex barvy",
+          "label": "Popředí kapsle"
+        },
+        "capsule-opacity": {
+          "description": "Průhlednost pozadí kapslí widgetů",
+          "label": "Průhlednost kapsle"
+        },
+        "capsule-padding": {
+          "description": "Vnitřní odsazení uvnitř kapslí widgetů",
+          "label": "Vnitřní odsazení kapsle"
+        },
+        "capsule-radius": {
+          "description": "Výchozí poloměr rohů pro kapsle widgetů, pilulky ploch a skupiny ploch hlavního panelu; ponechte prázdné pro automatický tvar pilulky nebo nastavte 0 pro pravé úhly",
+          "label": "Poloměr kapsle"
+        },
+        "capsule-thickness": {
+          "description": "Velikost kapsle napříč lištou jako zlomek tloušťky lišty (1.0 vyplní celou lištu)",
+          "label": "Tloušťka kapsle"
+        },
+        "center-widgets": {
+          "description": "Widgety uprostřed lišty",
+          "label": "Widgety uprostřed"
+        },
+        "contact-shadow": {
+          "description": "Tmavý přechod mezi připojeným panelem a lištou, který naznačuje hloubku ve švu"
+        },
+        "content-padding": {
+          "description": "Vnitřní odsazení v obsahové oblasti lišty",
+          "label": "Vnitřní odsazení obsahu"
+        },
+        "content-scale": {
+          "description": "Faktor měřítka pro obsah lišty",
+          "label": "Měřítko obsahu"
+        },
+        "corner-bottom-left": {
+          "description": "Poloměr dolního levého rohu lišty; záporné hodnoty vytvoří konkávní roh, pokud tento roh nesměřuje k okraji obrazovky"
+        },
+        "corner-bottom-right": {
+          "description": "Poloměr dolního pravého rohu lišty; záporné hodnoty vytvoří konkávní roh, pokud tento roh nesměřuje k okraji obrazovky"
+        },
+        "corner-radius": {
+          "description": "Poloměr rohů lišty"
+        },
+        "corner-top-left": {
+          "description": "Poloměr horního levého rohu lišty; záporné hodnoty vytvoří konkávní roh, pokud tento roh nesměřuje k okraji obrazovky"
+        },
+        "corner-top-right": {
+          "description": "Poloměr horního pravého rohu lišty; záporné hodnoty vytvoří konkávní roh, pokud tento roh nesměřuje k okraji obrazovky"
+        },
+        "dead-zone-command": {
+          "description": "Příkaz shellu spuštěný při kliknutí levým tlačítkem do okraje lišty mimo sekce widgetů",
+          "label": "Levé kliknutí"
+        },
+        "dead-zone-middle-command": {
+          "description": "Příkaz shellu spuštěný při kliknutí prostředním tlačítkem do okraje lišty mimo sekce widgetů",
+          "label": "Prostřední kliknutí"
+        },
+        "dead-zone-right-command": {
+          "description": "Příkaz shellu spuštěný při kliknutí pravým tlačítkem; ponechte prázdné pro otevření Ovládacího centra",
+          "label": "Pravé kliknutí"
+        },
+        "dead-zone-scroll-down-command": {
+          "description": "Příkaz shellu spuštěný při rolování dolů",
+          "label": "Rolování dolů"
+        },
+        "dead-zone-scroll-up-command": {
+          "description": "Příkaz shellu spuštěný při rolování nahoru",
+          "label": "Rolování nahoru"
+        },
+        "edge-margin": {
+          "description": "Mezera mezi lištou a okrajem obrazovky, na kterém sedí. Nastavením na 0 px ji přisadíte přímo k okraji."
+        },
+        "enabled": {
+          "description": "Zobrazit nebo skrýt tuto lištu"
+        },
+        "end-widgets": {
+          "description": "Widgety na konci (vpravo/dole) lišty",
+          "label": "Widgety na konci"
+        },
+        "ends-margin": {
+          "description": "Zkracuje lištu z obou konců po její délce. Nastavením na 0 px získáte lištu přes celou šířku nebo výšku."
+        },
+        "font-family": {
+          "description": "Písmo pro widgety této lišty; ponechte prázdné pro zdědění globálního písma. Rodina písma jednotlivého widgetu toto přepíše.",
+          "label": "Rodina písma"
+        },
+        "font-weight": {
+          "description": "Výchozí řez písma pro popisky widgetů na této liště.",
+          "label": "Řez písma"
+        },
+        "layer": {
+          "description": "Použijte Overlay pro zobrazení lišty nad aplikacemi na celou obrazovku. Připojené panely lištu následují.",
+          "label": "Vrstva Wayland"
+        },
+        "opposite-edge-margin": {
+          "description": "Extra rezervovaný prostor na vnitřní straně lišty, mimo okraj obrazovky; použijte, když maximalizovaná okna ignorují struts"
+        },
+        "panel-overlap": {
+          "description": "Počet pixelů, o které připojený panel překrývá okraj lišty, aby skryl šev (upravte, pokud vidíte čáru nebo mezeru)",
+          "label": "Přesah panelu"
+        },
+        "position": {
+          "description": "Na kterém okraji obrazovky lišta sedí"
+        },
+        "reserve-space": {
+          "description": "Odsunout okna od okraje lišty"
+        },
+        "shadow": {
+          "description": "Vrhat globální stín povrchu z lišty"
+        },
+        "show-on-workspace-switch": {
+          "description": "Krátce zobrazit lištu při změně aktivní plochy",
+          "label": "Zobrazit při přepnutí plochy"
+        },
+        "start-widgets": {
+          "description": "Widgety na začátku (vlevo/nahoře) lišty",
+          "label": "Widgety na začátku"
+        },
+        "thickness": {
+          "description": "Tloušťka lišty v pixelech",
+          "label": "Tloušťka"
+        },
+        "widget-capsules": {
+          "description": "Obalit widgety pozadím kapsle",
+          "label": "Kapsle widgetů"
+        },
+        "widget-color": {
+          "description": "Výchozí barevná role ikony a popisku pro widgety na této liště; podporovány jsou i pevné hex barvy",
+          "label": "Barva widgetu"
+        },
+        "widget-icon-color": {
+          "description": "Přepíše barvu widgetu pro ikony na této liště; podporovány jsou i pevné hex barvy",
+          "label": "Barva ikony widgetu"
+        },
+        "widget-spacing": {
+          "description": "Rozestup mezi widgety lišty",
+          "label": "Rozestup widgetů"
+        }
+      },
+      "desktop": {
+        "hot-corners-bottom-left": {
+          "description": "Akce, když ukazatel dosáhne dolního levého rohu",
+          "label": "Dolní levý roh"
+        },
+        "hot-corners-bottom-left-command": {
+          "description": "Příkaz shellu spuštěný při dosažení dolního levého rohu",
+          "label": "Příkaz"
+        },
+        "hot-corners-bottom-right": {
+          "description": "Akce, když ukazatel dosáhne dolního pravého rohu",
+          "label": "Dolní pravý roh"
+        },
+        "hot-corners-bottom-right-command": {
+          "description": "Příkaz shellu spuštěný při dosažení dolního pravého rohu",
+          "label": "Příkaz"
+        },
+        "hot-corners-enabled": {
+          "description": "Spouštět akce zatlačením ukazatele myši do rohů obrazovky",
+          "label": "Aktivní rohy"
+        },
+        "hot-corners-top-left": {
+          "description": "Akce, když ukazatel dosáhne horního levého rohu",
+          "label": "Horní levý roh"
+        },
+        "hot-corners-top-left-command": {
+          "description": "Příkaz shellu spuštěný při dosažení horního levého rohu",
+          "label": "Příkaz"
+        },
+        "hot-corners-top-right": {
+          "description": "Akce, když ukazatel dosáhne horního pravého rohu",
+          "label": "Horní pravý roh"
+        },
+        "hot-corners-top-right-command": {
+          "description": "Příkaz shellu spuštěný při dosažení horního pravého rohu",
+          "label": "Příkaz"
+        },
+        "screen-corners-enabled": {
+          "description": "Zaoblit rohy obrazovky černým překrytím",
+          "label": "Zaoblené rohy obrazovky"
+        },
+        "screen-corners-size": {
+          "description": "Poloměr zaoblených rohů obrazovky v pixelech",
+          "label": "Velikost rohu"
+        },
+        "widgets": {
+          "description": "Zobrazit widgety na ploše",
+          "label": "Widgety plochy"
+        },
+        "widgets-editor": {
+          "button": "Přepnout editor",
+          "description": "Přidávat, přesouvat a měnit velikost widgetů plochy",
+          "label": "Editor widgetů"
+        }
+      },
+      "dock": {
+        "active-icon-opacity": {
+          "description": "Průhlednost zaměřené ikony docku",
+          "label": "Průhlednost aktivní ikony"
+        },
+        "active-icon-scale": {
+          "description": "Velikost zaměřené ikony docku",
+          "label": "Měřítko aktivní ikony"
+        },
+        "active-monitor-only": {
+          "description": "Zobrazit pouze aplikace běžící na aktivním monitoru",
+          "label": "Pouze aktivní monitor"
+        },
+        "auto-hide": {
+          "description": "Automaticky skrýt dock, když se nepoužívá"
+        },
+        "background-opacity": {
+          "description": "Průhlednost pozadí docku"
+        },
+        "corner-bottom-left": {
+          "description": "Poloměr dolního levého rohu docku"
+        },
+        "corner-bottom-right": {
+          "description": "Poloměr dolního pravého rohu docku"
+        },
+        "corner-radius": {
+          "description": "Poloměr rohů docku"
+        },
+        "corner-top-left": {
+          "description": "Poloměr horního levého rohu docku"
+        },
+        "corner-top-right": {
+          "description": "Poloměr horního pravého rohu docku"
+        },
+        "cross-axis-padding": {
+          "description": "Vnitřní odsazení podél příčné osy docku (mezi ikonami a okrajem obrazovky)"
+        },
+        "edge-margin": {
+          "description": "Vzdálenost od nejbližšího okraje obrazovky; kladné hodnoty odsunou dock plovoucím způsobem od okraje"
+        },
+        "enabled": {
+          "description": "Zobrazit nebo skrýt dock"
+        },
+        "ends-margin": {
+          "description": "Odsazení od každého konce docku podél jeho hlavní osy"
+        },
+        "icon-size": {
+          "description": "Velikost ikon docku v pixelech",
+          "label": "Velikost ikon"
+        },
+        "inactive-icon-opacity": {
+          "description": "Průhlednost nezaměřených ikon docku",
+          "label": "Průhlednost neaktivní ikony"
+        },
+        "inactive-icon-scale": {
+          "description": "Velikost nezaměřených ikon docku",
+          "label": "Měřítko neaktivní ikony"
+        },
+        "item-spacing": {
+          "description": "Rozestup mezi položkami docku",
+          "label": "Rozestup položek"
+        },
+        "launcher-icon": {
+          "description": "Ikona Tabler zobrazená na tlačítku spouštěče docku",
+          "label": "Ikona spouštěče"
+        },
+        "launcher-position": {
+          "description": "Zobrazit tlačítko spouštěče na začátku nebo na konci docku",
+          "label": "Tlačítko spouštěče"
+        },
+        "magnification": {
+          "description": "Zvětšovat ikony docku poblíž ukazatele ve stylu macOS",
+          "label": "Zvětšování"
+        },
+        "magnification-scale": {
+          "description": "Maximální násobič zvětšení ikony ve středu ukazatele (1.0 vypíná zvětšování)",
+          "label": "Míra zvětšování"
+        },
+        "main-axis-padding": {
+          "description": "Vnitřní odsazení podél hlavní osy docku (mezi ikonami a krátkými konci kapsle)"
+        },
+        "monitors": {
+          "description": "Vybrat, které monitory zobrazují dock (ponechte prázdné pro všechny); filtrování aktivního monitoru se uplatní v rámci těchto monitorů",
+          "label": "Monitory"
+        },
+        "pinned-apps": {
+          "description": "ID desktop entry aplikací připnutých k docku",
+          "label": "Připnuté aplikace"
+        },
+        "position": {
+          "description": "Na kterém okraji obrazovky dock sedí"
+        },
+        "reserve-space": {
+          "description": "Odsunout okna od okraje docku"
+        },
+        "shadow": {
+          "description": "Vrhat globální stín povrchu z docku"
+        },
+        "show-dots": {
+          "description": "Zobrazit tečky běžících oken vedle ikon docku",
+          "label": "Zobrazit tečky"
+        },
+        "show-instance-count": {
+          "description": "Zobrazit odznak s počtem otevřených instancí",
+          "label": "Zobrazit počet instancí"
+        },
+        "show-running": {
+          "description": "Zobrazit běžící aplikace, které nejsou připnuté",
+          "label": "Zobrazit běžící"
+        }
+      },
+      "hooks": {
+        "command-placeholder": "příkaz shellu nebo cesta ke skriptu",
+        "events": {
+          "battery-charging": {
+            "description": "Příkaz spuštěný, když se baterie začne nabíjet",
+            "label": "Při nabíjení baterie"
+          },
+          "battery-discharging": {
+            "description": "Příkaz spuštěný, když se baterie začne vybíjet",
+            "label": "Při vybíjení baterie"
+          },
+          "battery-percentage-changed": {
+            "description": "Příkaz spuštěný při změně procenta baterie",
+            "label": "Při změně procenta baterie"
+          },
+          "battery-plugged": {
+            "description": "Příkaz spuštěný, když je baterie plně nabitá nebo čeká na nabíjení",
+            "label": "Při připojení baterie"
+          },
+          "bluetooth-disabled": {
+            "description": "Příkaz spuštěný při vypnutí Bluetooth",
+            "label": "Při vypnutí Bluetooth"
+          },
+          "bluetooth-enabled": {
+            "description": "Příkaz spuštěný při zapnutí Bluetooth",
+            "label": "Při zapnutí Bluetooth"
+          },
+          "colors-changed": {
+            "description": "Příkaz spuštěný při změně aktivní barevné palety",
+            "label": "Při změně barev"
+          },
+          "logging-out": {
+            "description": "Příkaz spuštěný před odhlášením",
+            "label": "Při odhlášení"
+          },
+          "power-profile-changed": {
+            "description": "Příkaz spuštěný při změně aktivního profilu napájení UPower/PPD",
+            "label": "Při změně profilu napájení"
+          },
+          "rebooting": {
+            "description": "Příkaz spuštěný před restartem",
+            "label": "Při restartu"
+          },
+          "session-locked": {
+            "description": "Příkaz spuštěný při uzamčení relace",
+            "label": "Při uzamčení relace"
+          },
+          "session-unlocked": {
+            "description": "Příkaz spuštěný po odemčení relace",
+            "label": "Při odemčení relace"
+          },
+          "shutting-down": {
+            "description": "Příkaz spuštěný před vypnutím",
+            "label": "Při vypnutí"
+          },
+          "started": {
+            "description": "Příkaz spuštěný po spuštění Noctalie",
+            "label": "Při spuštění"
+          },
+          "theme-mode-changed": {
+            "description": "Příkaz spuštěný při změně výsledného režimu motivu mezi světlým a tmavým",
+            "label": "Při změně režimu motivu"
+          },
+          "wallpaper-changed": {
+            "description": "Příkaz spuštěný při změně tapety; poskytuje NOCTALIA_WALLPAPER_PATH a NOCTALIA_WALLPAPER_CONNECTOR",
+            "label": "Při změně tapety"
+          },
+          "wifi-disabled": {
+            "description": "Příkaz spuštěný při vypnutí Wi-Fi",
+            "label": "Při vypnutí Wi-Fi"
+          },
+          "wifi-enabled": {
+            "description": "Příkaz spuštěný při zapnutí Wi-Fi",
+            "label": "Při zapnutí Wi-Fi"
+          }
+        }
+      },
+      "idle": {
+        "behaviors": {
+          "description": "Pojmenované akce nečinnosti s přednastaveními (zamknout, vypnout displeje, uspat) nebo vlastními příkazy, časovými limity, párováním obnovení a pořadím",
+          "label": "Chování"
+        },
+        "pre-action-fade": {
+          "description": "Počet sekund ztmavení celé obrazovky před příkazem nečinnosti; použijte 0 pro vypnutí",
+          "label": "Ztmavení při nečinnosti"
+        }
+      },
+      "keybinds": {
+        "cancel": {
+          "description": "Zavřít vyskakovací okna, zrušit panely nebo přerušit aktuální operaci",
+          "label": "Zrušit"
+        },
+        "down": {
+          "description": "Přesunout zaměření nebo výběr o jeden řádek dolů",
+          "label": "Navigovat dolů"
+        },
+        "left": {
+          "description": "Přesunout zaměření nebo výběr doleva",
+          "label": "Navigovat vlevo"
+        },
+        "right": {
+          "description": "Přesunout zaměření nebo výběr doprava",
+          "label": "Navigovat vpravo"
+        },
+        "tab-next": {
+          "description": "Přesunout zaměření na další ovládací prvek",
+          "label": "Zaměřit další"
+        },
+        "tab-previous": {
+          "description": "Přesunout zaměření na předchozí ovládací prvek",
+          "label": "Zaměřit předchozí"
+        },
+        "up": {
+          "description": "Přesunout zaměření nebo výběr o jeden řádek nahoru",
+          "label": "Navigovat nahoru"
+        },
+        "validate": {
+          "description": "Potvrdit výběr, odeslat vstupy nebo aktivovat zaměřenou položku",
+          "label": "Potvrdit"
+        }
+      },
+      "lockscreen": {
+        "allow-empty-password": {
+          "description": "Umožnit potvrzení prázdného hesla klávesou Enter. Povolte pro bezpečnostní klíč nebo jiné bezheslové PAM zásobníky; ponechte vypnuté, abyste předešli náhodnému uzamčení probouzecí klávesou.",
+          "label": "Potvrzení prázdného hesla"
+        },
+        "blur-intensity": {
+          "description": "Jak moc je rozostřeno pozadí uzamykací obrazovky",
+          "label": "Intenzita rozostření"
+        },
+        "blurred-desktop": {
+          "description": "Použít snímek plochy jako pozadí uzamykací obrazovky",
+          "label": "Snímek plochy"
+        },
+        "enabled": {
+          "description": "Povolit uzamčení relace, integraci logind a akce zamykání",
+          "label": "Uzamykací obrazovka"
+        },
+        "fingerprint": {
+          "description": "Odemknout otiskem prstu přes fprintd, spolu se zadáním hesla",
+          "label": "Odemknutí otiskem prstu"
+        },
+        "monitors": {
+          "description": "Vybrat, které monitory zobrazují uzamykací obrazovku; ponechte prázdné pro zobrazení na všech monitorech",
+          "label": "Monitory"
+        },
+        "tint-intensity": {
+          "description": "Zabarvení povrchovou barvou přes pozadí uzamykací obrazovky",
+          "label": "Intenzita zabarvení"
+        },
+        "wallpaper": {
+          "description": "Vlastní obrázek pro pozadí uzamykací obrazovky. Ponechte prázdné pro použití tapety plochy.",
+          "label": "Tapeta",
+          "placeholder": "Použít tapetu plochy"
+        },
+        "widgets": {
+          "description": "Zobrazit konfigurovatelné widgety na uzamykací obrazovce",
+          "label": "Widgety uzamykací obrazovky"
+        },
+        "widgets-editor": {
+          "button": "Přepnout editor",
+          "description": "Přidávat, přesouvat a měnit velikost widgetů na uzamykací obrazovce",
+          "label": "Editor widgetů uzamykací obrazovky"
+        }
+      },
+      "notifications": {
+        "allowed-urgencies": {
+          "description": "Zobrazovat externí oznámení pouze s vybranými úrovněmi naléhavosti",
+          "label": "Povolené úrovně naléhavosti"
+        },
+        "blacklist": {
+          "description": "Skrýt odpovídající odesílatele (název aplikace, desktop entry nebo kategorie)",
+          "label": "Černá listina oznámení"
+        },
+        "blacklist-allow-critical": {
+          "description": "Přesto zobrazovat kritická oznámení od odesílatelů na černé listině"
+        },
+        "collapse-on-dismiss": {
+          "description": "Posunout zbývající bubliny, aby se zavřely mezery po zavření jedné z nich",
+          "label": "Sloučit při zavření"
+        },
+        "daemon": {
+          "description": "Povolit vestavěného démona oznámení",
+          "label": "Démon oznámení"
+        },
+        "filters": {
+          "description": "Pravidla podle odesílatele pro bubliny, historii a zvuky; vyhrává první odpovídající povolený filtr",
+          "label": "Filtry oznámení"
+        },
+        "layer": {
+          "description": "Použijte Overlay pro zobrazení bublin oznámení nad aplikacemi na celou obrazovku.",
+          "label": "Vrstva Wayland"
+        },
+        "monitors": {
+          "description": "Vybrat, které monitory zobrazují bubliny oznámení; ponechte prázdné pro zobrazení na všech monitorech",
+          "label": "Monitory"
+        },
+        "offset-x": {
+          "description": "Absolutní vodorovný okraj od hrany obrazovky nebo lišty",
+          "label": "Vodorovný okraj"
+        },
+        "offset-y": {
+          "description": "Absolutní svislý okraj od hrany obrazovky nebo lišty",
+          "label": "Svislý okraj"
+        },
+        "position": {
+          "description": "Pozice na obrazovce pro bubliny oznámení",
+          "label": "Pozice na obrazovce"
+        },
+        "scale": {
+          "description": "Zvětšit nebo zmenšit bubliny oznámení vzhledem k měřítku rozhraní shellu",
+          "label": "Velikost"
+        },
+        "show-actions": {
+          "description": "Zobrazit tlačítka akcí v bublinách oznámení; je-li vypnuto, kliknutí na bublinu spustí výchozí akci",
+          "label": "Zobrazit tlačítka akcí"
+        },
+        "show-app-name": {
+          "description": "Zobrazit název odesílající aplikace v bublinách oznámení",
+          "label": "Zobrazit název aplikace"
+        },
+        "toast-opacity": {
+          "description": "Průhlednost pozadí bublin oznámení",
+          "label": "Průhlednost pozadí"
+        }
+      },
+      "panels": {
+        "borders": {
+          "description": "Vykreslit obrys na panelech a kartách sekcí uvnitř panelů",
+          "label": "Obrysy"
+        },
+        "control-center-sidebar": {
+          "description": "Vybrat, jak zobrazit boční panel",
+          "label": "Boční panel"
+        },
+        "control-center-sidebar-section": {
+          "description": "Při otevírání konkrétní karty (hlasitost, média atd.)",
+          "label": "Boční panel při otevírání karty"
+        },
+        "control-center-tabs": {
+          "description": "Vybrat, které karty se zobrazí v ovládacím centru; nezaškrtnuté karty jsou skryté",
+          "label": "Karty ovládacího centra"
+        },
+        "control-center-width": {
+          "description": "Šířka panelu ovládacího centra v pixelech (kompaktní a bezpanelové režimy se z ní zmenšují)",
+          "label": "Šířka ovládacího centra"
+        },
+        "floating-offset": {
+          "description": "Mezera v pixelech mezi plovoucím nebo odděleným panelem a okrajem lišty",
+          "label": "Plovoucí odsazení"
+        },
+        "home-shortcuts": {
+          "description": "Vybrat až šest tlačítek zkratek pro domovskou kartu",
+          "label": "Domovské zkratky"
+        },
+        "launcher-app-grid": {
+          "description": "Zobrazit mřížku ikon aplikací s popisky pod nimi, pokud jsou výsledky pouze aplikace",
+          "label": "Mřížkové zobrazení aplikací"
+        },
+        "launcher-categories": {
+          "description": "Zobrazit filtry kategorií ve spouštěči; odhalte klávesou F6, poté procházejte pomocí F6 a Shift+F6",
+          "label": "Zobrazit kategorie"
+        },
+        "launcher-compact": {
+          "description": "Použít menší ikony a hustší řádky výsledků",
+          "label": "Kompaktní řádky"
+        },
+        "launcher-reset-usage": {
+          "button": "Obnovit",
+          "description": "Vymazat počty spuštění a historii nedávno použitých, používané pro řazení spouštěče",
+          "label": "Obnovit data o používání"
+        },
+        "launcher-session-search": {
+          "description": "Zahrnout akce relace (zamknout, uspat, restartovat, vypnout, odhlásit) do obecného vyhledávání ve spouštěči, nejen za předponou /session",
+          "label": "Povolit vyhledávání relace"
+        },
+        "launcher-show-icons": {
+          "description": "Zobrazit ikony aplikací ve výsledcích spouštěče",
+          "label": "Zobrazit ikony aplikací"
+        },
+        "launcher-sort-by-usage": {
+          "description": "Posunout často používané aplikace nahoru a zobrazit filtr kategorie Nedávno použité",
+          "label": "Řadit podle používání"
+        },
+        "open-near-click-clipboard": {
+          "description": "Umístit panel schránky poblíž kliknutí na liště místo vystředění podél lišty",
+          "label": "Otevřít u kliknutí"
+        },
+        "open-near-click-control-center": {
+          "description": "Umístit panel Ovládacího centra poblíž kliknutí na liště místo vystředění podél lišty",
+          "label": "Otevřít u kliknutí"
+        },
+        "open-near-click-launcher": {
+          "description": "Umístit panel spouštěče poblíž kliknutí na liště místo vystředění podél lišty",
+          "label": "Otevřít u kliknutí"
+        },
+        "open-near-click-session": {
+          "description": "Umístit panel nabídky relace poblíž kliknutí na liště místo vystředění podél lišty",
+          "label": "Otevřít u kliknutí"
+        },
+        "open-near-click-wallpaper": {
+          "description": "Umístit panel výběru tapety poblíž kliknutí na liště místo vystředění podél lišty",
+          "label": "Otevřít u kliknutí"
+        },
+        "placement-clipboard": {
+          "description": "Vybrat, zda se schránka připojí k liště nebo bude plovoucí na zvolené pozici obrazovky",
+          "label": "Umístění"
+        },
+        "placement-control-center": {
+          "description": "Vybrat, zda se Ovládací centrum připojí k liště nebo bude plovoucí na zvolené pozici obrazovky",
+          "label": "Umístění"
+        },
+        "placement-launcher": {
+          "description": "Vybrat, zda se spouštěč připojí k liště nebo bude plovoucí na zvolené pozici obrazovky",
+          "label": "Umístění"
+        },
+        "placement-polkit": {
+          "description": "Vybrat, zda se výzva polkit připojí k liště nebo bude plovoucí na zvolené pozici obrazovky",
+          "label": "Umístění"
+        },
+        "placement-session": {
+          "description": "Vybrat, zda se nabídka relace připojí k liště nebo bude plovoucí na zvolené pozici obrazovky",
+          "label": "Umístění"
+        },
+        "placement-wallpaper": {
+          "description": "Vybrat, zda se výběr tapety připojí k liště nebo bude plovoucí na zvolené pozici obrazovky",
+          "label": "Umístění"
+        },
+        "position-clipboard": {
+          "description": "Kde se schránka na obrazovce vznáší — Sledovat lištu ji udrží poblíž lišty",
+          "label": "Pozice"
+        },
+        "position-control-center": {
+          "description": "Kde se Ovládací centrum na obrazovce vznáší — Sledovat lištu ho udrží poblíž lišty",
+          "label": "Pozice"
+        },
+        "position-launcher": {
+          "description": "Kde se spouštěč na obrazovce vznáší — Sledovat lištu ho udrží poblíž lišty",
+          "label": "Pozice"
+        },
+        "position-polkit": {
+          "description": "Kde se výzva polkit na obrazovce vznáší — Sledovat lištu ji udrží poblíž lišty",
+          "label": "Pozice"
+        },
+        "position-session": {
+          "description": "Kde se nabídka relace na obrazovce vznáší — Sledovat lištu ji udrží poblíž lišty",
+          "label": "Pozice"
+        },
+        "position-wallpaper": {
+          "description": "Kde se výběr tapety na obrazovce vznáší — Sledovat lištu ho udrží poblíž lišty",
+          "label": "Pozice"
+        },
+        "shadow": {
+          "description": "Vrhat globální stín povrchu z povrchů panelů"
+        },
+        "transparency-mode": {
+          "description": "Styl skla panelu, včetně průhlednosti plovoucího panelu a průsvitnosti karet",
+          "label": "Průhlednost"
+        }
+      },
+      "power": {
+        "session-actions": {
+          "description": "Položky nabídky napájení, jejich pořadí, vlastní příkazy a ikony",
+          "label": "Položky"
+        }
+      },
+      "services": {
+        "audio-overdrive": {
+          "description": "Povolit hlasitost nad 100 %",
+          "label": "Přebuzení zvuku"
+        },
+        "calendar": {
+          "description": "Zobrazit události z vašich online kalendářních účtů",
+          "label": "Kalendář"
+        },
+        "calendar-add": {
+          "button": "Přidat účet",
+          "description": "Přidat účty iCloud, CalDAV nebo Google",
+          "label": "Kalendářní účty"
+        },
+        "calendar-edit": {
+          "button": "Upravit",
+          "description": "Aktualizovat tento kalendářní účet"
+        },
+        "calendar-refresh-interval": {
+          "description": "Jak často synchronizovat události kalendáře (minuty)",
+          "label": "Interval obnovování"
+        },
+        "day-temperature": {
+          "description": "Teplota barev během dne (Kelviny)",
+          "label": "Denní teplota"
+        },
+        "ddcutil": {
+          "description": "Ovládat jas externího monitoru přes DDC/CI",
+          "label": "DDC/CI (ddcutil)",
+          "requires-ddcutil": "Pro povolení ovládání jasu přes DDC/CI nainstalujte ddcutil"
+        },
+        "force-night-light": {
+          "description": "Vždy aplikovat noční režim bez ohledu na čas",
+          "label": "Vynutit noční režim"
+        },
+        "latitude": {
+          "description": "Ruční zeměpisná šířka pro plán východu/západu slunce, použije se, když jsou auto-lokalizace a adresa vypnuté",
+          "label": "Zeměpisná šířka"
+        },
+        "location-address": {
+          "description": "Město nebo adresa k lokalizaci, použije se, když je auto-lokalizace vypnutá",
+          "label": "Adresa",
+          "placeholder": "Město, Země"
+        },
+        "location-auto-locate": {
+          "description": "Automaticky zjistit vaši polohu z IP adresy přes noctalia.dev",
+          "label": "Automatická lokalizace (IP)"
+        },
+        "longitude": {
+          "description": "Ruční zeměpisná délka pro plán východu/západu slunce, použije se, když jsou auto-lokalizace a adresa vypnuté",
+          "label": "Zeměpisná délka"
+        },
+        "minimum-brightness": {
+          "description": "Zabránit úplnému ztmavnutí obrazovky",
+          "label": "Minimální jas"
+        },
+        "mpris-blacklist": {
+          "description": "Přehrávače, které se mají ignorovat pro ovládání médií a Nyní hraje",
+          "label": "Černá listina přehrávačů MPRIS"
+        },
+        "night-light": {
+          "description": "V noci posunout barvy obrazovky do teplejších tónů",
+          "label": "Noční režim",
+          "requires-gamma-control": "Kompozitor nepodporuje ovládání gamy"
+        },
+        "night-temperature": {
+          "description": "Teplota barev v noci (Kelviny)",
+          "label": "Noční teplota"
+        },
+        "notification-sound": {
+          "description": "Zvukový soubor použitý pro zpětnou vazbu oznámení",
+          "label": "Zvuk oznámení",
+          "placeholder": "/cesta/ke/zvuku.wav"
+        },
+        "shell-sounds": {
+          "description": "Přehrávat zvukové efekty pro události shellu",
+          "label": "Zvuky shellu"
+        },
+        "sound-volume": {
+          "description": "Hlasitost zvukových efektů shellu",
+          "label": "Hlasitost zvuku"
+        },
+        "sunrise": {
+          "description": "Ruční čas východu slunce ve formátu HH:MM, použije se, když není nastavena poloha",
+          "label": "Východ slunce"
+        },
+        "sunset": {
+          "description": "Ruční čas západu slunce ve formátu HH:MM, použije se, když není nastavena poloha",
+          "label": "Západ slunce"
+        },
+        "sync-monitor-brightness": {
+          "description": "Synchronizovat jas všech monitorů",
+          "label": "Synchronizovat jas monitorů"
+        },
+        "system-monitor": {
+          "cpu-poll": {
+            "description": "Sekund mezi vzorky vytížení procesoru, teploty procesoru a průměrné zátěže (0 vypíná)",
+            "label": "Interval kontroly CPU"
+          },
+          "description": "Vzorkovat statistiky procesoru, paměti, sítě, zátěže, teploty a disku",
+          "disk-poll": {
+            "description": "Sekund mezi vzorky využití disku a odkládacího prostoru (0 vypíná)",
+            "label": "Interval kontroly disku"
+          },
+          "gpu-poll": {
+            "description": "Sekund mezi vzorky teploty GPU a VRAM. 0 to vypíná (výchozí), čímž se zabrání probuzení dedikované GPU; 5 je dobrý interval, pokud jej povolíte",
+            "label": "Interval kontroly GPU"
+          },
+          "label": "Sledování systému",
+          "memory-poll": {
+            "description": "Sekund mezi vzorky využití RAM (0 vypíná)",
+            "label": "Interval kontroly paměti"
+          },
+          "network-poll": {
+            "description": "Sekund mezi vzorky propustnosti sítě (0 vypíná)",
+            "label": "Interval kontroly sítě"
+          },
+          "stats": {
+            "cpu-temp": "Teplota CPU",
+            "cpu-usage": "Vytížení CPU",
+            "disk-usage": "Využití disku",
+            "gpu-temp": "Teplota GPU",
+            "gpu-usage": "Vytížení GPU",
+            "gpu-vram": "VRAM GPU",
+            "network-rx": "Stahování",
+            "network-tx": "Nahrávání",
+            "ram-usage": "Využití RAM",
+            "swap-usage": "Využití odkládacího prostoru"
+          },
+          "threshold": {
+            "description": "Práh aktivity (vlevo) a kritický práh (vpravo)",
+            "label": "{stat}"
+          }
+        },
+        "volume-change-sound": {
+          "description": "Zvukový soubor použitý pro zpětnou vazbu hlasitosti",
+          "label": "Zvuk změny hlasitosti",
+          "placeholder": "/cesta/ke/zvuku.wav"
+        },
+        "weather": {
+          "description": "Povolit službu počasí přes open-meteo.com",
+          "label": "Počasí"
+        },
+        "weather-effects": {
+          "description": "Zobrazit vizuální efekty počasí",
+          "label": "Efekty počasí"
+        },
+        "weather-refresh-interval": {
+          "description": "Jak často obnovovat data o počasí (minuty)",
+          "label": "Interval obnovování"
+        },
+        "weather-unit": {
+          "description": "Jednotková soustava pro zobrazení počasí",
+          "label": "Jednotky"
+        }
+      },
+      "shared": {
+        "auto-hide": {
+          "label": "Automaticky skrýt"
+        },
+        "background-opacity": {
+          "label": "Průhlednost pozadí"
+        },
+        "contact-shadow": {
+          "label": "Kontaktní stín"
+        },
+        "corner-bottom-left": {
+          "label": "Poloměr dolního levého rohu"
+        },
+        "corner-bottom-right": {
+          "label": "Poloměr dolního pravého rohu"
+        },
+        "corner-radius": {
+          "label": "Poloměr rohů"
+        },
+        "corner-top-left": {
+          "label": "Poloměr horního levého rohu"
+        },
+        "corner-top-right": {
+          "label": "Poloměr horního pravého rohu"
+        },
+        "cross-axis-padding": {
+          "label": "Odsazení příčné osy"
+        },
+        "edge-margin": {
+          "label": "Okraj lišty"
+        },
+        "enabled": {
+          "label": "Povoleno"
+        },
+        "ends-margin": {
+          "label": "Okraj konců"
+        },
+        "main-axis-padding": {
+          "label": "Odsazení hlavní osy"
+        },
+        "opposite-edge-margin": {
+          "label": "Opačný okraj"
+        },
+        "position": {
+          "label": "Pozice"
+        },
+        "reserve-space": {
+          "label": "Rezervovat prostor"
+        },
+        "shadow": {
+          "label": "Stín"
+        },
+        "shadow-alpha": {
+          "label": "Průhlednost stínu"
+        },
+        "shadow-direction": {
+          "label": "Směr stínu"
+        }
+      },
+      "shell": {
+        "avatar-path": {
+          "description": "Cesta k vlastnímu obrázku avatara. Velké obrázky se automaticky oříznou a změní jim velikost.",
+          "label": "Cesta k avataru",
+          "placeholder": "/cesta/k/avataru.png"
+        },
+        "clipboard-auto-paste": {
+          "description": "Automaticky vložit výběry ze schránky",
+          "label": "Automatické vložení ze schránky"
+        },
+        "clipboard-confirm-clear-history": {
+          "description": "Zeptat se před vymazáním historie schránky nebo smazáním nepřipnuté položky z panelu; je-li vypnuto, tyto akce se provedou okamžitě (u připnutých položek se stále zeptá před smazáním)",
+          "label": "Potvrdit vymazání historie"
+        },
+        "clipboard-enabled": {
+          "description": "Povolit historii schránky, panel schránky a integraci kopírování/vkládání",
+          "label": "Schránka"
+        },
+        "clipboard-history-max-entries": {
+          "description": "Maximální počet nepřipnutých položek uchovávaných v historii schránky",
+          "label": "Velikost historie"
+        },
+        "clipboard-image-action": {
+          "description": "Příkaz spuštěný z obrázkových položek schránky; použijte {path} pro cestu k souboru, {stdin} pro označení pozice stdin, nebo vynechte {path} pro automatické roury",
+          "label": "Příkaz akce pro obrázek",
+          "placeholder": "gimp {path} nebo satty -f -"
+        },
+        "date-format": {
+          "description": "Výchozí formát data pro rozhraní shellu bez vlastního nastavení",
+          "label": "Formát data"
+        },
+        "greeter-sync-auto": {
+          "description": "Automaticky synchronizovat uvítací obrazovku při každé změně tapety, barev nebo režimu motivu",
+          "label": "Automatická synchronizace uvítací obrazovky"
+        },
+        "greeter-sync-privilege-command": {
+          "description": "Nahradit pkexec/run0 pro Synchronizovat nyní uvítací obrazovky. Cesta pomocníka pro aplikaci a staging adresář se přidají automaticky. Příklad: ghostty -e pkexec",
+          "label": "Příkaz oprávnění pro synchronizaci uvítací obrazovky"
+        },
+        "launch-apps-as-systemd-services": {
+          "description": "Spouští aplikace v samostatných službách systemd, aby nesdílely cgroup Noctalie",
+          "label": "Spouštět aplikace jako služby systemd"
+        },
+        "launch-apps-custom-command": {
+          "description": "Vlastní příkaz použitý spouštěčem aplikací, nahrazuje $CMD původním příkazem.",
+          "label": "Vlastní příkaz spouštěče",
+          "placeholder": "$CMD"
+        },
+        "middle-click-opens-widget-settings": {
+          "description": "Otevřít nastavení widgetu lišty z lišty kliknutím prostředním tlačítkem",
+          "label": "Prostřední kliknutí otevírá nastavení widgetu"
+        },
+        "niri-overview-type-to-launch": {
+          "description": "Otevřít spouštěč při psaní v přehledu niri; používá malý povrch pro klávesové zaměření, dokud je přehled otevřený",
+          "label": "Psaním spustit"
+        },
+        "offline-mode": {
+          "description": "Blokovat všechny odchozí síťové požadavky",
+          "label": "Režim offline"
+        },
+        "osd-background-opacity": {
+          "description": "Průhlednost pozadí vyskakovacích oken OSD",
+          "label": "Průhlednost pozadí"
+        },
+        "osd-kinds-bluetooth": {
+          "description": "Zobrazit vyskakovací okno OSD při přepnutí Bluetooth",
+          "label": "Bluetooth"
+        },
+        "osd-kinds-brightness": {
+          "description": "Zobrazit vyskakovací okno OSD při změně jasu displeje",
+          "label": "Jas"
+        },
+        "osd-kinds-caffeine": {
+          "description": "Zobrazit vyskakovací okno OSD při změně stavu Caffeine (blokování nečinnosti)",
+          "label": "Caffeine"
+        },
+        "osd-kinds-dnd": {
+          "description": "Zobrazit vyskakovací okno OSD při přepnutí Nerušit",
+          "label": "Nerušit"
+        },
+        "osd-kinds-keyboard-layout": {
+          "description": "Zobrazit vyskakovací okno OSD při změně vstupního rozložení klávesnice",
+          "label": "Rozložení klávesnice"
+        },
+        "osd-kinds-lock-keys": {
+          "description": "Zobrazit vyskakovací okna OSD pro změny Caps Lock, Num Lock a Scroll Lock",
+          "label": "Zámkové klávesy"
+        },
+        "osd-kinds-media": {
+          "description": "Zobrazit vyskakovací okno OSD při spuštění nové skladby",
+          "label": "Nyní hraje"
+        },
+        "osd-kinds-nightlight": {
+          "description": "Zobrazit vyskakovací okno OSD při přepnutí nočního režimu",
+          "label": "Noční režim"
+        },
+        "osd-kinds-power-profile": {
+          "description": "Zobrazit vyskakovací okno OSD při změně profilu napájení",
+          "label": "Profil napájení"
+        },
+        "osd-kinds-privacy": {
+          "description": "Zobrazit vyskakovací okno OSD při zahájení nebo ukončení záznamu mikrofonu, kamery nebo sdílení obrazovky",
+          "label": "Soukromí"
+        },
+        "osd-kinds-volume": {
+          "description": "Zobrazit vyskakovací okna OSD při změně hlasitosti; pro oddělené ovládání výstupu a vstupu použijte pokročilá nastavení",
+          "label": "Hlasitost"
+        },
+        "osd-kinds-volume-input": {
+          "description": "Zobrazit vyskakovací okno OSD při změně vstupní hlasitosti (mikrofon)",
+          "label": "Hlasitost vstupu"
+        },
+        "osd-kinds-volume-output": {
+          "description": "Zobrazit vyskakovací okno OSD při změně výstupní hlasitosti (reproduktor)",
+          "label": "Hlasitost výstupu"
+        },
+        "osd-kinds-wifi": {
+          "description": "Zobrazit vyskakovací okno OSD při přepnutí Wi-Fi",
+          "label": "Wi-Fi"
+        },
+        "osd-monitors": {
+          "description": "Vybrat, které monitory zobrazují vyskakovací okna OSD; ponechte prázdné pro zobrazení na všech monitorech",
+          "label": "Monitory"
+        },
+        "osd-offset-x": {
+          "description": "Absolutní vodorovný okraj od hrany obrazovky",
+          "label": "Vodorovný okraj"
+        },
+        "osd-offset-y": {
+          "description": "Absolutní svislý okraj od hrany obrazovky",
+          "label": "Svislý okraj"
+        },
+        "osd-orientation": {
+          "description": "Směr rozvržení vyskakovacích oken OSD",
+          "label": "Orientace"
+        },
+        "osd-position": {
+          "description": "Pozice na obrazovce pro vyskakovací okna OSD",
+          "label": "Pozice na obrazovce"
+        },
+        "osd-position-vertical": {
+          "description": "Pozice na obrazovce, když je orientace posuvníku svislá",
+          "label": "Svislá pozice"
+        },
+        "osd-scale": {
+          "description": "Zvětšit nebo zmenšit vyskakovací okna OSD vzhledem k měřítku rozhraní shellu (1.0 zachovává výchozí velikost)",
+          "label": "Měřítko"
+        },
+        "password-style": {
+          "description": "Vizuální styl maskování zadávaného hesla",
+          "label": "Styl hesla"
+        },
+        "polkit-agent": {
+          "description": "Povolit vestavěného ověřovacího agenta",
+          "label": "Agent polkit"
+        },
+        "privacy-cam-filter-regex": {
+          "description": "Regulární výraz pro aplikace kamery, které se mají ignorovat v indikátorech soukromí a OSD",
+          "label": "Regulární výraz filtru kamery"
+        },
+        "privacy-mic-filter-regex": {
+          "description": "Regulární výraz pro aplikace mikrofonu, které se mají ignorovat v indikátorech soukromí a OSD",
+          "label": "Regulární výraz filtru mikrofonu"
+        },
+        "screen-time-enabled": {
+          "description": "Sledovat využití jednotlivých aplikací a zobrazit je v Ovládacím centru",
+          "label": "Doba u obrazovky"
+        },
+        "screen-time-reset": {
+          "button": "Obnovit",
+          "description": "Vymazat uloženou historii využití aplikací v popředí",
+          "label": "Obnovit data o době u obrazovky"
+        },
+        "screenshot-confirm-region": {
+          "description": "Po vykreslení oblasti ponechat překrytí otevřené, dokud nepotvrdíte klávesou Enter nebo mezerníkem",
+          "label": "Potvrdit oblast"
+        },
+        "screenshot-copy-to-clipboard": {
+          "description": "Umístit zachycený PNG do výběru schránky",
+          "label": "Kopírovat do schránky"
+        },
+        "screenshot-directory": {
+          "description": "Složka pro uložené soubory PNG; ponechte prázdné pro použití ~/Pictures",
+          "label": "Výstupní složka",
+          "placeholder": "~/Pictures"
+        },
+        "screenshot-filename-pattern": {
+          "description": "Vzor strftime bez přípony (.png se přidá automaticky); použijte %s pro unixový čas",
+          "label": "Vzor názvu souboru"
+        },
+        "screenshot-freeze-screen": {
+          "description": "Zachytit plochu před výběrem oblasti, aby se pohybující obsah nehýbal",
+          "label": "Zmrazit obrazovku"
+        },
+        "screenshot-pipe-command": {
+          "description": "Příkaz spuštěný jako /bin/sh -lc s PNG na stdin; pro anotátory nebo nahrávače (například: swappy -f - nebo satty -f -)",
+          "label": "Příkaz roury",
+          "placeholder": "swappy -f -"
+        },
+        "screenshot-pipe-to-command": {
+          "description": "Poslat zachycený PNG do příkazu shellu přes stdin",
+          "label": "Předat do příkazu"
+        },
+        "screenshot-save-to-file": {
+          "description": "Zapisovat snímky obrazovky jako soubory PNG do výstupní složky",
+          "label": "Uložit do souboru"
+        },
+        "show-location": {
+          "description": "Zobrazit název polohy ve widgetech počasí",
+          "label": "Zobrazit polohu"
+        },
+        "sync-greeter": {
+          "button": "Synchronizovat nyní",
+          "description": "Zkopírovat aktuální tapetu a barvy do Noctalia Greeter (vyžaduje schválení správcem)",
+          "label": "Noctalia Greeter"
+        },
+        "telemetry": {
+          "description": "Odešle malý anonymní ping při spuštění s verzí, OS, kompozitorem, rozlišeními monitorů, RAM a měřítkem rozhraní",
+          "label": "Anonymní ping při spuštění"
+        },
+        "time-format": {
+          "description": "Výchozí formát času pro rozhraní shellu bez vlastního nastavení",
+          "label": "Formát času"
+        }
+      },
+      "system": {
+        "battery-device-warning-threshold": {
+          "description": "Přepsat práh varování baterie pro toto zařízení. Nastavením na 0 vypnete varování pro toto zařízení.",
+          "label": "Práh varování {device}"
+        },
+        "battery-warning-threshold": {
+          "description": "Procento systémové baterie, při kterém nebo pod kterým shell odešle oznámení o nízkém stavu baterie a widgety baterie použijí svou varovnou barvu. Nastavením na 0 vypnete.",
+          "label": "Práh varování baterie"
+        }
+      },
+      "templates": {
+        "builtin-ids": {
+          "description": "Přepnout vestavěné šablony aplikací pro vykreslení při každé změně motivu",
+          "empty": "Nejsou k dispozici žádné vestavěné šablony.",
+          "label": "Vestavěné šablony"
+        },
+        "community-ids": {
+          "description": "Přepnout uložené komunitní šablony pro vykreslení při každé změně motivu",
+          "empty": "Zatím nejsou k dispozici žádné komunitní šablony. Nejprve povolte komunitní šablony a obnovte katalog.",
+          "label": "Komunitní šablony"
+        },
+        "enable-builtins": {
+          "description": "Použít vestavěný katalog šablon motivů pro aplikace",
+          "label": "Povolit vestavěné šablony"
+        },
+        "enable-community-templates": {
+          "description": "Stahovat a aplikovat šablony z komunitního katalogu",
+          "label": "Povolit komunitní šablony"
+        }
+      },
+      "wallpaper": {
+        "automation": {
+          "description": "Automaticky střídat tapety podle časovače",
+          "label": "Automatické střídání"
+        },
+        "automation-interval": {
+          "description": "Sekund mezi změnami tapety",
+          "label": "Interval střídání"
+        },
+        "automation-order": {
+          "description": "Vybírat tapety náhodně nebo abecedně",
+          "label": "Pořadí"
+        },
+        "automation-recursive": {
+          "description": "Prohledat vnořené složky pro tapety",
+          "label": "Zahrnout podsložky"
+        },
+        "directory": {
+          "description": "Složka obsahující tapety",
+          "label": "Složka s tapetami"
+        },
+        "directory-dark": {
+          "description": "Složka s tapetami použitá v tmavém režimu motivu",
+          "label": "Složka pro tmavý režim",
+          "placeholder": "~/Pictures/Wallpapers"
+        },
+        "directory-light": {
+          "description": "Složka s tapetami použitá ve světlém režimu motivu",
+          "label": "Složka pro světlý režim",
+          "placeholder": "~/Pictures/Wallpapers"
+        },
+        "edge-smoothness": {
+          "description": "Prolínání okrajů přechodu mezi tapetami",
+          "label": "Vyhlazení okrajů"
+        },
+        "enabled": {
+          "description": "Povolit službu tapet"
+        },
+        "fill-color": {
+          "description": "Plná barva zobrazená za obrázkem v nepokrytých oblastech",
+          "label": "Barva výplně"
+        },
+        "fill-mode": {
+          "description": "Jak se tapety přizpůsobí obrazovce",
+          "label": "Režim výplně"
+        },
+        "monitor-directory": {
+          "label": "Složka s tapetami"
+        },
+        "monitor-directory-dark": {
+          "label": "Složka pro tmavý režim",
+          "placeholder": "~/Pictures/Wallpapers"
+        },
+        "monitor-directory-light": {
+          "label": "Složka pro světlý režim",
+          "placeholder": "~/Pictures/Wallpapers"
+        },
+        "panel": {
+          "button": "Otevřít panel",
+          "description": "Otevřít panel výběru tapety",
+          "label": "Panel tapety"
+        },
+        "per-monitor-directories": {
+          "description": "Použít oddělené složky s tapetami pro každý monitor",
+          "label": "Složky podle monitoru"
+        },
+        "transition-duration": {
+          "description": "Délka animace změny tapety v milisekundách",
+          "label": "Délka přechodu"
+        },
+        "transition-on-startup": {
+          "description": "Přehrát přechod, když shell poprvé zobrazí tapetu",
+          "label": "Animovat při spuštění"
+        },
+        "transitions": {
+          "description": "Dostupné efekty při změně tapety (při každé změně se náhodně vybere jeden)",
+          "label": "Efekty přechodu"
+        }
+      }
+    },
+    "session-actions": {
+      "add": "Přidat akci",
+      "clear-glyph": "Vymazat",
+      "command-label": "Příkaz shellu",
+      "command-placeholder": "Volitelný příkaz bash, ponechte prázdné pro vestavěné chování",
+      "command-required-placeholder": "Příkaz shellu ke spuštění",
+      "countdown-seconds-description": "Před spuštěním počkat tento počet sekund. Opětovnou aktivací potvrdíte okamžitě. 0 spustí ihned.",
+      "countdown-seconds-label": "Odpočet (sekundy)",
+      "glyph-label": "Ikona",
+      "glyph-picker-title": "Ikona akce",
+      "kind-section-label": "Chování",
+      "label-field": "Popisek",
+      "label-placeholder": "Volitelný text tlačítka",
+      "shortcut-label": "Zkratka",
+      "variant": {
+        "default": "Výchozí",
+        "destructive": "Destruktivní",
+        "ghost": "Neviditelné",
+        "outline": "Obrys",
+        "primary": "Primární",
+        "secondary": "Sekundární"
+      },
+      "variant-label": "Styl tlačítka"
+    },
+    "widgets": {
+      "instances": {
+        "cpu": "CPU",
+        "date": "Datum",
+        "input-volume": "Hlasitost vstupu",
+        "network-rx": "Síť RX",
+        "network-tx": "Síť TX",
+        "output-volume": "Hlasitost výstupu",
+        "ram": "RAM",
+        "temp": "Teplota"
+      },
+      "options": {
+        "always": "Vždy",
+        "auto": "Automaticky",
+        "cpu-temp": "Teplota procesoru",
+        "cpu-usage": "Vytížení procesoru",
+        "disk-percent": "Procento disku",
+        "full": "Plný",
+        "gauge": "Ukazatel",
+        "glyph": "Ikona",
+        "gpu-temp": "Teplota GPU",
+        "gpu-usage": "Vytížení GPU",
+        "gpu-vram": "VRAM GPU",
+        "graph": "Graf",
+        "graphic": "Grafický",
+        "icon-and-text": "Ikona a text",
+        "icon-only": "Pouze ikona",
+        "id": "ID",
+        "input": "Vstup",
+        "instance": "Podle umístění",
+        "kilobytes": "kB/s",
+        "megabytes": "MB/s",
+        "name": "Název",
+        "net-rx": "Síť RX",
+        "net-tx": "Síť TX",
+        "none": "Žádné",
+        "on-hover": "Při najetí myší",
+        "output": "Výstup",
+        "ram-percent": "Procento RAM",
+        "ram-used": "Využitá RAM",
+        "screenshot-primary-fullscreen": "Celá obrazovka",
+        "screenshot-primary-region": "Oblast",
+        "shared": "Sdílené",
+        "short": "Krátký",
+        "swap-percent": "Procento odkládacího prostoru",
+        "text": "Text",
+        "text-only": "Pouze text",
+        "workspace-label-centered": "Na střed",
+        "workspace-label-corner": "V rohu",
+        "workspace-label-inside": "Uvnitř pilulky"
+      },
+      "settings": {
+        "active-color": {
+          "description": "Barva použitá pro aktivní indikátory soukromí; podporovány jsou i pevné hex barvy",
+          "label": "Aktivní barva"
+        },
+        "active-opacity": {
+          "description": "Průhlednost ikony aktivního (zaměřeného) okna.",
+          "label": "Průhlednost aktivní ikony"
+        },
+        "active-pill-size": {
+          "description": "Minimální délka pilulky aktivní plochy podél lišty, jako násobek tloušťky pilulky",
+          "label": "Velikost aktivní pilulky",
+          "workspaces-description": "Minimální délka pilulky aktivní plochy podél lišty, jako násobek tloušťky pilulky; popisky mohou přesáhnout tuto hodnotu"
+        },
+        "album-art-only": {
+          "description": "Zobrazit pouze kruhovou obálku alba bez názvu skladby",
+          "label": "Pouze obálka alba"
+        },
+        "anchor": {
+          "description": "Připnout tento widget jako kotvu pro zarovnání na střed",
+          "label": "Kotva"
+        },
+        "art-size": {
+          "description": "Velikost obálky média v pixelech",
+          "label": "Velikost obálky"
+        },
+        "bands": {
+          "description": "Počet pásem vizualizéru",
+          "label": "Pásma"
+        },
+        "cam-filter-regex": {
+          "description": "Regulární výraz pro názvy procesů kamery, které se mají ignorovat",
+          "label": "Regulární výraz filtru kamery"
+        },
+        "capsule": {
+          "description": "Vykreslit kapsli za tímto widgetem",
+          "label": "Kapsle"
+        },
+        "capsule-border": {
+          "description": "Barevná role pro obrys kapsle; podporovány jsou i pevné hex barvy",
+          "label": "Obrys kapsle"
+        },
+        "capsule-fill": {
+          "description": "Barevná role pro pozadí kapsle; podporovány jsou i pevné hex barvy",
+          "label": "Výplň kapsle"
+        },
+        "capsule-foreground": {
+          "description": "Barevná role pro obsah uvnitř kapsle; podporovány jsou i pevné hex barvy",
+          "label": "Popředí kapsle"
+        },
+        "capsule-opacity": {
+          "description": "Průhlednost pozadí kapsle",
+          "label": "Průhlednost kapsle"
+        },
+        "capsule-padding": {
+          "description": "Vnitřní odsazení uvnitř kapsle",
+          "label": "Vnitřní odsazení kapsle"
+        },
+        "capsule-radius": {
+          "description": "Poloměr rohů kapsle tohoto widgetu; ponechte prázdné pro automatický tvar pilulky nebo nastavte 0 pro pravé úhly",
+          "label": "Poloměr kapsle",
+          "taskbar-description": "Poloměr rohů kapsle widgetu, kruhových indikátorů plochy a kapslí skupin ploch; ponechte prázdné pro automatický tvar pilulky nebo nastavte 0 pro pravé úhly",
+          "workspaces-description": "Poloměr rohů kapsle tohoto widgetu a pilulek ploch; ponechte prázdné pro automatický tvar pilulky nebo nastavte 0 pro pravé úhly"
+        },
+        "centered": {
+          "description": "Vystředit pruhy vizualizéru místo zarovnání k okraji",
+          "label": "Na střed"
+        },
+        "color": {
+          "description": "Barevná role pro ikonu a popisek tohoto widgetu; podporovány jsou i pevné hex barvy",
+          "label": "Barva"
+        },
+        "color-1": {
+          "description": "První barva přechodu ve vizualizéru",
+          "label": "Barva jedna"
+        },
+        "color-2": {
+          "description": "Druhá barva přechodu ve vizualizéru",
+          "label": "Barva dva"
+        },
+        "command": {
+          "description": "Příkaz shellu spuštěný při kliknutí levým tlačítkem na toto tlačítko",
+          "label": "Příkaz levého kliknutí"
+        },
+        "custom-image": {
+          "description": "Cesta k vlastnímu obrázku. Ponechte prázdné pro použití ikony.",
+          "dialog-title": "Vybrat vlastní obrázek",
+          "label": "Vlastní obrázek"
+        },
+        "custom-image-colorize": {
+          "description": "Obarvit vlastní obrázek podle nastavení barvy ikony widgetu",
+          "label": "Obarvit vlastní obrázek"
+        },
+        "custom-labels": {
+          "description": "Namapovat názvy rozložení klávesnice na vlastní popisky",
+          "label": "Vlastní popisky"
+        },
+        "cycle-command": {
+          "description": "Příkaz spuštěný při přepínání rozložení klávesnice",
+          "label": "Příkaz pro přepínání"
+        },
+        "detached-panel": {
+          "description": "Otevřít zásuvku jako plovoucí panel s vlastním pozadím místo sloučení s lištou",
+          "label": "Oddělený panel"
+        },
+        "device": {
+          "description": "Zařízení ke sledování nebo ovládání",
+          "label": "Zařízení"
+        },
+        "display": {
+          "active-window-description": "Ikona, název nebo obojí na vodorovných lištách. Svislé lišty zůstávají pouze s ikonou.",
+          "description": "Režim zobrazení tohoto widgetu",
+          "label": "Zobrazení"
+        },
+        "display-mode": {
+          "description": "Vykreslit baterii jako grafický tvar nebo jako ikonu Tabler",
+          "label": "Režim zobrazení"
+        },
+        "drawer": {
+          "description": "Zobrazit tlačítko systémové lišty v liště a otevírat položky v panelu",
+          "label": "Použít panel zásuvky"
+        },
+        "drawer-columns": {
+          "description": "Počet ikon systémové lišty na řádek v panelu zásuvky",
+          "label": "Sloupce zásuvky"
+        },
+        "empty-color": {
+          "description": "Barevná role použitá pro prázdné plochy; podporovány jsou i pevné hex barvy",
+          "label": "Barva prázdné plochy"
+        },
+        "focused-color": {
+          "description": "Barevná role použitá pro zaměřenou plochu; podporovány jsou i pevné hex barvy",
+          "label": "Barva zaměřené plochy"
+        },
+        "focused-output-only": {
+          "description": "Zvýraznit aktivní plochu pouze na zaměřeném monitoru",
+          "label": "Zvýraznit pouze zaměřený monitor",
+          "taskbar-description": "Použít barvu zaměření pouze pro aktivní plochu na monitoru s klávesovým nebo ukazatelovým zaměřením; ostatní monitory používají barvu obsazené plochy",
+          "workspaces-description": "Zvýraznit aktivní plochu pouze na monitoru s klávesovým nebo ukazatelovým zaměřením; ostatní monitory zobrazí svou aktivní plochu jako obsazenou"
+        },
+        "font-family": {
+          "description": "Písmo tohoto widgetu; ponechte prázdné pro zdědění písma lišty",
+          "label": "Rodina písma"
+        },
+        "font-weight": {
+          "description": "Výchozí hodnota dědí řez písma lišty",
+          "label": "Řez písma"
+        },
+        "format": {
+          "description": "Formátovací řetězec času",
+          "label": "Formát"
+        },
+        "glyph": {
+          "description": "Název ikony",
+          "label": "Ikona",
+          "sysmon-description": "Vlastní ikona. Ponechte prázdné pro použití ikony vybrané statistiky.",
+          "volume-description": "Vlastní ikona. Ponechte prázdné pro použití vestavěných dynamických ikon."
+        },
+        "group-by-workspace": {
+          "description": "Seskupit ikony hlavního panelu do kapslí ploch, pokud jsou k dispozici data kompozitoru",
+          "label": "Seskupit podle plochy"
+        },
+        "group-single-icon-per-app": {
+          "description": "Při seskupování podle plochy sloučit více oken stejné aplikace do jedné ikony s odznakem počtu.",
+          "label": "Jedna ikona na aplikaci"
+        },
+        "height": {
+          "description": "Výška widgetu v pixelech",
+          "label": "Výška"
+        },
+        "hidden": {
+          "description": "ID položek systémové lišty, které se mají skrýt",
+          "label": "Skryté položky"
+        },
+        "hide-album-art": {
+          "description": "Skrýt obálku alba",
+          "label": "Skrýt obálku alba"
+        },
+        "hide-empty-workspaces": {
+          "description": "Při seskupování podle plochy vynechat kapsle bez běžících oken v seznamu hlavního panelu.",
+          "label": "Skrýt prázdné plochy"
+        },
+        "hide-inactive": {
+          "description": "Skrýt neaktivní ikony soukromí a skrýt widget, když nic není aktivní",
+          "label": "Skrýt neaktivní"
+        },
+        "hide-when-empty": {
+          "description": "Skrýt pilulky ploch, když nejsou žádná otevřená okna",
+          "label": "Skrýt, když prázdné",
+          "workspaces-description": "Skrýt pilulky ploch bez otevřených oken"
+        },
+        "hide-when-full": {
+          "description": "Skrýt widget baterie při plném nabití",
+          "label": "Skrýt při plném nabití"
+        },
+        "hide-when-no-connected-device": {
+          "description": "Skrýt widget bluetooth, když není připojeno žádné zařízení",
+          "label": "Skrýt bez připojeného zařízení"
+        },
+        "hide-when-no-media": {
+          "description": "Skrýt widget médií, když není aktivní žádný přehrávač MPRIS",
+          "label": "Skrýt bez médií"
+        },
+        "hide-when-no-unread": {
+          "description": "Skrýt widget oznámení, když nejsou žádná nepřečtená oznámení",
+          "label": "Skrýt bez nových"
+        },
+        "hide-when-off": {
+          "description": "Skrýt indikátor zámkové klávesy, když je neaktivní",
+          "label": "Skrýt při vypnutí"
+        },
+        "hide-when-plugged": {
+          "description": "Skrýt widget baterie při připojení k síťovému napájení",
+          "label": "Skrýt při připojení"
+        },
+        "hide-when-single-layout": {
+          "description": "Skrýt widget rozložení klávesnice, pokud je nakonfigurováno pouze jedno rozložení",
+          "label": "Skrýt při jednom rozložení"
+        },
+        "highlight-color": {
+          "description": "Barva dosažená při dosažení nebo překročení kritického prahu",
+          "label": "Zvýrazňovací barva"
+        },
+        "hot-reload": {
+          "description": "Znovu načíst skriptovaný widget při změně jeho zdroje",
+          "label": "Živé opětovné načtení"
+        },
+        "icon-color": {
+          "description": "Přepíše barvu widgetu pouze pro ikony; podporovány jsou i pevné hex barvy",
+          "label": "Barva ikony"
+        },
+        "icon-size": {
+          "description": "Velikost ikony v pixelech",
+          "label": "Velikost ikony"
+        },
+        "icon-spacing": {
+          "description": "Rozestup mezi ikonami indikátoru soukromí v pixelech",
+          "label": "Rozestup ikon"
+        },
+        "inactive-color": {
+          "description": "Barva použitá pro neaktivní indikátory soukromí; podporovány jsou i pevné hex barvy",
+          "label": "Neaktivní barva"
+        },
+        "inactive-opacity": {
+          "description": "Průhlednost ikon neaktivních (nezaměřených) oken.",
+          "label": "Průhlednost neaktivní ikony"
+        },
+        "inactive-pill-size": {
+          "description": "Minimální délka pilulky neaktivní plochy podél lišty, jako násobek tloušťky pilulky",
+          "label": "Velikost neaktivní pilulky",
+          "workspaces-description": "Minimální délka pilulky neaktivní plochy podél lišty, jako násobek tloušťky pilulky; popisky mohou přesáhnout tuto hodnotu"
+        },
+        "interface": {
+          "description": "Síťové rozhraní ke sledování; ponechte prázdné pro celkový součet všech rozhraní",
+          "label": "Rozhraní"
+        },
+        "label": {
+          "description": "Volitelný statický text zobrazený na tomto tlačítku",
+          "label": "Popisek"
+        },
+        "label-min-width": {
+          "description": "Minimální šířka popisku v pixelech, aby se zabránilo změně velikosti",
+          "label": "Min. šířka popisku"
+        },
+        "labels-only-when-occupied": {
+          "description": "Skrýt popisky ploch na prázdných, neaktivních plochách",
+          "label": "Popisky jen u obsazených",
+          "workspaces-description": "Zobrazit popisky id nebo názvu na plochách s otevřenými okny a na aktivní ploše i když je prázdná; ostatní prázdné štítky zůstanou bez popisku"
+        },
+        "length": {
+          "description": "Délka mezery v pixelech",
+          "label": "Délka"
+        },
+        "match-adjacent-spacing": {
+          "description": "Rozšířit mezery mezi vloženými ikonami systémové lišty tak, aby odpovídaly rozestupu sousedních widgetů lišty (včetně vnitřního odsazení kapsle)",
+          "label": "Přizpůsobit rozestup sousedním widgetům"
+        },
+        "max-label-chars": {
+          "description": "Maximální počet znaků zobrazených u názvů ploch",
+          "label": "Max. znaků popisku",
+          "workspaces-description": "Maximální počet znaků pro popisky názvů ploch"
+        },
+        "max-length": {
+          "description": "Maximální délka widgetu v pixelech",
+          "label": "Max. délka"
+        },
+        "mic-filter-regex": {
+          "description": "Regulární výraz pro názvy aplikací mikrofonu, které se mají ignorovat",
+          "label": "Regulární výraz filtru mikrofonu"
+        },
+        "middle-command": {
+          "description": "Příkaz shellu spuštěný při kliknutí prostředním tlačítkem na toto tlačítko. Pokud je nastaven, prostřední kliknutí otevře tento příkaz místo nastavení widgetu.",
+          "label": "Příkaz prostředního kliknutí"
+        },
+        "min-length": {
+          "description": "Minimální délka widgetu v pixelech",
+          "label": "Min. délka"
+        },
+        "minimal": {
+          "description": "Zobrazit pouze id nebo název plochy jako text, bez animovaných pilulek",
+          "label": "Minimalistický styl",
+          "workspaces-description": "Textové popisky ploch bez pozadí pilulek nebo posuvné animace"
+        },
+        "mirrored": {
+          "description": "Zrcadlit vizualizér kolem jeho středu",
+          "label": "Zrcadlené"
+        },
+        "mute-color": {
+          "description": "Barevná role použitá pro ikonu a popisek při ztlumení; podporovány jsou i pevné hex barvy",
+          "label": "Barva ztlumení"
+        },
+        "mute-glyph": {
+          "description": "Ikona použitá při ztlumení nebo hlasitosti 0 %. Ponechte prázdné pro použití vestavěné ikony ztlumení.",
+          "label": "Ikona ztlumení"
+        },
+        "network-speed-compact": {
+          "description": "Použít krátké jednotkové přípony, např. 1.2M místo 1.2 MB/s",
+          "label": "Kompaktní rychlost sítě"
+        },
+        "network-speed-unit": {
+          "description": "Jednotka použitá pro rychlosti příjmu a odesílání sítě; Automaticky přepíná mezi B/s, kB/s, MB/s a GB/s",
+          "label": "Jednotka rychlosti sítě"
+        },
+        "occupied-color": {
+          "description": "Barevná role použitá pro obsazené plochy; podporovány jsou i pevné hex barvy",
+          "label": "Barva obsazené plochy"
+        },
+        "only-active-workspace": {
+          "description": "Skrýt okna na neaktivních plochách.",
+          "label": "Pouze aktivní plocha"
+        },
+        "path": {
+          "description": "Cesta použitá pro statistiky disku",
+          "label": "Cesta"
+        },
+        "pill-scale": {
+          "description": "Upravit velikost pilulek ploch",
+          "label": "Velikost pilulky",
+          "workspaces-description": "Upravit velikost pilulek ploch"
+        },
+        "pinned": {
+          "description": "ID položek systémové lišty, které zůstávají viditelné v liště, když je povolen režim zásuvky",
+          "label": "Připnuté položky"
+        },
+        "primary-click": {
+          "description": "Akce provedená při kliknutí levým tlačítkem na tlačítko lišty",
+          "label": "Primární kliknutí"
+        },
+        "right-command": {
+          "description": "Příkaz shellu spuštěný při kliknutí pravým tlačítkem na toto tlačítko",
+          "label": "Příkaz pravého kliknutí"
+        },
+        "scale": {
+          "description": "Zvětšit nebo zmenšit tento widget vzhledem k měřítku obsahu lišty",
+          "label": "Měřítko"
+        },
+        "scope": {
+          "description": "Spustit jedno běhové prostředí skriptu na každé živé umístění widgetu, nebo sdílet jedno běhové prostředí napříč lištami se stejným id widgetu",
+          "label": "Rozsah běhového prostředí"
+        },
+        "script": {
+          "description": "Cesta ke skriptu lua",
+          "label": "Skript"
+        },
+        "scroll-down-command": {
+          "description": "Příkaz shellu spuštěný při rolování dolů nad tímto tlačítkem",
+          "label": "Příkaz rolování dolů"
+        },
+        "scroll-step": {
+          "description": "Procentuální změna aplikovaná při každém kroku kolečka myši",
+          "label": "Krok rolování"
+        },
+        "scroll-up-command": {
+          "description": "Příkaz shellu spuštěný při rolování nahoru nad tímto tlačítkem",
+          "label": "Příkaz rolování nahoru"
+        },
+        "show-active-indicator": {
+          "description": "Zobrazit malou tečku pod ikonou aktivního okna v hlavním panelu.",
+          "label": "Indikátor aktivního okna"
+        },
+        "show-all-outputs": {
+          "description": "Zahrnout okna ze všech displejů do tohoto widgetu.",
+          "label": "Zobrazit všechny monitory"
+        },
+        "show-caps-lock": {
+          "description": "Zobrazit stav Caps Lock",
+          "label": "Zobrazit Caps Lock"
+        },
+        "show-condition": {
+          "description": "Zobrazit text stavu počasí",
+          "label": "Zobrazit stav počasí"
+        },
+        "show-empty-label": {
+          "description": "Zobrazit zástupný text, když není zaměřeno žádné okno, místo skrytí widgetu",
+          "label": "Zobrazit prázdný popisek"
+        },
+        "show-icon": {
+          "description": "Zobrazit ikonu tohoto widgetu",
+          "label": "Zobrazit ikonu"
+        },
+        "show-label": {
+          "description": "Zobrazit text vedle ikony",
+          "label": "Zobrazit popisek"
+        },
+        "show-num-lock": {
+          "description": "Zobrazit stav Num Lock",
+          "label": "Zobrazit Num Lock"
+        },
+        "show-scroll-lock": {
+          "description": "Zobrazit stav Scroll Lock",
+          "label": "Zobrazit Scroll Lock"
+        },
+        "show-temperature": {
+          "description": "Zobrazit text aktuální teploty",
+          "label": "Zobrazit teplotu"
+        },
+        "show-when-idle": {
+          "description": "Zachovat vizualizér viditelný i když nic nehraje",
+          "label": "Zobrazit při nečinnosti"
+        },
+        "show-window-title": {
+          "description": "Zobrazit název okna vedle jeho ikony (pouze na vodorovných lištách)",
+          "label": "Zobrazit název okna"
+        },
+        "show-workspace-label": {
+          "description": "Zobrazit malý štítek plochy na seskupených kapslích hlavního panelu. Vypněte pro skupiny pouze s ikonami.",
+          "label": "Popisek kapsle plochy"
+        },
+        "stat": {
+          "description": "Systémová statistika k zobrazení",
+          "label": "Statistika"
+        },
+        "taskbar-max-width": {
+          "description": "Celkový rozpočet šířky v pixelech; názvy oken se zmenší, aby se vešly, a skryjí se při příliš malé šířce",
+          "label": "Max. šířka hlavního panelu"
+        },
+        "title-scroll": {
+          "description": "Kdy by se měl název widgetu posouvat",
+          "label": "Posouvání názvu"
+        },
+        "tooltip": {
+          "description": "Popisek zobrazený při najetí myší na toto tlačítko",
+          "label": "Popisek nástroje"
+        },
+        "tooltip-format": {
+          "description": "Volitelný formát pro popisek nástroje",
+          "label": "Formát popisku nástroje"
+        },
+        "type": {
+          "description": "Vestavěný typ widgetu pro tento pojmenovaný widget",
+          "label": "Typ"
+        },
+        "vertical-format": {
+          "description": "Volitelný formát použitý na svislých lištách",
+          "label": "Svislý formát"
+        },
+        "warning-color": {
+          "description": "Barva použitá, když je nabití na hranici nebo pod prahem varování systémové baterie",
+          "label": "Varovná barva"
+        },
+        "width": {
+          "description": "Šířka widgetu v pixelech",
+          "label": "Šířka"
+        },
+        "window-title-max-width": {
+          "description": "Maximální šířka v pixelech pro názvy oken",
+          "label": "Max. šířka názvu okna"
+        },
+        "workspace-group-capsule": {
+          "description": "Vykreslit pozadí a obrys kolem každé seskupené plochy. Vypněte pro zachování pouze seskupení ikon a popisků kruhových indikátorů plochy.",
+          "label": "Kapsle skupiny ploch"
+        },
+        "workspace-label-placement": {
+          "description": "V rohu, na střed okraje, nebo uvnitř pilulky.",
+          "label": "Umístění popisku plochy"
+        }
+      },
+      "types": {
+        "active-window": "Aktivní okno",
+        "audio-visualizer": "Vizualizér zvuku",
+        "battery": "Baterie",
+        "bluetooth": "Bluetooth",
+        "brightness": "Jas",
+        "caffeine": "Caffeine",
+        "clipboard": "Schránka",
+        "clock": "Hodiny",
+        "control-center": "Ovládací centrum",
+        "custom-button": "Vlastní tlačítko",
+        "keyboard-layout": "Rozložení klávesnice",
+        "launcher": "Spouštěč",
+        "lock-keys": "Zámkové klávesy",
+        "media": "Média",
+        "network": "Síť",
+        "nightlight": "Noční režim",
+        "notifications": "Oznámení",
+        "power-profile": "Profil napájení",
+        "privacy": "Indikátor soukromí",
+        "screenshot": "Snímek obrazovky",
+        "scripted": "Skriptovaný",
+        "session": "Relace",
+        "settings": "Nastavení",
+        "spacer": "Mezera",
+        "sysmon": "Sledování systému",
+        "taskbar": "Hlavní panel",
+        "test": "Test",
+        "theme-mode": "Režim motivu",
+        "tray": "Systémová lišta",
+        "volume": "Hlasitost",
+        "wallpaper": "Tapeta",
+        "weather": "Počasí",
+        "workspaces": "Plochy"
+      }
+    },
+    "window": {
+      "export-config": "Exportovat konfiguraci…",
+      "export-config-saved": "Export konfigurace uložen.",
+      "filter-modified": "Změněné",
+      "native-title": "Nastavení Noctalia",
+      "no-results": "Nebyla nalezena žádná nastavení",
+      "no-results-hint": "Zkuste jiný název nastavení nebo klíč konfigurace.",
+      "reset-page": "Obnovit stránku",
+      "reset-page-confirm": "Potvrdit obnovení",
+      "search-placeholder": "Hledat nastavení…",
+      "search-truncated": "Zobrazeno prvních {count} shod. Zpřesněte hledání pro užší výsledky.",
+      "support-report": "Zpráva pro podporu",
+      "support-report-saved": "Zpráva pro podporu uložena.",
+      "support-report-title": "Uložit zprávu pro podporu",
+      "title": "Nastavení"
     }
+  },
+  "setup-wizard": {
+    "browse": "Procházet",
+    "builtin-palette": "Vestavěná paleta",
+    "footer-note": "Toto můžete později změnit v nastavení.",
+    "get-started": "Začít",
+    "mode": "Režim",
+    "no-wallpaper-selected": "Nebyla vybrána žádná tapeta",
+    "select-wallpaper": "Vybrat tapetu",
+    "subtitle": "Několik rychlých voleb pro začátek.",
+    "title": "Vítejte v Noctalii",
+    "wallpaper": "Tapeta",
+    "wallpaper-scheme": "Schéma tapety"
+  },
+  "system": {
+    "hardware": {
+      "unknown": "Neznámé",
+      "unknown-cpu": "Neznámý procesor",
+      "unknown-distro": "Neznámá distribuce",
+      "unknown-gpu": "Neznámá grafická karta"
+    }
+  },
+  "theme": {
+    "scheme": {
+      "dysfunctional": "Nefunkční",
+      "faithful": "Věrné",
+      "m3-content": "M3 Obsah",
+      "m3-fruit-salad": "M3 Ovocný salát",
+      "m3-monochrome": "M3 Monochromatické",
+      "m3-rainbow": "M3 Duha",
+      "m3-tonal-spot": "M3 Tónová skvrna",
+      "muted": "Tlumené",
+      "soft": "Jemné",
+      "vibrant": "Syté"
+    }
+  },
+  "time": {
+    "duration": {
+      "less-than-day": "méně než 1 den",
+      "less-than-minute": "<1m",
+      "three-parts": "{first} {second} {third}",
+      "two-parts": "{first} {second}"
+    },
+    "file": {
+      "unknown": "Neznámé"
+    },
+    "relative": {
+      "days-ago": "před {count} dnem",
+      "days-ago-plural": "před {count} dny",
+      "hours-ago": "před {count} hod",
+      "hours-ago-plural": "před {count} hod",
+      "just-now": "právě teď",
+      "minutes-ago": "před {count} min",
+      "minutes-ago-plural": "před {count} min"
+    },
+    "units": {
+      "day": "{count} den",
+      "day-plural": "{count} dní",
+      "hour": "{count} hodina",
+      "hour-plural": "{count} hodin",
+      "minute": "{count} minuta",
+      "minute-plural": "{count} minut",
+      "month": "{count} měsíc",
+      "month-plural": "{count} měsíců",
+      "year": "{count} rok",
+      "year-plural": "{count} let"
+    }
+  },
+  "tray": {
+    "menu": {
+      "empty": "Žádné položky nabídky...",
+      "pin": "Připnout",
+      "unpin": "Odepnout"
+    }
+  },
+  "ui": {
+    "controls": {
+      "search-picker": {
+        "empty": "Žádné výsledky",
+        "placeholder": "Hledat..."
+      },
+      "select": {
+        "placeholder": "Vyberte možnost"
+      }
+    },
+    "dialogs": {
+      "color-picker": {
+        "title": "Barva"
+      },
+      "file": {
+        "actions": {
+          "open": "Otevřít",
+          "save": "Uložit",
+          "select-folder": "Vybrat složku"
+        },
+        "empty-filtered": "Žádné soubory neodpovídají aktuálnímu filtru",
+        "entry": {
+          "folder": "Složka"
+        },
+        "filename-placeholder": "Název souboru",
+        "filter-placeholder": "Filtrovat...",
+        "sort": {
+          "ascending": "↑",
+          "date": "Datum",
+          "descending": "↓",
+          "name": "Název",
+          "size": "Velikost"
+        },
+        "title": {
+          "default": "Dialog souboru",
+          "open": "Otevřít soubor",
+          "save": "Uložit soubor",
+          "select-folder": "Vybrat složku"
+        }
+      },
+      "glyph-picker": {
+        "all-categories": "Vše",
+        "search-placeholder": "Hledat ikony…",
+        "title": "Vybrat ikonu"
+      }
+    }
+  },
+  "wallpaper": {
+    "panel": {
+      "all-monitors": "VŠE",
+      "color-title": "Barva tapety",
+      "filter-placeholder": "Filtrovat...",
+      "flatten": "Sloučit",
+      "loading": "Načítání tapet...",
+      "sort-date-asc": "Seřadit podle data (nejstarší první)",
+      "sort-date-desc": "Seřadit podle data (nejnovější první)",
+      "sort-name-asc": "Seřadit podle názvu (A-Z)",
+      "sort-name-desc": "Seřadit podle názvu (Z-A)",
+      "title": "Tapeta"
+    }
+  },
+  "weather": {
+    "conditions": {
+      "full": {
+        "clear-sky": "Jasná obloha",
+        "drizzle": "Mrholení",
+        "fog": "Mlha",
+        "mainly-clear": "Převážně jasno",
+        "overcast": "Zataženo",
+        "partly-cloudy": "Polojasno",
+        "rain-showers": "Přeháňky",
+        "snow": "Sníh",
+        "snow-showers": "Sněhové přeháňky",
+        "thunderstorm": "Bouřka",
+        "unknown": "Neznámé"
+      },
+      "short": {
+        "clear": "Jasno",
+        "cloudy": "Oblačno",
+        "drizzle": "Mrholení",
+        "fog": "Mlha",
+        "mostly-clear": "Skoro jasno",
+        "overcast": "Zataženo",
+        "showers": "Přeháňky",
+        "snow": "Sníh",
+        "snow-showers": "Sněhové přeháňky",
+        "storm": "Bouřka",
+        "weather": "Počasí"
+      }
+    },
+    "errors": {
+      "fetch-failed": "Načtení počasí selhalo",
+      "parse-weather": "Odpověď o počasí se nepodařilo zpracovat"
+    }
+  },
+  "window-switcher": {
+    "empty": "Žádná otevřená okna",
+    "hint": "Tab · Shift+Tab · Šipky · Uvolněním Alt přepnete · Esc pro zrušení",
+    "title": "Okna"
   }
 }

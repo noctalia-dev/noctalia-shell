@@ -119,13 +119,15 @@ int main() {
   assert(fallback.exec.empty());
   assert(fallback.icon.empty());
 
+  // Hidden/NoDisplay entries are excluded at parse time, so the resolver never receives one in
+  // production and does not re-filter them. If one is present it resolves like any other entry.
   DesktopEntry hidden = sampleChatEntry();
   hidden.hidden = true;
-  assert(app_identity::resolveRunningDesktopEntry("Sample.ChatDesktop", {hidden}).id == "Sample.ChatDesktop");
+  assert(app_identity::resolveRunningDesktopEntry("Sample.ChatDesktop", {hidden}).id == "sample-chat-desktop");
 
   DesktopEntry noDisplay = sampleChatEntry();
   noDisplay.noDisplay = true;
-  assert(app_identity::resolveRunningDesktopEntry("Sample.ChatDesktop", {noDisplay}).id == "Sample.ChatDesktop");
+  assert(app_identity::resolveRunningDesktopEntry("Sample.ChatDesktop", {noDisplay}).id == "sample-chat-desktop");
 
   const std::vector<DesktopEntry> multipleEntries = {sampleChatEntry(), sampleMailEntry()};
   const auto resolvedApps =

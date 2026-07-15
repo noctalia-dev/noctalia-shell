@@ -7,8 +7,10 @@
 #include <vector>
 
 class Flex;
+class InputArea;
 class Node;
 class Renderer;
+enum class FontWeight : int;
 
 namespace ui {
 
@@ -42,6 +44,9 @@ namespace ui {
     using CallbackSink = std::function<void(const ControlCallback& callback)>;
     // Resolves a tree-supplied path (e.g. image source) to an absolute path.
     using PathResolver = std::function<std::string(const std::string& path)>;
+    // Receives the input area of a freshly created control whose `focus` prop
+    // is true. The host decides how (and whether) to grant keyboard focus.
+    using FocusRequestSink = std::function<void(InputArea* area)>;
 
     UiTreeReconciler();
     ~UiTreeReconciler();
@@ -51,8 +56,19 @@ namespace ui {
 
     void setCallbackSink(CallbackSink sink) { m_sink = std::move(sink); }
     void setPathResolver(PathResolver resolver) { m_resolver = std::move(resolver); }
+    void setFocusRequestSink(FocusRequestSink sink) { m_focusSink = std::move(sink); }
     // Content scale multiplied into size-like props (fonts, gaps, sizes, radii).
     void setScale(float scale) { m_scale = scale; }
+    // Host text defaults for label/glyph props the tree leaves unset, so
+    // declarative text matches the host's imperative text (e.g. the bar's
+    // per-widget font family/weight). Empty family = renderer-global font.
+    void setTextDefaults(std::string fontFamily, FontWeight fontWeight) {
+      m_defaultFontFamily = std::move(fontFamily);
+      m_defaultFontWeight = fontWeight;
+    }
+    // Compact control chrome for space-tight hosts (bar widgets): buttons drop
+    // the settings-tier min-height/padding and hug their content instead.
+    void setCompactControls(bool compact) { m_compactControls = compact; }
 
     // Reconciles `tree` as the single child of `host`. Props are (re)applied on
     // every call — setters are change-checked, and the scale may differ between
@@ -75,7 +91,11 @@ namespace ui {
 
     CallbackSink m_sink;
     PathResolver m_resolver;
+    FocusRequestSink m_focusSink;
     float m_scale = 1.0f;
+    std::string m_defaultFontFamily;
+    FontWeight m_defaultFontWeight; // initialized in the ctor (opaque enum here)
+    bool m_compactControls = false;
     std::vector<Slot> m_rootSlots;
   };
 

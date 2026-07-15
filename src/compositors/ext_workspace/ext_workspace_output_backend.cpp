@@ -1,6 +1,6 @@
 #include "compositors/ext_workspace/ext_workspace_output_backend.h"
 
-#include "core/process.h"
+#include "core/process/process.h"
 
 namespace compositors::ext_workspace {
 

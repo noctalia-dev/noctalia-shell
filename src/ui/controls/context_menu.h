@@ -1,5 +1,6 @@
 #pragma once
 
+#include "render/core/renderer.h"
 #include "render/scene/node.h"
 
 #include <cstdint>
@@ -23,6 +24,7 @@ struct ContextMenuControlEntry {
   bool checkmark = false;
   bool radio = false;
   std::int32_t toggleState = -1;
+  TextEllipsize ellipsize = TextEllipsize::End;
 };
 
 class ContextMenuControl : public Node {

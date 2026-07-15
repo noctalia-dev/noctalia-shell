@@ -22,16 +22,10 @@ namespace app_identity {
 
   [[nodiscard]] bool desktopEntryMatchesLower(const DesktopEntry& entry, std::string_view valueLower);
 
-  struct DesktopEntryLookupOptions {
-    bool includeHidden = false;
-    bool includeNoDisplay = false;
-  };
-
-  // Best-effort lookup by app id / StartupWMClass. Set includeHidden/includeNoDisplay for
-  // Steam shortcuts and other entries that are not shown in launchers.
-  [[nodiscard]] std::optional<DesktopEntry> findDesktopEntry(
-      std::string_view appKey, const std::vector<DesktopEntry>& allEntries, DesktopEntryLookupOptions options = {}
-  );
+  // Best-effort lookup by app id / StartupWMClass. Operates on the parsed desktop-entry list,
+  // which already excludes hidden/NoDisplay/wrong-desktop entries.
+  [[nodiscard]] std::optional<DesktopEntry>
+  findDesktopEntry(std::string_view appKey, const std::vector<DesktopEntry>& allEntries);
 
   [[nodiscard]] DesktopEntry
   resolveRunningDesktopEntry(std::string_view runningAppId, const std::vector<DesktopEntry>& allEntries);

@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
+#include "core/input/keybind_matcher.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "dbus/tray/tray_service.h"
@@ -13,8 +14,10 @@
 #include "ui/controls/scroll_view.h"
 #include "ui/popup_chrome.h"
 #include "ui/style.h"
+#include "wayland/layer_surface.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
+#include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include "xdg-shell-client-protocol.h"
 
 #include <algorithm>
@@ -340,6 +343,17 @@ void TrayMenu::requestLayout() {
       level.instance->surface->requestLayout();
     }
   }
+}
+
+bool TrayMenu::onKeyboardEvent(const KeyboardEvent& event) {
+  if (!m_visible) {
+    return false;
+  }
+  if (event.pressed && !event.preedit && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
+    DeferredCall::callLater([this]() { close(); });
+  }
+  // The menu holds a modal grab while open — swallow keys so they don't leak.
+  return true;
 }
 
 bool TrayMenu::onPointerEvent(const PointerEvent& event) {
@@ -713,8 +727,22 @@ void TrayMenu::ensureSurface() {
   };
   popup_chrome::applyToConfig(popupConfig, chrome, placement.chromeAttachment);
 
+  // Layer-shell popups inherit their parent's keyboard interactivity. The bar is
+  // None, so without this the grabbing popup would get no keyboard focus and ESC
+  // could not reach it. Flip the bar to OnDemand before the popup maps; the
+  // focus-grab path carries keyboard itself, so only the plain grab path needs it.
+  if (!useFocusGrab) {
+    m_keyboardBarLayerSurface = parentLayerSurface;
+    m_keyboardBarWlSurface = parentWlSurface;
+    zwlr_layer_surface_v1_set_keyboard_interactivity(
+        parentLayerSurface, static_cast<std::uint32_t>(LayerShellKeyboard::OnDemand)
+    );
+    wl_surface_commit(parentWlSurface);
+  }
+
   if (!inst->surface->initialize(parentLayerSurface, output, popupConfig)) {
     kLog.debug("tray menu: failed to create popup surface");
+    restoreBarKeyboardInteractivity();
     return;
   }
 
@@ -789,6 +817,21 @@ void TrayMenu::destroySurface() {
   }
   m_instance.reset();
   m_focusGrab.reset();
+  restoreBarKeyboardInteractivity();
+}
+
+void TrayMenu::restoreBarKeyboardInteractivity() {
+  if (m_keyboardBarLayerSurface == nullptr) {
+    return;
+  }
+  zwlr_layer_surface_v1_set_keyboard_interactivity(
+      m_keyboardBarLayerSurface, static_cast<std::uint32_t>(LayerShellKeyboard::None)
+  );
+  if (m_keyboardBarWlSurface != nullptr) {
+    wl_surface_commit(m_keyboardBarWlSurface);
+  }
+  m_keyboardBarLayerSurface = nullptr;
+  m_keyboardBarWlSurface = nullptr;
 }
 
 void TrayMenu::rebuildScenes() {

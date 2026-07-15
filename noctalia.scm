@@ -6,7 +6,7 @@
 ;;; --8<---------------cut here---------------start------------->8---
 ;;; (channel
 ;;;   (name 'noctalia)
-;;;   (url "https://github.com/noctalia-dev/noctalia-shell")
+;;;   (url "https://github.com/noctalia-dev/noctalia")
 ;;;   (branch "v5"))
 ;;; --8<---------------cut here---------------end--------------->8---
 ;;;
@@ -22,7 +22,9 @@
   #:use-module (guix git-download)
   ;; Guix build systems
   #:use-module (guix build-system meson)
+  #:use-module (guix build-system gnu)
   ;; Guix packages
+  #:use-module (gnu packages cpp)
   #:use-module (gnu packages curl)
   #:use-module (gnu packages fontutils)
   #:use-module (gnu packages freedesktop)
@@ -33,12 +35,37 @@
   #:use-module (gnu packages image)
   #:use-module (gnu packages jemalloc)
   #:use-module (gnu packages linux)
+  #:use-module (gnu packages markup)
   #:use-module (gnu packages maths)
   #:use-module (gnu packages multiprecision)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages polkit)
+  #:use-module (gnu packages stb)
   #:use-module (gnu packages xdisorg)
   #:use-module (gnu packages xml))
+
+;; guix distributes stb headers under include/stb_x.h, but noctalia
+;; expects them in include/stb/stb_x.h
+(define* (wrap-stb-header stb-package name #:key deprecated?)
+  (package
+   (inherit stb-package)
+   (arguments
+    (list
+     #:modules '((guix build utils))
+     #:builder
+     #~(begin
+         (use-modules (guix build utils))
+         (let ((headers-dir #$(file-append (this-package-input "stb")
+                                           (if deprecated? "/deprecated" "")))
+               (lib (string-join (string-split #$name #\-) "_"))
+               (out #$output))
+           (install-file (string-append headers-dir "/" lib ".h")
+                         (string-append out "/include/stb/"))
+           #t))))))
+(define stb-image-resize2-wrapped
+  (wrap-stb-header stb-image-resize2 "stb-image-resize2"))
+(define stb-image-write-wrapped
+  (wrap-stb-header stb-image-write "stb-image-write"))
 
 (define wayland-protocols-1.48
   (package
@@ -70,13 +97,6 @@
     (build-system meson-build-system)
     (arguments
      (list #:build-type "release"
-           ;; FIXME: process_test fails with:
-           ;; --8<---------------cut here---------------start------------->8---
-           ;; stderr:
-           ;; process_test: completion-only async command exit code was wrong
-           ;; process_test: completion-only async command stdout was wrong
-           ;; --8<---------------cut here---------------end--------------->8---
-           #:tests? #f
            #:phases
            #~(modify-phases %standard-phases
                (add-after 'unpack 'prepare-for-build
@@ -97,22 +117,28 @@
            freetype
            glib
            gmp
-           mpfr
            harfbuzz
            jemalloc
+           mpfr
            (librsvg-for-system)
            libqalculate
            libwebp
            libxkbcommon
            libxml2
            linux-pam
+           md4c
            mesa
+           nlohmann-json
            pango
            pipewire
            polkit
            sdbus-c++
+           stb-image-resize2-wrapped
+           stb-image-write-wrapped
+           tomlplusplus
            wayland
-           wayland-protocols-1.48))
+           wayland-protocols-1.48
+           wireplumber))
     (home-page "https://noctalia.dev/")
     (synopsis "Wayland shell and bar")
     (description

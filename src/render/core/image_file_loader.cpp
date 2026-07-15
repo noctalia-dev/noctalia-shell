@@ -10,7 +10,7 @@
 #include <cstdint>
 #include <cstring>
 #include <expected>
-#include <stb_image_resize2.h>
+#include <stb/stb_image_resize2.h>
 #include <string_view>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wexpansion-to-defined"
@@ -496,6 +496,11 @@ loadImageFile(const std::string& path, int targetSize, bool centerSquareCrop) {
     return decodeDataUri(path).and_then([&](DecodedDataUri dataUri) {
       return loadImageBytes(std::move(dataUri.bytes), dataUri.declaredSvg, targetSize, centerSquareCrop);
     });
+  }
+
+  std::error_code ec;
+  if (!std::filesystem::is_regular_file(path, ec)) {
+    return std::unexpected("path is not a regular file");
   }
 
   auto fileData = FileUtils::readBinaryFile(path);

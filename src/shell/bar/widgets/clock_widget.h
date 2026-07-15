@@ -12,7 +12,7 @@ class ClockWidget : public Widget {
 public:
   ClockWidget(
       wl_output* output, std::string format = "{:%H:%M}", std::string verticalFormat = "",
-      std::string tooltipFormat = ""
+      std::string tooltipFormat = "", std::string tzName = ""
   );
 
   void create() override;
@@ -25,6 +25,7 @@ private:
   std::string m_format;
   std::string m_verticalFormat;
   std::string m_tooltipFormat;
+  std::string m_timezone;
   bool m_isVertical = false;
   Label* m_label = nullptr;
   Label* m_secondaryLabel = nullptr;

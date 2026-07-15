@@ -216,6 +216,7 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
           .maxWidth =
               entry.hasSubmenu ? (rowWidth - 30.0f * scale - toggleSlot) : (rowWidth - 16.0f * scale - toggleSlot),
           .maxLines = 1,
+          .ellipsize = entry.ellipsize,
       });
       label->measure(renderer);
       label->setPosition(8.0f * scale + toggleSlot, (rowHeight - label->height()) * 0.5f);

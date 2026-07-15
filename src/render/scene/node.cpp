@@ -478,6 +478,12 @@ void Node::absolutePosition(const Node* node, float& outX, float& outY) {
   outY = topLeft.y;
 }
 
+void Node::mapToScene(const Node* node, float localX, float localY, float& outSceneX, float& outSceneY) {
+  const Vec2 scenePoint = computeWorldTransform(node).transformPoint(localX, localY);
+  outSceneX = scenePoint.x;
+  outSceneY = scenePoint.y;
+}
+
 bool Node::mapFromScene(const Node* node, float sceneX, float sceneY, float& outLocalX, float& outLocalY) {
   if (node == nullptr) {
     outLocalX = 0.0f;

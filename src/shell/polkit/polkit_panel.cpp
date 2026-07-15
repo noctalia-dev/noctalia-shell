@@ -2,9 +2,9 @@
 
 #include "config/config_service.h"
 #include "config/config_types.h"
-#include "core/key_modifiers.h"
-#include "core/keybind_matcher.h"
-#include "core/resource_paths.h"
+#include "core/files/resource_paths.h"
+#include "core/input/key_modifiers.h"
+#include "core/input/keybind_matcher.h"
 #include "dbus/polkit/polkit_agent.h"
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
@@ -92,8 +92,8 @@ void PolkitPanel::create() {
               .out = &m_titleLabel,
               .text = i18n::tr("auth.polkit.title"),
               .fontSize = Style::fontSizeTitle * scale,
-              .color = colorSpecFromRole(ColorRole::Primary),
               .fontWeight = FontWeight::Bold,
+              .color = colorSpecFromRole(ColorRole::Primary),
           }),
           ui::label({
               .out = &m_messageLabel,
@@ -129,7 +129,13 @@ void PolkitPanel::create() {
           .maxLines = 4,
       }),
       ui::row(
-          {.align = FlexAlign::Center, .justify = FlexJustify::End, .gap = Style::spaceSm * scale},
+          {
+              .align = FlexAlign::Center,
+              .justify = FlexJustify::End,
+              .wrap = true,
+              .gap = Style::spaceSm * scale,
+              .fillWidth = true,
+          },
           ui::button({
               .out = &m_cancelButton,
               .text = i18n::tr("common.actions.cancel"),

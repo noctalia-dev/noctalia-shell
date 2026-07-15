@@ -1,5 +1,7 @@
 #pragma once
 
+#include "render/core/renderer.h"
+
 #include <string>
 #include <variant>
 #include <vector>
@@ -7,6 +9,7 @@
 struct TooltipRow {
   std::string key;
   std::string value;
+  TextEllipsize valueEllipsize = TextEllipsize::End;
 };
 
 enum class TooltipPlacement : std::uint8_t {

@@ -7,6 +7,9 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <memory>
+#include <mutex>
+#include <ranges>
 #include <string_view>
 #include <sys/inotify.h>
 #include <sys/stat.h>
@@ -23,6 +26,50 @@ namespace {
   bool parseDesktopBool(std::string_view value) {
     const std::string lower = StringUtils::toLower(value);
     return lower == "true" || lower == "1" || lower == "yes";
+  }
+
+  void splitMultipleDesktopStrings(std::vector<std::string>& parsedValues, std::string_view fullValue) {
+    std::size_t start = 0;
+    while (start < fullValue.size()) {
+      const auto delimiter = fullValue.find(';', start);
+      const auto token =
+          (delimiter == std::string_view::npos) ? fullValue.substr(start) : fullValue.substr(start, delimiter - start);
+      if (!token.empty()) {
+        parsedValues.emplace_back(token);
+      }
+      if (delimiter == std::string_view::npos) {
+        break;
+      }
+      start = delimiter + 1;
+    }
+  }
+
+  bool
+  shouldShowOnCurrentDesktop(const std::vector<std::string>& onlyShowIn, const std::vector<std::string>& notShowIn) {
+    const auto visibleByDefault = onlyShowIn.empty();
+    const char* currentDesktop = std::getenv("XDG_CURRENT_DESKTOP");
+    if (currentDesktop == nullptr || currentDesktop[0] == '\0') {
+      return visibleByDefault;
+    }
+    std::string_view desktops(currentDesktop);
+    std::size_t start = 0;
+    while (start <= desktops.size()) {
+      const auto delimiter = desktops.find(':', start);
+      const auto token =
+          (delimiter == std::string_view::npos) ? desktops.substr(start) : desktops.substr(start, delimiter - start);
+      if (!token.empty()) {
+        if (std::ranges::find(onlyShowIn, token) != onlyShowIn.end()) {
+          return true;
+        } else if (std::ranges::find(notShowIn, token) != notShowIn.end()) {
+          return false;
+        }
+      }
+      if (delimiter == std::string_view::npos) {
+        break;
+      }
+      start = delimiter + 1;
+    }
+    return visibleByDefault;
   }
 
   struct LocaleInfo {
@@ -101,6 +148,10 @@ namespace {
     std::string localizedGenericName;
     std::string localizedComment;
     std::string type;
+
+    // Desktop-environment visibility lists (OnlyShowIn/NotShowIn)
+    std::vector<std::string> onlyShowIn;
+    std::vector<std::string> notShowIn;
 
     // Action parsing state
     std::vector<std::string> actionOrder;
@@ -225,26 +276,23 @@ namespace {
         entry.workingDir = std::string(value);
       } else if (key == "Terminal") {
         entry.terminal = parseDesktopBool(value);
+      } else if (key == "OnlyShowIn") {
+        splitMultipleDesktopStrings(onlyShowIn, value);
+      } else if (key == "NotShowIn") {
+        splitMultipleDesktopStrings(notShowIn, value);
       } else if (key == "Actions") {
-        // Semicolon-separated list of action IDs, e.g. "NewWindow;NewPrivateWindow;"
-        std::size_t start = 0;
-        while (start < value.size()) {
-          auto semi = value.find(';', start);
-          auto id = (semi == std::string_view::npos) ? value.substr(start) : value.substr(start, semi - start);
-          if (!id.empty()) {
-            actionOrder.emplace_back(id);
-          }
-          if (semi == std::string_view::npos)
-            break;
-          start = semi + 1;
-        }
+        splitMultipleDesktopStrings(actionOrder, value);
       }
     }
 
     // Flush any trailing action section.
     flushCurrentAction();
 
-    if (type != "Application" || entry.noDisplay || entry.hidden || entry.name.empty()) {
+    if (type != "Application"
+        || entry.noDisplay
+        || entry.hidden
+        || entry.name.empty()
+        || !shouldShowOnCurrentDesktop(onlyShowIn, notShowIn)) {
       return;
     }
 
@@ -343,6 +391,14 @@ namespace {
 
     const std::vector<DesktopEntry>& entries() {
       refreshIfNeeded();
+      return *m_entries;
+    }
+
+    // Worker-thread-safe shared snapshot. Deliberately non-refreshing:
+    // freshness stays driven by the main thread's poll/reload path; this only
+    // synchronizes against the reload swap.
+    std::shared_ptr<const std::vector<DesktopEntry>> entriesSnapshot() const {
+      std::scoped_lock lock(m_entriesMutex);
       return m_entries;
     }
 
@@ -402,7 +458,11 @@ namespace {
         return;
       }
 
-      m_entries = scanDesktopEntries();
+      auto scanned = std::make_shared<const std::vector<DesktopEntry>>(scanDesktopEntries());
+      {
+        std::scoped_lock lock(m_entriesMutex);
+        m_entries = std::move(scanned);
+      }
       rebuildWatches();
       m_sourceSignature = computeSourceSignature();
       m_dirty = false;
@@ -415,6 +475,11 @@ namespace {
     // are added or removed in place.
     std::string computeSourceSignature() const {
       std::string sig;
+      const char* currentDesktop = std::getenv("XDG_CURRENT_DESKTOP");
+      sig += "xdg_current_desktop=";
+      sig += (currentDesktop != nullptr && currentDesktop[0] != '\0') ? currentDesktop : "<unset>";
+      sig += '\n';
+
       for (const auto& dataDir : xdgDataDirs()) {
         const fs::path appDir = fs::path(dataDir) / "applications";
         std::error_code ec;
@@ -503,7 +568,8 @@ namespace {
       m_watches[wd] = key;
     }
 
-    std::vector<DesktopEntry> m_entries;
+    std::shared_ptr<const std::vector<DesktopEntry>> m_entries = std::make_shared<std::vector<DesktopEntry>>();
+    mutable std::mutex m_entriesMutex; // guards the m_entries swap against entriesSnapshot() readers
     std::uint64_t m_version = 0;
     int m_inotifyFd = -1;
     bool m_dirty = true;
@@ -558,6 +624,8 @@ std::vector<DesktopEntry> scanDesktopEntries() {
 }
 
 const std::vector<DesktopEntry>& desktopEntries() { return cache().entries(); }
+
+std::shared_ptr<const std::vector<DesktopEntry>> desktopEntriesSnapshot() { return cache().entriesSnapshot(); }
 
 std::uint64_t desktopEntriesVersion() { return cache().version(); }
 

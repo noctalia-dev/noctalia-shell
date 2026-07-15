@@ -31,6 +31,7 @@
       "choose-display": "Chọn màn hình",
       "confirm-region": "Kéo, thả để chọn · Nhấn Esc để hủy · Nhấn Enter hoặc Space để chụp phần đã chọn",
       "fullscreen": "Toàn màn hình",
+      "overlay-alloc-failed": "Không thể hiển thị lớp phủ chụp màn hình (GPU có thể đã hết bộ nhớ video?)",
       "region": "Chọn khu vực"
     },
     "widgets": {
@@ -166,7 +167,7 @@
       "application-volumes": "Âm lượng ứng dụng",
       "choose-effects-profile": "Chọn một cấu hình",
       "effects-profile": "Hiệu ứng",
-      "input-device-prefix": "Đầu vào:",
+      "input-device-prefix": "Đầu vào",
       "no-application-audio": "Không có âm thanh từ ứng dụng",
       "no-application-audio-body": "Hiện không có ứng dụng nào đang phát âm thanh.",
       "no-input-devices": "Không tìm thấy thiết bị đầu vào",
@@ -175,7 +176,7 @@
       "no-output-devices": "Không tìm thấy thiết bị đầu ra",
       "no-output-devices-body": "Không có thiết bị phát âm thanh khả dụng.",
       "no-output-selected": "Không có thiết bị đầu ra nào được chọn",
-      "output-device-prefix": "Đầu ra:",
+      "output-device-prefix": "Đầu ra",
       "unavailable-body": "PipeWire hiện không hoạt động.",
       "unavailable-title": "Âm thanh không khả dụng"
     },
@@ -211,7 +212,8 @@
       "all-day": "Cả ngày",
       "events": "Sự kiện",
       "no-events": "Không có sự kiện.",
-      "today": "Hôm nay"
+      "today": "Hôm nay",
+      "toggle-events-card": "Hiện/ẩn thẻ sự kiện"
     },
     "display": {
       "disabled": "Đã tắt",
@@ -249,6 +251,7 @@
     "network": {
       "connect": "Kết nối",
       "current-connection": "Kết nối hiện tại",
+      "external-ip": "WAN {ip}",
       "no-networks": "Không có mạng khả dụng ở gần",
       "not-connected": "Chưa kết nối",
       "password": "Mật khẩu",
@@ -482,6 +485,11 @@
         "label-min-width": "Độ rộng tối thiểu của chữ",
         "layout": "Bố cục",
         "mirrored": "Phản chiếu",
+        "network-speed-compact": "Tốc độ mạng dạng thu gọn",
+        "network-speed-unit": "Đơn vị tốc độ truyền mạng",
+        "network-speed-unit-auto": "Tự động",
+        "network-speed-unit-kilobytes": "kB/s",
+        "network-speed-unit-megabytes": "MB/s",
         "opacity": "Độ trong suốt",
         "primary-color": "Màu chính",
         "reset-defaults": "Khôi phục về mặc định",
@@ -490,9 +498,12 @@
         "secondary-color": "Màu phụ",
         "sensitivity": "Độ nhạy",
         "shadow": "Bóng",
+        "show-caps-lock": "Cảnh báo phím Caps Lock",
         "show-forecast": "Hiển thị dự báo",
+        "show-keyboard-layout": "Bố cục bàn phím",
         "show-label": "Hiển thị nhãn",
         "show-login-button": "Nút đăng nhập",
+        "show-password-hint": "Gợi ý mật khẩu",
         "show-when-idle": "Hiển thị khi không hoạt động",
         "stat": "Trạng thái",
         "stat-cpu-temp": "Nhiệt độ CPU",
@@ -643,6 +654,7 @@
   "lockscreen": {
     "authenticating": "Đang xác thực...",
     "authentication-failed": "Xác thực thất bại",
+    "caps-lock-on": "Caps lock đang bật",
     "password-cleared": "Đã xóa mật khẩu",
     "password-placeholder": "Mật khẩu",
     "ready": "Nhập mật khẩu của bạn và nhấn Enter.",
@@ -675,14 +687,18 @@
       "calendar-google-connect-start-failed": "Không thể bắt đầu ủy quyền Google. Vui lòng kiểm tra kết nối mạng và thử lại.",
       "calendar-google-connect-start-http": "Không thể bắt đầu ủy quyền Google. Trình môi giới OAuth đã trả về HTTP {status}.",
       "calendar-google-connect-timeout": "Thời gian ủy quyền Google đã hết. Hãy bắt đầu lại kết nối khi bạn sẵn sàng đăng nhập.",
+      "config-migration-body": "Cấu hình cũ, bao gồm {path}, đang được chuyển đổi tạm thời trong bộ nhớ. Hãy cập nhật cấu hình gốc; Cài đặt và noctalia config validate sẽ hiển thị cấu hình thay thế cần dùng.",
+      "config-migration-title": "Cần cập nhật cấu hình",
       "dbus-disabled": "Thông báo DBus đã tắt",
       "desktop-widgets-editor": "Trình chỉnh sửa tiện ích",
       "desktop-widgets-editor-enabled": "Trình chỉnh sửa tiện ích màn hình nền đang bật. Chuyển sang một không gian làm việc trống để xem Overlay trình chỉnh sửa.",
-      "greeter-sync": "Noctalia Màn hình chào mừng",
+      "greeter-sync": "Noctalia Màn hình chào",
       "greeter-sync-pending": "Đang chờ quyền quản trị viên để viết vào greeter.",
       "greeter-sync-pending-console": "Đang chờ quyền quản trị viên. Chấp thuận ở thông báo polkit, trong TTY hoặc chạy pkexec thủ công.",
       "greeter-sync-pending-manual": "Đã chuẩn bị tệp. Hãy chạy câu lệnh sau trong terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". Hoặc đặt shell.greeter_sync.privilege_command (ví dụ như ghostty -e pkexec) và đồng bộ hóa lần nữa.",
       "greeter-sync-success": "Đã đồng bộ giao diện. Các thay đổi sẽ áp dụng vào màn hình đăng nhập tiếp theo.",
+      "greeter-sync-timeout": "Đồng bộ hóa màn hình chào vẫn đang chờ quyền phê duyệt của quản trị viên. Hãy kiểm tra TTY hoặc bảng điều khiển để tìm yêu cầu từ polkit, bật tác nhân polkit trong phần cài đặt Bảo mật hoặc tự chạy pkexec thủ công.",
+      "greeter-sync-timeout-manual": "Đồng bộ hóa màn hình chào vẫn cần quyền phê duyệt của quản trị viên. Hãy chạy lệnh sau trong Terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "keybind-app": "Noctalia",
       "keybind-invalid-modifier": "Phím tắt này nhận một phím không kèm phím bổ trợ.",
       "keybind-invalid-printable": "Các phím ký tự (chữ cái, số, ký hiệu) cần một phím bổ trợ như Ctrl hoặc Alt.",
@@ -749,7 +765,15 @@
   },
   "plugins": {
     "auto-disabled": {
+      "body-errors": "{plugin} gặp quá nhiều lỗi và đã bị vô hiệu hóa. Hãy tải lại sau khi đã khắc phục sự cố.",
+      "body-timeouts": "{plugin} đã ngừng phản hồi và bị vô hiệu hóa. Hãy tải lại sau khi đã khắc phục sự cố.",
       "title": "Plugin đã tắt"
+    },
+    "enable-failed": {
+      "body-error": "{plugin}: {error}",
+      "body-incompatible": "{plugin} yêu cầu Noctalia phiên bản {version} trở lên.",
+      "body-timeout": "{plugin} mất quá nhiều thời gian để cài đặt.",
+      "title": "Plugin chưa được bật"
     }
   },
   "power": {
@@ -801,6 +825,7 @@
     "badges": {
       "advanced": "Nâng cao",
       "community": "Cộng đồng",
+      "deprecated": "Lỗi thời",
       "inherited": "Kế thừa",
       "monitor": "Màn hình",
       "official": "Chính thức",
@@ -895,11 +920,23 @@
           "border": "Viền",
           "border-description": "Vai trò màu sắc đường viền của Vùng chứa; để Mặc định nếu không muốn có đường viền",
           "clear": "Xóa",
+          "drawer-columns": "Cột của ngăn ứng dụng",
+          "drawer-columns-description": "Số lượng widget trên mỗi hàng trong ngăn ứng dụng",
+          "drawer-detached": "Bảng điều khiển tách rời",
+          "drawer-detached-description": "Mở ngăn ứng dụng dưới dạng bảng điều khiển nổi với nền riêng thay vì gộp với thanh",
+          "drawer-enabled": "Ngăn ứng dụng",
+          "drawer-enabled-description": "Chuyển các widget trong nhóm vào ngăn ứng dụng, có thể mở hoặc đóng bằng một nút",
+          "drawer-glyph-closed": "Biểu tượng khi đóng",
+          "drawer-glyph-closed-description": "Ký tự biểu tượng hiển thị trên nút chuyển đổi của ngăn ứng dụng khi bảng điều khiển đang đóng",
+          "drawer-glyph-opened": "Biểu tượng khi mở",
+          "drawer-glyph-opened-description": "Ký tự biểu tượng hiển thị trên nút chuyển đổi của ngăn ứng dụng khi bảng điều khiển đang mở",
           "edit": "Chỉnh sửa kiểu dáng",
           "fill": "Nền",
           "fill-description": "Vai trò màu nền của khung chứa; cũng hỗ trợ các mã màu hex cố định",
           "foreground": "Nền trước",
           "foreground-description": "Vai trò màu sắc của biểu tượng và nhãn cho các widget trong nhóm này",
+          "hide": "Ẩn nhóm này",
+          "hide-widget": "Ẩn widget này",
           "hint": "Một phần của nhóm Capsule",
           "members": "{count} tiện ích",
           "opacity": "Độ mờ đục",
@@ -910,6 +947,8 @@
           "radius": "Bán kính",
           "radius-description": "Bán kính góc của Capsule theo pixel; Tự động kế thừa bán kính capsule của Bar",
           "selected": "{count} đã chọn",
+          "show": "Hiện nhóm này",
+          "show-widget": "Hiện widget này",
           "style": "Phong cách",
           "title": "Nhóm khung",
           "ungroup": "Tách nhóm"
@@ -954,7 +993,17 @@
             "grouping": "Nhóm",
             "presentation": "Trình bày",
             "runtime": "Thời gian chạy",
-            "widget": "Tiện ích"
+            "taskbar": {
+              "grouping": "Nhóm",
+              "windows": "Cửa sổ",
+              "workspace-labels": "Nhãn không gian làm việc"
+            },
+            "widget": "Tiện ích",
+            "workspaces": {
+              "colors": "Màu",
+              "list": "Không gian làm việc",
+              "pills": "Kiểu hình viên thuốc"
+            }
           }
         }
       }
@@ -981,6 +1030,8 @@
       "reset-page": "Không thể đặt lại một số cài đặt.",
       "support-report": "Không thể lưu báo cáo hỗ trợ.",
       "sync-greeter": "Không thể đồng bộ giao diện với Noctalia Greeter.",
+      "sync-greeter-timeout": "Quá trình đồng bộ màn hình chào vẫn đang chờ quyền phê duyệt của quản trị viên. Hãy kiểm tra TTY hoặc bảng điều khiển để tìm hộp thoại polkit, bật tác nhân polkit trong phần cài đặt Bảo mật hoặc tự chạy pkexec thủ công.",
+      "sync-greeter-timeout-manual": "Đồng bộ hóa màn hình chào vẫn cần quyền phê duyệt của quản trị viên. Hãy chạy lệnh sau trong Terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "widget": {
         "rename": "Không thể đổi tên tiện ích đã đặt tên."
       },
@@ -1012,7 +1063,7 @@
         "name-label": "Tên",
         "name-placeholder": "Hành vi khi không hoạt động",
         "resume-command-label": "Lệnh khôi phục",
-        "resume-command-placeholder": "noctalia:dpms-on",
+        "resume-command-placeholder": "notify-send 'Đã hoạt động trở lại'",
         "summary": "{name} - {seconds} giây",
         "summary-disabled-timeout": "{name}, tắt hẹn giờ",
         "timeout-label": "Số giây chờ",
@@ -1026,7 +1077,9 @@
     },
     "navigation": {
       "groups": {
+        "accessibility": "Trợ năng",
         "audio": "Âm thanh",
+        "authentication": "Xác thực",
         "automation": "Tự động hóa",
         "backdrop": "Nền",
         "background": "Nền",
@@ -1041,11 +1094,13 @@
         "control-center": "Trung tâm điều khiển",
         "dead-zone": "Vùng chết",
         "directories": "Thư mục",
+        "display": "Hiển thị",
         "effects": "Hiệu ứng",
         "filtering": "Lọc",
         "focus-styling": "Kiểu dáng tiêu điểm",
         "formats": "Định dạng",
         "general": "Chung",
+        "greeter": "Màn hình chào",
         "grouping": "Nhóm",
         "home": "Trang chủ",
         "hot-corners": "Hot corners",
@@ -1072,7 +1127,7 @@
         "pinned-apps": "Ứng dụng đã ghim",
         "polkit": "Polkit",
         "power": "Nguồn",
-        "privacy-security": "Quyền riêng tư & Bảo mật",
+        "privacy": "Quyền riêng tư",
         "profile": "Hồ sơ",
         "screen-corners": "Các góc màn hình",
         "screen-time": "Thời gian sử dụng màn hình",
@@ -1091,6 +1146,7 @@
         "widgets": "Tiện ích"
       },
       "sections": {
+        "accessibility": "Trợ năng",
         "appearance": "Giao diện",
         "backdrop": "Nền",
         "bar": "Thanh",
@@ -1099,6 +1155,7 @@
         "dock": "Dock",
         "hooks": "Hooks",
         "keybinds": "Phím tắt",
+        "launcher": "Trình khởi chạy",
         "location": "Vị trí",
         "niri": "Niri",
         "notifications": "Thông báo",
@@ -1128,8 +1185,11 @@
           "toast": "thông báo nổi"
         },
         "flags-label": "Khi phù hợp",
+        "match-content-label": "Nội dung regex",
+        "match-content-placeholder": "Mẫu regex để khớp với tiêu đề hoặc nội dung…",
         "match-label": "Ứng dụng",
         "match-placeholder": "Tên ứng dụng, mục khởi chạy hoặc danh mục…",
+        "override-duration": "Thời lượng ghi đè",
         "play-sound": "Phát âm thanh",
         "save-history": "Lưu vào lịch sử",
         "show-toast": "Hiển thị thông báo nổi",
@@ -1199,6 +1259,10 @@
       "orientation": {
         "horizontal": "Ngang",
         "vertical": "Dọc"
+      },
+      "panel-bar-alignment": {
+        "centered": "Căn giữa",
+        "near-trigger": "Gần vị trí kích hoạt"
       },
       "panel-position": {
         "auto": "Theo Bar"
@@ -1289,17 +1353,23 @@
       "browse-store": "Tìm kiếm plugin",
       "panels": {
         "open-near-click": {
+          "description": "Mở bảng điều khiển gần widget trên thanh đã kích hoạt nó",
           "label": "Mở tại nơi click"
         },
         "placement": {
+          "description": "Gắn bảng điều khiển vào thanh hoặc hiển thị nổi gần mép thanh",
           "label": "Vị trí đặt"
         },
         "position": {
+          "description": "Vị trí trên màn hình khi bảng điều khiển ở chế độ nổi",
           "label": "Vị trí"
         }
       },
       "plugins": {
         "configure": "Cấu hình",
+        "delete": "Xóa",
+        "delete-confirm-desc": "Plugin này sẽ được gỡ bỏ và xóa khỏi ổ đĩa.",
+        "delete-confirm-title": "Xóa \"{name}\"?",
         "deprecated": "đã lỗi thời",
         "empty": "Không tìm thấy plugin nào. Hãy thêm nguồn hoặc kiểm tra mạng của bạn.",
         "loading": "Đang tải các plugin...",
@@ -1333,6 +1403,7 @@
         "location-placeholder-path": "~/dev/noctalia-plugins",
         "name-label": "Mã nguồn",
         "name-placeholder": "my-plugins",
+        "precedence-hint": "Nguồn nằm thấp hơn sẽ ghi đè nguồn nằm cao hơn khi cả hai cung cấp cùng một plugin.",
         "remove": "Xóa nguồn",
         "save": "Lưu",
         "title": "Các nguồn",
@@ -1341,6 +1412,7 @@
       },
       "store": {
         "add": "Thêm vào Noctalia",
+        "categories": "Danh mục",
         "category-all": "Tất cả",
         "empty": "Không tìm thấy plugin",
         "incompatible": "Không phù hợp",
@@ -1352,6 +1424,12 @@
       }
     },
     "schema": {
+      "accessibility": {
+        "high-contrast": {
+          "description": "Tăng độ tương phản bằng cách điều chỉnh màu bề mặt và màu nền về các mức cực đại hoặc cực tiểu",
+          "label": "Độ tương phản cao"
+        }
+      },
       "appearance": {
         "animation-speed": {
           "description": "Hệ số nhân tốc độ cho tất cả các hoạt ảnh",
@@ -1372,6 +1450,10 @@
         "builtin-palette": {
           "description": "Chọn một bảng màu từ danh mục có sẵn",
           "label": "Bảng màu tích hợp sẵn"
+        },
+        "button-borders": {
+          "description": "Hiển thị đường viền quanh các nút trong toàn bộ giao diện",
+          "label": "Đường viền nút"
         },
         "community-palette": {
           "description": "Chọn một bảng màu từ danh mục cộng đồng",
@@ -1409,6 +1491,10 @@
         "palette-source": {
           "description": "Lấy bảng màu từ đâu",
           "label": "Nguồn bảng màu"
+        },
+        "pure-black-dark": {
+          "description": "Đặt các bề mặt tối thành màu đen thuần để giảm hiện tượng dải màu trên màn hình OLED (chỉ áp dụng ở chế độ tối)",
+          "label": "Đen thuần"
         },
         "theme-mode": {
           "description": "Chọn tối, sáng hoặc tự động theo thời gian trong ngày",
@@ -1483,6 +1569,9 @@
           "description": "Widgets ở giữa Bar",
           "label": "Căn giữa các tiện ích"
         },
+        "concave-edge-corners": {
+          "description": "Tạo các góc lõm ở hai góc của thanh (yêu cầu Lề cạnh bằng 0); nếu Lề hai đầu bằng 0, các góc ở mép trong của thanh sẽ được tạo lõm, ngược lại các góc tiếp giáp với mép màn hình sẽ được tạo lõm"
+        },
         "contact-shadow": {
           "description": "Chuyển màu tối giữa một bảng điều khiển gắn liền và thanh để gợi ý chiều sâu tại đường nối"
         },
@@ -1510,22 +1599,27 @@
           "description": "Bán kính góc trên bên phải cho Bar"
         },
         "dead-zone-command": {
+          "description": "ệnh shell được thực thi khi nhấp chuột trái vào khoảng trống trên thanh bên ngoài các khu vực widget",
           "label": "Lệnh nhấp chuột trái"
         },
         "dead-zone-middle-command": {
+          "description": "Lệnh shell được thực thi khi nhấp chuột giữa vào hoảng trống trên thanh bên ngoài các khu vực widget",
           "label": "Lệnh nhấp chuột giữa"
         },
         "dead-zone-right-command": {
+          "description": "Lệnh shell được thực thi khi nhấp chuột phải; để trống để mở Trung tâm điều khiển.",
           "label": "Lệnh nhấp chuột phải"
         },
         "dead-zone-scroll-down-command": {
+          "description": "Lệnh shell được thực thi khi lăn chuột xuống",
           "label": "Kéo xuống"
         },
         "dead-zone-scroll-up-command": {
+          "description": "Lệnh shell được thực thi khi lăn chuột lên",
           "label": "Kéo lên"
         },
         "edge-margin": {
-          "description": "Khoảng cách từ cạnh màn hình gần nhất; giá trị dương sẽ di chuyển thanh Bar ra xa khỏi cạnh đó"
+          "description": "Khoảng cách giữa thanh và mép màn hình mà nó nằm trên. Đặt 0 px để thanh nằm sát mép màn hình."
         },
         "enabled": {
           "description": "Hiện hoặc ẩn thanh này"
@@ -1535,7 +1629,7 @@
           "label": "Các tiện ích cuối"
         },
         "ends-margin": {
-          "description": "Đệm từ hai đầu thanh dọc theo trục chính"
+          "description": "Rút ngắn thanh từ cả hai đầu theo chiều dài của nó. Đặt thành 0 px để thanh có chiều rộng hoặc chiều cao đầy đủ."
         },
         "font-family": {
           "description": "Phông chữ dùng cho các widget trên thanh này. Để trống để sử dụng phông chữ toàn cục. Thiết lập Họ phông chữ riêng của widget sẽ ưu tiên hơn tùy chọn này.",
@@ -1549,6 +1643,9 @@
           "description": "Sử dụng Overlay để hiển thị thanh trên các ứng dụng toàn màn hình. Các bảng điều khiển gắn liền di chuyển theo thanh.",
           "label": "Lớp Wayland"
         },
+        "opposite-edge-margin": {
+          "description": "Phần không gian bổ sung được dành ở phía trong của thanh, cách xa mép màn hình; sử dụng khi các cửa sổ phóng to bỏ qua vùng strut"
+        },
         "panel-overlap": {
           "description": "Số pixel mà một panel đính kèm chồng lên cạnh Bar để ẩn đường nối (điều chỉnh nếu bạn thấy một đường hoặc khoảng trống)",
           "label": "Chồng lấn bảng"
@@ -1561,6 +1658,10 @@
         },
         "shadow": {
           "description": "Đổ bóng bề mặt toàn cục từ thanh Bar"
+        },
+        "show-on-workspace-switch": {
+          "description": "Tạm hiện thanh khi active workspace thay đổi",
+          "label": "Hiển thị khi chuyển workspace"
         },
         "start-widgets": {
           "description": "Widgets ở phía đầu (trái/trên) của thanh",
@@ -1589,30 +1690,39 @@
       },
       "desktop": {
         "hot-corners-bottom-left": {
+          "description": "Hành động khi con trỏ chạm vào góc dưới bên trái",
           "label": "Góc dưới bên trái"
         },
         "hot-corners-bottom-left-command": {
+          "description": "Lệnh shell được thực thi khi chạm vào góc dưới bên trái",
           "label": "Lệnh"
         },
         "hot-corners-bottom-right": {
+          "description": "Hành động khi con trỏ chạm vào góc dưới bên phải",
           "label": "Góc dưới bên phải"
         },
         "hot-corners-bottom-right-command": {
+          "description": "Lệnh shell được thực thi khi chạm vào góc dưới bên phải",
           "label": "Lệnh"
         },
         "hot-corners-enabled": {
+          "description": "Kích hoạt hành động bằng cách đưa con trỏ chuột vào các góc màn hình",
           "label": "Hot corners"
         },
         "hot-corners-top-left": {
+          "description": "Hành động khi con trỏ chạm vào góc trên bên trái",
           "label": "Góc trên bên trái"
         },
         "hot-corners-top-left-command": {
+          "description": "Lệnh shell được thực thi khi chạm vào góc trên bên trái",
           "label": "Lệnh"
         },
         "hot-corners-top-right": {
+          "description": "Hành động khi con trỏ chạm vào góc trên bên phải",
           "label": "Góc trên bên phải"
         },
         "hot-corners-top-right-command": {
+          "description": "Lệnh shell được thực thi khi chạm vào góc trên bên phải",
           "label": "Lệnh"
         },
         "screen-corners-enabled": {
@@ -1694,6 +1804,15 @@
         "item-spacing": {
           "description": "Khoảng cách giữa các mục trên Dock",
           "label": "Khoảng cách mục"
+        },
+        "launcher-custom-image": {
+          "description": "Sử dụng hình ảnh cho nút khởi chạy trên dock thay vì biểu tượng",
+          "label": "Ảnh tùy chỉnh của trình khởi chạy",
+          "placeholder": "Đường dẫn tới ảnh"
+        },
+        "launcher-custom-image-colorize": {
+          "description": "Áp dụng màu biểu tượng cho ảnh tùy chỉnh",
+          "label": "Tô màu ảnh tùy chỉnh"
         },
         "launcher-icon": {
           "description": "Biểu tượng Tabler hiển thị trên nút khởi chạy Dock",
@@ -1983,7 +2102,12 @@
           "description": "Khi mở một tab cụ thể (âm lượng, phương tiện, v.v.)",
           "label": "Thanh bên khi mở thẻ"
         },
+        "control-center-tabs": {
+          "description": "Chọn các thẻ để hiển thị trong Trung tâm điều khiển; những thẻ không được chọn sẽ bị ẩn.",
+          "label": "Các thẻ của Trung tâm điều khiển"
+        },
         "control-center-width": {
+          "description": "Chiều rộng của bảng Trung tâm điều khiển tính bằng pixel (chế độ thu gọn và không có thanh bên sẽ được thu nhỏ dựa trên giá trị này)",
           "label": "Độ rộng trung tâm điều khiển"
         },
         "floating-offset": {
@@ -1995,6 +2119,7 @@
           "label": "Lối tắt Trang chủ"
         },
         "launcher-app-grid": {
+          "description": "Hiển thị lưới biểu tượng ứng dụng với nhãn bên dưới khi kết quả chỉ bao gồm ứng dụng",
           "label": "Hiển thị ứng dụng dạng lưới"
         },
         "launcher-categories": {
@@ -2055,6 +2180,7 @@
           "label": "Vị trí"
         },
         "placement-polkit": {
+          "description": "Chọn việc hộp thoại polkit sẽ gắn vào thanh hay hiển thị nổi tại vị trí màn hình đã chọn",
           "label": "Vị trí"
         },
         "placement-session": {
@@ -2066,21 +2192,27 @@
           "label": "Vị trí"
         },
         "position-clipboard": {
+          "description": "Vị trí nổi của bảng nhớ tạm trên màn hình — Chế độ Theo thanh sẽ đặt nó gần thanh",
           "label": "Vị trí"
         },
         "position-control-center": {
+          "description": "Vị trí nổi của Trung tâm điều khiển trên màn hình — Chế độ Theo thanh sẽ đặt nó gần thanh",
           "label": "Vị trí"
         },
         "position-launcher": {
+          "description": "Vị trí nổi của trình khởi chạy trên màn hình — Chế độ Theo thanh sẽ đặt nó gần thanh",
           "label": "Vị trí"
         },
         "position-polkit": {
+          "description": "Vị trí nổi của hộp thoại polkit trên màn hình — Chế độ Theo thanh sẽ đặt nó gần thanh",
           "label": "Vị trí"
         },
         "position-session": {
+          "description": "Vị trí nổi của session menu trên màn hình — Tùy chọn Theo thanh sẽ giữ nó gần thanh",
           "label": "Vị trí"
         },
         "position-wallpaper": {
+          "description": "Vị trí nổi của trình chọn hình nền trên màn hình — Tùy chọn Theo thanh sẽ giữ nó gần thanh",
           "label": "Vị trí"
         },
         "shadow": {
@@ -2186,6 +2318,10 @@
         "sunset": {
           "description": "Thời gian hoàng hôn thủ công theo định dạng HH:MM, được sử dụng khi chưa đặt vị trí",
           "label": "Hoàng hôn"
+        },
+        "sync-monitor-brightness": {
+          "description": "Đồng bộ độ sáng của tất cả màn hình",
+          "label": "Đồng bộ độ sáng màn hình"
         },
         "system-monitor": {
           "cpu-poll": {
@@ -2339,9 +2475,21 @@
           "description": "Định dạng ngày mặc định cho giao diện người dùng shell khi không có cài đặt riêng",
           "label": "Định dạng ngày"
         },
+        "greeter-sync-auto": {
+          "description": "Tự động đồng bộ màn hình chào mỗi khi hình nền, màu sắc hoặc chế độ giao diện thay đổi",
+          "label": "Tự động đồng bộ màn hình chào"
+        },
+        "greeter-sync-privilege-command": {
+          "description": "Thay thế pkexec/run0 cho tính năng Đồng bộ ngay của màn hình chào. Đường dẫn trình hỗ trợ áp dụng và thư mục tạm sẽ được tự động thêm vào. Ví dụ: ghostty -e pkexec",
+          "label": "Lệnh cấp quyền cho đồng bộ màn hình chào"
+        },
         "launch-apps-as-systemd-services": {
           "description": "Khởi chạy ứng dụng trong các dịch vụ systemd riêng biệt để chúng không chia sẻ cgroup của Noctalia",
           "label": "Khởi chạy ứng dụng dưới dạng dịch vụ systemd"
+        },
+        "launch-apps-custom-command": {
+          "description": "Lệnh tùy chỉnh được dùng bởi trình khởi chạy ứng dụng, biến $CMD sẽ được thay thế bằng lệnh gốc.",
+          "label": "Lệnh trình khởi chạy tùy chỉnh"
         },
         "middle-click-opens-widget-settings": {
           "description": "Mở cài đặt của một Widget trên Thanh bằng cách nhấp chuột giữa",
@@ -2453,6 +2601,9 @@
         },
         "privacy-mic-filter-regex": {
           "label": "Bộ lọc micrô"
+        },
+        "privacy-screen-filter-regex": {
+          "label": "Bộ lọc chia sẻ màn hình"
         },
         "screen-time-enabled": {
           "description": "Theo dõi mức sử dụng của từng ứng dụng và hiển thị trong Trung tâm điều khiển",
@@ -2796,7 +2947,7 @@
         },
         "detached-panel": {
           "description": "Mở bảng điều khiển dưới dạng bảng nổi với nền riêng thay vì hòa vào thanh.",
-          "label": "Bảng điều khiển nổi"
+          "label": "Bảng điều khiển tách rời"
         },
         "device": {
           "description": "Thiết bị để giám sát hoặc điều khiển",

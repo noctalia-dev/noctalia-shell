@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "config/config_types.h"
+#include "core/files/resource_paths.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "i18n/i18n.h"
 #include "render/scene/node.h"
@@ -78,8 +79,8 @@ namespace settings {
       return ui::label({
           .text = std::string(text),
           .fontSize = fontSize,
-          .color = color,
           .fontWeight = fontWeight,
+          .color = color,
       });
     }
 
@@ -104,20 +105,6 @@ namespace settings {
           makeLabel(title, Style::fontSizeCaption * scale, colorSpecFromRole(ColorRole::Secondary), FontWeight::Bold)
       );
       return header;
-    }
-
-    std::string_view widgetSettingGroupKey(const WidgetSettingSpec& spec) {
-      switch (spec.group) {
-      case WidgetSettingGroup::Runtime:
-        return "runtime";
-      case WidgetSettingGroup::Presentation:
-        return "presentation";
-      case WidgetSettingGroup::Grouping:
-        return "grouping";
-      case WidgetSettingGroup::Widget:
-        return "widget";
-      }
-      return "widget";
     }
 
     std::string widgetSettingGroupTitle(std::string_view groupKey) {
@@ -174,7 +161,7 @@ namespace settings {
           ui::button({
               .glyph = std::move(glyph),
               .glyphSize = Style::fontSizeBody * ctx.scale,
-              .variant = ButtonVariant::Outline,
+              .variant = ButtonVariant::Default,
               .minWidth = Style::controlHeight * ctx.scale,
               .minHeight = Style::controlHeight * ctx.scale,
               .paddingV = Style::spaceXs * ctx.scale,
@@ -452,6 +439,63 @@ namespace settings {
       return isNamedWidgetInstance(ctx.config, widgetName)
           && ctx.configService != nullptr
           && ctx.configService->hasOverride({"widget", std::string(widgetName)});
+    }
+
+    bool widgetHasPlacementAfterLaneEdit(
+        const Config& cfg, const std::vector<std::string>& editedLanePath,
+        const std::vector<std::string>& editedLaneItems, std::string_view widgetName
+    ) {
+      const auto editedItems = [&](const std::vector<std::string>& path,
+                                   const std::vector<std::string>& items) -> const std::vector<std::string>& {
+        return path == editedLanePath ? editedLaneItems : items;
+      };
+      const auto scopeContains = [&](const std::vector<std::string>& start, const std::vector<std::string>& center,
+                                     const std::vector<std::string>& end,
+                                     const std::vector<BarCapsuleGroupStyle>& groups) {
+        if (std::ranges::contains(start, widgetName)
+            || std::ranges::contains(center, widgetName)
+            || std::ranges::contains(end, widgetName)) {
+          return true;
+        }
+        for (const auto& group : groups) {
+          if (!std::ranges::contains(group.members, widgetName)) {
+            continue;
+          }
+          const std::string token = makeCapsuleGroupToken(group.id);
+          if (std::ranges::contains(start, token)
+              || std::ranges::contains(center, token)
+              || std::ranges::contains(end, token)) {
+            return true;
+          }
+        }
+        return false;
+      };
+
+      for (const auto& bar : cfg.bars) {
+        const std::vector<std::string>& baseStart = editedItems({"bar", bar.name, "start"}, bar.startWidgets);
+        const std::vector<std::string>& baseCenter = editedItems({"bar", bar.name, "center"}, bar.centerWidgets);
+        const std::vector<std::string>& baseEnd = editedItems({"bar", bar.name, "end"}, bar.endWidgets);
+        if (scopeContains(baseStart, baseCenter, baseEnd, bar.widgetCapsuleGroups)) {
+          return true;
+        }
+
+        for (const auto& ovr : bar.monitorOverrides) {
+          const std::vector<std::string>& monitorStart = ovr.startWidgets.has_value()
+              ? editedItems({"bar", bar.name, "monitor", ovr.match, "start"}, *ovr.startWidgets)
+              : baseStart;
+          const std::vector<std::string>& monitorCenter = ovr.centerWidgets.has_value()
+              ? editedItems({"bar", bar.name, "monitor", ovr.match, "center"}, *ovr.centerWidgets)
+              : baseCenter;
+          const std::vector<std::string>& monitorEnd = ovr.endWidgets.has_value()
+              ? editedItems({"bar", bar.name, "monitor", ovr.match, "end"}, *ovr.endWidgets)
+              : baseEnd;
+          const auto& groups = ovr.widgetCapsuleGroups.has_value() ? *ovr.widgetCapsuleGroups : bar.widgetCapsuleGroups;
+          if (scopeContains(monitorStart, monitorCenter, monitorEnd, groups)) {
+            return true;
+          }
+        }
+      }
+      return false;
     }
 
     bool isValidWidgetInstanceId(std::string_view id) {
@@ -1115,30 +1159,54 @@ namespace settings {
       );
     }
 
-    [[nodiscard]] bool workspacesMinimalEnabled(
+    [[nodiscard]] bool workspacesCompactStyleEnabled(
         const Config& cfg, std::string_view widgetName, const std::vector<WidgetSettingSpec>& allSpecs
     ) {
-      for (const auto& spec : allSpecs) {
-        if (spec.schema.key == "minimal") {
-          return settingValueAsBool(widgetSettingValue(cfg, widgetName, spec));
-        }
+      const std::string style = settingCurrentString(cfg, widgetName, "style", allSpecs);
+      return style == "minimal" || style == "focus_hint";
+    }
+
+    SelectSetting workspacesStyleSelectSetting(
+        const BarWidgetEditorContext& ctx, std::string_view widgetName, const WidgetSettingSpec& styleSpec,
+        const std::vector<WidgetSettingSpec>& allSpecs, std::string selectedValue
+    ) {
+      std::vector<SelectOption> options;
+      options.reserve(styleSpec.options.size());
+      for (const auto& option : styleSpec.options) {
+        options.push_back(
+            SelectOption{option.value, styleSpec.literalLabels ? option.labelKey : i18n::tr(option.labelKey)}
+        );
       }
-      return false;
+      SelectSetting selectSetting{std::move(options), std::move(selectedValue)};
+      selectSetting.segmented = styleSpec.segmented;
+      const ConfigService* configService = ctx.configService;
+      selectSetting.groupedCommit = [configService, widgetName = std::string(widgetName),
+                                     allSpecs](std::string_view value, const std::vector<std::string>& path) {
+        std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides;
+        overrides.emplace_back(path, ConfigOverrideValue{std::string(value)});
+        if ((value == "minimal" || value == "focus_hint")
+            && configService != nullptr
+            && settingCurrentString(configService->config(), widgetName, "display", allSpecs) == "none") {
+          overrides.emplace_back(widgetSettingPath(widgetName, "display"), ConfigOverrideValue{std::string("id")});
+        }
+        return overrides;
+      };
+      return selectSetting;
     }
 
     SelectSetting workspacesDisplaySelectSetting(
         const BarWidgetEditorContext& ctx, std::string_view widgetName, const WidgetSettingSpec& displaySpec,
         const std::vector<WidgetSettingSpec>& allSpecs, std::string selectedValue
     ) {
-      const bool minimal = workspacesMinimalEnabled(ctx.config, widgetName, allSpecs);
-      if (minimal && selectedValue == "none") {
+      const bool compactStyle = workspacesCompactStyleEnabled(ctx.config, widgetName, allSpecs);
+      if (compactStyle && selectedValue == "none") {
         selectedValue = "id";
       }
 
       std::vector<SelectOption> options;
       options.reserve(displaySpec.options.size());
       for (const auto& option : displaySpec.options) {
-        if (minimal && option.value == "none") {
+        if (compactStyle && option.value == "none") {
           continue;
         }
         options.push_back(
@@ -1167,7 +1235,7 @@ namespace settings {
       }
 
       SelectSetting selectSetting{std::move(options), std::move(selectedValue)};
-      selectSetting.integerValue = spec.integerValue;
+      selectSetting.valueType = spec.integerValue ? SelectValueType::Integer : SelectValueType::String;
       return selectSetting;
     }
 
@@ -1333,12 +1401,14 @@ namespace settings {
       std::size_t visibleSpecs = 0;
       std::string activeGroupKey;
       // Coalesce specs by group so each group header renders once regardless of spec declaration order.
-      const auto specOrder =
-          coalesceByGroupKey(specs.size(), [&](std::size_t i) { return std::string(widgetSettingGroupKey(specs[i])); });
+      const auto specOrder = coalesceByGroupKey(specs.size(), [&](std::size_t i) { return specs[i].group; });
       const bool barHorizontal =
           lanePath.size() >= 2 && lanePath[0] == "bar" ? isBarHorizontal(ctx.config, lanePath[1]) : true;
       for (const std::size_t specIndex : specOrder) {
         const auto& spec = specs[specIndex];
+        if (!spec.visibleInInspector) {
+          continue;
+        }
         if (spec.horizontalBarOnly && !barHorizontal) {
           continue;
         }
@@ -1354,10 +1424,9 @@ namespace settings {
           continue;
         }
 
-        const std::string_view groupKey = widgetSettingGroupKey(spec);
-        if (groupKey != activeGroupKey) {
-          panel->addChild(makeMiniSectionHeader(widgetSettingGroupTitle(groupKey), ctx.scale, visibleSpecs > 0));
-          activeGroupKey = groupKey;
+        if (spec.group != activeGroupKey) {
+          panel->addChild(makeMiniSectionHeader(widgetSettingGroupTitle(spec.group), ctx.scale, visibleSpecs > 0));
+          activeGroupKey = spec.group;
         }
 
         const auto value = widgetSettingValue(ctx.config, widgetName, spec);
@@ -1374,7 +1443,6 @@ namespace settings {
             .control = TextSetting{},
             .advanced = spec.advanced,
             .searchText = {},
-            .visibleWhen = std::nullopt,
         };
 
         const auto makeGlyphTextControl = [&ctx, path](std::string currentValue) -> std::unique_ptr<Node> {
@@ -1388,7 +1456,7 @@ namespace settings {
               ui::button({
                   .glyph = "apps",
                   .glyphSize = Style::fontSizeBody * ctx.scale,
-                  .variant = ButtonVariant::Outline,
+                  .variant = ButtonVariant::Default,
                   .minWidth = Style::controlHeight * ctx.scale,
                   .minHeight = Style::controlHeight * ctx.scale,
                   .paddingV = Style::spaceXs * ctx.scale,
@@ -1423,36 +1491,16 @@ namespace settings {
           if (const auto* defaultBool = std::get_if<bool>(&spec.schema.defaultValue)) {
             clearWhenValue = *defaultBool;
           }
-          if (widgetType == "workspaces" && spec.schema.key == "minimal") {
-            ctx.makeRow(
-                *panel, entry,
-                ui::toggle({
-                    .checked = settingValueAsBool(value),
-                    .scale = ctx.scale,
-                    .onChange = [configService = ctx.configService, setOverride = ctx.setOverride,
-                                 requestRebuild = ctx.requestRebuild, widgetName = std::string(widgetName), path,
-                                 displayPath = widgetSettingPath(std::string(widgetName), "display"),
-                                 specs](bool enabled) {
-                      setOverride(path, enabled);
-                      if (enabled
-                          && configService != nullptr
-                          && settingCurrentString(configService->config(), widgetName, "display", specs) == "none") {
-                        setOverride(displayPath, std::string("id"));
-                      }
-                      if (requestRebuild) {
-                        requestRebuild();
-                      }
-                    },
-                })
-            );
-          } else {
-            ctx.makeRow(*panel, entry, ctx.makeToggle(settingValueAsBool(value), path, clearWhenValue));
-          }
+          ctx.makeRow(*panel, entry, ctx.makeToggle(settingValueAsBool(value), path, clearWhenValue));
           break;
         }
         case WidgetControlKind::Int: {
-          const double minValue = spec.schema.minValue.value_or(0.0);
-          const double maxValue = spec.schema.maxValue.value_or(100.0);
+          // A plugin manifest may declare minValue > maxValue; order the range so
+          // the clamp, stepper, and slider below all get a valid [min, max].
+          const double rawMin = spec.schema.minValue.value_or(0.0);
+          const double rawMax = spec.schema.maxValue.value_or(100.0);
+          const double minValue = std::min(rawMin, rawMax);
+          const double maxValue = std::max(rawMin, rawMax);
           if (spec.stepper) {
             const int minStep = static_cast<int>(std::lround(minValue));
             const int maxStep = static_cast<int>(std::lround(maxValue));
@@ -1519,6 +1567,7 @@ namespace settings {
             options.defaultViewMode = FileDialogViewMode::Grid;
             options.title = i18n::tr("settings.widgets.settings.custom-image.dialog-title");
             options.extensions = {".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp", ".gif"};
+            options.startDirectory = paths::assetPath("images");
             ctx.makeRow(
                 *panel, entry,
                 makePathBrowseControl(
@@ -1604,6 +1653,8 @@ namespace settings {
             );
           } else if (widgetType == "workspaces" && spec.schema.key == "display") {
             selectSetting = workspacesDisplaySelectSetting(ctx, widgetName, spec, specs, selectedValue);
+          } else if (widgetType == "workspaces" && spec.schema.key == "style") {
+            selectSetting = workspacesStyleSelectSetting(ctx, widgetName, spec, specs, selectedValue);
           } else {
             std::vector<SelectOption> options;
             options.reserve(spec.options.size());
@@ -1615,7 +1666,7 @@ namespace settings {
             selectSetting = SelectSetting{std::move(options), selectedValue};
           }
           selectSetting.segmented = spec.segmented;
-          selectSetting.integerValue = spec.integerValue;
+          selectSetting.valueType = spec.integerValue ? SelectValueType::Integer : SelectValueType::String;
           if (const auto* defaultString = std::get_if<std::string>(&spec.schema.defaultValue);
               defaultString != nullptr) {
             selectSetting.clearOnEmpty = defaultString->empty();
@@ -2115,7 +2166,6 @@ namespace settings {
             .path = std::move(fieldPath),
             .control = {},
             .searchText = {},
-            .visibleWhen = std::nullopt,
         };
       };
 
@@ -2180,7 +2230,7 @@ namespace settings {
               .glyph = "stack-pop",
               .fontSize = Style::fontSizeCaption * ctx.scale,
               .glyphSize = Style::fontSizeCaption * ctx.scale,
-              .variant = ButtonVariant::Outline,
+              .variant = ButtonVariant::Default,
               .minHeight = Style::controlHeightSm * ctx.scale,
               .paddingV = Style::spaceXs * ctx.scale,
               .paddingH = Style::spaceSm * ctx.scale,
@@ -2634,6 +2684,9 @@ namespace settings {
         wireDrag(*dragBtn, dragBtnPtr, cardPtr, homeZoneIndex, itemIndex);
         row->addChild(std::move(dragBtn));
       }
+      row->addChild(
+          makeGlyph(widgetBadgeGlyph(info.kind), Style::fontSizeCaption * ctx.scale, widgetBadgeGlyphColor(info.kind))
+      );
       {
         auto titleLabel = makeLabel(
             info.title, Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurface),
@@ -2643,9 +2696,6 @@ namespace settings {
         titleLabel->setFlexGrow(1.0f);
         row->addChild(std::move(titleLabel));
       }
-      row->addChild(
-          makeGlyph(widgetBadgeGlyph(info.kind), Style::fontSizeCaption * ctx.scale, widgetBadgeGlyphColor(info.kind))
-      );
       if (!widgetTypeForReference(ctx.config, name).empty()) {
         row->addChild(
             ui::button({
@@ -2659,6 +2709,32 @@ namespace settings {
                 .onClick = [openWidgetInspector = ctx.openWidgetInspector, laneListPath = entry.path, name]() {
                   if (openWidgetInspector) {
                     openWidgetInspector(laneListPath, name);
+                  }
+                },
+            })
+        );
+      }
+      {
+        bool widgetEnabled = true;
+        if (auto it = ctx.config.widgets.find(name); it != ctx.config.widgets.end()) {
+          widgetEnabled = it->second.getBool("enabled", true);
+        }
+        row->addChild(
+            ui::button({
+                .glyph = widgetEnabled ? "eye" : "eye-off",
+                .glyphSize = Style::fontSizeCaption * ctx.scale,
+                .variant = ButtonVariant::Ghost,
+                .tooltip = widgetEnabled ? i18n::tr("settings.entities.widget.group.hide-widget")
+                                         : i18n::tr("settings.entities.widget.group.show-widget"),
+                .minWidth = iconSize,
+                .minHeight = iconSize,
+                .padding = iconPad,
+                .radius = Style::scaledRadiusSm(ctx.scale),
+                .opacity = widgetEnabled ? 1.0f : 0.38f,
+                .onClick = [setOverride = ctx.setOverride, requestRebuild = ctx.requestRebuild, name, widgetEnabled]() {
+                  setOverride({"widget", name, "enabled"}, !widgetEnabled);
+                  if (requestRebuild) {
+                    requestRebuild();
                   }
                 },
             })
@@ -2863,6 +2939,7 @@ namespace settings {
               .fill = groupFillTint,
               .radius = Style::scaledRadiusSm(ctx.scale),
               .border = groupBorder,
+              .opacity = group->enabled ? 1.0f : 0.45f,
           });
           auto* containerPtr = container.get();
 
@@ -2896,6 +2973,37 @@ namespace settings {
             groupLabel->setFlexGrow(1.0f);
             groupHeader->addChild(std::move(groupLabel));
           }
+          groupHeader->addChild(
+              ui::button({
+                  .glyph = group->enabled ? "eye" : "eye-off",
+                  .glyphSize = Style::fontSizeCaption * ctx.scale,
+                  .variant = ButtonVariant::Ghost,
+                  .tooltip = group->enabled ? i18n::tr("settings.entities.widget.group.hide")
+                                            : i18n::tr("settings.entities.widget.group.show"),
+                  .minWidth = iconSize,
+                  .minHeight = iconSize,
+                  .padding = iconPad,
+                  .radius = Style::scaledRadiusSm(ctx.scale),
+                  .opacity = group->enabled ? 1.0f : 0.38f,
+                  .onClick = [setOverrides = ctx.setOverrides, groups = laneGroups, lanePathCopy = lanePath, gid,
+                              requestRebuild = ctx.requestRebuild]() {
+                    std::vector<BarCapsuleGroupStyle> updated = groups;
+                    for (auto& g : updated) {
+                      if (g.id == gid) {
+                        g.enabled = !g.enabled;
+                        break;
+                      }
+                    }
+                    const std::vector<std::string> groupPath = capsuleGroupPathForLanePath(lanePathCopy);
+                    if (!groupPath.empty()) {
+                      setOverrides({{groupPath, updated}});
+                      if (requestRebuild) {
+                        requestRebuild();
+                      }
+                    }
+                  },
+              })
+          );
           groupHeader->addChild(
               ui::button({
                   .glyph = "settings",
@@ -3049,9 +3157,16 @@ namespace settings {
         const bool isSelected = std::ranges::contains(ctx.selectedLaneWidgets, selectionToken);
         std::function<void()> removeClose;
         if (!inherited) {
-          removeClose = [setOverride = ctx.setOverride, items = laneItems, lanePath, i]() mutable {
-            items.erase(items.begin() + static_cast<std::ptrdiff_t>(i));
+          auto items = laneItems;
+          items.erase(items.begin() + static_cast<std::ptrdiff_t>(i));
+          const bool removeInstance = isGuiManagedNamedWidgetInstance(ctx, entryName)
+              && !widgetHasPlacementAfterLaneEdit(ctx.config, lanePath, items, entryName);
+          removeClose = [setOverride = ctx.setOverride, clearOverride = ctx.clearOverride, items = std::move(items),
+                         lanePath, entryName, removeInstance]() {
             setOverride(lanePath, items);
+            if (removeInstance) {
+              clearOverride({"widget", entryName});
+            }
           };
         }
         std::function<void()> toggleSelect;

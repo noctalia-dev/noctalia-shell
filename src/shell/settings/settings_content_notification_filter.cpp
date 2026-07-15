@@ -1,14 +1,17 @@
 #include "config/config_types.h"
 #include "i18n/i18n.h"
 #include "notification/notification_filter.h"
+#include "notification/notification_manager.h"
 #include "shell/settings/settings_content.h"
 #include "shell/settings/settings_content_common.h"
 #include "ui/builders.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/input.h"
+#include "ui/controls/stepper.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
 #include <functional>
@@ -85,6 +88,32 @@ namespace settings {
     matchInput->setOnFocusLoss(commitMatch);
     matchBlock->addChild(std::move(matchInput));
     body->addChild(std::move(matchBlock));
+
+    auto matchContentBlock = ui::column(
+        {.align = FlexAlign::Stretch, .gap = Style::spaceXs * scale},
+        makeLabel(
+            i18n::tr("settings.notifications.filter.match-content-label"), Style::fontSizeCaption * scale,
+            colorSpecFromRole(ColorRole::OnSurfaceVariant), FontWeight::Normal
+        )
+    );
+    Input* matchContentPtr = nullptr;
+    auto matchContentInput = ui::input({
+        .out = &matchContentPtr,
+        .value = row.matchContent,
+        .placeholder = i18n::tr("settings.notifications.filter.match-content-placeholder"),
+        .fontSize = Style::fontSizeBody * scale,
+        .controlHeight = Style::controlHeight * scale,
+        .horizontalPadding = Style::spaceSm * scale,
+    });
+    const auto commitMatchContent = [&row, persist, matchContentPtr]() {
+      row.matchContent = StringUtils::trim(matchContentPtr->value());
+      matchContentPtr->setValue(row.matchContent);
+      persist();
+    };
+    matchContentInput->setOnSubmit([commitMatchContent](const std::string& /*text*/) { commitMatchContent(); });
+    matchContentInput->setOnFocusLoss(commitMatchContent);
+    matchContentBlock->addChild(std::move(matchContentInput));
+    body->addChild(std::move(matchContentBlock));
 
     auto flagsBlock = ui::column(
         {.align = FlexAlign::Stretch, .gap = Style::spaceSm * scale},
@@ -163,6 +192,56 @@ namespace settings {
           persist();
         }
     );
+
+    auto durationRow = ui::row({
+        .align = FlexAlign::Center,
+        .justify = FlexJustify::SpaceBetween,
+        .gap = Style::spaceSm * scale,
+        .minHeight = Style::controlHeightSm * scale,
+    });
+    durationRow->addChild(makeLabel(
+        i18n::tr("settings.notifications.filter.override-duration"), Style::fontSizeBody * scale,
+        colorSpecFromRole(ColorRole::OnSurface), FontWeight::Normal
+    ));
+
+    auto durationControls = ui::row({.align = FlexAlign::Center, .gap = Style::spaceSm * scale});
+
+    Stepper* overrideStepper = nullptr;
+    durationControls->addChild(
+        ui::stepper(
+            {.out = &overrideStepper,
+             .minValue = 0,
+             .maxValue = 3600000,
+             .step = 1000,
+             .value = row.overrideDuration.value_or(kDefaultNotificationTimeout),
+             .enabled = row.overrideDuration.has_value(),
+             .scale = scale,
+             .valueSuffix = " ms",
+             .onValueCommitted = [&row, persist](int val) {
+               row.overrideDuration = val;
+               persist();
+             }}
+        )
+    );
+
+    durationControls->addChild(
+        ui::toggle({
+            .checked = row.overrideDuration.has_value(),
+            .scale = scale,
+            .onChange = [&row, persist, overrideStepper](bool checked) {
+              if (checked) {
+                row.overrideDuration = overrideStepper->value();
+              } else {
+                row.overrideDuration = std::nullopt;
+              }
+              overrideStepper->setEnabled(checked);
+              persist();
+            },
+        })
+    );
+    durationRow->addChild(std::move(durationControls));
+    flagsBlock->addChild(std::move(durationRow));
+
     body->addChild(std::move(flagsBlock));
 
     parent.addChild(std::move(body));

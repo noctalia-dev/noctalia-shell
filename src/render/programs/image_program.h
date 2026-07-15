@@ -18,6 +18,7 @@ public:
 
   void ensureInitialized();
   void destroy();
+  void abandon() noexcept;
 
   void draw(
       TextureId texture, float surfaceWidth, float surfaceHeight, float width, float height, const Color& tint,

@@ -1,13 +1,13 @@
 #include "i18n/i18n_service.h"
 
+#include "core/files/resource_paths.h"
 #include "core/log.h"
-#include "core/resource_paths.h"
 #include "i18n/language_tag.h"
 
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <utility>
 

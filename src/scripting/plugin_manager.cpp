@@ -5,6 +5,8 @@
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/version.h"
+#include "i18n/i18n.h"
+#include "notification/notifications.h"
 #include "scripting/plugin_catalog.h"
 #include "scripting/plugin_git.h"
 #include "scripting/plugin_id.h"
@@ -507,10 +509,23 @@ namespace scripting {
               "cannot enable '{}': requires noctalia >= {} (running {})", id, requiredNoctalia,
               noctalia::build_info::version()
           );
+          notify::error(
+              "Noctalia", i18n::tr("plugins.enable-failed.title"),
+              i18n::tr("plugins.enable-failed.body-incompatible", "plugin", id, "version", requiredNoctalia)
+          );
         } else if (timedOut) {
           kLog.warn("cannot enable '{}': export timed out", id);
+          notify::error(
+              "Noctalia", i18n::tr("plugins.enable-failed.title"),
+              i18n::tr("plugins.enable-failed.body-timeout", "plugin", id)
+          );
         } else {
-          kLog.warn("cannot enable '{}': {}", id, error.empty() ? "export failed" : error);
+          const std::string reason = error.empty() ? "export failed" : error;
+          kLog.warn("cannot enable '{}': {}", id, reason);
+          notify::error(
+              "Noctalia", i18n::tr("plugins.enable-failed.title"),
+              i18n::tr("plugins.enable-failed.body-error", "plugin", id, "error", reason)
+          );
         }
         if (m_onEnablingChanged) {
           m_onEnablingChanged();
@@ -740,6 +755,9 @@ namespace scripting {
         }
         if (sourceRevisionChanged) {
           kLog.info("updated source '{}' -> {}", sourceName, newRev);
+          if (m_onSourceUpdated) {
+            m_onSourceUpdated(sourceName); // stale store thumbnails/READMEs re-fetch at the new HEAD
+          }
         } else if (materialized) {
           kLog.info("reconciled source '{}' at {}", sourceName, newRev);
         } else {

@@ -104,9 +104,13 @@ void Scrollbar::update(float viewportHeight, float contentHeight, float scrollOf
   m_trackArea->setPosition(0.0f, 0.0f);
   m_trackArea->setFrameSize(Style::scrollbarWidth, trackH);
 
-  const float thumbH = std::clamp(
-      (viewportHeight * viewportHeight) / std::max(viewportHeight, contentHeight), Style::scrollbarMinThumbHeight,
-      trackH
+  // Cap at trackH so a viewport shorter than the min thumb height yields a
+  // track-filling thumb instead of an inverted std::clamp range (hi < lo).
+  const float thumbH = std::min(
+      trackH,
+      std::max(
+          Style::scrollbarMinThumbHeight, (viewportHeight * viewportHeight) / std::max(viewportHeight, contentHeight)
+      )
   );
   m_thumbTravel = std::max(0.0f, trackH - thumbH);
   m_thumb->setFrameSize(Style::scrollbarWidth, thumbH);

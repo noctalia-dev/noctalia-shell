@@ -19,15 +19,64 @@
 #include <cmath>
 
 namespace shell::dock {
+
   namespace {
 
-    Radii dockCornerRadii(const DockConfig& cfg) {
-      return Radii{
-          static_cast<float>(cfg.radiusTopLeft),
-          static_cast<float>(cfg.radiusTopRight),
-          static_cast<float>(cfg.radiusBottomRight),
-          static_cast<float>(cfg.radiusBottomLeft),
-      };
+    [[nodiscard]] bool dockUsesSlideAutoHide(const DockConfig& cfg, const DockInstance& instance) noexcept {
+      if (cfg.smartAutoHide) {
+        return !instance.smartAutoHidePinnedVisible;
+      }
+      return cfg.autoHide;
+    }
+
+    [[nodiscard]] bool dockUsesAnyAutoHide(const DockConfig& cfg) noexcept { return cfg.autoHide || cfg.smartAutoHide; }
+
+    [[nodiscard]] bool workspaceKeyMatchesAssignment(std::string_view assignmentKey, const Workspace& workspace) {
+      if (assignmentKey.empty()) {
+        return false;
+      }
+      if (!workspace.id.empty() && assignmentKey == workspace.id) {
+        return true;
+      }
+      if (!workspace.name.empty() && assignmentKey == workspace.name) {
+        return true;
+      }
+      if (workspace.index > 0 && assignmentKey == std::to_string(workspace.index)) {
+        return true;
+      }
+      return false;
+    }
+
+    [[nodiscard]] bool activeWorkspaceHasWindows(const CompositorPlatform& platform, wl_output* output) {
+      const auto workspaces = platform.workspaces(output);
+      const Workspace* active = nullptr;
+      for (const auto& workspace : workspaces) {
+        if (workspace.active) {
+          active = &workspace;
+          break;
+        }
+      }
+      if (active == nullptr) {
+        return false;
+      }
+
+      const auto assignments = platform.workspaceWindowAssignments(output);
+      for (const auto& assignment : assignments) {
+        if (workspaceKeyMatchesAssignment(assignment.workspaceKey, *active)) {
+          return true;
+        }
+      }
+      if (!assignments.empty()) {
+        return false;
+      }
+      return active->occupied;
+    }
+
+    [[nodiscard]] bool smartAutoHideWantsPinnedVisible(const CompositorPlatform& platform, wl_output* output) {
+      if (platform.hasOverviewState() && platform.isOverviewOpen()) {
+        return true;
+      }
+      return !activeWorkspaceHasWindows(platform, output);
     }
 
   } // namespace
@@ -74,7 +123,7 @@ namespace shell::dock {
     if (instance.slideRoot == nullptr) {
       return;
     }
-    if (cfg.autoHide) {
+    if (dockUsesSlideAutoHide(cfg, instance) || instance.hideOpacity < 0.999f) {
       const float t = 1.0f - instance.hideOpacity;
       instance.slideRoot->setPosition(instance.slideHiddenDx * t, instance.slideHiddenDy * t);
     } else {
@@ -89,22 +138,27 @@ namespace shell::dock {
     // Compositor blur is independent of scene opacity — clear it while auto-hide
     // has faded the dock out so a transparent buffer does not leave a blur halo.
     constexpr float kBlurVisibleOpacity = 0.02f;
-    if (cfg.autoHide && instance.hideOpacity < kBlurVisibleOpacity) {
+    if (dockUsesAnyAutoHide(cfg) && instance.hideOpacity < kBlurVisibleOpacity) {
       instance.surface->clearBlurRegion();
       return;
     }
     if (instance.panel == nullptr) {
       return;
     }
+    const auto concave = dockConcaveShape(cfg);
     float absX = 0.0f;
     float absY = 0.0f;
     Node::absolutePosition(instance.panel, absX, absY);
-    const int px = static_cast<int>(std::lround(absX));
-    const int py = static_cast<int>(std::lround(absY));
-    const int pw = static_cast<int>(std::lround(instance.panel->width()));
-    const int ph = static_cast<int>(std::lround(instance.panel->height()));
-    const Radii radii = dockCornerRadii(cfg);
-    auto blurStrips = Surface::tessellateRoundedRect(px, py, pw, ph, radii.tl, radii.tr, radii.br, radii.bl);
+
+    const float insetL = concave.logicalInset.left;
+    const float insetT = concave.logicalInset.top;
+    const float insetR = concave.logicalInset.right;
+    const float insetB = concave.logicalInset.bottom;
+    const int px = static_cast<int>(std::lround(absX + insetL));
+    const int py = static_cast<int>(std::lround(absY + insetT));
+    const int pw = static_cast<int>(std::lround(instance.panel->width() - insetL - insetR));
+    const int ph = static_cast<int>(std::lround(instance.panel->height() - insetT - insetB));
+    auto blurStrips = Surface::tessellateShape(px, py, pw, ph, concave.corners, concave.logicalInset, concave.radii);
     instance.surface->setBlurRegion(blurStrips);
   }
 
@@ -122,7 +176,7 @@ namespace shell::dock {
 
     const auto& shadowConfig = deps.config.config().shell.shadow;
     const auto panelGeometry = shell::dock::computePanelGeometry(cfg, shadowConfig, w, h);
-    const Radii radii = dockCornerRadii(cfg);
+    const auto concave = shell::dock::dockConcaveShape(cfg);
 
     if (instance.sceneRoot == nullptr) {
       instance.sceneRoot = std::make_unique<Node>();
@@ -142,8 +196,10 @@ namespace shell::dock {
       // Panel background (icons render as a sibling so magnification can extend past the capsule).
       instance.panel = static_cast<Box*>(instance.slideRoot->addChild(
           ui::box({
-              .configure = [radii](Box& box) {
-                box.setRadii(radii);
+              .configure = [concave](Box& box) {
+                box.setCornerShapes(concave.corners);
+                box.setLogicalInset(concave.logicalInset);
+                box.setRadii(concave.radii);
                 box.setClipChildren(false);
               },
           })
@@ -169,10 +225,12 @@ namespace shell::dock {
         callbacks.rebuildItems(instance);
       }
 
-      if (cfg.autoHide) {
-        // Start off-screen (slide); opacity stays at 1 so the compositor blur matches the panel.
+      if (dockUsesAnyAutoHide(cfg)) {
+        instance.smartAutoHidePinnedVisible =
+            cfg.smartAutoHide && smartAutoHideWantsPinnedVisible(deps.platform, instance.output);
         instance.slideRoot->setOpacity(1.0f);
-        instance.hideOpacity = 0.0f;
+        const bool startHidden = cfg.smartAutoHide ? !instance.smartAutoHidePinnedVisible : cfg.autoHide;
+        instance.hideOpacity = startHidden ? 0.0f : 1.0f;
       } else {
         instance.slideRoot->setOpacity(0.0f);
         instance.hideOpacity = 1.0f;
@@ -183,6 +241,11 @@ namespace shell::dock {
       }
 
       instance.surface->setSceneRoot(instance.sceneRoot.get());
+    } else {
+      // Update corner shapes/radii/inset on reconfigure.
+      instance.panel->setCornerShapes(concave.corners);
+      instance.panel->setLogicalInset(concave.logicalInset);
+      instance.panel->setRadii(concave.radii);
     }
 
     // Update root size on reconfigure.
@@ -191,24 +254,38 @@ namespace shell::dock {
       instance.slideRoot->setSize(w, h);
     }
 
-    // Shadow
+    // Shadow follows the same shape as the background
     if (instance.shadow != nullptr) {
       const auto shadowOff = shadowDirectionOffset(shadowConfig.direction);
       const auto shadowOffsetX = static_cast<float>(shadowOff.x);
       const auto shadowOffsetY = static_cast<float>(shadowOff.y);
       const RoundedRectStyle shadowStyle = shell::surface_shadow::style(
-          shadowConfig, cfg.backgroundOpacity, shell::surface_shadow::Shape{.radius = radii}
+          shadowConfig, cfg.backgroundOpacity,
+          shell::surface_shadow::Shape{
+              .corners = concave.corners, .logicalInset = concave.logicalInset, .radius = concave.radii
+          }
       );
       instance.shadow->setStyle(shadowStyle);
       instance.shadow->setZIndex(-1);
-      instance.shadow->setPosition(panelGeometry.panelX + shadowOffsetX, panelGeometry.panelY + shadowOffsetY);
-      instance.shadow->setSize(panelGeometry.panelW, panelGeometry.panelH);
+      instance.shadow->setPosition(
+          panelGeometry.panelX - concave.logicalInset.left + shadowOffsetX,
+          panelGeometry.panelY - concave.logicalInset.top + shadowOffsetY
+      );
+      instance.shadow->setSize(
+          panelGeometry.panelW + concave.logicalInset.left + concave.logicalInset.right,
+          panelGeometry.panelH + concave.logicalInset.top + concave.logicalInset.bottom
+      );
     }
 
     // Panel
     applyPanelPalette(instance, cfg);
-    instance.panel->setPosition(panelGeometry.panelX, panelGeometry.panelY);
-    instance.panel->setSize(panelGeometry.panelW, panelGeometry.panelH);
+    instance.panel->setPosition(
+        panelGeometry.panelX - concave.logicalInset.left, panelGeometry.panelY - concave.logicalInset.top
+    );
+    instance.panel->setSize(
+        panelGeometry.panelW + concave.logicalInset.left + concave.logicalInset.right,
+        panelGeometry.panelH + concave.logicalInset.top + concave.logicalInset.bottom
+    );
 
     // Row matches the pill; hover spread is clamped to stay inside the background.
     instance.row->setPosition(panelGeometry.panelX, panelGeometry.panelY);
@@ -216,7 +293,7 @@ namespace shell::dock {
     instance.row->layout(deps.renderContext);
     shell::dock::syncDockItemRestPositions(instance, cfg);
 
-    if (cfg.autoHide) {
+    if (dockUsesAnyAutoHide(cfg)) {
       const auto hiddenDelta = shell::dock::computeHiddenSlideDelta(cfg, shadowConfig, w, h, panelGeometry);
       instance.slideHiddenDx = hiddenDelta.first;
       instance.slideHiddenDy = hiddenDelta.second;
@@ -227,7 +304,7 @@ namespace shell::dock {
     syncDockSlideLayerTransform(instance, cfg);
 
     // Input region: trigger strip when hidden (autoHide), full panel otherwise.
-    const bool hiddenInputRegion = cfg.autoHide && instance.hideOpacity < 0.5f;
+    const bool hiddenInputRegion = dockUsesSlideAutoHide(cfg, instance) && instance.hideOpacity < 0.5f;
     auto inputPanelGeometry = panelGeometry;
     if (!hiddenInputRegion && instance.slideRoot != nullptr) {
       inputPanelGeometry.panelX += instance.slideRoot->x();
@@ -274,6 +351,47 @@ namespace shell::dock {
         || instance.surface->height() != surfaceGeometry.surfaceH) {
       instance.surface->requestSize(surfaceGeometry.surfaceW, surfaceGeometry.surfaceH);
     }
+  }
+
+  void revealAutoHideDock(DockInstance& inst, ConfigService& config) {
+    const auto& cfg = config.config().dock;
+    if (!dockUsesAnyAutoHide(cfg) || inst.surface == nullptr || inst.slideRoot == nullptr) {
+      return;
+    }
+
+    if (inst.hideAnimId != 0) {
+      inst.animations.cancel(inst.hideAnimId);
+      inst.hideAnimId = 0;
+    }
+
+    constexpr float kSettledThreshold = 0.999f;
+    const float current = inst.hideOpacity;
+    if (current >= kSettledThreshold) {
+      const int sw = static_cast<int>(inst.surface->width());
+      const int sh = static_cast<int>(inst.surface->height());
+      if (sw > 0 && sh > 0) {
+        inst.surface->setInputRegion({InputRect{0, 0, sw, sh}});
+      }
+      inst.surface->requestRedraw();
+      return;
+    }
+
+    inst.hideAnimId = inst.animations.animate(
+        current, 1.0f, Style::animNormal, Easing::EaseOutCubic,
+        [&inst, &config](float v) {
+          inst.hideOpacity = v;
+          const auto& dockCfg = config.config().dock;
+          syncDockSlideLayerTransform(inst, dockCfg);
+          applyDockCompositorBlur(inst, dockCfg);
+        },
+        [&inst]() { inst.hideAnimId = 0; }
+    );
+    const int sw = static_cast<int>(inst.surface->width());
+    const int sh = static_cast<int>(inst.surface->height());
+    if (sw > 0 && sh > 0) {
+      inst.surface->setInputRegion({InputRect{0, 0, sw, sh}});
+    }
+    inst.surface->requestRedraw();
   }
 
   void startHideFadeOut(DockInstance& inst, ConfigService& config) {

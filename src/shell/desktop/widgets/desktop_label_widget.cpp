@@ -33,9 +33,9 @@ void DesktopLabelWidget::create() {
       .out = &m_titleLabel,
       .text = m_title,
       .fontSize = titleFontSize(contentScale()),
+      .fontWeight = FontWeight::Bold,
       .color = m_color,
       .maxLines = 3,
-      .fontWeight = FontWeight::Bold,
       .textAlign = TextAlign::Start,
   });
   rootNode->addChild(std::move(titleLabel));

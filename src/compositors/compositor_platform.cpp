@@ -24,7 +24,8 @@
 #include "compositors/triad/triad_workspace_backend.h"
 #include "compositors/workspace_alert_service.h"
 #include "core/log.h"
-#include "core/process.h"
+#include "core/process/process.h"
+#include "wayland/output_probe.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_workspaces.h"
 
@@ -33,7 +34,7 @@
 #include <csignal>
 #include <cstdlib>
 #include <functional>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
 #include <sys/types.h>
@@ -627,6 +628,8 @@ wl_output* CompositorPlatform::outputForSurface(wl_surface* surface) const noexc
 
 FocusGrabService* CompositorPlatform::focusGrabService() const noexcept { return m_wayland.focusGrabService(); }
 
+bool CompositorPlatform::hasPointerPosition() const noexcept { return m_wayland.hasPointerPosition(); }
+
 wl_surface* CompositorPlatform::lastPointerSurface() const noexcept { return m_wayland.lastPointerSurface(); }
 
 wl_surface* CompositorPlatform::lastKeyboardSurface() const noexcept { return m_wayland.lastKeyboardSurface(); }
@@ -647,7 +650,7 @@ void CompositorPlatform::setCursorShape(std::uint32_t serial, std::uint32_t shap
   m_wayland.setCursorShape(serial, shape);
 }
 
-wl_output* CompositorPlatform::preferredInteractiveOutput(std::chrono::milliseconds pointerMaxAge) const {
+wl_output* CompositorPlatform::focusedInteractiveOutput(std::chrono::milliseconds pointerMaxAge) const {
   const auto outputReady = [this](wl_output* output) {
     const auto* info = m_wayland.findOutputByWl(output);
     return info != nullptr && info->done && info->output != nullptr && info->hasUsableGeometry();
@@ -711,11 +714,28 @@ wl_output* CompositorPlatform::preferredInteractiveOutput(std::chrono::milliseco
     }
   }
 
+  return nullptr;
+}
+
+wl_output* CompositorPlatform::preferredInteractiveOutput(std::chrono::milliseconds pointerMaxAge) const {
+  if (wl_output* focused = focusedInteractiveOutput(pointerMaxAge); focused != nullptr) {
+    return focused;
+  }
+
   const auto& outputs = m_wayland.outputs();
   const auto it = std::ranges::find_if(outputs, [](const WaylandOutput& output) {
     return output.done && output.output != nullptr && output.hasUsableGeometry();
   });
   return it != outputs.end() ? it->output : nullptr;
+}
+
+void CompositorPlatform::probeFocusedOutput(
+    std::function<void(wl_output*)> callback, std::chrono::milliseconds timeout
+) {
+  // Replace any in-flight probe; only the latest request matters. A finished
+  // probe goes inert (surface torn down, timer stopped) and lingers here until
+  // the next probe or destruction replaces it.
+  m_outputProbe = std::make_unique<OutputProbe>(m_wayland, timeout, std::move(callback));
 }
 
 std::optional<ActiveToplevel> CompositorPlatform::activeToplevel() const {

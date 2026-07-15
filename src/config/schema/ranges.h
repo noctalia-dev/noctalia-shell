@@ -24,11 +24,15 @@ namespace noctalia::config::schema {
       noctalia::config::kClipboardHistoryMaxEntries,
       noctalia::config::kClipboardHistoryStepEntries,
   };
+  inline constexpr Range<std::int64_t> kSessionGridColumnsRange{1, 5, 1};
 
   // Battery / wallpaper.
   inline constexpr Range<std::int64_t> kBatteryWarningThresholdRange{0, 100, 1};
   inline constexpr Range<float> kWallpaperTransitionDurationRange{100.0f, 30000.0f, 100.0f};
   inline constexpr Range<std::int64_t> kWallpaperAutomationIntervalRange{1, 86400, 1};
+  inline constexpr Range<std::int64_t> kLivePaperIntervalRange{0, 86400, 1}; // preset rotation; 0 = no rotation
+  inline constexpr Range<std::int64_t> kLivePaperFpsRange{1, 240, 1};
+  inline constexpr Range<std::int64_t> kLivePaperMeshRange{4, 256, 1};
 
   // Dock.
   inline constexpr Range<std::int64_t> kDockIconSizeRange{16, 128, 1};

@@ -3,7 +3,7 @@
 #include "compositors/compositor_platform.h"
 #include "config/config_types.h"
 #include "core/log.h"
-#include "core/process.h"
+#include "core/process/process.h"
 #include "dbus/system_bus.h"
 #include "ipc/ipc_arg_parse.h"
 #include "ipc/ipc_service.h"
@@ -187,6 +187,34 @@ namespace {
     }
 
     return BrightnessBackendPreference::Auto;
+  }
+
+  // Returns the explicit backlight device name/path configured for this output, if any.
+  std::optional<std::string> backlightDeviceForOutput(const BrightnessConfig& config, const WaylandOutput* output) {
+    if (output == nullptr) {
+      return std::nullopt;
+    }
+
+    for (const auto& override : config.monitorOverrides) {
+      if (override.match.empty() || !outputMatchesSelector(override.match, *output)) {
+        continue;
+      }
+      if (override.backlightDevice.has_value()) {
+        return override.backlightDevice;
+      }
+      break;
+    }
+
+    return std::nullopt;
+  }
+
+  // Returns the sysfs device name from either a bare name ("intel_backlight") or a path.
+  std::string_view extractBacklightDeviceName(std::string_view deviceSpec) {
+    const auto lastSlash = deviceSpec.rfind('/');
+    if (lastSlash != std::string_view::npos) {
+      return deviceSpec.substr(lastSlash + 1);
+    }
+    return deviceSpec;
   }
 
   void applyOutputMetadata(BrightnessDisplay& display, const WaylandOutput& output) {
@@ -841,9 +869,14 @@ struct BrightnessService::Impl {
         continue;
       }
 
-      if (sessionProxy == nullptr) {
-        kLog.debug("skipping backlight '{}' because logind brightness control is unavailable", name);
-        continue;
+      if (const auto explicitDevice = backlightDeviceForOutput(activeConfig, output); explicitDevice.has_value()) {
+        if (extractBacklightDeviceName(*explicitDevice) != name) {
+          kLog.debug(
+              "skipping backlight '{}' for connector {} (explicit device '{}' configured)", name, connectorName,
+              *explicitDevice
+          );
+          continue;
+        }
       }
 
       DisplayInternal display;
@@ -1010,19 +1043,45 @@ struct BrightnessService::Impl {
   }
 
   void setBacklightBrightness(DisplayInternal& display, float value) {
-    if (sessionProxy == nullptr) {
-      return;
-    }
-
     const auto rawValue = static_cast<std::uint32_t>(std::round(value * static_cast<float>(display.maxRaw)));
     const std::string& backlightName = display.backlightName.empty() ? display.pub.id : display.backlightName;
-    try {
-      sessionProxy->callMethod("SetBrightness")
-          .onInterface(kLogindSessionInterface)
-          .withArguments(std::string("backlight"), backlightName, rawValue);
-    } catch (const sdbus::Error& e) {
-      kLog.warn("SetBrightness failed for '{}' via '{}': {}", display.pub.id, backlightName, e.what());
+    if (sessionProxy != nullptr) {
+      try {
+        sessionProxy->callMethod("SetBrightness")
+            .onInterface(kLogindSessionInterface)
+            .withArguments(std::string("backlight"), backlightName, rawValue);
+        display.pub.brightness = value;
+        syncPublicDisplay(display);
+        if (changeCallback) {
+          changeCallback();
+        }
+        return;
+      } catch (const sdbus::Error& e) {
+        kLog.warn("SetBrightness failed for '{}' via '{}': {}", display.pub.id, backlightName, e.what());
+      }
     }
+    writeSysfsBacklight(display, rawValue);
+  }
+
+  bool writeSysfsBacklight(DisplayInternal& display, std::uint32_t rawValue) {
+    const std::string brightnessPath = display.sysfsPath + "/brightness";
+    std::ofstream file(brightnessPath);
+    if (!file.is_open()) {
+      kLog.warn("cannot open sysfs brightness file '{}'", brightnessPath);
+      return false;
+    }
+    file << rawValue;
+    file.close();
+    if (file.fail()) {
+      kLog.warn("failed to write brightness to '{}'", brightnessPath);
+      return false;
+    }
+    display.pub.brightness = static_cast<float>(rawValue) / static_cast<float>(display.maxRaw);
+    syncPublicDisplay(display);
+    if (changeCallback) {
+      changeCallback();
+    }
+    return true;
   }
 
   void setDdcBrightness(DisplayInternal& display, float value) {
@@ -1622,6 +1681,28 @@ void BrightnessService::registerIpc(IpcService& ipc, std::function<void()> onBat
   registerDeltaHandler(
       "brightness-down", -1.0f, "brightness-down [current|*|all|monitor-selector] [step]",
       "Decrease brightness (defaults to current monitor)"
+  );
+
+  ipc.registerHandler(
+      "brightness-list-backlight-devices",
+      [](const std::string& /*args*/) -> std::string {
+        const std::string backlightDir = "/sys/class/backlight";
+        DIR* dir = ::opendir(backlightDir.c_str());
+        if (dir == nullptr) {
+          return "error: no backlight devices available\n";
+        }
+        std::string result;
+        while (auto* entry = ::readdir(dir)) {
+          const std::string name = entry->d_name;
+          if (name == "." || name == "..") {
+            continue;
+          }
+          result += name + "\n";
+        }
+        ::closedir(dir);
+        return result.empty() ? "error: no backlight devices available\n" : result;
+      },
+      "brightness-list-backlight-devices", "List available sysfs backlight device names"
   );
 }
 

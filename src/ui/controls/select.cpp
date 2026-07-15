@@ -1,6 +1,6 @@
 #include "ui/controls/select.h"
 
-#include "core/keybind_matcher.h"
+#include "core/input/keybind_matcher.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "i18n/i18n.h"
 #include "render/animation/animation_manager.h"

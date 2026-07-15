@@ -6,6 +6,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -46,7 +47,8 @@ public:
   bool activateAccessPoint(const AccessPointInfo& ap) override;
   bool activateAccessPoint(const AccessPointInfo& ap, const std::string& psk) override;
 
-  // Activate / deactivate a saved VPN connection profile.
+  // Activate / deactivate a saved VPN connection profile. Deactivate also
+  // aborts a connection that is stuck activating.
   bool activateVpnConnection(const VpnConnectionInfo& vpn) override;
   bool deactivateVpnConnection(const VpnConnectionInfo& vpn) override;
   [[nodiscard]] bool canActivateWiredConnection() const noexcept override;
@@ -55,7 +57,7 @@ public:
   // Enable / disable the Wi-Fi radio.
   void setWirelessEnabled(bool enabled) override;
 
-  // Deactivate the current primary connection.
+  // Disconnect the active physical connection.
   void disconnect() override;
 
   // Delete every saved connection whose 802-11-wireless SSID matches.
@@ -69,6 +71,7 @@ private:
   void refreshAccessPoints(std::function<void()> onComplete);
   void refreshSavedConnections(std::function<void()> onComplete);
   void refreshVpnConnections(std::function<void()> onComplete);
+  void reconcileVpnActiveWatchers(const std::set<std::string>& activePaths);
   void finishSavedConnections(
       std::vector<std::string>& ssids, std::vector<std::string>& wiredConnectionPaths, std::function<void()> onComplete
   );
@@ -80,14 +83,19 @@ private:
   void handlePendingAccessPointActivationState(const std::string& activePath, std::uint32_t state);
   void persistConnectionToDisk(const std::string& connectionPath, const std::string& ssid);
   void deleteUnsavedConnection(const std::string& connectionPath, const std::string& ssid);
-  void rebindActiveConnection();
-  [[nodiscard]] std::string physicalActivatingConnection();
+  // Async rebind pipeline. All proxy destruction happens in async reply
+  // context, never inside a proxy's own signal handler.
+  void requestRebind();
+  void resolvePhysicalPrimary(std::function<void(std::string connectionPath, std::string devicePath)> done);
+  void adoptActiveConnection(const std::string& connectionPath, const std::string& devicePath);
   void rebindActiveDevice(const std::string& devicePath);
   void rebindActiveAccessPoint(const std::string& apPath);
   void ensureWifiDeviceSubscribed(const std::string& devicePath);
+  void
+  collectWifiDevices(std::function<void(std::vector<std::string> devicePaths, std::int64_t lastScanBaseline)> done);
+  void tryActivateWiredConnection(std::shared_ptr<std::vector<std::string>> candidates, std::size_t index);
   void readStateAsync(std::function<void(NetworkState)> onComplete);
   [[nodiscard]] NetworkChangeOrigin consumeWirelessEnabledChangeOrigin(bool enabled);
-  void emitChangedIfNeeded(NetworkState next);
 
   struct PendingAccessPointActivation;
 
@@ -97,6 +105,7 @@ private:
   std::unique_ptr<sdbus::IProxy> m_activeDevice;
   std::unique_ptr<sdbus::IProxy> m_activeAp;
   std::unordered_map<std::string, std::unique_ptr<sdbus::IProxy>> m_wifiDevices;
+  std::unordered_map<std::string, std::unique_ptr<sdbus::IProxy>> m_vpnActiveWatchers;
   std::string m_activeConnectionPath;
   std::string m_activeDevicePath;
   std::string m_activeApPath;
@@ -106,10 +115,17 @@ private:
   std::vector<std::string> m_savedSsids;
   std::vector<std::string> m_savedWiredConnectionPaths;
   std::unordered_map<std::string, std::unique_ptr<PendingAccessPointActivation>> m_pendingApActivations;
+  // Finished activations whose proxy may still be executing its own handler;
+  // freed at the next refresh completion (an async reply context).
+  std::vector<std::unique_ptr<PendingAccessPointActivation>> m_retiredApActivations;
   std::shared_ptr<int> m_lifetimeToken;
   bool m_refreshInFlight = false;
   bool m_refreshQueued = false;
+  bool m_rebindInFlight = false;
+  bool m_rebindQueued = false;
+  bool m_emitOnNextRefresh = false;
   bool m_scanning = false;
+  bool m_anyVpnConnected = false;
   std::int64_t m_scanBaselineLastScan = 0;
   std::optional<bool> m_pendingLocalWirelessEnabled;
   bool m_hasStateSnapshot = false;

@@ -22,6 +22,7 @@ public:
 
   void initialize(wl_display* display, bool createSharedContext = true);
   void cleanup();
+  void recreateRootContext();
 
   [[nodiscard]] EGLDisplay display() const noexcept { return m_display; }
   [[nodiscard]] EGLConfig config() const noexcept { return m_config; }
@@ -56,4 +57,5 @@ private:
   bool m_resetNotificationEnabled = false;
   bool m_videoMemoryPurgeNotificationEnabled = false;
   int m_clientVersion = 0;
+  bool m_sharedContextEnabled = false;
 };

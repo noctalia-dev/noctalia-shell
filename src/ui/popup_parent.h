@@ -27,4 +27,8 @@ struct PopupSurfaceParent {
   zwlr_layer_surface_v1* layerSurface = nullptr;
   xdg_surface* xdgSurface = nullptr;
   wl_output* output = nullptr;
+  // Parent surface. When set alongside a layerSurface whose keyboard
+  // interactivity is None (e.g. a bar), the popup owner flips it to OnDemand
+  // while open so the grabbing popup inherits keyboard focus.
+  wl_surface* wlSurface = nullptr;
 };

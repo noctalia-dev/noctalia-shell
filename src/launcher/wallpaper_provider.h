@@ -9,7 +9,7 @@ class WallpaperProvider : public LauncherProvider {
 public:
   WallpaperProvider(ConfigService* config, WaylandConnection* wayland);
 
-  [[nodiscard]] std::string_view prefix() const override { return "/wall"; }
+  [[nodiscard]] std::string_view defaultPrefix() const override { return "wall"; }
   [[nodiscard]] std::string_view id() const override { return "Wallpaper"; }
   [[nodiscard]] std::string displayName() const override;
   [[nodiscard]] std::string_view defaultGlyphName() const override { return "wallpaper-selector"; }

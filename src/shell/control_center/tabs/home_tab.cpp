@@ -3,7 +3,7 @@
 #include "config/config_service.h"
 #include "core/build_info.h"
 #include "core/deferred_call.h"
-#include "core/keybind_matcher.h"
+#include "core/input/keybind_matcher.h"
 #include "core/log.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "dbus/accounts/accounts_service.h"
@@ -46,6 +46,9 @@ namespace {
   // (tweak either value slightly if needed).
   constexpr float kHomeMainColumnFlexGrow = 1.66f;
   constexpr float kHomeShortcutsFlexGrow = 1.0f;
+  // Left-column card height split (media above, clock/weather below).
+  constexpr float kHomeMediaCardFlexGrow = 1.4f;
+  constexpr float kHomeDateTimeCardFlexGrow = 1.0f;
   constexpr std::size_t kHomeShortcutGridColumns = 2;
   // At or below this count the shortcuts stack in a single narrow column instead of the 2-column grid.
   constexpr std::size_t kHomeStackedShortcutMax = 2;
@@ -326,8 +329,8 @@ std::unique_ptr<Flex> HomeTab::create() {
           ui::label({
               .text = displayName,
               .fontSize = Style::fontSizeTitle * 1.12f * scale,
-              .color = colorSpecFromRole(ColorRole::OnSurface),
               .fontWeight = FontWeight::Bold,
+              .color = colorSpecFromRole(ColorRole::OnSurface),
               .configure =
                   [scale](Label& label) { label.setShadow(Color{0.0f, 0.0f, 0.0f, 0.42f}, 0.0f, 1.0f * scale); },
           }),
@@ -386,7 +389,7 @@ std::unique_ptr<Flex> HomeTab::create() {
       .gap = Style::spaceXs * scale,
       .fillWidth = true,
       .fillHeight = true,
-      .flexGrow = 1.4f,
+      .flexGrow = kHomeMediaCardFlexGrow,
       .configure = [scale, opacity = panelCardOpacity(), borders = panelBordersEnabled()](Flex& card) {
         applyHomeCardStyle(card, scale, opacity, borders);
       },
@@ -459,7 +462,7 @@ std::unique_ptr<Flex> HomeTab::create() {
        .gap = Style::spaceLg * scale,
        .fillWidth = true,
        .fillHeight = true,
-       .flexGrow = 1.0f,
+       .flexGrow = kHomeDateTimeCardFlexGrow,
        .configure =
            [scale, opacity = panelCardOpacity(), borders = panelBordersEnabled()](Flex& card) {
              applyHomeCardStyle(card, scale, opacity, borders);
@@ -472,8 +475,8 @@ std::unique_ptr<Flex> HomeTab::create() {
           .out = &m_timeLabel,
           .text = formatShellTime(m_config),
           .fontSize = Style::fontSizeTitle * 1.7f * scale,
-          .color = colorSpecFromRole(ColorRole::Primary),
           .fontWeight = FontWeight::Bold,
+          .color = colorSpecFromRole(ColorRole::Primary),
       }),
       ui::column(
           {.align = FlexAlign::Start, .justify = FlexJustify::Center, .gap = Style::spaceXs * 0.5f * scale},
@@ -579,8 +582,12 @@ std::unique_ptr<Flex> HomeTab::create() {
         if (data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL || padIdx >= m_shortcutPads.size()) {
           return false;
         }
+        const float steps = data.scrollSteps();
+        if (steps == 0.0f) {
+          return false;
+        }
         // Scroll up moves forward (toward performance); Wayland reports up as a negative delta.
-        m_shortcutPads[padIdx].shortcut->onScroll(data.scrollDelta(1.0f) > 0 ? -1 : 1);
+        m_shortcutPads[padIdx].shortcut->onScroll(steps > 0.0f ? -1 : 1);
         return true;
       });
     }
@@ -633,11 +640,13 @@ void HomeTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight)
     return;
   }
 
-  if (m_dateTimeCard != nullptr) {
-    m_dateTimeCard->setMinHeight(0.0f);
-  }
   if (m_mediaCard != nullptr) {
     m_mediaCard->setMinHeight(0.0f);
+    m_mediaCard->setMaxHeight(0.0f);
+  }
+  if (m_dateTimeCard != nullptr) {
+    m_dateTimeCard->setMinHeight(0.0f);
+    m_dateTimeCard->setMaxHeight(0.0f);
   }
   if (m_userAvatar != nullptr && m_userMain != nullptr) {
     const float userMainHeight = std::max(1.0f, m_userAvatar->height());
@@ -791,12 +800,28 @@ void HomeTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight)
     // Cells aim for square but trimmed slightly so the grid stays compact and the bottom row
     // doesn't tower over the user card area. The width was capped earlier so this stays bounded.
     const float cellSide = cellWidth * kHomeShortcutSquareTrim;
-    const float gridH = static_cast<float>(rows) * cellSide
+    const float measuredRowH = m_bottomRow != nullptr ? m_bottomRow->height() : m_shortcutsGrid->height();
+    const float formulaH = static_cast<float>(rows) * cellSide
         + static_cast<float>(rows > 0 ? rows - 1 : 0) * m_shortcutsGrid->rowGap()
         + m_shortcutsGrid->paddingTop()
         + m_shortcutsGrid->paddingBottom();
+    const float gridH = std::round(std::max(measuredRowH, formulaH));
     if (m_bottomRow != nullptr) {
       m_bottomRow->setMinHeight(gridH);
+    }
+
+    // Integer card heights track the snapped row height so top/bottom borders land on pixels.
+    if (m_mediaCard != nullptr && m_dateTimeCard != nullptr) {
+      const float colGap = Style::spaceSm * contentScale();
+      const float avail = std::max(0.0f, gridH - colGap);
+      const float cardGrowTotal = kHomeMediaCardFlexGrow + kHomeDateTimeCardFlexGrow;
+      const float mediaH = std::round(avail * (kHomeMediaCardFlexGrow / cardGrowTotal));
+      const float dateH = std::max(0.0f, avail - mediaH);
+
+      m_mediaCard->setMinHeight(mediaH);
+      m_mediaCard->setMaxHeight(mediaH);
+      m_dateTimeCard->setMinHeight(dateH);
+      m_dateTimeCard->setMaxHeight(dateH);
     }
   }
 

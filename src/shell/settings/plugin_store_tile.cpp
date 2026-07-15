@@ -9,7 +9,15 @@
 #include "ui/palette.h"
 #include "ui/style.h"
 
+#include <cmath>
+
 namespace settings {
+
+  namespace {
+
+    constexpr float kSourceBadgeMaxWidth = 120.0F;
+
+  } // namespace
 
   PluginStoreTile::PluginStoreTile(float scale) : m_scale(scale) {
     setDirection(FlexDirection::Vertical);
@@ -26,7 +34,7 @@ namespace settings {
             .fit = ImageFit::Cover,
             .radius = Style::scaledRadiusSm(scale),
             .width = -1.0f,
-            .height = 100.0f * scale,
+            .height = 80.0f * scale,
             .visible = false,
         })
     );
@@ -36,7 +44,7 @@ namespace settings {
             {.out = &m_iconContainer,
              .align = FlexAlign::Center,
              .justify = FlexJustify::Center,
-             .height = 100.0f * scale},
+             .height = 80.0f * scale},
             ui::glyph({
                 .out = &m_icon,
                 .glyph = "apps",
@@ -50,9 +58,9 @@ namespace settings {
         ui::label({
             .out = &m_nameLabel,
             .fontSize = Style::fontSizeBody * scale,
+            .fontWeight = FontWeight::Medium,
             .color = colorSpecFromRole(ColorRole::OnSurface),
             .maxLines = 1,
-            .fontWeight = FontWeight::Medium,
             .ellipsize = TextEllipsize::End,
         })
     );
@@ -74,12 +82,16 @@ namespace settings {
              .paddingH = Style::spaceXs * scale,
              .fill = colorSpecFromRole(ColorRole::Primary, 0.15f),
              .radius = Style::scaledRadiusSm(scale),
+             .maxWidth = kSourceBadgeMaxWidth * scale,
              .visible = false},
             ui::label({
                 .out = &m_badgeLabel,
                 .fontSize = Style::fontSizeMini * scale,
-                .color = colorSpecFromRole(ColorRole::Primary),
                 .fontWeight = FontWeight::Bold,
+                .color = colorSpecFromRole(ColorRole::Primary),
+                .maxWidth = (kSourceBadgeMaxWidth - (Style::spaceXs * 2.0F)) * scale,
+                .maxLines = 1,
+                .ellipsize = TextEllipsize::End,
             })
         )
     );
@@ -127,10 +139,13 @@ namespace settings {
     // Thumbnail vs icon fallback.
     const bool hasThumbnail = !thumbnailPath.empty() && renderer != nullptr;
     if (hasThumbnail && thumbnailPath != m_boundThumbnailPath) {
+      // The thumbnail is Cover-fit across the grid cell (~200px logical wide); decode to that
+      // size and mipmap so the full-res webp does not alias when minified into the tile.
+      const int targetSize = static_cast<int>(std::ceil(200.0f * m_scale));
       if (textureCache != nullptr) {
-        m_thumbnail->setSourceFileAsync(*renderer, *textureCache, thumbnailPath);
+        m_thumbnail->setSourceFileAsync(*renderer, *textureCache, thumbnailPath, targetSize, true);
       } else {
-        m_thumbnail->setSourceFile(*renderer, thumbnailPath);
+        m_thumbnail->setSourceFile(*renderer, thumbnailPath, targetSize, true);
       }
       m_boundThumbnailPath = thumbnailPath;
     }
@@ -148,14 +163,21 @@ namespace settings {
     if (source == "official") {
       m_badge->setVisible(true);
       m_badge->setParticipatesInLayout(true);
+      m_badge->setFill(colorSpecFromRole(ColorRole::Primary, 0.15f));
       m_badgeLabel->setText(i18n::tr("settings.badges.official"));
+      m_badgeLabel->setColor(colorSpecFromRole(ColorRole::Primary));
     } else if (source == "community") {
       m_badge->setVisible(true);
       m_badge->setParticipatesInLayout(true);
+      m_badge->setFill(colorSpecFromRole(ColorRole::Secondary, 0.15f));
       m_badgeLabel->setText(i18n::tr("settings.badges.community"));
+      m_badgeLabel->setColor(colorSpecFromRole(ColorRole::Secondary));
     } else {
-      m_badge->setVisible(false);
-      m_badge->setParticipatesInLayout(false);
+      m_badge->setVisible(true);
+      m_badge->setParticipatesInLayout(true);
+      m_badge->setFill(colorSpecFromRole(ColorRole::Tertiary, 0.15f));
+      m_badgeLabel->setText(source);
+      m_badgeLabel->setColor(colorSpecFromRole(ColorRole::Tertiary));
     }
 
     m_descLabel->setText(entry.description);

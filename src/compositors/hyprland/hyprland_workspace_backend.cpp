@@ -211,6 +211,7 @@ void HyprlandWorkspaceBackend::focusWindow(const std::string& windowId) {
   } else {
     (void)m_runtime.request(std::format("dispatch focuswindow {}", target));
   }
+  (void)m_runtime.request(std::format("dispatch alterzorder top,{}", target));
 }
 
 void HyprlandWorkspaceBackend::notifyCleanup() {
@@ -296,6 +297,72 @@ void HyprlandWorkspaceBackend::refreshWorkspaces() {
       workspace.ordinal = m_nextOrdinal++;
     }
     next.push_back(std::move(workspace));
+  }
+
+  std::unordered_set<std::string> seenKeys;
+  for (const auto& ws : next) {
+    if (ws.id >= 0) {
+      seenKeys.insert(std::to_string(ws.id));
+    } else if (!ws.name.empty()) {
+      seenKeys.insert(ws.name);
+    }
+  }
+
+  const auto rulesJson = m_runtime.requestJson("j/workspacerules");
+  if (rulesJson && rulesJson->is_array()) {
+    for (const auto& item : *rulesJson) {
+      if (!item.is_object()) {
+        continue;
+      }
+
+      bool isPersistent = false;
+      if (auto it = item.find("persistent"); it != item.end() && it->is_boolean()) {
+        isPersistent = it->get<bool>();
+      }
+      if (!isPersistent) {
+        continue;
+      }
+
+      std::string workspaceString = item.value("workspaceString", "");
+      if (workspaceString.empty()) {
+        continue;
+      }
+
+      std::string nameStr = workspaceString;
+      if (nameStr.starts_with("name:")) {
+        nameStr = nameStr.substr(5);
+      }
+
+      int id = -1;
+      if (auto parsed = parseInt(nameStr); parsed.has_value()) {
+        id = *parsed;
+      }
+
+      std::string key = (id >= 0) ? std::to_string(id) : nameStr;
+      if (seenKeys.contains(key)) {
+        continue;
+      }
+
+      WorkspaceState workspace;
+      workspace.id = id;
+      workspace.name = (id >= 0) ? "" : nameStr;
+      workspace.monitor = item.value("monitor", "");
+
+      if (workspace.id >= 0) {
+        if (const auto it = ordinalsById.find(workspace.id); it != ordinalsById.end()) {
+          workspace.ordinal = it->second;
+        } else {
+          workspace.ordinal = m_nextOrdinal++;
+        }
+      } else if (const auto it = ordinalsByName.find(workspace.name); it != ordinalsByName.end()) {
+        workspace.ordinal = it->second;
+      } else {
+        workspace.ordinal = m_nextOrdinal++;
+      }
+
+      seenKeys.insert(key);
+      next.push_back(std::move(workspace));
+    }
   }
 
   m_workspaces = std::move(next);

@@ -16,6 +16,7 @@ class Node;
 class PopupSurface;
 class RenderContext;
 class WaylandConnection;
+struct KeyboardEvent;
 struct PointerEvent;
 struct wl_surface;
 
@@ -53,7 +54,12 @@ public:
   void setShadowConfig(const ShellConfig::ShadowConfig& shadow);
 
   bool onPointerEvent(const PointerEvent& event);
+  void onKeyboardEvent(const KeyboardEvent& event);
   [[nodiscard]] wl_surface* wlSurface() const noexcept;
+
+  // Route a keyboard event to the currently-open context menu, if any. A grab
+  // popup is modal, so while one is open it swallows keys (returns true).
+  static bool dispatchKeyboardEvent(const KeyboardEvent& event);
 
 private:
   WaylandConnection& m_wayland;
@@ -64,7 +70,17 @@ private:
   wl_surface* m_wlSurface = nullptr;
   bool m_pointerInside = false;
 
+  void restoreParentKeyboardInteractivity();
+
   std::function<void(const ContextMenuControlEntry&)> m_onActivate;
   std::function<void()> m_onDismissed;
   ShellConfig::ShadowConfig m_shadowConfig;
+
+  // Parent layer surface (e.g. a bar) whose keyboard interactivity is flipped to
+  // OnDemand while the menu is open so the grabbing popup inherits keyboard
+  // focus, then restored to None on close.
+  zwlr_layer_surface_v1* m_keyboardParentLayerSurface = nullptr;
+  wl_surface* m_keyboardParentWlSurface = nullptr;
+
+  static ContextMenuPopup* s_openMenu;
 };

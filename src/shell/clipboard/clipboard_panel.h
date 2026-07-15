@@ -124,6 +124,7 @@ private:
   float m_lastHeight = 0.0f;
   float m_lastPreviewWidth = -1.0f;
   float m_lastPreviewHeight = -1.0f;
+  float m_listRowHeight = 0.0f;
   bool m_pendingScrollToSelected = false;
   bool m_thumbnailRefreshPending = false;
   ThumbnailService::Subscription m_thumbnailPendingSub;

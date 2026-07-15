@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "render/backend/render_backend.h"
 #include "render/core/texture_manager.h"
+#include "render/text/font_registry.h"
 #include "render/text/font_weight_catalog.h"
 
 #include <algorithm>
@@ -346,6 +347,12 @@ void CairoTextRenderer::invalidateGlyphTextures() {
   m_cacheBytes = 0;
 }
 
+void CairoTextRenderer::abandonGlyphTextures() noexcept {
+  m_cache.clear();
+  m_lru.clear();
+  m_cacheBytes = 0;
+}
+
 void CairoTextRenderer::setContentScale(float scale) {
   if (scale <= 0.0f) {
     return;
@@ -373,6 +380,15 @@ void CairoTextRenderer::notifyFontConfigChanged() {
     pango_fc_font_map_config_changed(PANGO_FC_FONT_MAP(m_fontMap));
   }
   clearCaches();
+}
+
+void CairoTextRenderer::maybeSyncFontConfig() {
+  const std::uint64_t generation = text::fontConfigGeneration();
+  if (generation == m_syncedFontGeneration) {
+    return;
+  }
+  m_syncedFontGeneration = generation;
+  notifyFontConfigChanged();
 }
 
 // ── Layout construction ─────────────────────────────────────────────────────
@@ -493,6 +509,7 @@ CairoTextRenderer::TextMetrics CairoTextRenderer::measure(
     std::string_view text, float fontSize, FontWeight fontWeight, float maxWidth, int maxLines, TextAlign align,
     std::string_view fontFamily, TextEllipsize ellipsize, bool useMarkup
 ) {
+  maybeSyncFontConfig();
   if (m_pangoContext == nullptr || text.empty()) {
     return {};
   }
@@ -597,6 +614,7 @@ void CairoTextRenderer::measureCursorStops(
     std::string_view text, float fontSize, const std::vector<std::size_t>& byteOffsets, std::vector<float>& outStops,
     FontWeight fontWeight
 ) {
+  maybeSyncFontConfig();
   outStops.clear();
   outStops.reserve(byteOffsets.size());
 
@@ -620,6 +638,48 @@ void CairoTextRenderer::measureCursorStops(
     PangoRectangle weak{};
     pango_layout_get_cursor_pos(layout, index, &strong, &weak);
     outStops.push_back(static_cast<float>(strong.x) * pscale * invScale);
+  }
+
+  g_object_unref(layout);
+}
+
+void CairoTextRenderer::measureCursorStopsWrapped(
+    std::string_view text, float fontSize, const std::vector<std::size_t>& byteOffsets, float maxWidth,
+    std::vector<TextCursorStop>& outStops, FontWeight fontWeight
+) {
+  maybeSyncFontConfig();
+  outStops.clear();
+  outStops.reserve(byteOffsets.size());
+
+  if (byteOffsets.empty()) {
+    return;
+  }
+  const float fallbackHeight = fontSize > 0.0f ? fontSize : 1.0f;
+  if (m_pangoContext == nullptr || text.empty()) {
+    outStops.resize(byteOffsets.size(), TextCursorStop{0.0f, 0.0f, fallbackHeight});
+    return;
+  }
+
+  // Same layout parameters as the draw path for a wrapping maxLines=0 text
+  // node, so caret geometry matches rendered pixels.
+  PangoLayout* layout = buildLayout(text, fontSize, fontWeight, maxWidth * m_contentScale, 0, TextAlign::Start);
+  const float invScale = 1.0f / m_contentScale;
+  const float pscale = 1.0f / static_cast<float>(PANGO_SCALE);
+  for (const std::size_t offset : byteOffsets) {
+    const std::size_t clampedOffset = std::min(offset, text.size());
+    const int index = clampedOffset > static_cast<std::size_t>(std::numeric_limits<int>::max())
+        ? std::numeric_limits<int>::max()
+        : static_cast<int>(clampedOffset);
+    PangoRectangle strong{};
+    PangoRectangle weak{};
+    pango_layout_get_cursor_pos(layout, index, &strong, &weak);
+    outStops.push_back(
+        TextCursorStop{
+            static_cast<float>(strong.x) * pscale * invScale,
+            static_cast<float>(strong.y) * pscale * invScale,
+            static_cast<float>(strong.height) * pscale * invScale,
+        }
+    );
   }
 
   g_object_unref(layout);
@@ -660,10 +720,13 @@ void CairoTextRenderer::rasterizeLayout(PangoLayout* layout, const Color& color,
   pxWidth = std::max(1, pxWidth);
   pxHeight = std::max(1, pxHeight);
 
-  // Baseline from top of layout, in raster pixels (shifted by any ink overhang above).
+  // Baseline from top of layout, in raster pixels (shifted by any ink overhang
+  // above). Integer division to match the row the line is actually drawn at
+  // (the per-line translate below uses the same floored baseline), so draw()'s
+  // quad placement and the rasterized ink agree even when Pango reports a
+  // fractional baseline (hint metrics off).
   const int baselinePango = pango_layout_get_baseline(layout);
-  entry.baselinePx =
-      static_cast<float>(baselinePango) / static_cast<float>(PANGO_SCALE) + static_cast<float>(extraTopPx);
+  entry.baselinePx = static_cast<float>(baselinePango / PANGO_SCALE + extraTopPx);
 
   if (m_glMaxTextureSize <= 0 && m_backend != nullptr) {
     m_glMaxTextureSize = m_backend->maxTextureSize();
@@ -947,6 +1010,7 @@ void CairoTextRenderer::draw(
     const Color& color, const Mat3& transform, FontWeight fontWeight, float maxWidth, int maxLines, TextAlign align,
     std::string_view fontFamily, TextEllipsize ellipsize, bool useMarkup
 ) {
+  maybeSyncFontConfig();
   if (m_pangoContext == nullptr || m_backend == nullptr || text.empty()) {
     return;
   }

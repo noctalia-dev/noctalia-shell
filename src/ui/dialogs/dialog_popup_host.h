@@ -103,7 +103,7 @@ protected:
   void cancel();
 
   // Effective UI scale (clamped to a safe minimum). Reads
-  // ConfigService::config().shell.uiScale.
+  // ConfigService::config().accessibility.uiScale.
   [[nodiscard]] float uiScale() const;
 
   [[nodiscard]] InputDispatcher& inputDispatcher() noexcept { return m_inputDispatcher; }

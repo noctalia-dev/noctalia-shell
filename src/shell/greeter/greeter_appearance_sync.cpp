@@ -4,7 +4,7 @@
 #include "config/config_service.h"
 #include "config/config_types.h"
 #include "core/log.h"
-#include "core/process.h"
+#include "core/process/process.h"
 #include "dbus/polkit/polkit_session_support.h"
 #include "ipc/ipc_service.h"
 #include "render/core/color.h"
@@ -16,8 +16,8 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <json.hpp>
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
 #include <string_view>

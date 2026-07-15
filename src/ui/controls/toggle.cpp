@@ -1,6 +1,6 @@
 #include "ui/controls/toggle.h"
 
-#include "core/keybind_matcher.h"
+#include "core/input/keybind_matcher.h"
 #include "render/animation/animation_manager.h"
 #include "render/core/color.h"
 #include "render/core/render_styles.h"

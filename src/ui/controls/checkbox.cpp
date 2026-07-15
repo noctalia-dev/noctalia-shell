@@ -1,6 +1,6 @@
 #include "ui/controls/checkbox.h"
 
-#include "core/keybind_matcher.h"
+#include "core/input/keybind_matcher.h"
 #include "render/scene/input_area.h"
 #include "ui/controls/box.h"
 #include "ui/controls/glyph.h"

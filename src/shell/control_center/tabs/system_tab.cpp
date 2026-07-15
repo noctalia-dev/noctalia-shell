@@ -45,8 +45,8 @@ namespace {
         ui::label({
             .text = title,
             .fontSize = Style::fontSizeTitle * scale,
-            .color = colorSpecFromRole(ColorRole::OnSurface),
             .fontWeight = FontWeight::Bold,
+            .color = colorSpecFromRole(ColorRole::OnSurface),
             .flexGrow = 1.0f,
         })
     );

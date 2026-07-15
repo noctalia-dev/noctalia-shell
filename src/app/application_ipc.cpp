@@ -5,10 +5,10 @@
 #include "config/config_types.h"
 #include "core/build_info.h"
 #include "core/deferred_call.h"
-#include "core/keybind_matcher.h"
+#include "core/files/resource_paths.h"
+#include "core/input/keybind_matcher.h"
 #include "core/log.h"
-#include "core/process.h"
-#include "core/resource_paths.h"
+#include "core/process/process.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "dbus/accounts/accounts_service.h"
 #include "dbus/bluetooth/bluetooth_agent.h"
@@ -98,6 +98,7 @@
 #include <filesystem>
 #include <limits>
 #include <malloc.h>
+#include <nlohmann/json.hpp>
 #include <optional>
 #include <ranges>
 #include <stdexcept>
@@ -136,6 +137,32 @@ void Application::initIpc() {
         return json;
       },
       "status", "Print current state as JSON"
+  );
+
+  m_ipcService.registerHandler(
+      "log-level-set",
+      [](const std::string& args) -> std::string {
+        const auto parts = noctalia::ipc::splitWords(args);
+        if (parts.size() != 1) {
+          return "error: log-level-set requires <debug|info|warn|error>\n";
+        }
+
+        const auto level = parseLogLevel(parts[0]);
+        if (!level.has_value()) {
+          return "error: invalid log level (use debug, info, warn, or error)\n";
+        }
+
+        setLogLevel(*level);
+        kLog.info("log level set to {}", logLevelName(*level));
+        return "ok\n";
+      },
+      "log-level-set <debug|info|warn|error>", "Set the console log level"
+  );
+
+  m_ipcService.registerHandler(
+      "log-level-status",
+      [](const std::string&) -> std::string { return std::string(logLevelName(currentLogLevel())) + "\n"; },
+      "log-level-status", "Print the current console log level"
   );
 
   auto applyNotificationDnd = [this](bool enabled) {
@@ -244,6 +271,144 @@ void Application::initIpc() {
         return "ok\n";
       },
       "notification-clear-history", "Clear notification history"
+  );
+
+  m_ipcService.registerHandler(
+      "notification-show",
+      [this](const std::string& args) -> std::string {
+        const std::string input = StringUtils::trim(args);
+        if (input.empty()) {
+          return "error: notification-show requires <summary> or <json-payload>\n";
+        }
+
+        std::string appName = "Noctalia";
+        std::string summary;
+        std::string body;
+        Urgency urgency = Urgency::Normal;
+        int32_t timeoutMs = kDefaultNotificationTimeout;
+        std::optional<std::string> icon;
+        std::optional<std::string> category;
+        std::optional<std::string> desktopEntry;
+
+        auto parseUrgency = [](const std::string& value, Urgency& outUrgency) -> bool {
+          if (value == "low") {
+            outUrgency = Urgency::Low;
+            return true;
+          }
+          if (value == "normal") {
+            outUrgency = Urgency::Normal;
+            return true;
+          }
+          if (value == "critical") {
+            outUrgency = Urgency::Critical;
+            return true;
+          }
+          return false;
+        };
+
+        if (!input.empty() && input.front() == '{') {
+          const nlohmann::json payload = nlohmann::json::parse(input, nullptr, false);
+          if (payload.is_discarded() || !payload.is_object()) {
+            return "error: notification-show JSON payload must be an object\n";
+          }
+
+          if (const auto it = payload.find("app_name"); it != payload.end()) {
+            if (!it->is_string()) {
+              return "error: notification-show field 'app_name' must be a string\n";
+            }
+            appName = it->get<std::string>();
+          }
+
+          if (const auto it = payload.find("summary"); it != payload.end()) {
+            if (!it->is_string()) {
+              return "error: notification-show field 'summary' must be a string\n";
+            }
+            summary = it->get<std::string>();
+          }
+
+          if (const auto it = payload.find("body"); it != payload.end()) {
+            if (!it->is_string()) {
+              return "error: notification-show field 'body' must be a string\n";
+            }
+            body = it->get<std::string>();
+          }
+
+          if (const auto it = payload.find("urgency"); it != payload.end()) {
+            if (!it->is_string()) {
+              return "error: notification-show field 'urgency' must be low, normal, or critical\n";
+            }
+            const std::string urgencyValue = StringUtils::toLower(it->get<std::string>());
+            if (!parseUrgency(urgencyValue, urgency)) {
+              return "error: notification-show field 'urgency' must be low, normal, or critical\n";
+            }
+          }
+
+          if (const auto it = payload.find("timeout_ms"); it != payload.end()) {
+            if (!it->is_number_integer()) {
+              return "error: notification-show field 'timeout_ms' must be an integer\n";
+            }
+            const auto timeoutValue = it->get<std::int64_t>();
+            if (timeoutValue < 0 || timeoutValue > std::numeric_limits<std::int32_t>::max()) {
+              return "error: notification-show field 'timeout_ms' must be between 0 and 2147483647\n";
+            }
+            timeoutMs = static_cast<std::int32_t>(timeoutValue);
+          }
+
+          if (const auto it = payload.find("icon"); it != payload.end()) {
+            if (!it->is_string()) {
+              return "error: notification-show field 'icon' must be a string\n";
+            }
+            icon = it->get<std::string>();
+          }
+
+          if (const auto it = payload.find("category"); it != payload.end()) {
+            if (!it->is_string()) {
+              return "error: notification-show field 'category' must be a string\n";
+            }
+            category = it->get<std::string>();
+          }
+
+          if (const auto it = payload.find("desktop_entry"); it != payload.end()) {
+            if (!it->is_string()) {
+              return "error: notification-show field 'desktop_entry' must be a string\n";
+            }
+            desktopEntry = it->get<std::string>();
+          }
+        } else {
+          constexpr std::string_view kBodyDelimiter = " -- ";
+          const std::size_t delimiterPos = input.find(kBodyDelimiter);
+          if (delimiterPos == std::string::npos) {
+            summary = input;
+          } else {
+            summary = StringUtils::trim(input.substr(0, delimiterPos));
+            body = StringUtils::trim(input.substr(delimiterPos + kBodyDelimiter.size()));
+          }
+        }
+
+        summary = StringUtils::trim(summary);
+        if (summary.empty()) {
+          return "error: notification-show requires a non-empty summary\n";
+        }
+
+        if (icon.has_value()) {
+          const std::string& iconValue = *icon;
+          const bool hasExplicitPrefix = iconValue.starts_with("noctalia-glyph:");
+          const bool looksLikePath =
+              iconValue.starts_with('/') || iconValue.starts_with("~/") || iconValue.contains('/');
+          const bool looksLikeFileUri = iconValue.starts_with("file:");
+          const bool looksLikeRemoteUrl = iconValue.starts_with("http://") || iconValue.starts_with("https://");
+          if (!hasExplicitPrefix && !looksLikePath && !looksLikeFileUri && !looksLikeRemoteUrl) {
+            icon = "noctalia-glyph:" + iconValue;
+          }
+        }
+
+        (void)m_notificationManager.addInternal(
+            std::move(appName), std::move(summary), std::move(body), urgency, timeoutMs, std::move(icon), std::nullopt,
+            std::move(category), std::move(desktopEntry)
+        );
+        return "ok\n";
+      },
+      "notification-show <summary [-- body]|json>", "Show an internal Noctalia notification"
   );
 
   m_ipcService.registerHandler(
@@ -529,18 +694,7 @@ void Application::initIpc() {
   m_windowSwitcher.registerIpc(m_ipcService);
 }
 
-bool Application::runUserCommand(const std::string& command) {
-  constexpr std::string_view prefix = "noctalia:";
-
-  if (command.starts_with(prefix)) {
-    const std::string response = m_ipcService.execute(command.substr(prefix.size()));
-    if (response.starts_with("error:")) {
-      kLog.warn("IPC command '{}' failed: {}", command, response.substr(0, response.find('\n')));
-      return false;
-    }
-    return true;
-  }
-
+bool Application::runShellCommand(const std::string& command) {
   if (!process::runAsync(command)) {
     kLog.warn("command failed to launch: {}", command);
     return false;
@@ -548,18 +702,7 @@ bool Application::runUserCommand(const std::string& command) {
   return true;
 }
 
-bool Application::runUserCommandBlocking(const std::string& command) {
-  constexpr std::string_view prefix = "noctalia:";
-
-  if (command.starts_with(prefix)) {
-    const std::string response = m_ipcService.execute(command.substr(prefix.size()));
-    if (response.starts_with("error:")) {
-      kLog.warn("IPC command '{}' failed: {}", command, response.substr(0, response.find('\n')));
-      return false;
-    }
-    return true;
-  }
-
+bool Application::runShellCommandBlocking(const std::string& command) {
   const auto result = process::runSync(command);
   if (!result) {
     kLog.warn("command failed: {} exit_code={} stderr={}", command, result.exitCode, result.err);
@@ -573,7 +716,7 @@ bool Application::runIdleAction(const IdleActionRequest& action) {
   case IdleActionKind::None:
     return true;
   case IdleActionKind::Command:
-    return runUserCommand(action.command);
+    return runShellCommand(action.command);
   case IdleActionKind::Lock:
     if (!m_configService.isLockScreenEnabled()) {
       return true;

@@ -30,6 +30,7 @@ public:
   [[nodiscard]] virtual TextureId colorTexture() const noexcept = 0;
   [[nodiscard]] virtual std::uint32_t width() const noexcept = 0;
   [[nodiscard]] virtual std::uint32_t height() const noexcept = 0;
+  virtual void abandon() noexcept = 0;
 };
 
 enum class RenderGraphicsResetStatus {
@@ -123,6 +124,8 @@ public:
   virtual void endFrame(RenderTarget& target) = 0;
   [[nodiscard]] virtual RenderGraphicsResetStatus graphicsResetStatus() = 0;
   virtual void invalidateGpuResources() = 0;
+  // Tear down a lost context without attempting to preserve its invalid GL objects.
+  virtual void abandonAfterGraphicsReset() noexcept = 0;
 
   [[nodiscard]] virtual std::unique_ptr<RenderSurfaceTarget> createSurfaceTarget(wl_surface* surface) = 0;
   [[nodiscard]] virtual std::unique_ptr<RenderFramebuffer>

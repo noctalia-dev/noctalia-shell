@@ -27,6 +27,9 @@ public:
 
   void initialize(GlSharedContext& shared);
   void cleanup();
+  void prepareForGraphicsReset();
+  void restoreAfterGraphicsReset(GlSharedContext& shared);
+  void finishGraphicsResetRecovery() noexcept { m_graphicsResetPending = false; }
 
   void renderScene(RenderTarget& target, Node* sceneRoot);
   void setGraphicsResetCallback(std::function<void(RenderGraphicsResetStatus)> callback) {
@@ -65,6 +68,10 @@ public:
       std::string_view text, float fontSize, const std::vector<std::size_t>& byteOffsets, std::vector<float>& outStops,
       FontWeight fontWeight = FontWeight::Normal
   ) override;
+  void measureTextCursorStopsWrapped(
+      std::string_view text, float fontSize, const std::vector<std::size_t>& byteOffsets, float maxWidth,
+      std::vector<TextCursorStop>& outStops, FontWeight fontWeight = FontWeight::Normal
+  ) override;
   [[nodiscard]] TextMetrics measureGlyph(char32_t codepoint, float fontSize) override;
   [[nodiscard]] TextureManager& textureManager() override;
   [[nodiscard]] float renderScale() const noexcept override { return m_renderScale; }
@@ -88,5 +95,6 @@ private:
   std::uint64_t m_textMetricsGeneration = 1;
   std::uint64_t m_gpuResourceGeneration = 0;
   bool m_glyphTexturesDirty = false;
+  bool m_graphicsResetPending = false;
   std::function<void(RenderGraphicsResetStatus)> m_graphicsResetCallback;
 };

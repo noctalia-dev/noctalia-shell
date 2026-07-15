@@ -60,9 +60,9 @@ namespace {
     auto label = ui::label({
         .text = text,
         .fontSize = fontSize * scale,
+        .fontWeight = weight,
         .color = colorSpecFromRole(color),
         .maxLines = maxLines,
-        .fontWeight = weight,
     });
     if (markup) {
       label->setUseMarkup(true);

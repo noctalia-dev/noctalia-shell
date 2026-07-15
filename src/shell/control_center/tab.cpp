@@ -20,8 +20,8 @@ namespace control_center {
         .out = &ptr,
         .text = text,
         .fontSize = Style::fontSizeTitle * scale,
-        .color = colorSpecFromRole(ColorRole::OnSurface),
         .fontWeight = FontWeight::Bold,
+        .color = colorSpecFromRole(ColorRole::OnSurface),
     });
     parent.addChild(std::move(label));
     return ptr;
@@ -43,8 +43,8 @@ namespace control_center {
         ui::label({
             .text = title,
             .fontSize = Style::fontSizeBody * scale,
-            .color = colorSpecFromRole(ColorRole::OnSurface),
             .fontWeight = FontWeight::Bold,
+            .color = colorSpecFromRole(ColorRole::OnSurface),
             .flexGrow = 1.0f,
         })
     );

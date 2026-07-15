@@ -358,8 +358,8 @@ namespace settings {
     auto titleLabel = ui::label({
         .text = title,
         .fontSize = Style::fontSizeBody * m_scale,
-        .color = colorSpecFromRole(ColorRole::OnSurface),
         .fontWeight = FontWeight::Bold,
+        .color = colorSpecFromRole(ColorRole::OnSurface),
     });
     if (m_createFormVisible) {
       titleLabel->setMaxLines(2);

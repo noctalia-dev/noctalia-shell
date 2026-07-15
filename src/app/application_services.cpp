@@ -5,10 +5,10 @@
 #include "config/config_types.h"
 #include "core/build_info.h"
 #include "core/deferred_call.h"
-#include "core/keybind_matcher.h"
+#include "core/files/resource_paths.h"
+#include "core/input/keybind_matcher.h"
 #include "core/log.h"
-#include "core/process.h"
-#include "core/resource_paths.h"
+#include "core/process/process.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "dbus/accounts/accounts_service.h"
 #include "dbus/bluetooth/bluetooth_agent.h"
@@ -18,6 +18,8 @@
 #include "dbus/logind/logind_service.h"
 #include "dbus/mpris/mpris_service.h"
 #include "dbus/network/inetwork_service.h"
+#include "dbus/network/iwd_secret_agent.h"
+#include "dbus/network/iwd_service.h"
 #include "dbus/network/network_manager_service.h"
 #include "dbus/network/network_secret_agent.h"
 #include "dbus/network/wpa_supplicant_service.h"
@@ -64,6 +66,7 @@
 #include "scripting/plugin_panel_shell.h"
 #include "scripting/plugin_registry.h"
 #include "scripting/plugin_runtime_context.h"
+#include "scripting/script_runtime.h"
 #include "shell/clipboard/clipboard_panel.h"
 #include "shell/clipboard/clipboard_paste.h"
 #include "shell/control_center/control_center_panel.h"
@@ -112,6 +115,7 @@ namespace {
 
   void signal_handler(int signum) {
     if (signum == SIGTERM || signum == SIGINT) {
+      scripting::ScriptRuntime::setShutdownSignal(signum);
       Application::s_shutdownRequested = true;
     }
   }
@@ -357,6 +361,7 @@ void Application::initStyleThemeAndWayland() {
     const bool cornerChanged =
         std::isfinite(lastCornerRadiusScale) && std::abs(corner - lastCornerRadiusScale) > 1.0e-4f;
     Style::setCornerRadiusScale(corner);
+    Style::setButtonBordersEnabled(m_configService.config().shell.buttonBorders);
     lastCornerRadiusScale = corner;
     if (cornerChanged) {
       m_notificationToast.requestLayout();
@@ -475,17 +480,20 @@ void Application::initStyleThemeAndWayland() {
     const std::string configuredMode(enumToKey(kThemeModes, m_themeService.configuredMode()));
     m_scriptApi.setDarkMode(resolvedMode != "light");
     syncScriptApiWallpaperDirectory();
-    m_templateApplyService.apply(generated, mode);
-    m_hookManager.fire(HookKind::ColorsChanged);
-    if (lastResolvedThemeMode.has_value() && *lastResolvedThemeMode != resolvedMode) {
-      m_hookManager.fire(
-          HookKind::ThemeModeChanged,
-          {{"NOCTALIA_THEME_MODE", resolvedMode},
-           {"NOCTALIA_THEME_MODE_PREVIOUS", *lastResolvedThemeMode},
-           {"NOCTALIA_THEME_MODE_CONFIGURED", configuredMode}}
-      );
-    }
+    const std::optional<std::string> previousMode = lastResolvedThemeMode;
     lastResolvedThemeMode = resolvedMode;
+    m_templateApplyService.setAfterApplyCallback([this, resolvedMode, previousMode, configuredMode]() {
+      m_hookManager.fire(HookKind::ColorsChanged);
+      if (previousMode.has_value() && *previousMode != resolvedMode) {
+        m_hookManager.fire(
+            HookKind::ThemeModeChanged,
+            {{"NOCTALIA_THEME_MODE", resolvedMode},
+             {"NOCTALIA_THEME_MODE_PREVIOUS", *previousMode},
+             {"NOCTALIA_THEME_MODE_CONFIGURED", configuredMode}}
+        );
+      }
+    });
+    m_templateApplyService.apply(generated, mode);
   });
   m_themeService.apply();
   syncScriptApiWallpaperDirectory();
@@ -547,6 +555,31 @@ void Application::initStyleThemeAndWayland() {
   });
 }
 
+void Application::reconcileOutputSurfaces() {
+  // Canonical bottom-to-top (re)creation order for per-output layer surfaces.
+  // This is the ONLY place this order is defined: it runs once after initUi()
+  // wiring for first creation and again on every output change, so same-layer
+  // stacking (e.g. screen corners above the dock) is identical in both cases.
+  // Each owner's onOutputChange() reconciles idempotently against the current
+  // output set, so re-running it is safe. initialize() only wires dependencies.
+  m_backdrop.onOutputChange();
+  m_wallpaper.onOutputChange();
+  m_bar.onOutputChange();
+  m_dock.onOutputChange();
+  m_desktopWidgetsController.onOutputChange();
+  m_lockscreenWidgetsController.onOutputChange();
+  m_screenCorners.onOutputChange();
+  m_hotCorners.onOutputChange();
+  m_lockScreen.onOutputChange();
+  m_idleGraceOverlay.onOutputChange();
+  m_idleInhibitor.onOutputChange();
+  m_overviewLauncherCapture.onOutputChange();
+  m_screenshotService.onOutputChange();
+  m_notificationToast.onOutputChange();
+  m_osdOverlay.onOutputChange();
+  m_windowSwitcher.onOutputChange();
+}
+
 void Application::initWaylandCallbacks() {
   auto shouldRefreshControlCenter = [this]() { return m_panelManager.isOpenPanel("control-center"); };
 
@@ -559,28 +592,15 @@ void Application::initWaylandCallbacks() {
     }
     m_gammaService.onOutputsChanged();
     m_pluginServiceHost.onOutputChange();
-    m_wallpaper.onOutputChange();
-    m_backdrop.onOutputChange();
-    m_bar.onOutputChange();
-    m_dock.onOutputChange();
-    m_desktopWidgetsController.onOutputChange();
-    m_lockscreenWidgetsController.onOutputChange();
-    m_screenCorners.onOutputChange();
-    m_hotCorners.onOutputChange();
-    m_lockScreen.onOutputChange();
-    m_idleGraceOverlay.onOutputChange();
-    m_idleInhibitor.onOutputChange();
-    m_overviewLauncherCapture.onOutputChange();
-    m_screenshotService.onOutputChange();
-    m_notificationToast.onOutputChange();
-    m_osdOverlay.onOutputChange();
-    m_windowSwitcher.onOutputChange();
+    reconcileOutputSurfaces();
   });
   m_clipboardService.setChangeCallback([this]() {
+    m_scriptApi.setClipboardText(m_clipboardService.clipboardText());
     if (m_panelManager.isOpenPanel("clipboard")) {
       m_panelManager.refresh();
     }
   });
+  m_scriptApi.setClipboardText(m_clipboardService.clipboardText());
   m_compositorPlatform.setWorkspaceAlertService(&m_workspaceAlertService);
   m_compositorPlatform.setWorkspaceChangeCallback([this]() {
     // Clear alerts for the workspace the user just switched to. Limit to the
@@ -592,6 +612,7 @@ void Application::initWaylandCallbacks() {
       (void)m_compositorPlatform.clearActiveWorkspaceAlerts();
     }
     m_bar.onWorkspaceChanged();
+    m_dock.onWorkspaceChanged();
     m_bar.refresh();
     m_windowSwitcher.onToplevelChange();
   });
@@ -606,6 +627,8 @@ void Application::initWaylandCallbacks() {
   });
   m_compositorPlatform.setToplevelChangeCallback([this]() {
     m_screenTimeService.onFocusChange();
+    m_bar.scheduleSmartAutoHideReevaluation();
+    m_dock.scheduleSmartAutoHideReevaluation();
     m_bar.refresh();
     m_dock.refresh();
     m_windowSwitcher.onToplevelChange();
@@ -650,9 +673,9 @@ void Application::initWaylandCallbacks() {
 void Application::initAuxServicesAndHooks() {
   auto shouldRefreshControlCenter = [this]() { return m_panelManager.isOpenPanel("control-center"); };
 
-  m_hookManager.setCommandRunner([this](const std::string& command) { return runUserCommand(command); });
+  m_hookManager.setCommandRunner([this](const std::string& command) { return runShellCommand(command); });
   m_hookManager.setBlockingCommandRunner([this](const std::string& command) {
-    return runUserCommandBlocking(command);
+    return runShellCommandBlocking(command);
   });
   m_hookManager.reload(m_configService.config().hooks);
   m_configService.addReloadCallback(
@@ -700,6 +723,26 @@ void Application::initAuxServicesAndHooks() {
     } else {
       for (const auto& change : wallpaperChanges) {
         fireWallpaperChangedHook(change.path, change.connector);
+      }
+    }
+    if (compositors::isKde()) {
+      const auto applyKdeWallpaper = [](const std::string& path, const std::string& connector) {
+        if (path.empty()) {
+          return;
+        }
+        std::string cmd = "plasma-apply-wallpaperimage";
+        if (!connector.empty()) {
+          cmd += " --screen " + connector;
+        }
+        cmd += " \"" + path + "\"";
+        (void)process::runAsync(cmd);
+      };
+      if (wallpaperChanges.empty()) {
+        applyKdeWallpaper(m_configService.getPaletteWallpaperPath(), {});
+      } else {
+        for (const auto& change : wallpaperChanges) {
+          applyKdeWallpaper(change.path, change.connector);
+        }
       }
     }
   });
@@ -789,6 +832,7 @@ void Application::initSystemBusServices() {
               }
             });
           }
+          requestAllSurfacesRedraw();
         });
         kLog.info("logind sleep monitor active");
         m_idleInhibitor.setLogindService(m_logindService.get());
@@ -903,8 +947,26 @@ void Application::initSystemBusServices() {
         }
         kLog.info("network service active (wpa_supplicant)");
       } catch (const std::exception& e2) {
-        kLog.warn("network service disabled: {}", e2.what());
-        m_networkService.reset();
+        kLog.warn("wpa_supplicant unavailable ({}), trying iwd", e2.what());
+        try {
+          m_networkService = std::make_unique<IwdService>(*m_systemBus);
+          m_networkService->setChangeCallback(
+              [this, shouldRefreshControlCenter](const NetworkState& state, NetworkChangeOrigin origin) {
+                onNetworkStateChangedForEvents(state, origin);
+                m_bar.refresh();
+                if (shouldRefreshControlCenter()) {
+                  m_panelManager.refresh();
+                }
+              }
+          );
+          if (m_networkService->hasStateSnapshot()) {
+            m_prevWirelessEnabledForEvents = m_networkService->state().wirelessEnabled;
+          }
+          kLog.info("network service active (iwd)");
+        } catch (const std::exception& e3) {
+          kLog.warn("network service disabled: {}", e3.what());
+          m_networkService.reset();
+        }
       }
     }
 
@@ -914,6 +976,17 @@ void Application::initSystemBusServices() {
       } catch (const std::exception& e) {
         kLog.warn("network secret agent disabled: {}", e.what());
         m_networkSecretAgent.reset();
+      }
+    }
+
+    // Initialize iwd secret agent if iwd is the active network service
+    if (auto* iwdService = dynamic_cast<IwdService*>(m_networkService.get())) {
+      try {
+        m_iwdSecretAgent = std::make_unique<IwdSecretAgent>(*m_systemBus);
+        iwdService->setSecretAgent(m_iwdSecretAgent.get());
+      } catch (const std::exception& e) {
+        kLog.warn("iwd secret agent disabled: {}", e.what());
+        m_iwdSecretAgent.reset();
       }
     }
 
@@ -1209,8 +1282,8 @@ void Application::triggerShellAction(const std::string& action, wl_output* outpu
   } else if (action == "overview") {
     // There is no public toggle for overview in OverviewLauncherCapture.
     // Try to execute a generic compositor action, or use niri directly if using niri.
-    runUserCommand("niri msg action toggle-overview");
+    runShellCommand("niri msg action toggle-overview");
   } else if (action == "window_switcher") {
-    runUserCommand("noctalia:window-switcher");
+    m_windowSwitcher.show(output);
   }
 }

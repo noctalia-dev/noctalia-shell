@@ -3,6 +3,7 @@
 #include "render/scene/node.h"
 #include "shell/tooltip/tooltip_content.h"
 
+#include <array>
 #include <chrono>
 #include <cstdint>
 #include <functional>
@@ -31,6 +32,7 @@ public:
     std::int32_t axisDiscrete = 0;
     std::int32_t axisValue120 = 0;
     float axisLines = 0.0f;
+    float axisSteps = 0.0f;
 
     [[nodiscard]] float scrollDelta(float wheelStep) const noexcept {
       if (axisLines != 0.0f) {
@@ -38,6 +40,12 @@ public:
       }
       return static_cast<float>(axisValue);
     }
+
+    // Whole wheel-detent steps accumulated by the InputArea (positive = scroll
+    // down). Continuous sources (touchpads, hi-res wheels) emit a step only
+    // once a full detent-equivalent has accrued — use this instead of
+    // scrollDelta() for discrete stepping (volume, workspace cycling, ...).
+    [[nodiscard]] float scrollSteps() const noexcept { return axisSteps; }
   };
 
   struct KeyData {
@@ -119,6 +127,8 @@ public:
   void setTooltipPlacement(TooltipPlacement placement);
   void setTooltipAnchorInsets(TooltipAnchorInsets insets);
   void clearTooltipAnchorInsets();
+  void setTooltipAnchorNode(Node* node) noexcept { m_tooltipAnchorNode = node; }
+  [[nodiscard]] Node* tooltipAnchorNode() const noexcept { return m_tooltipAnchorNode; }
   [[nodiscard]] TooltipPlacement tooltipPlacement() const noexcept { return m_tooltipPlacement; }
   [[nodiscard]] bool hasTooltipAnchorInsets() const noexcept { return m_hasTooltipAnchorInsets; }
   [[nodiscard]] TooltipAnchorInsets tooltipAnchorInsets() const noexcept { return m_tooltipAnchorInsets; }
@@ -153,6 +163,7 @@ protected:
 
 private:
   void notifyTooltipChanged();
+  void resetScrollAccumulators() noexcept;
 
   DestroyCallback m_destroyCallback;
   PointerCallback m_onEnter;
@@ -174,6 +185,8 @@ private:
   bool m_hovered = false;
   bool m_pressed = false;
   std::uint32_t m_pressedButton = 0;
+  // Detent-unit scroll accumulators, indexed by wl_pointer axis (vertical, horizontal).
+  std::array<float, 2> m_scrollStepAccum{};
   bool m_focusable = false;
   bool m_tabStop = true;
   std::string m_tabFocusKey;
@@ -188,4 +201,5 @@ private:
   TooltipPlacement m_tooltipPlacement = TooltipPlacement::Default;
   TooltipAnchorInsets m_tooltipAnchorInsets{};
   bool m_hasTooltipAnchorInsets = false;
+  Node* m_tooltipAnchorNode = nullptr;
 };

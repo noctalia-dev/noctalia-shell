@@ -87,9 +87,9 @@ void DesktopWeatherWidget::create() {
   auto temperature = ui::label({
       .out = &m_temperature,
       .fontSize = temperatureFontSize(contentScale()),
+      .fontWeight = FontWeight::Bold,
       .color = m_color,
       .maxLines = 1,
-      .fontWeight = FontWeight::Bold,
       .textAlign = TextAlign::Start,
   });
   rootNode->addChild(std::move(temperature));

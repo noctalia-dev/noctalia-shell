@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/file_watcher.h"
+#include "core/files/file_watcher.h"
 #include "core/timer_manager.h"
 #include "scripting/plugin_ipc.h"
 #include "scripting/script_runtime.h"

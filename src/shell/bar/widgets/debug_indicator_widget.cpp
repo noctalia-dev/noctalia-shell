@@ -27,10 +27,10 @@ void DebugIndicatorWidget::create() {
           .out = &m_label,
           .text = "DEBUG",
           .fontSize = Style::fontSizeCaption * m_contentScale,
+          .fontWeight = labelFontWeight(),
           .fontFamily = labelFontFamily(),
           .color = colorSpecFromRole(ColorRole::Error),
           .maxLines = 1,
-          .fontWeight = labelFontWeight(),
       })
   );
   setRoot(std::move(row));

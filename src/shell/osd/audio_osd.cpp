@@ -15,21 +15,11 @@ namespace {
 
   [[nodiscard]] bool volumeChanged(float a, float b) { return std::abs(a - b) > kVolumeChangeEpsilon; }
 
-  const char* volumeIconName(float volume, bool muted) {
-    if (muted || volume <= 0.0f) {
-      return "volume-mute";
-    }
-    if (volume < 0.4f) {
-      return "volume-low";
-    }
-    return "volume-high";
-  }
-
   OsdContent makeOutputContent(float volume, bool muted) {
     const int percent = static_cast<int>(std::round(std::max(0.0f, volume) * 100.0f));
     return OsdContent{
         .kind = OsdKind::Volume,
-        .icon = volumeIconName(volume, muted),
+        .icon = audioVolumeGlyph(volume, muted, false),
         .value = std::to_string(percent) + "%",
         .progress = std::clamp(volume, 0.0f, 1.0f),
         .overLimit = percent > 100,
@@ -41,7 +31,7 @@ namespace {
     const int percent = static_cast<int>(std::round(std::max(0.0f, volume) * 100.0f));
     return OsdContent{
         .kind = OsdKind::Microphone,
-        .icon = muted ? "microphone-mute" : "microphone",
+        .icon = audioVolumeGlyph(volume, muted, true),
         .value = std::to_string(percent) + "%",
         .progress = std::clamp(volume, 0.0f, 1.0f),
         .overLimit = percent > 100,
@@ -82,6 +72,7 @@ void AudioOsd::showOutput(std::uint32_t sinkId, float volume, bool muted, bool p
   m_suppressAutoInputOsdUntil = now + kSuppressInputOsdAfterOutput;
   if (m_overlay != nullptr) {
     m_overlay->show(makeOutputContent(volume, muted));
+    m_currentKind = OsdKind::Volume;
   }
   if (playFeedback && m_soundPlayer != nullptr && now - m_lastSoundAt >= kVolumeSoundCooldown) {
     m_soundPlayer->play("volume-change");
@@ -100,6 +91,7 @@ void AudioOsd::showInput(std::uint32_t sourceId, float volume, bool muted, bool 
   }
   if (m_overlay != nullptr) {
     m_overlay->show(makeInputContent(volume, muted));
+    m_currentKind = OsdKind::Microphone;
   }
   if (playFeedback && m_soundPlayer != nullptr && now - m_lastSoundAt >= kVolumeSoundCooldown) {
     m_soundPlayer->play("volume-change");
@@ -126,6 +118,20 @@ void AudioOsd::onAudioStateChanged(const PipeWireService& service) {
   const bool sourceMuted = source != nullptr ? source->muted : false;
 
   const auto now = std::chrono::steady_clock::now();
+
+  // The bar samples committed audio state live on every refresh; the OSD is a frozen snapshot fed
+  // through suppressed/optimistic event paths, so the two can end up showing different mute icons.
+  // Whenever committed mute changes for the node the OSD is currently displaying, force its icon
+  // back in sync in place. Suppression only gates popping up / switching OSDs, not correcting the
+  // one already on screen; volume stays optimistic, only the mute state is reconciled.
+  if (m_overlay != nullptr && m_overlay->isVisible()) {
+    if (sink != nullptr && m_currentKind == OsdKind::Volume && sinkMuted != m_lastSinkMuted) {
+      m_overlay->show(makeOutputContent(sinkVolume, sinkMuted));
+    } else if (source != nullptr && m_currentKind == OsdKind::Microphone && sourceMuted != m_lastSourceMuted) {
+      m_overlay->show(makeInputContent(sourceVolume, sourceMuted));
+    }
+  }
+
   if (now < m_suppressUntil) {
     m_lastSinkId = sinkId;
     m_lastSinkVolume = sinkVolume;

@@ -298,6 +298,11 @@ namespace {
       std::string_view labelText, const std::string& key, int fallback, int minVal, int maxVal, int step,
       const std::optional<std::string>& valueSuffix, const Settings& s, DesktopWidgetsEditor* editor
   ) {
+    // A plugin manifest may declare minValue > maxValue; order the range so both
+    // the clamp and the stepper below get a valid [min, max].
+    if (maxVal < minVal) {
+      std::swap(minVal, maxVal);
+    }
     const int currentValue =
         std::clamp(static_cast<int>(std::llround(getDouble(s, key, static_cast<double>(fallback)))), minVal, maxVal);
     return makeRow(
@@ -349,7 +354,7 @@ namespace {
     auto picker = ui::button({
         .glyph = "apps",
         .glyphSize = Style::fontSizeBody,
-        .variant = ButtonVariant::Outline,
+        .variant = ButtonVariant::Default,
         .minWidth = Style::controlHeightSm,
         .minHeight = Style::controlHeightSm,
         .paddingV = Style::spaceXs,
@@ -400,7 +405,7 @@ namespace {
         labelText,
         ui::button({
             .text = i18n::tr("desktop-widgets.editor.settings.change-image"),
-            .variant = ButtonVariant::Outline,
+            .variant = ButtonVariant::Default,
             .flexGrow = 1.0f,
             .onClick = [editor, key]() {
               FileDialogOptions options;
@@ -594,8 +599,8 @@ namespace {
         ui::label({
             .text = i18n::tr(labelKey),
             .fontSize = Style::fontSizeCaption,
-            .color = colorSpecFromRole(ColorRole::Secondary),
             .fontWeight = FontWeight::Bold,
+            .color = colorSpecFromRole(ColorRole::Secondary),
         })
     );
   }

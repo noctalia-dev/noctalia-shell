@@ -89,8 +89,8 @@ namespace {
     return ui::label({
         .text = std::string(text),
         .fontSize = fontSize,
-        .color = color,
         .fontWeight = fontWeight,
+        .color = color,
     });
   }
 
@@ -244,8 +244,8 @@ namespace {
       return true;
     }
     if (auto* optionalNumber = std::get_if<settings::OptionalNumberSetting>(&entry.control)) {
-      if (const auto number = overrideNumber(value); number.has_value()) {
-        optionalNumber->value = *number;
+      if (auto number = overrideNumber(value); number.has_value()) {
+        optionalNumber->value = number;
         return true;
       }
       const auto* text = std::get_if<std::string>(&value);
@@ -256,8 +256,8 @@ namespace {
       return false;
     }
     if (auto* optionalStepper = std::get_if<settings::OptionalStepperSetting>(&entry.control)) {
-      if (const auto number = overrideInt(value); number.has_value()) {
-        optionalStepper->value = *number;
+      if (auto number = overrideInt(value); number.has_value()) {
+        optionalStepper->value = number;
         return true;
       }
       const auto* text = std::get_if<std::string>(&value);
@@ -324,11 +324,24 @@ namespace {
       return true;
     }
     if (auto* multi = std::get_if<settings::MultiSelectSetting>(&entry.control)) {
-      const auto* selected = std::get_if<std::vector<std::string>>(&value);
-      if (selected == nullptr) {
+      const auto* stored = std::get_if<std::vector<std::string>>(&value);
+      if (stored == nullptr) {
         return false;
       }
-      multi->selectedValues = *selected;
+      if (multi->persistUnselected) {
+        // The override stores the unchecked complement (denylist); reconstruct the
+        // selection as every option not present in it.
+        std::vector<std::string> selected;
+        selected.reserve(multi->options.size());
+        for (const auto& option : multi->options) {
+          if (!std::ranges::contains(*stored, option.value)) {
+            selected.push_back(option.value);
+          }
+        }
+        multi->selectedValues = std::move(selected);
+      } else {
+        multi->selectedValues = *stored;
+      }
       return true;
     }
     if (auto* grid = std::get_if<settings::TemplateGridSetting>(&entry.control)) {
@@ -695,7 +708,9 @@ void SettingsWindow::scrollFocusedAreaIntoView(InputArea* area) {
       if (node == m_contentScrollView->content()) {
         m_pendingContentScrollTarget = area;
         m_scrollToPendingContentTarget = true;
-        applyPendingContentScrollTarget(Style::spaceMd * uiScale());
+        if (!m_deferFocusScrollToLayout) {
+          applyPendingContentScrollTarget(Style::spaceMd * uiScale());
+        }
         return;
       }
     }
@@ -1016,11 +1031,23 @@ void SettingsWindow::rebuildSettingsContent() {
                 [this](std::string id) {
                   if (m_pluginManager != nullptr) {
                     m_pluginManager->remove(id);
+                    m_pendingDeletePluginId.clear();
                     markPluginListDirty();
                     requestSceneRebuild();
                   }
                 },
             .openStore = [this]() { openPluginStore(); },
+            .pendingDeletePluginId = m_pendingDeletePluginId,
+            .requestDeleteConfirm =
+                [this](std::string id) {
+                  m_pendingDeletePluginId = std::move(id);
+                  requestSceneRebuild();
+                },
+            .cancelDelete =
+                [this]() {
+                  m_pendingDeletePluginId.clear();
+                  requestSceneRebuild();
+                },
         }
     );
   }
@@ -1044,8 +1071,8 @@ std::unique_ptr<Flex> SettingsWindow::buildHeaderRow(float scale) {
       ui::label({
           .text = i18n::tr("settings.window.title"),
           .fontSize = Style::fontSizeTitle * scale,
-          .color = colorSpecFromRole(ColorRole::OnSurface),
           .fontWeight = FontWeight::Bold,
+          .color = colorSpecFromRole(ColorRole::OnSurface),
           .flexGrow = 1.0f,
       }),
       ui::button({
@@ -1224,59 +1251,33 @@ std::unique_ptr<Flex> SettingsWindow::buildFilterRow(
     );
   }
 
-  if (m_focusSearchOnRebuild && searchInputPtr != nullptr && searchInputPtr->inputArea() != nullptr) {
-    m_inputDispatcher.setFocus(searchInputPtr->inputArea());
-    m_focusSearchOnRebuild = false;
-  }
-
   return filters;
 }
 
 std::unique_ptr<Flex> SettingsWindow::buildStatusRow(float scale) {
-  if (m_statusMessage.empty()) {
+  const auto* legacyIssue = m_config != nullptr && !m_config->legacyConfigIssues().empty()
+      ? &m_config->legacyConfigIssues().front()
+      : nullptr;
+  if (m_statusMessage.empty() && legacyIssue == nullptr) {
     return nullptr;
   }
 
-  const auto requestRebuild = [this]() { requestSceneRebuild(); };
-  const auto clearStatus = [this]() { clearStatusMessage(); };
+  const bool transientStatus = !m_statusMessage.empty();
+  const bool statusIsError = transientStatus ? m_statusIsError : true;
+  const std::string messageText = transientStatus
+      ? m_statusMessage
+      : i18n::tr("settings.window.legacy-config-warning", "issue", legacyIssue->path + ": " + legacyIssue->message);
 
-  auto status = ui::row({
-      .align = FlexAlign::Center,
-      .gap = Style::spaceSm * scale,
-      .configure = [this, scale](Flex& row) {
-        row.setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
-        row.setRadius(Style::scaledRadiusMd(scale));
-        row.setFill(colorSpecFromRole(m_statusIsError ? ColorRole::Error : ColorRole::Secondary, 0.14f));
-        row.setBorder(
-            colorSpecFromRole(m_statusIsError ? ColorRole::Error : ColorRole::Secondary, 0.45f), Style::borderWidth
-        );
-      },
+  return settings::makeSettingsStatusBanner({
+      .message = messageText,
+      .error = statusIsError,
+      .scale = scale,
+      .onDismiss = transientStatus ? std::function<void()>{[this]() {
+        clearStatusMessage();
+        requestSceneRebuild();
+      }}
+                                   : std::function<void()>{},
   });
-
-  auto message = makeLabel(
-      m_statusMessage, Style::fontSizeCaption * scale,
-      colorSpecFromRole(m_statusIsError ? ColorRole::Error : ColorRole::Secondary), FontWeight::Bold
-  );
-  message->setFlexGrow(1.0f);
-  status->addChild(std::move(message));
-
-  status->addChild(
-      ui::button({
-          .glyph = "close",
-          .glyphSize = Style::fontSizeCaption * scale,
-          .variant = ButtonVariant::Ghost,
-          .minWidth = Style::controlHeightSm * scale,
-          .minHeight = Style::controlHeightSm * scale,
-          .padding = Style::spaceXs * scale,
-          .radius = Style::scaledRadiusSm(scale),
-          .onClick = [clearStatus, requestRebuild]() {
-            clearStatus();
-            requestRebuild();
-          },
-      })
-  );
-
-  return status;
 }
 
 std::unique_ptr<Flex> SettingsWindow::buildBody(
@@ -1363,16 +1364,13 @@ void SettingsWindow::refreshSettingsRegistry(const Config& cfg) {
 
   if (m_syncGreeterAppearance && env.greeterSyncAvailable) {
     auto it = std::ranges::find_if(m_settingsRegistry, [](const settings::SettingEntry& e) {
-      return e.section == settings::SettingsSection::Shell
-          && e.group == "privacy-security"
-          && e.path == std::vector<std::string>{"shell", "password_style"};
+      return e.section == settings::SettingsSection::Security
+          && e.group == "greeter"
+          && e.path == std::vector<std::string>{"shell", "greeter_sync", "privilege_command"};
     });
-    if (it != m_settingsRegistry.end()) {
-      ++it;
-    }
     settings::SettingEntry btn{
         .section = settings::SettingsSection::Security,
-        .group = "privacy-security",
+        .group = "greeter",
         .title = i18n::tr("settings.schema.shell.sync-greeter.label"),
         .subtitle = i18n::tr("settings.schema.shell.sync-greeter.description"),
         .path = {},
@@ -1383,34 +1381,32 @@ void SettingsWindow::refreshSettingsRegistry(const Config& cfg) {
                 .glyph = {},
             },
         .searchText = "greeter login sync appearance wallpaper colors security",
-        .visibleWhen = std::nullopt,
     };
     auto insertedIt = m_settingsRegistry.insert(it, std::move(btn));
     ++insertedIt;
     settings::SettingEntry toggle{
         .section = settings::SettingsSection::Security,
-        .group = "privacy-security",
+        .group = "greeter",
         .title = i18n::tr("settings.schema.shell.greeter-sync-auto.label"),
         .subtitle = i18n::tr("settings.schema.shell.greeter-sync-auto.description"),
         .path = {"shell", "greeter_sync", "auto_sync"},
         .control = settings::ToggleSetting{cfg.shell.greeterSync.autoSync},
         .searchText = "greeter sync auto automatic",
-        .visibleWhen = std::nullopt,
     };
     m_settingsRegistry.insert(insertedIt, std::move(toggle));
   }
 
   if (m_resetLauncherUsage) {
     auto it = std::ranges::find_if(m_settingsRegistry, [](const settings::SettingEntry& e) {
-      return e.section == settings::SettingsSection::Panels
+      return e.section == settings::SettingsSection::Launcher
           && e.group == "launcher"
-          && e.path == std::vector<std::string>{"shell", "panel", "launcher_sort_by_usage"};
+          && e.path == std::vector<std::string>{"shell", "launcher", "sort_by_usage"};
     });
     if (it != m_settingsRegistry.end()) {
       ++it;
     }
     settings::SettingEntry btn{
-        .section = settings::SettingsSection::Panels,
+        .section = settings::SettingsSection::Launcher,
         .group = "launcher",
         .title = i18n::tr("settings.schema.panels.launcher-reset-usage.label"),
         .subtitle = i18n::tr("settings.schema.panels.launcher-reset-usage.description"),
@@ -1422,7 +1418,6 @@ void SettingsWindow::refreshSettingsRegistry(const Config& cfg) {
                 .glyph = "refresh",
             },
         .searchText = "launcher reset usage recently used launch count history clear",
-        .visibleWhen = std::nullopt,
     };
     m_settingsRegistry.insert(it, std::move(btn));
   }
@@ -1449,7 +1444,7 @@ void SettingsWindow::refreshSettingsRegistry(const Config& cfg) {
                 .glyph = "refresh",
             },
         .searchText = "screen time reset usage history clear tracking",
-        .visibleWhen = settings::SettingVisibility{{"shell", "screen_time_enabled"}, {"true"}},
+        .visibleWhen = [](const Config& c) { return c.shell.screenTimeEnabled; },
     };
     m_settingsRegistry.insert(it, std::move(btn));
   }
@@ -1476,7 +1471,6 @@ void SettingsWindow::refreshSettingsRegistry(const Config& cfg) {
                 .glyph = {},
             },
         .searchText = "wallpaper palette export custom save colors theme",
-        .visibleWhen = std::nullopt,
     };
     m_settingsRegistry.insert(it, std::move(btn));
   }
@@ -1500,7 +1494,6 @@ void SettingsWindow::refreshSettingsRegistry(const Config& cfg) {
                 .glyph = "wallpaper-selector"
             },
         .searchText = "wallpaper panel open selector browse",
-        .visibleWhen = std::nullopt,
     };
     m_settingsRegistry.insert(it, std::move(btn));
   }
@@ -1525,7 +1518,6 @@ void SettingsWindow::refreshSettingsRegistry(const Config& cfg) {
                 .glyph = {}
             },
         .searchText = "desktop widgets editor edit",
-        .visibleWhen = std::nullopt,
     };
     m_settingsRegistry.insert(it, std::move(btn));
   }
@@ -1552,10 +1544,7 @@ void SettingsWindow::refreshSettingsRegistry(const Config& cfg) {
                 .glyph = {}
             },
         .searchText = "lockscreen widgets editor edit layout",
-        .visibleWhen = settings::SettingVisibility{std::vector<settings::SettingVisibilityCondition>{
-            {{"lockscreen", "enabled"}, {"true"}},
-            {{"lockscreen_widgets", "enabled"}, {"true"}},
-        }},
+        .visibleWhen = [](const Config& c) { return c.lockscreen.enabled && c.lockscreenWidgets.enabled; },
     };
     m_settingsRegistry.insert(it, std::move(btn));
   }
@@ -1569,7 +1558,7 @@ void SettingsWindow::refreshSettingsRegistry(const Config& cfg) {
     if (it != m_settingsRegistry.end()) {
       ++it;
     }
-    const settings::SettingVisibility calendarOn{{"calendar", "enabled"}, {"true"}};
+    const settings::SettingVisibility calendarOn = [](const Config& c) { return c.calendar.enabled; };
     settings::SettingEntry addBtn{
         .section = settings::SettingsSection::Services,
         .group = "calendar",
@@ -1583,7 +1572,6 @@ void SettingsWindow::refreshSettingsRegistry(const Config& cfg) {
                 .glyph = "plus",
             },
         .searchText = "calendar add account icloud caldav google",
-        .visibleWhen = std::nullopt,
     };
     it = m_settingsRegistry.insert(it, std::move(addBtn));
     ++it;
@@ -1620,11 +1608,21 @@ std::vector<std::vector<std::string>> SettingsWindow::currentPageResetPaths() co
     return resetPagePaths;
   }
   for (const auto& entry : m_settingsRegistry) {
-    if (!entry.path.empty()
-        && settingEntryBelongsToPage(entry, m_selectedSection, m_selectedBarName, m_selectedMonitorOverride)
-        && m_config->hasEffectiveOverride(entry.path)
-        && !containsPath(resetPagePaths, entry.path)) {
-      resetPagePaths.push_back(entry.path);
+    if (!settingEntryBelongsToPage(entry, m_selectedSection, m_selectedBarName, m_selectedMonitorOverride)) {
+      continue;
+    }
+
+    const auto appendIfOverridden = [this, &resetPagePaths](const std::vector<std::string>& path) {
+      if (!path.empty() && m_config->hasEffectiveOverride(path) && !containsPath(resetPagePaths, path)) {
+        resetPagePaths.push_back(path);
+      }
+    };
+    appendIfOverridden(entry.path);
+    if (const auto* range = std::get_if<settings::RangeSliderSetting>(&entry.control)) {
+      appendIfOverridden(range->highPath);
+    }
+    if (const auto* select = std::get_if<settings::SelectSetting>(&entry.control)) {
+      appendIfOverridden(select->linkedPath);
     }
   }
   return resetPagePaths;
@@ -1679,7 +1677,7 @@ void SettingsWindow::rebuildFilterRow(float scale) {
     return;
   }
 
-  const std::size_t index = static_cast<std::size_t>(std::distance(children.begin(), it));
+  const auto index = static_cast<std::size_t>(std::distance(children.begin(), it));
   (void)m_mainContainer->removeChild(m_filterRow);
   const std::string resetPageScope = pageScopeKey(m_selectedSection, m_selectedBarName, m_selectedMonitorOverride);
   m_filterRow = m_mainContainer->insertChildAt(
@@ -1700,6 +1698,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   const float scale = uiScale();
   m_actionsMenuButton = nullptr;
   m_contentScrollView = nullptr;
+  m_sidebarScrollView = nullptr;
+  m_sidebarNav = nullptr;
+  m_settingsSearchInput = nullptr;
 
   const Config fallbackCfg{};
   const Config& cfg = m_config != nullptr ? m_config->config() : fallbackCfg;

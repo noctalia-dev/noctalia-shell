@@ -164,7 +164,7 @@
       "application-volumes": "Applicatievolumes",
       "choose-effects-profile": "Kies een profiel",
       "effects-profile": "Effecten",
-      "input-device-prefix": "Invoer:",
+      "input-device-prefix": "Invoer",
       "no-application-audio": "Geen applicatiegeluid",
       "no-application-audio-body": "Er zijn momenteel geen applicatie-afspeelbronnen beschikbaar.",
       "no-input-devices": "Geen invoerapparaten",
@@ -173,7 +173,7 @@
       "no-output-devices": "Geen uitvoerapparaten",
       "no-output-devices-body": "Er zijn momenteel geen afspeelapparaten beschikbaar.",
       "no-output-selected": "Geen uitvoerapparaat geselecteerd",
-      "output-device-prefix": "Uitvoer:",
+      "output-device-prefix": "Uitvoer",
       "unavailable-body": "Pipewire is niet actief.",
       "unavailable-title": "Geluid niet beschikbaar"
     },
@@ -247,6 +247,7 @@
     "network": {
       "connect": "Verbinden",
       "current-connection": "Huidige verbinding",
+      "external-ip": "WAN {ip}",
       "no-networks": "Geen netwerken in bereik",
       "not-connected": "Niet verbonden",
       "password": "Wachtwoord",
@@ -365,6 +366,14 @@
       "weather": "Weer"
     },
     "weather": {
+      "daily": {
+        "tooltip": {
+          "high": "Hoog",
+          "low": "Laag",
+          "sunrise": "Zonsopkomst",
+          "sunset": "Zonsondergang"
+        }
+      },
       "data-unavailable": "Weergegevens niet beschikbaar",
       "details": {
         "elevation": "Hoogte",
@@ -373,6 +382,7 @@
         "temp-max": "Max. temperatuur",
         "temp-min": "Min. temperatuur",
         "timezone": "Tijdzone",
+        "uv-index": "UV Index",
         "wind": "Wind"
       },
       "disabled": "Schakel [weather] in in config.toml",
@@ -382,7 +392,20 @@
         "description": "Weer",
         "temperature": "10 / 4 °C"
       },
+      "forecast-view": {
+        "daily": "Dagelijks",
+        "hourly": "Uurlijks"
+      },
+      "hourly": {
+        "summary": "{condition} / Regen {precip}%",
+        "tooltip": {
+          "humidity": "Vochtigheid",
+          "rain": "Regen",
+          "wind": "Wind"
+        }
+      },
       "location-unavailable": "Locatie niet beschikbaar",
+      "no-location-title": "Geen locatie ingesteld",
       "refreshing": "Weer vernieuwen...",
       "waiting": "Wachten op weergegevens"
     }
@@ -645,6 +668,7 @@
       "lockscreen-widgets-editor-blocked-locked": "Ontgrendel de sessie voordat je de widgets van het vergrendelscherm bewerkt.",
       "lockscreen-widgets-editor-enabled": "Widget-editor voor vergrendelscherm staat aan. Rangschik de widgets op de voorvertoning-overlay en vergrendel vervolgens de sessie om de indeling te controleren.",
       "mpris-disabled": "MPRIS uitgeschakeld",
+      "polkit-agent": "Polkit Agent",
       "session-bus-unavailable": "Sessiebus niet beschikbaar",
       "wallpaper-palette-export": "Aangepast palet",
       "wallpaper-palette-export-success": "\"{name}\" opgeslagen en paletbron gewijzigd naar aangepast."
@@ -931,7 +955,7 @@
         "name-label": "Naam",
         "name-placeholder": "inactiviteit-gedrag",
         "resume-command-label": "Hervattingsopdracht",
-        "resume-command-placeholder": "noctalia:dpms-on",
+        "resume-command-placeholder": "",
         "summary": "{name} · {seconds}s",
         "summary-disabled-timeout": "{name} · time-out uitgeschakeld",
         "timeout-label": "Time-out in seconden",
@@ -988,7 +1012,6 @@
         "overview": "Overzicht",
         "pinned-apps": "Vastgemaakte apps",
         "power": "Energiebeheer",
-        "privacy-security": "Privacy & Veiligheid",
         "profile": "Profiel",
         "screen-corners": "Schermhoeken",
         "screen-time": "Schermtijd",

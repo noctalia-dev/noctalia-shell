@@ -116,8 +116,8 @@ namespace settings {
                 ui::label({
                     .text = m_title,
                     .fontSize = Style::fontSizeBody * m_scale,
-                    .color = colorSpecFromRole(ColorRole::OnSurface),
                     .fontWeight = FontWeight::Bold,
+                    .color = colorSpecFromRole(ColorRole::OnSurface),
                 }),
                 ui::spacer(),
                 ui::button({

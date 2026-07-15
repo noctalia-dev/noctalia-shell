@@ -3,9 +3,9 @@
 #include "config/config_service.h"
 #include "config/config_types.h"
 #include "core/deferred_call.h"
-#include "core/key_modifiers.h"
-#include "core/key_symbols.h"
-#include "core/keybind_matcher.h"
+#include "core/input/key_modifiers.h"
+#include "core/input/key_symbols.h"
+#include "core/input/keybind_matcher.h"
 #include "core/log.h"
 #include "core/scoped_timer.h"
 #include "core/ui_phase.h"
@@ -43,7 +43,7 @@ namespace {
 
   constexpr float kWindowWidth = 1280.0f;
   constexpr float kWindowHeight = 600.0f;
-  constexpr float kWindowMinWidth = 900.0f;
+  constexpr float kWindowMinWidth = 1020.0f;
   constexpr float kWindowMinHeight = 500.0f;
 
   // How many frames to wait for the settings window to gain keyboard focus before opening a pending
@@ -73,7 +73,7 @@ namespace {
   }
 
   void focusExistingSettingsWindow(WaylandConnection& wayland, wl_surface* surface) {
-    static constexpr std::string_view kSettingsAppId = "dev.noctalia.Noctalia.Settings";
+    static constexpr std::string_view kSettingsAppId = "dev.noctalia.Noctalia";
     wayland.activateSurface(surface);
     wayland.activateToplevelForAppId(kSettingsAppId);
   }
@@ -162,7 +162,7 @@ float SettingsWindow::uiScale() const {
   if (m_config == nullptr) {
     return 1.0f;
   }
-  return std::max(0.1f, m_config->config().shell.uiScale);
+  return std::max(0.1f, m_config->config().accessibility.uiScale);
 }
 
 bool SettingsWindow::headerDragRegionContains(float sceneX, float sceneY) const {
@@ -409,7 +409,7 @@ void SettingsWindow::open(std::string context) {
       .minWidth = minWidth,
       .minHeight = minHeight,
       .title = i18n::tr("settings.window.native-title"),
-      .appId = "dev.noctalia.Noctalia.Settings",
+      .appId = "dev.noctalia.Noctalia",
   };
 
   if (!m_surface->initialize(output, cfg)) {
@@ -565,6 +565,12 @@ void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
     m_inputDispatcher.stashTabFocus();
     buildScene(width, height);
     m_inputDispatcher.restoreStashedTabFocus();
+    if (m_focusSearchOnRebuild) {
+      if (m_settingsSearchInput != nullptr && m_settingsSearchInput->inputArea() != nullptr) {
+        m_inputDispatcher.setFocus(m_settingsSearchInput->inputArea());
+      }
+      m_focusSearchOnRebuild = false;
+    }
     logSettingsProfile("prepareFrame buildScene", phaseProfileWatch);
     m_lastSceneWidth = width;
     m_lastSceneHeight = height;
@@ -604,7 +610,9 @@ void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
         m_filterRowRefreshRequested = false;
       }
       rebuildSettingsContent();
+      m_deferFocusScrollToLayout = true;
       m_inputDispatcher.restoreStashedTabFocus();
+      m_deferFocusScrollToLayout = false;
       m_contentRebuildRequested = false;
     }
     logSettingsProfile("prepareFrame rebuildContent", phaseProfileWatch);
@@ -1093,6 +1101,10 @@ void SettingsWindow::onPluginsChanged() {
   if (isOpen() && m_selectedSection == "plugins") {
     requestContentRebuild();
   }
+}
+
+void SettingsWindow::invalidatePluginSourceCache(const std::string& sourceName) {
+  m_pluginFileCache.invalidateSource(sourceName);
 }
 
 void SettingsWindow::refreshIdleLiveStatusText() {

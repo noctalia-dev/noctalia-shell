@@ -83,7 +83,7 @@ namespace {
           ui::button({
               .text = historyActionLabel(actionKey, actions[i + 1]),
               .fontSize = Style::fontSizeCaption * scale,
-              .variant = ButtonVariant::Outline,
+              .variant = ButtonVariant::Default,
           })
       );
     }
@@ -452,7 +452,7 @@ namespace {
           auto button = ui::button({
               .text = historyActionLabel(actionKey, entry.notification.actions[i + 1]),
               .fontSize = Style::fontSizeCaption * m_scale,
-              .variant = ButtonVariant::Outline,
+              .variant = ButtonVariant::Default,
           });
           button->setOnClick([onAction, id = entry.notification.id, key = std::string(actionKey)]() {
             onAction(id, key);
@@ -719,8 +719,8 @@ std::unique_ptr<Flex> NotificationsTab::create() {
           ui::label({
               .out = &m_emptyTitle,
               .fontSize = Style::fontSizeBody * scale,
-              .color = colorSpecFromRole(ColorRole::OnSurface),
               .fontWeight = FontWeight::Bold,
+              .color = colorSpecFromRole(ColorRole::OnSurface),
           }),
           ui::label({
               .out = &m_emptyBody,

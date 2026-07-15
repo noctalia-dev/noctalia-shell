@@ -7,9 +7,8 @@
 #include <string>
 #include <vector>
 
-// Abstract interface shared by NetworkManagerService (NetworkManager backend) and
-// WpaSupplicantService (wpa_supplicant backend).  UI code should use this type
-// so it works with either backend.
+// Abstract interface shared by the NetworkManager, wpa_supplicant, and iwd
+// backends. UI code should use this type so it works with any backend.
 class IpcService;
 
 class INetworkService {

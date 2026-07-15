@@ -1,7 +1,7 @@
 #include "config/widget_config.h"
 #include "core/toml.h"
 
-#include <cstdio>
+#include <print>
 #include <string>
 #include <variant>
 
@@ -9,7 +9,7 @@ namespace {
 
   bool expect(bool condition, const char* message) {
     if (!condition) {
-      std::fprintf(stderr, "config_widget_test: FAIL: %s\n", message);
+      std::println(stderr, "config_widget_test: FAIL: {}", message);
       return false;
     }
     return true;
@@ -18,12 +18,12 @@ namespace {
   bool expectStringSetting(const WidgetConfig& widget, const std::string& key, const std::string& expected) {
     const auto it = widget.settings.find(key);
     if (it == widget.settings.end()) {
-      std::fprintf(stderr, "config_widget_test: FAIL: missing setting '%s'\n", key.c_str());
+      std::println(stderr, "config_widget_test: FAIL: missing setting '{}'", key);
       return false;
     }
     const auto* actual = std::get_if<std::string>(&it->second);
     if (actual == nullptr || *actual != expected) {
-      std::fprintf(stderr, "config_widget_test: FAIL: setting '%s': expected '%s'\n", key.c_str(), expected.c_str());
+      std::println(stderr, "config_widget_test: FAIL: setting '{}': expected '{}'", key, expected);
       return false;
     }
     return true;
@@ -32,14 +32,12 @@ namespace {
   bool expectBoolSetting(const WidgetConfig& widget, const std::string& key, bool expected) {
     const auto it = widget.settings.find(key);
     if (it == widget.settings.end()) {
-      std::fprintf(stderr, "config_widget_test: FAIL: missing setting '%s'\n", key.c_str());
+      std::println(stderr, "config_widget_test: FAIL: missing setting '{}'", key);
       return false;
     }
     const auto* actual = std::get_if<bool>(&it->second);
     if (actual == nullptr || *actual != expected) {
-      std::fprintf(
-          stderr, "config_widget_test: FAIL: setting '%s': expected %s\n", key.c_str(), expected ? "true" : "false"
-      );
+      std::println(stderr, "config_widget_test: FAIL: setting '{}': expected {}", key, expected);
       return false;
     }
     return true;
@@ -50,15 +48,12 @@ namespace {
   ) {
     const auto tableIt = widget.tables.find(tableKey);
     if (tableIt == widget.tables.end()) {
-      std::fprintf(stderr, "config_widget_test: FAIL: missing table '%s'\n", tableKey.c_str());
+      std::println(stderr, "config_widget_test: FAIL: missing table '{}'", tableKey);
       return false;
     }
     const auto valueIt = tableIt->second.find(key);
     if (valueIt == tableIt->second.end() || valueIt->second != expected) {
-      std::fprintf(
-          stderr, "config_widget_test: FAIL: table '%s.%s': expected '%s'\n", tableKey.c_str(), key.c_str(),
-          expected.c_str()
-      );
+      std::println(stderr, "config_widget_test: FAIL: table '{}.{}': expected '{}'", tableKey, key, expected);
       return false;
     }
     return true;
@@ -111,6 +106,27 @@ int main() {
   ok = expect(layout.type == "keyboard_layout", "keyboard_layout keeps builtin type") && ok;
   ok = expectBoolSetting(layout, "hide_when_single_layout", false) && ok;
   ok = expectStringMapEntry(layout, "custom_labels", "English (US)", "EN") && ok;
+
+  BarConfig bar;
+  bar.widgetCapsuleRadius = 12.0;
+  WidgetConfig launcher;
+  launcher.settings["capsule"] = true;
+  launcher.settings["capsule_radius"] = std::string("auto");
+  const WidgetBarCapsuleSpec automaticCapsule = resolveWidgetBarCapsuleSpec(bar, &launcher);
+  ok = expect(automaticCapsule.enabled, "launcher capsule is enabled with an automatic radius") && ok;
+  ok = expect(
+           automaticCapsule.radius.has_value() && *automaticCapsule.radius == 12.0f,
+           "automatic widget capsule radius keeps the bar radius"
+       )
+      && ok;
+
+  launcher.settings["capsule_radius"] = 7.0;
+  const WidgetBarCapsuleSpec explicitCapsule = resolveWidgetBarCapsuleSpec(bar, &launcher);
+  ok = expect(
+           explicitCapsule.radius.has_value() && *explicitCapsule.radius == 7.0f,
+           "numeric widget capsule radius overrides the bar radius"
+       )
+      && ok;
 
   return ok ? 0 : 1;
 }

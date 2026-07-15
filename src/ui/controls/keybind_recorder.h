@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/key_chord.h"
+#include "core/input/key_chord.h"
 #include "ui/controls/flex.h"
 
 #include <cstdint>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/key_modifiers.h"
+#include "core/input/key_modifiers.h"
 
 #include <chrono>
 #include <cstdint>

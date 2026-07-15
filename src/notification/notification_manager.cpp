@@ -214,8 +214,12 @@ uint32_t NotificationManager::addOrReplace(NotificationRequest request) {
   };
 
   const ExternalNotificationDispatch externalDispatch = origin == NotificationOrigin::External
-      ? evaluateExternalDispatch(urgency, appName, category, desktopEntry, transient)
+      ? evaluateExternalDispatch(urgency, appName, category, desktopEntry, summary, body, transient)
       : ExternalNotificationDispatch{};
+
+  if (externalDispatch.overrideDuration.has_value()) {
+    timeout = normalizeNotifyExpireTimeout(*externalDispatch.overrideDuration);
+  }
 
   // A matching filter with allow_permanent = false expires otherwise-permanent (timeout 0) notifications.
   if (timeout == 0 && externalDispatch.disallowPermanent) {
@@ -641,7 +645,7 @@ const std::vector<NotificationFilterConfig>& NotificationManager::filters() cons
 
 NotificationManager::ExternalNotificationDispatch NotificationManager::evaluateExternalDispatch(
     Urgency urgency, std::string_view appName, const std::optional<std::string>& category,
-    const std::optional<std::string>& desktopEntry, bool transient
+    const std::optional<std::string>& desktopEntry, std::string_view summary, std::string_view body, bool transient
 ) const {
   ExternalNotificationDispatch dispatch;
   const auto resolved = resolveNotificationFilter(
@@ -650,6 +654,8 @@ NotificationManager::ExternalNotificationDispatch NotificationManager::evaluateE
           .appName = appName,
           .category = category.has_value() ? std::optional<std::string_view>{*category} : std::nullopt,
           .desktopEntry = desktopEntry.has_value() ? std::optional<std::string_view>{*desktopEntry} : std::nullopt,
+          .summary = summary,
+          .body = body,
       }
   );
   dispatch.disallowPermanent = resolved.matched && !resolved.allowPermanent;
@@ -664,6 +670,7 @@ NotificationManager::ExternalNotificationDispatch NotificationManager::evaluateE
   dispatch.saveHistory = resolved.saveHistory && shouldTrackHistory(NotificationOrigin::External, urgency, transient);
   dispatch.playSound = resolved.playSound && dispatch.showToast;
   dispatch.fullySuppress = !dispatch.showToast && !dispatch.saveHistory;
+  dispatch.overrideDuration = resolved.overrideDuration;
   return dispatch;
 }
 

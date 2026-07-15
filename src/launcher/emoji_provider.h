@@ -11,7 +11,7 @@ class EmojiProvider : public LauncherProvider {
 public:
   explicit EmojiProvider(ClipboardService* clipboard) : m_clipboard(clipboard) {}
 
-  [[nodiscard]] std::string_view prefix() const override { return "/emo"; }
+  [[nodiscard]] std::string_view defaultPrefix() const override { return "emo"; }
   [[nodiscard]] std::string_view id() const override { return "Emoji"; }
   [[nodiscard]] std::string displayName() const override;
   [[nodiscard]] std::string_view defaultGlyphName() const override { return "mood-smile-beam"; }

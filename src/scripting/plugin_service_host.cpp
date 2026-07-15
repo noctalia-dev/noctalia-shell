@@ -179,6 +179,14 @@ namespace scripting {
       if (!sourceChanged && !settingsChanged) {
         continue;
       }
+      // A settings-only change reconfigures a service that opts in via onConfigChanged
+      // in place, no VM teardown, so its in-memory runtime state survives.
+      if (settingsChanged && !sourceChanged && service.runtime->hasOnConfigChanged()) {
+        service.lastSeededSettings = *seeded;
+        (void)service.runtime->enqueueSettingsChanged(service.lastSeededSettings);
+        kLog.info("reconfigured service '{}' in place after settings change", id);
+        continue;
+      }
       std::string code = readFile(entry.sourcePath);
       if (code.empty()) {
         kLog.warn("service '{}': empty or unreadable source on refresh {}", id, entry.sourcePath.string());

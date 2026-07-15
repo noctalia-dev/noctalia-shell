@@ -1,7 +1,7 @@
 #pragma once
 
 #include "config/config_types.h"
-#include "core/file_watcher.h"
+#include "core/files/file_watcher.h"
 #include "core/timer_manager.h"
 #include "launcher/launcher_provider.h"
 #include "scripting/script_runtime.h"
@@ -41,13 +41,13 @@ public:
   PluginLauncherProvider(scripting::PluginRuntimeContext context, PluginLauncherProviderOptions options);
   ~PluginLauncherProvider() override;
 
-  [[nodiscard]] std::string_view prefix() const override { return m_prefix; }
+  [[nodiscard]] std::string_view defaultPrefix() const override { return m_prefix; }
   [[nodiscard]] std::string_view id() const override { return m_entryId; }
   [[nodiscard]] std::string displayName() const override { return m_displayName.empty() ? m_entryId : m_displayName; }
   [[nodiscard]] std::string_view defaultGlyphName() const override {
     return m_glyph.empty() ? std::string_view("search") : std::string_view(m_glyph);
   }
-  [[nodiscard]] bool includeInGlobalSearch() const override { return m_globalSearch; }
+  [[nodiscard]] bool defaultIncludeInGlobalSearch() const override { return m_globalSearch; }
   [[nodiscard]] std::vector<LauncherCategory> categories() const override { return m_categories; }
   [[nodiscard]] bool isDynamic() const override { return true; }
   void setResultsChangedCallback(std::function<void()> callback) override { m_onResultsChanged = std::move(callback); }
@@ -68,6 +68,10 @@ private:
   void teardownScriptWatch();
   void reloadScript();
   void handleResult(const scripting::ScriptResult& result);
+  // Prepend this provider's resolved prefix to a plugin-supplied sub-query, so a
+  // rewritten launcher input keeps the provider active regardless of the configured
+  // prefix. An empty prefix (global provider) yields the sub-query verbatim.
+  [[nodiscard]] std::string buildProviderInput(std::string_view sub) const;
   // Enqueue onQuery for `text` on the runtime (skips a duplicate of the last send).
   void dispatchQuery(const std::string& text) const;
   // Restart the debounce timer; it fires dispatchQuery(m_pendingQuery) when idle.

@@ -1,9 +1,9 @@
 #include "ui/dialogs/file_dialog_view.h"
 
 #include "core/deferred_call.h"
-#include "core/key_modifiers.h"
-#include "core/key_symbols.h"
-#include "core/keybind_matcher.h"
+#include "core/input/key_modifiers.h"
+#include "core/input/key_symbols.h"
+#include "core/input/keybind_matcher.h"
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/core/thumbnail_service.h"
@@ -148,8 +148,8 @@ void FileDialogView::create() {
           ui::label({
               .out = &m_titleLabel,
               .fontSize = Style::fontSizeTitle * scale,
-              .color = colorSpecFromRole(ColorRole::Primary),
               .fontWeight = FontWeight::Bold,
+              .color = colorSpecFromRole(ColorRole::Primary),
           }),
           ui::spacer(),
           ui::button({

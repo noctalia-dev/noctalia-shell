@@ -1,6 +1,6 @@
 #include "shell/settings/font_family_catalog.h"
 
-#include "core/process.h"
+#include "core/process/process.h"
 #include "i18n/i18n.h"
 #include "util/string_utils.h"
 

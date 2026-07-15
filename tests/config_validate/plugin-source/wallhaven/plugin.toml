@@ -1,0 +1,11 @@
+id = "noctalia/wallhaven"
+name = "Wallhaven"
+min_noctalia = "5.0.0"
+
+[[panel]]
+id = "browser"
+entry = "panel.luau"
+width = 920
+height = 780
+placement = "attached"
+position = "auto"

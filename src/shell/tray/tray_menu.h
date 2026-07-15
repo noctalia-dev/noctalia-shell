@@ -20,6 +20,7 @@
 class ConfigService;
 class RenderContext;
 class WaylandConnection;
+struct KeyboardEvent;
 struct PointerEvent;
 struct wl_surface;
 
@@ -38,6 +39,8 @@ public:
   [[nodiscard]] bool isOpen() const noexcept { return m_visible; }
 
   [[nodiscard]] bool onPointerEvent(const PointerEvent& event);
+  // Consumes keys while the menu is open (modal grab); Cancel closes it.
+  [[nodiscard]] bool onKeyboardEvent(const KeyboardEvent& event);
 
 private:
   struct MenuInstance {
@@ -62,6 +65,7 @@ private:
   void ensureSurface();
   void resizeMainSurfaceToEntries();
   void destroySurface();
+  void restoreBarKeyboardInteractivity();
   void rebuildScenes();
   void prepareMainMenuFrame(MenuInstance& inst, bool needsUpdate, bool needsLayout);
   void buildScene(MenuInstance& inst, uint32_t width, uint32_t height);
@@ -83,6 +87,12 @@ private:
   std::string m_activeItemId;
   std::vector<TrayMenuEntry> m_entries;
   std::unique_ptr<MenuInstance> m_instance;
+
+  // Bar layer surface (owned by the bar) whose keyboard interactivity is flipped
+  // to OnDemand while the menu is open so the grabbing popup inherits keyboard
+  // focus, then restored to None on close.
+  zwlr_layer_surface_v1* m_keyboardBarLayerSurface = nullptr;
+  wl_surface* m_keyboardBarWlSurface = nullptr;
   float m_contentScale = 1.0f;
   bool m_visible = false;
   std::string m_lastClosedItemId;

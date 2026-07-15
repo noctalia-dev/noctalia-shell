@@ -14,6 +14,7 @@
 namespace scripting {
   struct ManifestField;
   struct PluginEntry;
+  class PluginRegistry;
   class PluginTranslationCatalog;
 } // namespace scripting
 
@@ -66,13 +67,6 @@ namespace settings {
     ColorSpec,
   };
 
-  enum class WidgetSettingGroup : std::uint8_t {
-    Widget,
-    Presentation,
-    Runtime,
-    Grouping,
-  };
-
   struct WidgetSettingSelectOption {
     std::string value;
     std::string labelKey; // i18n key, unless the owning spec sets `literalLabels` (then a literal label)
@@ -104,8 +98,12 @@ namespace settings {
     std::string literalLabel;       // when non-empty, used verbatim instead of tr(labelKey)
     std::string literalDescription; // when non-empty, used verbatim instead of tr(descriptionKey)
     bool literalLabels = false;     // when true, option.labelKey holds a literal label (not an i18n key)
-    WidgetSettingGroup group = WidgetSettingGroup::Widget;
+    // Section this setting renders under. Doubles as the i18n key suffix, resolved against
+    // settings.entities.widget.settings.groups.<group>. Shared across widgets: "widget", "presentation",
+    // "runtime". Anything meaningful to a single widget is prefixed with its type, e.g. "taskbar.grouping".
+    std::string group = "widget";
     std::vector<WidgetSettingSelectOption> options; // value+label; values mirror schema.enumValues
+    bool visibleInInspector = true;
     bool advanced = false;
     bool segmented = false;              // applies when control == Select
     bool integerValue = false;           // applies when control == Select
@@ -130,15 +128,17 @@ namespace settings {
   [[nodiscard]] WidgetReferenceInfo
   widgetReferenceInfo(const Config& cfg, std::string_view name, bool includeManifestVersion = true);
   [[nodiscard]] std::vector<WidgetPickerEntry> widgetPickerEntries(const Config& cfg);
-  [[nodiscard]] std::vector<WidgetSettingSpec> commonWidgetSettingSpecs(std::string_view shellFontFamily);
+  [[nodiscard]] std::vector<WidgetSettingSpec>
+  commonWidgetSettingSpecs(std::string_view shellFontFamily, bool populateFontCatalogs = true);
   [[nodiscard]] std::vector<WidgetSettingSpec> widgetSettingSpecs(
-      std::string_view type, std::string_view shellFontFamily, bool supportsTaskbarWorkspaceGrouping = true
+      std::string_view type, std::string_view shellFontFamily, bool supportsTaskbarWorkspaceGrouping = true,
+      bool populateFontCatalogs = true
   );
   // Config-aware variant: for a plugin [[widget]] type, returns the manifest-driven
   // settings. Falls back to the type-only specs otherwise.
   [[nodiscard]] std::vector<WidgetSettingSpec> widgetSettingSpecs(
       std::string_view type, const WidgetConfig* config, std::string_view shellFontFamily,
-      bool supportsTaskbarWorkspaceGrouping = true
+      bool supportsTaskbarWorkspaceGrouping = true, bool populateFontCatalogs = true
   );
   // Build settings specs from a plugin entry's declared setting schema.
   [[nodiscard]] std::vector<WidgetSettingSpec> manifestSettingSpecs(
@@ -151,8 +151,9 @@ namespace settings {
   // layer (e.g. `config validate`). For plugin widgets the type alone resolves the
   // manifest, so the config arg is no longer required for them.
   [[nodiscard]] noctalia::config::schema::WidgetSettingSchema widgetSettingSchema(std::string_view type);
-  [[nodiscard]] noctalia::config::schema::WidgetSettingSchema
-  widgetSettingSchema(std::string_view type, const WidgetConfig* config);
+  [[nodiscard]] noctalia::config::schema::WidgetSettingSchema widgetSettingSchema(
+      std::string_view type, const WidgetConfig* config, scripting::PluginRegistry* pluginRegistry = nullptr
+  );
   [[nodiscard]] std::optional<noctalia::config::schema::WidgetSettingField>
   findWidgetSettingField(std::string_view widgetType, std::string_view settingKey);
 

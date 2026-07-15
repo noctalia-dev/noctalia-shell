@@ -1,7 +1,9 @@
 #pragma once
 
+#include "config/config_migrations.h"
 #include "config/config_types.h"
 #include "config/state_store.h"
+#include "core/timer_manager.h"
 #include "core/toml.h"
 
 #include <cstdint>
@@ -48,6 +50,7 @@ public:
   // Which sections changed in the reload currently being dispatched. Valid while
   // reload callbacks run; subscribers consult it to skip unaffected work.
   [[nodiscard]] const ConfigChangeSet& lastChange() const noexcept { return m_lastChange; }
+  [[nodiscard]] const std::string& lastMutationError() const noexcept { return m_lastMutationError; }
   [[nodiscard]] bool matchesKeybind(KeybindAction action, std::uint32_t sym, std::uint32_t modifiers) const;
   [[nodiscard]] int watchFd() const noexcept { return m_inotifyFd; }
   [[nodiscard]] std::string buildSupportReport() const;
@@ -62,6 +65,9 @@ public:
   [[nodiscard]] bool shouldRunSetupWizard() const;
   [[nodiscard]] std::optional<bool> stateBool(std::string_view owner, std::string_view key) const;
   [[nodiscard]] std::optional<std::string> stateString(std::string_view owner, std::string_view key) const;
+  [[nodiscard]] const noctalia::config::LegacyConfigIssues& legacyConfigIssues() const noexcept {
+    return m_legacyConfigIssues;
+  }
 
   // The optional label is used only for opt-in reload profiling (NOCTALIA_PROFILE);
   // unlabeled subscribers are reported by registration index.
@@ -135,6 +141,9 @@ public:
   bool deleteCalendarAccountOverride(std::string_view id);
   bool setOverride(const std::vector<std::string>& path, ConfigOverrideValue value);
   bool setOverride(const std::vector<std::string>& path, ConfigOverrideValue value, bool* changed);
+  [[nodiscard]] bool validateOverride(
+      const std::vector<std::string>& path, const ConfigOverrideValue& value, std::string* error = nullptr
+  );
   bool setOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides);
   bool setOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides, bool* changed);
   bool clearOverride(const std::vector<std::string>& path);
@@ -153,6 +162,11 @@ private:
   static void
   parseConfigTable(const toml::table& tbl, Config& config, bool logSummary, bool logSchemaDiagnostics = true);
   [[nodiscard]] std::optional<Config> configForOverrides(const toml::table& overrides) const;
+  [[nodiscard]] noctalia::config::schema::Diagnostics diagnosticsForOverrides(const toml::table& overrides) const;
+  [[nodiscard]] bool validateOverrideMutation(
+      const toml::table& candidateOverrides, const toml::table* baselineOverrides = nullptr,
+      const noctalia::config::schema::Diagnostics* candidateDiagnostics = nullptr
+  );
   [[nodiscard]] bool overridePathEffectiveInTable(
       const std::vector<std::string>& path, const toml::table& overrides, const Config* parsedWith = nullptr
   ) const;
@@ -165,10 +179,14 @@ private:
   void fireReloadCallbacks();
   void loadOverridesFromFile();
   void setConfigParseError(std::string parseError);
+  void updateLegacyConfigIssues(noctalia::config::LegacyConfigIssues issues);
+  void notifyLegacyConfigIssues();
   bool writeOverridesToFile();
   void extractWallpaperFromOverrides();
   void extractWallpaperFromTable(const toml::table& table);
   void syncWallpaperFavoritesToOverridesTable();
+  [[nodiscard]] bool hasConfiguredWallpaper() const;
+  [[nodiscard]] std::string firstRunWallpaperPath() const;
 
   Config m_config;
   ConfigChangeSet m_lastChange;
@@ -186,6 +204,7 @@ private:
   // or dismissed. Single canonical signal for the setup wizard.
   std::string m_setupMarkerPath;
   toml::table m_overridesTable;
+  toml::table m_persistedOverridesTable;
   std::unordered_set<std::string> m_configFileBarNames;
   std::unordered_map<std::string, std::unordered_set<std::string>> m_configFileMonitorOverrideNames;
   std::unordered_set<std::string> m_configFileCalendarAccountNames;
@@ -198,6 +217,10 @@ private:
   std::string m_overridesParseError;
   std::string m_pendingError; // parse error from initial load, sent as notification once manager is wired up
   uint32_t m_configErrorNotificationId = 0; // ID of the active config-error notification, 0 if none
+  noctalia::config::LegacyConfigIssues m_legacyConfigIssues;
+  std::string m_loggedLegacyIssueFingerprint;
+  bool m_legacyReminderPending = false;
+  Timer m_legacyReminderTimer;
   NotificationManager* m_notificationManager = nullptr;
 
   // Single inotify fd, two watch descriptors (config dir + state dir).
@@ -223,6 +246,7 @@ private:
   std::vector<std::filesystem::path> m_includeDirs;
 
   bool m_ownOverridesWritePending = false;
+  std::string m_lastMutationError;
   int m_wallpaperBatchDepth = 0;
   bool m_wallpaperBatchDirty = false;
 

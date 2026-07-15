@@ -3,15 +3,20 @@
 #include "compositors/compositor_platform.h"
 #include "render/animation/animation_manager.h"
 #include "shell/bar/widget.h"
+#include "system/icon_resolver.h"
 #include "ui/palette.h"
+#include "ui/signal.h"
 
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 class Box;
+class ConfigService;
+class Image;
 class InputArea;
 class Label;
 
@@ -35,24 +40,33 @@ public:
     float activePillSize = 2.2f;
     float inactivePillSize = 1.0f;
     bool minimal = false;
+    bool focusedPill = false;
     bool focusedOutputOnly = false;
   };
 
-  WorkspacesWidget(CompositorPlatform& platform, wl_output* output, Options options);
+  WorkspacesWidget(CompositorPlatform& platform, ConfigService& config, wl_output* output, Options options);
   ~WorkspacesWidget() override;
 
   void create() override;
+  [[nodiscard]] bool wantsBarHoverHighlight() const noexcept override { return false; }
 
 private:
+  struct Item;
+
   void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void doUpdate(Renderer& renderer) override;
   void rebuild(Renderer& renderer);
   void computeTargets();
+  void updateItemFlowPositions();
   void retarget(Renderer& renderer);
   void updateContainerSize();
   void startAnimation();
   void cancelAnimation();
-  void applyItemLayout(std::size_t i);
+  void finishAnimation();
+  void applyItemLayout(Item& item);
+  void applyItemLayouts();
+  void snapshotItemsForRebuild();
+  void scheduleRebuildFromSnapshot();
   [[nodiscard]] float workspacePillRadius(float width, float height) const noexcept;
   [[nodiscard]] float workspaceMainAxisMinWidth(float baseSize, bool active) const noexcept;
   [[nodiscard]] std::optional<std::size_t> activeWorkspaceIndex() const;
@@ -60,29 +74,63 @@ private:
 
   [[nodiscard]] static std::optional<std::size_t> numericWorkspaceId(const Workspace& workspace);
   [[nodiscard]] std::string workspaceLabel(const Workspace& workspace, std::size_t displayIndex) const;
+  [[nodiscard]] std::string activeWindowAppId() const;
+  [[nodiscard]] std::string resolveIconPath(const std::string& appId);
+  [[nodiscard]] float focusedPillIconSize() const noexcept;
+  [[nodiscard]] float focusedPillDotSize() const noexcept;
+  [[nodiscard]] float focusedPillActiveMainAxisSize(
+      float textWidth, float textHeight, bool showLabel, bool hasIcon, float baseSize, float padding
+  ) const noexcept;
+  void buildDesktopIconIndex();
+  void syncActiveWindowIcon(Renderer& renderer, Item& item);
   [[nodiscard]] bool shouldShowWorkspaceLabel(const Workspace& workspace, std::string_view label) const noexcept;
   [[nodiscard]] DisplayMode effectiveDisplayMode() const noexcept;
   [[nodiscard]] bool isWorkspaceHidden(const Workspace& workspace) const noexcept;
   void syncWidgetVisibility(bool showWidget);
-  void recalculateItemMetrics(Renderer& renderer, std::size_t index);
-  void updateAllItemMetrics(Renderer& renderer);
-  void ensureItemLabel(Renderer& renderer, std::size_t index);
+  void recalculateItemMetrics(Renderer& renderer, Item& item, const Workspace& workspace, std::size_t displayIndex);
+  void ensureItemLabel(Renderer& renderer, Item& item, const Workspace& workspace);
+  void setWorkspaceClickHandler(InputArea& area, const Workspace& workspace);
+  void applyItemVisualStyle(Item& item);
+  void updateHoverOverlay();
+  [[nodiscard]] bool shouldHoldPreviousVisualWorkspace(
+      const Workspace& previousVisualWorkspace, const Workspace& currentWorkspace
+  ) const noexcept;
+  [[nodiscard]] bool releaseHeldVisualStyles();
 
   struct Item {
     InputArea* area = nullptr;
     Box* indicator = nullptr;
     Label* text = nullptr;
+    Image* icon = nullptr;
+    Workspace workspace;
+    Workspace visualWorkspace;
+    std::string key;
     std::string label;
+    std::string iconPath;
     bool showLabel = false;
+    bool showIcon = false;
     bool active = false;
+    bool exiting = false;
+    bool releaseVisualAfterAnimation = false;
     float inactiveWidth = 0.0f;
     float activeWidth = 0.0f;
-    float fromX = 0.0f;
     float fromWidth = 0.0f;
     float targetX = 0.0f;
     float targetWidth = 0.0f;
     float currentX = 0.0f;
     float currentWidth = 0.0f;
+    float fromOpacity = 1.0f;
+    float targetOpacity = 1.0f;
+    float currentOpacity = 1.0f;
+  };
+
+  struct ItemSnapshot {
+    std::string key;
+    Workspace workspace;
+    std::string label;
+    bool showLabel = false;
+    float width = 0.0f;
+    float opacity = 1.0f;
   };
 
   [[nodiscard]] ColorSpec workspaceFillColor(const Workspace& workspace) const;
@@ -92,6 +140,7 @@ private:
   [[nodiscard]] bool isFocusedOutput() const;
 
   CompositorPlatform& m_platform;
+  ConfigService& m_configService;
   wl_output* m_output = nullptr;
   DisplayMode m_displayMode = DisplayMode::None;
   std::size_t m_maxLabelChars = 1;
@@ -101,17 +150,28 @@ private:
   float m_activePillSize = 2.2f;
   float m_inactivePillSize = 1.0f;
   bool m_minimal = false;
+  bool m_focusedPill = false;
   bool m_focusedOutputOnly = false;
   bool m_wasFocusedOutput = true;
   bool m_activeUsesFocusedColor = true;
+  std::string m_cachedActiveWindowAppId;
+  IconResolver m_iconResolver;
+  std::unordered_map<std::string, std::string> m_appIcons;
+  std::uint64_t m_desktopEntriesVersion = 0;
   Node* m_container = nullptr;
   std::vector<Workspace> m_cachedState;
   std::vector<Item> m_items;
+  std::vector<ItemSnapshot> m_rebuildSnapshot;
   bool m_rebuildPending = true;
+  bool m_iconColorizeRefreshPending = false;
   std::uint64_t m_textMetricsGeneration = 0;
+  Signal<>::ScopedConnection m_appIconColorizeConn;
 
   float m_gap = 0.0f;
   float m_indicatorHeight = 0.0f;
+  Box* m_hoverOverlay = nullptr;
+  float m_hoverProgress = 0.0f;
+  InputArea* m_hoveredArea = nullptr;
   bool m_isVertical = false;
 
   AnimationManager::Id m_animId = 0;

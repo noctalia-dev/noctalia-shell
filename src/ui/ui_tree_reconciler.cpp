@@ -23,6 +23,7 @@
 #include "ui/style.h"
 #include "ui/ui_tree.h"
 
+#include <charconv>
 #include <cmath>
 #include <format>
 #include <linux/input-event-codes.h>
@@ -60,14 +61,35 @@ namespace ui {
       return it != node.props.end() ? std::get_if<std::vector<std::string>>(&it->second) : nullptr;
     }
 
-    // Role token ("primary", "on_surface", …) or hex ("#rrggbb[aa]").
+    // Role token ("primary", "on_surface", …) with an optional alpha suffix
+    // ("primary/0.6" → the role at 60% alpha, resolved live against the palette),
+    // or hex ("#rrggbb[aa]"). Alpha is 0.0–1.0; hex carries its own alpha byte.
     std::optional<ColorSpec> parseColor(const UiTreeNode& node, const char* key) {
       const std::string* token = strProp(node, key);
       if (token == nullptr) {
         return std::nullopt;
       }
-      if (auto role = colorRoleFromToken(*token); role.has_value()) {
-        return colorSpecFromRole(*role);
+      std::string_view base = *token;
+      float alpha = 1.0f;
+      if (const auto slash = base.find('/'); slash != std::string_view::npos) {
+        const std::string_view alphaText = base.substr(slash + 1);
+        base = base.substr(0, slash);
+        const auto* end = alphaText.data() + alphaText.size();
+        if (const auto res = std::from_chars(alphaText.data(), end, alpha);
+            res.ec != std::errc{} || res.ptr != end || alpha < 0.0f || alpha > 1.0f) {
+          kLog.warn(
+              "ui node '{}': invalid alpha '{}' in color '{}' for prop '{}' (expected 0.0-1.0)", node.type, alphaText,
+              *token, key
+          );
+          return std::nullopt;
+        }
+      }
+      if (auto role = colorRoleFromToken(base); role.has_value()) {
+        return colorSpecFromRole(*role, alpha);
+      }
+      if (base.size() != token->size()) {
+        kLog.warn("ui node '{}': alpha suffix requires a color role, got '{}' for prop '{}'", node.type, base, key);
+        return std::nullopt;
       }
       Color fixed;
       if (tryParseHexColor(*token, fixed)) {
@@ -170,6 +192,29 @@ namespace ui {
       return std::nullopt;
     }
 
+    // Named control-height tier, in unscaled logical pixels. Callers scale it.
+    // Distinct from ui.glyph's numeric `size`; use `height` for exact pixels.
+    std::optional<float> parseControlSize(const UiTreeNode& node) {
+      const std::string* token = strProp(node, "controlSize");
+      if (token == nullptr) {
+        if (node.props.contains("controlSize")) {
+          kLog.warn(
+              "ui node '{}': controlSize expects 'sm'/'md'/'lg', not a number - use 'height' for exact pixels",
+              node.type
+          );
+        }
+        return std::nullopt;
+      }
+      if (*token == "sm")
+        return Style::controlHeightSm;
+      if (*token == "md")
+        return Style::controlHeight;
+      if (*token == "lg")
+        return Style::controlHeightLg;
+      kLog.warn("ui node '{}': unknown controlSize '{}'", node.type, *token);
+      return std::nullopt;
+    }
+
     // The Node that a control's children reconcile into. Flex containers host
     // their children directly; a ScrollView hosts them in its inner content
     // Flex. Any other control returns nullptr — it cannot have children.
@@ -245,7 +290,8 @@ namespace ui {
                                                            "borderWidth", "softness", "onClick"};
       static const std::unordered_set<std::string> kLabel = {"width",      "height",   "flexGrow", "opacity",
                                                              "visible",    "text",     "fontSize", "color",
-                                                             "fontWeight", "maxWidth", "maxLines", "textAlign"};
+                                                             "fontWeight", "maxWidth", "maxLines", "textAlign",
+                                                             "fontFamily", "baseline"};
       static const std::unordered_set<std::string> kGlyph = {"width",   "height", "flexGrow", "opacity",
                                                              "visible", "name",   "size",     "color"};
       static const std::unordered_set<std::string> kImage = {"width",   "height",      "flexGrow", "opacity",
@@ -256,22 +302,25 @@ namespace ui {
                                                                  "color",   "spacing", "orientation"};
       static const std::unordered_set<std::string> kProgress = {"width",    "height", "flexGrow", "opacity", "visible",
                                                                 "progress", "fill",   "track",    "radius"};
-      static const std::unordered_set<std::string> kButton = {"width",     "height",      "flexGrow", "opacity",
-                                                              "visible",   "text",        "glyph",    "fontSize",
-                                                              "glyphSize", "variant",     "enabled",  "selected",
-                                                              "onClick",   "onRightClick"};
+      static const std::unordered_set<std::string> kButton = {"width",      "height",  "flexGrow",     "opacity",
+                                                              "visible",    "text",    "glyph",        "fontSize",
+                                                              "glyphSize",  "variant", "contentAlign", "enabled",
+                                                              "selected",   "onClick", "onRightClick", "tooltip",
+                                                              "controlSize"};
       static const std::unordered_set<std::string> kGraph = {"width",   "height",    "flexGrow",   "opacity",
                                                              "visible", "values",    "values2",    "color",
                                                              "color2",  "lineWidth", "fillOpacity"};
-      static const std::unordered_set<std::string> kInput = {"width",   "height",   "flexGrow",    "opacity",
-                                                             "visible", "value",    "placeholder", "fontSize",
-                                                             "enabled", "password", "onChange",    "onSubmit"};
-      static const std::unordered_set<std::string> kSelect = {"width",       "height",  "flexGrow",      "opacity",
-                                                              "visible",     "options", "selectedIndex", "enabled",
-                                                              "placeholder", "onChange"};
-      static const std::unordered_set<std::string> kSlider = {"width",   "height",  "flexGrow", "opacity",
-                                                              "visible", "min",     "max",      "step",
-                                                              "value",   "enabled", "onChange", "onDragEnd"};
+      static const std::unordered_set<std::string> kInput = {"width",    "height",   "flexGrow",    "opacity",
+                                                             "visible",  "value",    "placeholder", "fontSize",
+                                                             "enabled",  "password", "multiline",   "focus",
+                                                             "onChange", "onSubmit", "controlSize"};
+      static const std::unordered_set<std::string> kSelect = {"width",       "height",   "flexGrow",      "opacity",
+                                                              "visible",     "options",  "selectedIndex", "enabled",
+                                                              "placeholder", "onChange", "controlSize"};
+      static const std::unordered_set<std::string> kSlider = {"width",      "height",  "flexGrow", "opacity",
+                                                              "visible",    "min",     "max",      "step",
+                                                              "value",      "enabled", "onChange", "onDragEnd",
+                                                              "controlSize"};
       static const std::unordered_set<std::string> kToggle = {"width",   "height",  "flexGrow", "opacity",
                                                               "visible", "checked", "enabled",  "onChange"};
       static const std::unordered_set<std::string> kScroll = {"width",       "height", "flexGrow", "opacity",
@@ -344,7 +393,7 @@ namespace ui {
     std::vector<Slot> children;
   };
 
-  UiTreeReconciler::UiTreeReconciler() = default;
+  UiTreeReconciler::UiTreeReconciler() : m_defaultFontWeight(FontWeight::Normal) {}
   UiTreeReconciler::~UiTreeReconciler() = default;
 
   bool UiTreeReconciler::reconcile(Flex& host, const UiTreeNode& tree, Renderer& renderer) {
@@ -640,17 +689,35 @@ namespace ui {
 
     if (desired.type == "label") {
       auto* label = static_cast<Label*>(node);
+      if (const std::string* fontFamily = strProp(desired, "fontFamily")) {
+        label->setFontFamily(*fontFamily);
+      } else {
+        label->setFontFamily(m_defaultFontFamily);
+      }
+      LabelBaselineMode baselineMode = LabelBaselineMode::Text;
+      if (const std::string* baseline = strProp(desired, "baseline")) {
+        if (auto mode = labelBaselineModeFromToken(*baseline)) {
+          baselineMode = *mode;
+        } else {
+          kLog.warn("ui node 'label': unknown baseline '{}'", *baseline);
+        }
+      }
+      label->setBaselineMode(baselineMode);
       if (const std::string* text = strProp(desired, "text")) {
         label->setText(*text);
       }
       if (const double* fontSize = numProp(desired, "fontSize")) {
         label->setFontSize(scaled(*fontSize));
+      } else {
+        label->setFontSize(Style::fontSizeBody * m_scale);
       }
       if (auto color = parseColor(desired, "color")) {
         label->setColor(*color);
       }
       if (auto weight = parseFontWeight(desired)) {
         label->setFontWeight(*weight);
+      } else {
+        label->setFontWeight(m_defaultFontWeight);
       }
       if (const double* maxWidth = numProp(desired, "maxWidth")) {
         label->setMaxWidth(scaled(*maxWidth));
@@ -671,6 +738,8 @@ namespace ui {
       }
       if (const double* size = numProp(desired, "size")) {
         glyph->setGlyphSize(scaled(*size));
+      } else {
+        glyph->setGlyphSize(Style::baseGlyphSize * m_scale);
       }
       if (auto color = parseColor(desired, "color")) {
         glyph->setColor(*color);
@@ -793,12 +862,29 @@ namespace ui {
       }
       if (const double* fontSize = numProp(desired, "fontSize")) {
         button->setFontSize(scaled(*fontSize));
+      } else if (text != nullptr && !text->empty()) {
+        // Guarded on non-empty text: setFontSize creates the label, which
+        // would flip a glyph-only button to the taller text chrome tier.
+        button->setFontSize(Style::fontSizeBody * m_scale);
       }
       if (const double* glyphSize = numProp(desired, "glyphSize")) {
         button->setGlyphSize(scaled(*glyphSize));
+      } else if (glyph != nullptr) {
+        button->setGlyphSize(Style::fontSizeBody * m_scale);
       }
       if (auto variant = parseButtonVariant(desired)) {
         button->setVariant(*variant);
+      }
+      if (const std::string* contentAlign = strProp(desired, "contentAlign")) {
+        if (*contentAlign == "start") {
+          button->setContentAlign(ButtonContentAlign::Start);
+        } else if (*contentAlign == "end") {
+          button->setContentAlign(ButtonContentAlign::End);
+        } else if (*contentAlign == "center") {
+          button->setContentAlign(ButtonContentAlign::Center);
+        } else {
+          kLog.warn("ui tree: unknown button contentAlign '{}'", *contentAlign);
+        }
       }
       if (const bool* enabled = boolProp(desired, "enabled")) {
         button->setEnabled(*enabled);
@@ -806,6 +892,10 @@ namespace ui {
       if (const bool* selected = boolProp(desired, "selected")) {
         button->setSelected(*selected);
       }
+      // Unconditional: a tooltip dropped between renders must clear on the
+      // retained Button. An empty text routes to InputArea::clearTooltip().
+      const std::string* tooltip = strProp(desired, "tooltip");
+      button->setTooltip(tooltip != nullptr ? *tooltip : "");
       if (const std::string* onClick = strProp(desired, "onClick");
           onClick != nullptr && *onClick != slot.callbackName) {
         slot.callbackName = *onClick;
@@ -823,6 +913,18 @@ namespace ui {
             m_sink(ControlCallback{name});
           }
         });
+      }
+      // Compact hosts (bar widgets): drop the settings-tier control chrome
+      // (min-height, wide padding) and hug the content — a bar capsule is
+      // barely one control height tall. Applied after setText/setGlyph, whose
+      // label creation re-applies the text-tier chrome. Explicit width/height
+      // below still override.
+      if (m_compactControls) {
+        button->setMinHeight(0.0f);
+        button->setPadding(Style::spaceXs * m_scale);
+      }
+      if (auto size = parseControlSize(desired)) {
+        button->setControlHeight(scaled(*size));
       }
       if (width != nullptr) {
         button->setMinWidth(scaled(*width));
@@ -923,6 +1025,9 @@ namespace ui {
           }
         });
       }
+      if (auto size = parseControlSize(desired)) {
+        slider->setControlHeight(scaled(*size));
+      }
       return;
     }
 
@@ -960,6 +1065,9 @@ namespace ui {
           select->setMaxWidth(w);
         }
       }
+      if (auto size = parseControlSize(desired)) {
+        select->setControlHeight(scaled(*size));
+      }
       if (height != nullptr) {
         select->setControlHeight(scaled(*height));
       }
@@ -975,6 +1083,11 @@ namespace ui {
         if (const std::string* value = strProp(desired, "value")) {
           input->setValue(*value);
         }
+        // `focus` requests keyboard focus once, when the control is created
+        // (a fresh key makes a new control) — never on later re-renders.
+        if (const bool* focus = boolProp(desired, "focus"); focus != nullptr && *focus && m_focusSink) {
+          m_focusSink(input->inputArea());
+        }
         slot.seeded = true;
       }
       if (const std::string* placeholder = strProp(desired, "placeholder")) {
@@ -982,6 +1095,10 @@ namespace ui {
       }
       if (const double* fontSize = numProp(desired, "fontSize")) {
         input->setFontSize(scaled(*fontSize));
+      }
+      // Multiline before password: they are mutually exclusive and multiline wins.
+      if (const bool* multiline = boolProp(desired, "multiline")) {
+        input->setMultiline(*multiline);
       }
       if (const bool* password = boolProp(desired, "password")) {
         input->setPasswordMode(*password);
@@ -1009,6 +1126,9 @@ namespace ui {
       }
       if (width != nullptr) {
         input->setMinLayoutWidth(scaled(*width));
+      }
+      if (auto size = parseControlSize(desired)) {
+        input->setControlHeight(scaled(*size));
       }
       if (height != nullptr) {
         input->setControlHeight(scaled(*height));

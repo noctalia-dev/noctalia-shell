@@ -13,9 +13,9 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <json.hpp>
 #include <map>
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <optional>
 #include <sstream>
 #include <string>

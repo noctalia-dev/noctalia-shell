@@ -7,25 +7,39 @@
 
 #include <memory>
 
-ClipboardWidget::ClipboardWidget(wl_output* /*output*/, std::string barGlyphId) : m_barGlyphId(std::move(barGlyphId)) {}
+ClipboardWidget::ClipboardWidget(wl_output* /*output*/, std::string barGlyphId, WidgetCustomImage customImage)
+    : m_barGlyphId(std::move(barGlyphId)), m_customImage(std::move(customImage)) {}
 
 void ClipboardWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) { requestPanelToggle("clipboard"); });
 
-  area->addChild(
-      ui::glyph({
-          .out = &m_glyph,
-          .glyph = m_barGlyphId.empty() ? "clipboard" : m_barGlyphId,
-          .glyphSize = Style::baseGlyphSize * m_contentScale,
-          .color = widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)),
-      })
-  );
+  if (m_customImage.enabled()) {
+    area->addChild(ui::image({.out = &m_image, .fit = ImageFit::Contain}));
+  } else {
+    area->addChild(
+        ui::glyph({
+            .out = &m_glyph,
+            .glyph = m_barGlyphId.empty() ? "clipboard" : m_barGlyphId,
+            .glyphSize = Style::baseGlyphSize * m_contentScale,
+            .color = widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)),
+        })
+    );
+  }
 
   setRoot(std::move(area));
 }
 
 void ClipboardWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+  if (m_image != nullptr) {
+    widget_custom_image::sync(
+        *m_image, renderer, m_customImage, m_contentScale, widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface))
+    );
+    if (auto* node = root(); node != nullptr) {
+      node->setSize(m_image->width(), m_image->height());
+    }
+    return;
+  }
   if (m_glyph == nullptr) {
     return;
   }

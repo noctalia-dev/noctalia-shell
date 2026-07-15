@@ -1,8 +1,8 @@
 #include "ui/controls/select_dropdown_popup.h"
 
 #include "core/deferred_call.h"
-#include "core/key_symbols.h"
-#include "core/keybind_matcher.h"
+#include "core/input/key_symbols.h"
+#include "core/input/keybind_matcher.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "cursor-shape-v1-client-protocol.h"

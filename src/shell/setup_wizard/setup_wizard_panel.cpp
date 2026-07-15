@@ -1,8 +1,8 @@
 #include "shell/setup_wizard/setup_wizard_panel.h"
 
 #include "config/config_service.h"
+#include "core/files/resource_paths.h"
 #include "core/log.h"
-#include "core/resource_paths.h"
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "shell/panel/panel_manager.h"
@@ -53,8 +53,8 @@ namespace {
     return ui::label({
         .text = std::string(text),
         .fontSize = fontSize,
-        .color = color,
         .fontWeight = fontWeight,
+        .color = color,
     });
   }
 

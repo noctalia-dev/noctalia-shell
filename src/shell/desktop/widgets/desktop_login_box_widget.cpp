@@ -85,7 +85,7 @@ void DesktopLoginBoxWidget::doLayout(Renderer& renderer) {
     m_panel->setStyle(
         RoundedRectStyle{
             .fill = resolveColorSpec(style.panelFill),
-            .border = colorForRole(ColorRole::Outline),
+            .border = colorForRole(ColorRole::Outline, style.panelOpacity),
             .fillMode = FillMode::Solid,
             .radius = Style::scaledRadius(style.panelRadius),
             .softness = 1.0f,

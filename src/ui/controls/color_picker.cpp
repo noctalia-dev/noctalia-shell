@@ -8,6 +8,7 @@
 #include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "util/clamp.h"
 
 #include <algorithm>
 #include <cctype>
@@ -464,8 +465,9 @@ void ColorPicker::positionOverlays() {
   if (m_hueStrip != nullptr && m_hueThumb != nullptr) {
     const float stripW = m_hueStrip->width();
     const float cx = m_hueStrip->x() + m_h * stripW;
-    const float x =
-        std::clamp(cx - m_hueThumb->width() * 0.5f, m_hueStrip->x(), m_hueStrip->x() + stripW - m_hueThumb->width());
+    const float x = util::clampOrdered(
+        cx - m_hueThumb->width() * 0.5f, m_hueStrip->x(), m_hueStrip->x() + stripW - m_hueThumb->width()
+    );
     const float y = m_hueStrip->y() + (m_hueStrip->height() - m_hueThumb->height()) * 0.5f;
     m_hueThumb->setPosition(x, y);
   }
@@ -511,8 +513,8 @@ ColorPickerSheet::ColorPickerSheet(float chromeScale) : m_chromeScale(std::max(0
               .out = &m_title,
               .text = i18n::tr("ui.dialogs.color-picker.title"),
               .fontSize = Style::fontSizeTitle * m_chromeScale,
-              .color = colorSpecFromRole(ColorRole::Primary),
               .fontWeight = FontWeight::Bold,
+              .color = colorSpecFromRole(ColorRole::Primary),
           }),
           ui::spacer(),
           ui::button({

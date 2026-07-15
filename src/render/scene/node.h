@@ -146,6 +146,7 @@ public:
 
   static Node* hitTest(Node* root, float x, float y);
   static void absolutePosition(const Node* node, float& outX, float& outY);
+  static void mapToScene(const Node* node, float localX, float localY, float& outSceneX, float& outSceneY);
   static bool mapFromScene(const Node* node, float sceneX, float sceneY, float& outLocalX, float& outLocalY);
   static void transformedBounds(const Node* node, float& outLeft, float& outTop, float& outRight, float& outBottom);
   static void transformedBounds(

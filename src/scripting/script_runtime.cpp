@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <condition_variable>
 #include <deque>
 #include <mutex>
 #include <unordered_map>
@@ -23,6 +24,7 @@ namespace scripting {
   namespace {
     constexpr Logger kLog("script-runtime");
     constexpr std::size_t kMaxQueuedEvents = 64;
+    std::atomic<int> g_shutdownSignal{0};
 
     // Unique per-State id, used to tag and clean up this runtime's state-store watchers.
     std::uint64_t nextStateToken() {
@@ -56,6 +58,9 @@ namespace scripting {
       }
       if (src.fontFamily.has_value()) {
         dest.fontFamily = src.fontFamily;
+      }
+      if (src.fontBaseline.has_value()) {
+        dest.fontBaseline = src.fontBaseline;
       }
       if (src.textColor.has_value()) {
         dest.textColor = src.textColor;
@@ -114,7 +119,8 @@ namespace scripting {
     }
 
     void dispatchSideEffects(
-        const std::vector<ScriptSideEffect>& effects, ClipboardService* clipboard, ScriptApiContext& api
+        const std::vector<ScriptSideEffect>& effects, ClipboardService* clipboard, ScriptApiContext& api,
+        const ScriptRuntime::TogglePanelCallback& togglePanelCallback
     ) {
       for (const auto& effect : effects) {
         switch (effect.kind) {
@@ -139,7 +145,11 @@ namespace scripting {
           api.invokeSetWallpaper(effect.title, effect.body);
           break;
         case ScriptSideEffectKind::TogglePanel:
-          api.invokeTogglePanel(effect.title);
+          if (togglePanelCallback) {
+            togglePanelCallback(effect.title);
+          } else {
+            api.invokeTogglePanel(effect.title);
+          }
           break;
         }
       }
@@ -150,12 +160,13 @@ namespace scripting {
   struct ScriptRuntime::State : public std::enable_shared_from_this<ScriptRuntime::State> {
     explicit State(
         std::string name, ScriptSettings widgetSettings, ScriptApiContext& api, std::filesystem::path dir,
-        HttpClient* httpClientPtr, ClipboardService* clipboardService
+        HttpClient* httpClientPtr, ClipboardService* clipboardService, TogglePanelCallback panelToggleCallback
     )
         : runtimeName(std::move(name)), settings(std::move(widgetSettings)), scriptApi(api), pluginDir(std::move(dir)),
-          httpClient(httpClientPtr), clipboard(clipboardService) {}
+          httpClient(httpClientPtr), clipboard(clipboardService), togglePanelCallback(std::move(panelToggleCallback)) {}
 
     mutable std::mutex mutex;
+    std::condition_variable stopCv;
     std::string runtimeName;
     ScriptSettings settings;
     ScriptApiContext& scriptApi;
@@ -167,6 +178,7 @@ namespace scripting {
     std::unique_ptr<LuauHost> host;
     PluginBindingContext bindingContext;
     ClipboardService* clipboard = nullptr;
+    TogglePanelCallback togglePanelCallback;
     SubscriberId nextSubscriberId = 1;
     std::uint64_t generation = 0;
     std::chrono::milliseconds updateInterval{250};
@@ -176,6 +188,7 @@ namespace scripting {
     ScriptResult replayState;
     bool replayStateReady = false;
     bool scheduled = false;
+    bool stopping = false;
     bool stopped = false;
     bool updateQueued = false;
     bool updateRunning = false;
@@ -183,6 +196,10 @@ namespace scripting {
     bool hasOnIpcKnown = false;
     bool hasOnActivate = false;
     bool hasOnActivateKnown = false;
+    bool hasOnConfigChanged = false;
+    bool hasOnConfigChangedKnown = false;
+    bool hasOnScroll = false;
+    bool hasOnScrollKnown = false;
     bool unhealthy = false;
     int consecutiveTimeouts = 0;
 
@@ -235,19 +252,45 @@ namespace scripting {
       subscribers.erase(id);
     }
 
-    void stop() {
-      PluginStateStore::instance().removeWatchers(stateToken);
-      std::scoped_lock lock(mutex);
-      stopped = true;
-      queue.clear();
-      subscribers.clear();
+    void stop(int exitSignal) {
+      bool shouldSchedule = false;
+      {
+        std::scoped_lock lock(mutex);
+        if (stopped) {
+          return;
+        }
+        if (!stopping) {
+          stopping = true;
+          queue.clear();
+          updateQueued = false;
+          subscribers.clear();
+
+          ScriptEvent event;
+          event.kind = ScriptEventKind::Stop;
+          event.generation = generation;
+          event.exitSignal = exitSignal;
+          queue.push_back(std::move(event));
+          if (!scheduled) {
+            scheduled = true;
+            shouldSchedule = true;
+          }
+        }
+      }
+
+      if (shouldSchedule) {
+        auto self = shared_from_this();
+        ScriptWorkerPool::instance().post([self] { self->drain(); });
+      }
+
+      std::unique_lock lock(mutex);
+      stopCv.wait(lock, [this] { return stopped; });
     }
 
     bool enqueue(ScriptEvent event) {
       bool shouldSchedule = false;
       {
         std::scoped_lock lock(mutex);
-        if (stopped) {
+        if (stopped || stopping) {
           return false;
         }
         if (unhealthy
@@ -257,13 +300,13 @@ namespace scripting {
           return false;
         }
 
-        // Supersede an already-queued coalescing CallStrings for the same
-        // callback with the newer payload instead of appending. Bounds the queue
-        // to a single pending event per callback (e.g. onAudioSpectrum at 60Hz),
-        // so a slow script can never accumulate stale spectrum frames.
-        if (event.kind == ScriptEventKind::CallStrings && event.coalesce) {
+        // Supersede an already-queued coalescing CallArgs for the same callback
+        // with the newer payload instead of appending. Bounds the queue to a
+        // single pending event per callback (e.g. onAudioSpectrum at 60Hz), so a
+        // slow script can never accumulate stale spectrum frames.
+        if (event.kind == ScriptEventKind::CallArgs && event.coalesce) {
           const auto existing = std::ranges::find_if(queue, [&event](const auto& queued) {
-            return queued.kind == ScriptEventKind::CallStrings
+            return queued.kind == ScriptEventKind::CallArgs
                 && queued.coalesce
                 && queued.functionName == event.functionName;
           });
@@ -293,11 +336,11 @@ namespace scripting {
             updateQueued = false;
             return false;
           }
-          if (event.kind == ScriptEventKind::CallBool) {
+          if (event.droppable) {
             return false;
           }
           const auto droppable = std::ranges::find_if(queue, [](const auto& queued) {
-            return queued.kind == ScriptEventKind::Update || queued.kind == ScriptEventKind::CallBool;
+            return queued.kind == ScriptEventKind::Update || queued.droppable;
           });
           if (droppable != queue.end()) {
             if (droppable->kind == ScriptEventKind::Update) {
@@ -375,6 +418,16 @@ namespace scripting {
       (void)enqueue(std::move(event));
     }
 
+    void enqueueColorPickerResult(std::uint64_t hostId, int callbackRef, std::optional<std::string> color) {
+      ScriptEvent event;
+      event.kind = ScriptEventKind::ColorPickerResult;
+      event.hostId = hostId;
+      event.callbackRef = callbackRef;
+      event.colorPickerResult = std::move(color);
+      event.budget = kCallbackBudget;
+      (void)enqueue(std::move(event));
+    }
+
     void enqueueStateWatchResult(int callbackRef, std::string json) {
       ScriptEvent event;
       event.kind = ScriptEventKind::StateWatchResult;
@@ -409,6 +462,18 @@ namespace scripting {
             updateQueued = false;
             updateRunning = true;
           }
+        }
+
+        if (event.kind == ScriptEventKind::Stop) {
+          teardownHost(event.exitSignal, event.snapshot);
+          {
+            std::scoped_lock lock(mutex);
+            queue.clear();
+            stopped = true;
+            scheduled = false;
+          }
+          stopCv.notify_all();
+          return;
         }
 
         auto result = processEvent(event);
@@ -470,6 +535,15 @@ namespace scripting {
         return collectResult(event, "http callback", ok);
       }
 
+      if (event.kind == ScriptEventKind::ColorPickerResult) {
+        if (event.hostId != host->hostId() || !host->hasColorPickerCallback(event.callbackRef)) {
+          return std::nullopt;
+        }
+        bindingContext.beginCall(event.snapshot);
+        const bool ok = host->callColorPickerCallback(event.callbackRef, event.colorPickerResult, event.budget);
+        return collectResult(event, "color picker callback", ok);
+      }
+
       if (event.kind == ScriptEventKind::StateWatchResult) {
         if (!host->hasStateWatchCallback(event.callbackRef)) {
           return std::nullopt;
@@ -488,6 +562,18 @@ namespace scripting {
         return collectResult(event, "stream callback", ok);
       }
 
+      if (event.kind == ScriptEventKind::SettingsChanged) {
+        // Swap the live snapshot first, so getConfig() returns the new values
+        // both inside onConfigChanged and on the next update().
+        settings = event.newSettings;
+        if (!host->hasGlobal("onConfigChanged")) {
+          return std::nullopt;
+        }
+        bindingContext.beginCall(event.snapshot);
+        const bool ok = host->callGlobalWithBudget("onConfigChanged", event.budget);
+        return collectResult(event, "onConfigChanged", ok);
+      }
+
       bindingContext.beginCall(event.snapshot);
       bool ok = false;
       switch (event.kind) {
@@ -498,17 +584,11 @@ namespace scripting {
         }
         ok = host->callGlobalWithBudget(event.functionName.c_str(), event.budget);
         break;
-      case ScriptEventKind::CallBool:
+      case ScriptEventKind::CallArgs:
         if (!host->hasGlobal(event.functionName.c_str())) {
           return std::nullopt;
         }
-        ok = host->callGlobalWithBoolAndBudget(event.functionName.c_str(), event.boolValue, event.budget);
-        break;
-      case ScriptEventKind::CallStrings:
-        if (!host->hasGlobal(event.functionName.c_str())) {
-          return std::nullopt;
-        }
-        ok = host->callGlobalWithStringsAndBudget(event.functionName.c_str(), event.first, event.second, event.budget);
+        ok = host->callGlobalWithArgsAndBudget(event.functionName.c_str(), event.args, event.budget);
         break;
       default:
         break;
@@ -517,8 +597,7 @@ namespace scripting {
     }
 
     ScriptResult processLoad(const ScriptEvent& event) {
-      // Drop watchers registered by the previous load before re-registering below.
-      PluginStateStore::instance().removeWatchers(stateToken);
+      teardownHost(0, event.snapshot);
 
       host = std::make_unique<LuauHost>(scriptApi);
       bindingContext.settings = &settings;
@@ -558,6 +637,13 @@ namespace scripting {
             }
           }
       );
+      host->setColorPickerResultHandler(
+          [weak](std::uint64_t hostId, int callbackRef, std::optional<std::string> color) {
+            if (auto state = weak.lock()) {
+              state->enqueueColorPickerResult(hostId, callbackRef, std::move(color));
+            }
+          }
+      );
       host->setStreamLineHandler([weak](std::uint64_t hostId, int callbackRef, std::string line) {
         if (auto state = weak.lock()) {
           state->enqueueStreamLine(hostId, callbackRef, std::move(line));
@@ -590,14 +676,32 @@ namespace scripting {
       result.hasOnIpc = host != nullptr && host->hasGlobal("onIpc");
       result.hasOnIpcKnown = true;
       const bool onActivatePresent = host != nullptr && host->hasGlobal("onActivate");
+      const bool onConfigChangedPresent = host != nullptr && host->hasGlobal("onConfigChanged");
+      const bool onScrollPresent = host != nullptr && host->hasGlobal("onScroll");
       {
         std::scoped_lock lock(mutex);
         hasOnIpc = result.hasOnIpc;
         hasOnIpcKnown = true;
         hasOnActivate = onActivatePresent;
         hasOnActivateKnown = true;
+        hasOnConfigChanged = onConfigChangedPresent;
+        hasOnConfigChangedKnown = true;
+        hasOnScroll = onScrollPresent;
+        hasOnScrollKnown = true;
       }
       return result;
+    }
+
+    void teardownHost(int signal, const ScriptSnapshot& snapshot) {
+      // Prevent old or newly registered watchers from outliving this VM.
+      PluginStateStore::instance().removeWatchers(stateToken);
+      if (host != nullptr && host->hasGlobal("onExit")) {
+        bindingContext.beginCall(snapshot);
+        const ScriptArgs args{static_cast<double>(signal)};
+        (void)host->callGlobalWithArgsAndBudget("onExit", args, kCallbackBudget);
+      }
+      PluginStateStore::instance().removeWatchers(stateToken);
+      host.reset();
     }
 
     ScriptResult collectResult(const ScriptEvent& event, std::string_view callbackName, bool ok) {
@@ -712,7 +816,7 @@ namespace scripting {
         }
       }
 
-      dispatchSideEffects(result.sideEffects, clipboard, scriptApi);
+      dispatchSideEffects(result.sideEffects, clipboard, scriptApi, togglePanelCallback);
       result.sideEffects.clear();
 
       for (auto& callback : callbacks) {
@@ -725,11 +829,12 @@ namespace scripting {
 
   ScriptRuntime::ScriptRuntime(
       std::string runtimeName, ScriptSettings settings, ScriptApiContext& api, std::filesystem::path pluginDir,
-      HttpClient* httpClient, ClipboardService* clipboard
+      HttpClient* httpClient, ClipboardService* clipboard, TogglePanelCallback togglePanelCallback
   )
       : m_state(
             std::make_shared<State>(
-                std::move(runtimeName), std::move(settings), api, std::move(pluginDir), httpClient, clipboard
+                std::move(runtimeName), std::move(settings), api, std::move(pluginDir), httpClient, clipboard,
+                std::move(togglePanelCallback)
             )
         ) {}
 
@@ -747,8 +852,12 @@ namespace scripting {
 
   void ScriptRuntime::stop() {
     if (m_state != nullptr) {
-      m_state->stop();
+      m_state->stop(g_shutdownSignal.load(std::memory_order_relaxed));
     }
+  }
+
+  void ScriptRuntime::setShutdownSignal(int signal) noexcept {
+    g_shutdownSignal.store(signal, std::memory_order_relaxed);
   }
 
   void ScriptRuntime::start(std::string chunkName, std::string source, ScriptSnapshot snapshot) {
@@ -786,28 +895,32 @@ namespace scripting {
     return m_state != nullptr && m_state->enqueue(std::move(event));
   }
 
-  bool ScriptRuntime::enqueueCallBool(std::string functionName, bool value, ScriptSnapshot snapshot) {
+  bool ScriptRuntime::enqueueCallArgs(
+      std::string functionName, ScriptArgs args, ScriptSnapshot snapshot, ScriptCallOptions options
+  ) {
     ScriptEvent event;
-    event.kind = ScriptEventKind::CallBool;
+    event.kind = ScriptEventKind::CallArgs;
     event.functionName = std::move(functionName);
-    event.boolValue = value;
+    event.args = std::move(args);
     event.snapshot = std::move(snapshot);
     event.budget = kCallbackBudget;
+    event.coalesce = options.coalesce;
+    event.droppable = options.droppable;
     return m_state != nullptr && m_state->enqueue(std::move(event));
+  }
+
+  bool ScriptRuntime::enqueueCallBool(std::string functionName, bool value, ScriptSnapshot snapshot) {
+    // Hover-style state echoes: a queue-full drop only loses an edge the next
+    // event supersedes anyway.
+    return enqueueCallArgs(std::move(functionName), {value}, std::move(snapshot), {.droppable = true});
   }
 
   bool ScriptRuntime::enqueueCallStrings(
       std::string functionName, std::string first, std::string second, ScriptSnapshot snapshot, bool coalesce
   ) {
-    ScriptEvent event;
-    event.kind = ScriptEventKind::CallStrings;
-    event.functionName = std::move(functionName);
-    event.first = std::move(first);
-    event.second = std::move(second);
-    event.snapshot = std::move(snapshot);
-    event.budget = kCallbackBudget;
-    event.coalesce = coalesce;
-    return m_state != nullptr && m_state->enqueue(std::move(event));
+    return enqueueCallArgs(
+        std::move(functionName), {std::move(first), std::move(second)}, std::move(snapshot), {.coalesce = coalesce}
+    );
   }
 
   bool ScriptRuntime::enqueueAsyncCommandResult(std::uint64_t hostId, int callbackRef, process::RunResult result) {
@@ -816,6 +929,15 @@ namespace scripting {
     }
     m_state->enqueueAsyncResult(hostId, callbackRef, std::move(result));
     return true;
+  }
+
+  bool ScriptRuntime::enqueueSettingsChanged(ScriptSettings newSettings, ScriptSnapshot snapshot) {
+    ScriptEvent event;
+    event.kind = ScriptEventKind::SettingsChanged;
+    event.newSettings = std::move(newSettings);
+    event.snapshot = std::move(snapshot);
+    event.budget = kCallbackBudget;
+    return m_state != nullptr && m_state->enqueue(std::move(event));
   }
 
   bool ScriptRuntime::hasOnIpc() const {
@@ -832,6 +954,22 @@ namespace scripting {
     }
     std::scoped_lock lock(m_state->mutex);
     return m_state->hasOnActivateKnown && m_state->hasOnActivate;
+  }
+
+  bool ScriptRuntime::hasOnConfigChanged() const {
+    if (m_state == nullptr) {
+      return false;
+    }
+    std::scoped_lock lock(m_state->mutex);
+    return m_state->hasOnConfigChangedKnown && m_state->hasOnConfigChanged;
+  }
+
+  bool ScriptRuntime::hasOnScroll() const {
+    if (m_state == nullptr) {
+      return false;
+    }
+    std::scoped_lock lock(m_state->mutex);
+    return m_state->hasOnScrollKnown && m_state->hasOnScroll;
   }
 
   bool ScriptRuntime::unhealthy() const {

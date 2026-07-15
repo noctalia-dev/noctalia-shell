@@ -25,11 +25,11 @@ namespace {
 
 MediaWidget::MediaWidget(
     MprisService* mpris, HttpClient* httpClient, wl_output* /*output*/, float maxWidth, float minWidth, float artSize,
-    MediaTitleScrollMode titleScrollMode, bool hideWhenNoMedia, bool albumArtOnly, bool hideAlbumArt
+    MediaTitleScrollMode titleScrollMode, bool hideWhenNoMedia, bool albumArtOnly, bool hideAlbumArt, bool hideArtist
 )
     : m_mpris(mpris), m_httpClient(httpClient), m_maxWidth(maxWidth), m_minWidth(minWidth), m_artSize(artSize),
       m_titleScrollMode(titleScrollMode), m_hideWhenNoMedia(hideWhenNoMedia), m_albumArtOnly(albumArtOnly),
-      m_hideAlbumArt(hideAlbumArt) {}
+      m_hideAlbumArt(hideAlbumArt), m_hideArtist(hideArtist) {}
 
 void MediaWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -67,11 +67,11 @@ void MediaWidget::create() {
       ui::label({
           .out = &m_label,
           .fontSize = Style::fontSizeBody * m_contentScale,
+          .fontWeight = labelFontWeight(),
           .fontFamily = labelFontFamily(),
           .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
           .maxWidth = m_maxWidth * m_contentScale,
           .maxLines = 1,
-          .fontWeight = labelFontWeight(),
           .autoScroll = false,
       })
   );
@@ -214,6 +214,7 @@ void MediaWidget::syncState(Renderer& renderer) {
   const auto active = m_mpris != nullptr ? m_mpris->activePlayer() : std::nullopt;
   syncWidgetVisibility(active.has_value());
   if (m_hideWhenNoMedia && !active.has_value()) {
+    applyTitleScrollMode(false);
     return;
   }
 
@@ -223,7 +224,7 @@ void MediaWidget::syncState(Renderer& renderer) {
 
   if (active.has_value()) {
     playbackStatus = active->playbackStatus;
-    displayText = buildDisplayText(*active);
+    displayText = buildDisplayText(*active, m_hideArtist);
     artUrl = effectiveArtUrl(*active);
   }
 
@@ -295,8 +296,8 @@ void MediaWidget::syncState(Renderer& renderer) {
   }
 }
 
-std::string MediaWidget::buildDisplayText(const MprisPlayerInfo& player) {
-  const std::string artists = joinArtists(player.artists);
+std::string MediaWidget::buildDisplayText(const MprisPlayerInfo& player, bool hideArtist) {
+  const std::string artists = hideArtist ? std::string() : joinArtists(player.artists);
   if (!player.title.empty() && !artists.empty()) {
     return player.title + " - " + artists;
   }

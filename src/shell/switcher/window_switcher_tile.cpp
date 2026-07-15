@@ -121,8 +121,8 @@ WindowSwitcherTile::WindowSwitcherTile(float contentScale, AsyncTextureCache* as
                           ui::label({
                               .out = &m_title,
                               .fontSize = Style::fontSizeCaption * m_contentScale,
-                              .color = colorSpecFromRole(ColorRole::OnSurface),
                               .fontWeight = FontWeight::Bold,
+                              .color = colorSpecFromRole(ColorRole::OnSurface),
                               .configure = [](Label& label) {
                                 label.setMaxLines(1);
                                 label.setTextAlign(TextAlign::Center);

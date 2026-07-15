@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <cmath>
 #include <format>
 #include <optional>
@@ -21,10 +22,37 @@
 namespace {
 
   [[nodiscard]] std::string displaySysmonLabel(const std::string& raw, bool verticalBar) {
-    if (!verticalBar || raw.size() < 2 || raw.back() != '%') {
+    if (!verticalBar) {
       return raw;
     }
-    return raw.substr(0, raw.size() - 1);
+
+    if (raw.size() >= 2 && raw.back() == '%') {
+      return raw.substr(0, raw.size() - 1);
+    }
+
+    const auto isSpace = [](char ch) { return std::isspace(static_cast<unsigned char>(ch)) != 0; };
+
+    std::size_t end = raw.size();
+    while (end > 0 && isSpace(raw[end - 1])) {
+      --end;
+    }
+    if (end == 0) {
+      return raw;
+    }
+
+    std::size_t lastDigit = end;
+    while (lastDigit > 0 && !std::isdigit(static_cast<unsigned char>(raw[lastDigit - 1]))) {
+      --lastDigit;
+    }
+    if (lastDigit == 0) {
+      return raw;
+    }
+
+    std::string compact = raw.substr(0, lastDigit);
+    while (!compact.empty() && isSpace(compact.back())) {
+      compact.pop_back();
+    }
+    return compact.empty() ? raw : compact;
   }
 
   // The gauge track is a dimmed version of the gauge fill so it inherits the
@@ -137,7 +165,8 @@ SysmonWidget::SysmonWidget(SystemMonitorService* monitor, ConfigService& configS
       m_highlightColor(options.highlightColor), m_configService(configService), m_showLabel(options.showLabel),
       m_labelMinWidth(options.labelMinWidth), m_diskPath(std::move(options.diskPath)),
       m_networkInterface(std::move(options.networkInterface)), m_networkSpeedUnit(options.networkSpeedUnit),
-      m_networkSpeedLabelStyle(options.networkSpeedLabelStyle), m_glyphOverride(std::move(options.glyph)) {
+      m_networkSpeedLabelStyle(options.networkSpeedLabelStyle), m_glyphOverride(std::move(options.glyph)),
+      m_customImage(std::move(options.customImage)) {
   if (m_monitor != nullptr) {
     if (needsCpuTemp(m_stat)) {
       m_monitor->retainCpuTemp();
@@ -183,14 +212,18 @@ void SysmonWidget::create() {
     requestPanelToggle("control-center", "system");
   });
 
-  container->addChild(
-      ui::glyph({
-          .out = &m_glyph,
-          .glyph = m_glyphOverride.empty() ? glyphName(m_stat) : m_glyphOverride,
-          .glyphSize = Style::baseGlyphSize * m_contentScale,
-          .color = widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)),
-      })
-  );
+  if (m_customImage.enabled()) {
+    container->addChild(ui::image({.out = &m_image, .fit = ImageFit::Contain}));
+  } else {
+    container->addChild(
+        ui::glyph({
+            .out = &m_glyph,
+            .glyph = m_glyphOverride.empty() ? glyphName(m_stat) : m_glyphOverride,
+            .glyphSize = Style::baseGlyphSize * m_contentScale,
+            .color = widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)),
+        })
+    );
+  }
 
   if (m_displayMode == SysmonDisplayMode::Graph) {
     m_chartBg = static_cast<Box*>(container->addChild(ui::box()));
@@ -217,10 +250,10 @@ void SysmonWidget::create() {
         ui::label({
             .out = &m_label,
             .fontSize = Style::fontSizeBody * m_contentScale,
+            .fontWeight = labelFontWeight(),
             .fontFamily = labelFontFamily(),
             .minWidth = m_labelMinWidth > 0.0f ? std::optional<float>{m_labelMinWidth * m_contentScale}
                                                : std::optional<float>{},
-            .fontWeight = labelFontWeight(),
         })
     );
   }
@@ -258,6 +291,10 @@ void SysmonWidget::syncValueColor() {
     const Color iconColor = m_widgetIconColor.has_value() ? resolveColorSpec(m_widgetIconColor.value()) : valueColor;
     m_glyph->setColor(iconColor);
   }
+  if (m_image != nullptr) {
+    const Color iconColor = m_widgetIconColor.has_value() ? resolveColorSpec(m_widgetIconColor.value()) : valueColor;
+    widget_custom_image::syncTint(*m_image, m_customImage, fixedColorSpec(iconColor));
+  }
   if (m_label != nullptr) {
     m_label->setColor(valueColor);
   }
@@ -275,6 +312,43 @@ Color SysmonWidget::currentValueColor(ColorSpec baseColor) {
   const auto [activityThreshold, criticalThreshold] = currentThresholds();
   const auto factor = static_cast<float>(gradientFactor(currentGradientValue(), activityThreshold, criticalThreshold));
   return lerpColor(base, highlight, factor);
+}
+
+void SysmonWidget::syncIcon(Renderer& renderer) {
+  const Color valueColor = currentValueColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
+  const Color iconColor = m_widgetIconColor.has_value() ? resolveColorSpec(m_widgetIconColor.value()) : valueColor;
+  if (m_image != nullptr) {
+    widget_custom_image::sync(*m_image, renderer, m_customImage, m_contentScale, fixedColorSpec(iconColor));
+    return;
+  }
+  if (m_glyph != nullptr) {
+    m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
+    m_glyph->measure(renderer);
+  }
+}
+
+float SysmonWidget::iconWidth() const {
+  if (m_image != nullptr) {
+    return m_image->width();
+  }
+  return m_glyph != nullptr ? m_glyph->width() : 0.0f;
+}
+
+float SysmonWidget::iconHeight() const {
+  if (m_image != nullptr) {
+    return m_image->height();
+  }
+  return m_glyph != nullptr ? m_glyph->height() : 0.0f;
+}
+
+void SysmonWidget::setIconPosition(float x, float y) {
+  if (m_image != nullptr) {
+    m_image->setPosition(x, y);
+    return;
+  }
+  if (m_glyph != nullptr) {
+    m_glyph->setPosition(x, y);
+  }
 }
 
 std::pair<double, double> SysmonWidget::currentThresholds() const {
@@ -376,7 +450,7 @@ void SysmonWidget::syncGaugeProgress(double normalized) {
 
 void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   auto* rootNode = root();
-  if (m_glyph == nullptr || rootNode == nullptr) {
+  if ((m_glyph == nullptr && m_image == nullptr) || rootNode == nullptr) {
     return;
   }
   const bool isVerticalBar = containerHeight > containerWidth;
@@ -384,8 +458,9 @@ void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float cont
   m_isVerticalBar = isVerticalBar;
 
   syncVisualPalette();
-  m_glyph->measure(renderer);
-  const float glyphH = m_glyph->height();
+  syncIcon(renderer);
+  const float iconW = iconWidth();
+  const float iconH = iconHeight();
   const float gap = Style::spaceXs * m_contentScale;
   const bool verticalBar = m_isVerticalBar;
 
@@ -406,16 +481,16 @@ void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float cont
 
     if (verticalBar) {
       m_gauge->setOrientation(ProgressBarOrientation::Horizontal);
-      const float trackW = std::max(m_glyph->width(), gaugeStem);
+      const float trackW = std::max(iconW, gaugeStem);
       const float trackH = gaugeThickness;
       m_gauge->setRadius(trackH / 2.0f);
-      float contentW = std::max(m_glyph->width(), trackW);
+      float contentW = std::max(iconW, trackW);
       if (m_label != nullptr)
         contentW = std::max(contentW, labelW);
-      m_glyph->setPosition((contentW - m_glyph->width()) * 0.5f, 0.0f);
-      m_gauge->setPosition(std::round((contentW - trackW) * 0.5f), glyphH + gap);
+      setIconPosition((contentW - iconW) * 0.5f, 0.0f);
+      m_gauge->setPosition(std::round((contentW - trackW) * 0.5f), iconH + gap);
       m_gauge->setSize(trackW, trackH);
-      float totalH = glyphH + gap + trackH;
+      float totalH = iconH + gap + trackH;
       if (m_label != nullptr) {
         m_label->setPosition((contentW - labelW) * 0.5f, totalH + gap);
         totalH += gap + labelH;
@@ -426,12 +501,12 @@ void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float cont
       const float gaugeW = gaugeThickness;
       const float gaugeH = gaugeStem;
       m_gauge->setRadius(gaugeW / 2.0f);
-      float contentH = std::max(glyphH, gaugeH);
+      float contentH = std::max(iconH, gaugeH);
       if (m_label != nullptr)
         contentH = std::max(contentH, labelH);
       const float gaugeY = std::round((contentH - gaugeH) * 0.5f);
-      m_glyph->setPosition(0.0f, (contentH - glyphH) * 0.5f);
-      m_gauge->setPosition(m_glyph->width() + gap, gaugeY);
+      setIconPosition(0.0f, (contentH - iconH) * 0.5f);
+      m_gauge->setPosition(iconW + gap, gaugeY);
       m_gauge->setSize(gaugeW, gaugeH);
       float totalW = m_gauge->x() + gaugeW;
       if (m_label != nullptr) {
@@ -450,36 +525,36 @@ void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float cont
         verticalBar ? std::min(50.0f * m_contentScale, std::max(1.0f, containerWidth)) : 50.0f * m_contentScale;
 
     if (verticalBar) {
-      float contentW = std::max(m_glyph->width(), chartW);
+      float contentW = std::max(iconW, chartW);
       if (m_label != nullptr)
         contentW = std::max(contentW, labelW);
-      m_glyph->setPosition((contentW - m_glyph->width()) * 0.5f, 0.0f);
-      const float chartY = glyphH + gap;
+      setIconPosition((contentW - iconW) * 0.5f, 0.0f);
+      const float chartY = iconH + gap;
       m_chartBg->setPosition(std::round((contentW - chartW) * 0.5f), chartY);
-      m_chartBg->setSize(chartW, glyphH);
+      m_chartBg->setSize(chartW, iconH);
 
       if (m_graph != nullptr) {
         m_graph->setPosition(0.0f, 0.0f);
-        m_graph->setSize(chartW, glyphH);
+        m_graph->setSize(chartW, iconH);
       }
 
-      float totalH = chartY + glyphH;
+      float totalH = chartY + iconH;
       if (m_label != nullptr) {
         m_label->setPosition((contentW - labelW) * 0.5f, totalH + gap);
         totalH += gap + labelH;
       }
       rootNode->setSize(contentW, totalH);
     } else {
-      float contentH = glyphH;
+      float contentH = iconH;
       if (m_label != nullptr)
         contentH = std::max(contentH, labelH);
-      m_glyph->setPosition(0.0f, (contentH - glyphH) * 0.5f);
-      m_chartBg->setPosition(m_glyph->width() + gap, std::round((contentH - glyphH) * 0.5f));
-      m_chartBg->setSize(chartW, glyphH);
+      setIconPosition(0.0f, (contentH - iconH) * 0.5f);
+      m_chartBg->setPosition(iconW + gap, std::round((contentH - iconH) * 0.5f));
+      m_chartBg->setSize(chartW, iconH);
 
       if (m_graph != nullptr) {
         m_graph->setPosition(0.0f, 0.0f);
-        m_graph->setSize(chartW, glyphH);
+        m_graph->setSize(chartW, iconH);
       }
 
       float totalW = m_chartBg->x() + chartW;
@@ -490,23 +565,23 @@ void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float cont
       rootNode->setSize(totalW, contentH);
     }
   } else if (m_label != nullptr && verticalBar) {
-    const float contentW = std::max(m_glyph->width(), labelW);
-    m_glyph->setPosition((contentW - m_glyph->width()) * 0.5f, 0.0f);
-    m_label->setPosition((contentW - labelW) * 0.5f, glyphH + gap);
-    rootNode->setSize(contentW, glyphH + gap + labelH);
+    const float contentW = std::max(iconW, labelW);
+    setIconPosition((contentW - iconW) * 0.5f, 0.0f);
+    m_label->setPosition((contentW - labelW) * 0.5f, iconH + gap);
+    rootNode->setSize(contentW, iconH + gap + labelH);
   } else if (m_label != nullptr) {
-    const float contentH = std::max(glyphH, labelH);
-    m_glyph->setPosition(0.0f, (contentH - glyphH) * 0.5f);
-    m_label->setPosition(m_glyph->width() + gap, (contentH - labelH) * 0.5f);
+    const float contentH = std::max(iconH, labelH);
+    setIconPosition(0.0f, (contentH - iconH) * 0.5f);
+    m_label->setPosition(iconW + gap, (contentH - labelH) * 0.5f);
     rootNode->setSize(m_label->x() + labelW, contentH);
   } else {
-    m_glyph->setPosition(0.0f, 0.0f);
-    rootNode->setSize(m_glyph->width(), glyphH);
+    setIconPosition(0.0f, 0.0f);
+    rootNode->setSize(iconW, iconH);
   }
 }
 
 void SysmonWidget::doUpdate(Renderer& renderer) {
-  if (m_glyph == nullptr) {
+  if (m_glyph == nullptr && m_image == nullptr) {
     return;
   }
 

@@ -1,7 +1,7 @@
 #include "scripting/plugin_git.h"
 
 #include "core/log.h"
-#include "core/process.h"
+#include "core/process/process.h"
 
 #include <chrono>
 #include <cstdlib>

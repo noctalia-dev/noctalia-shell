@@ -3,6 +3,7 @@
 #include <atomic>
 #include <functional>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -47,6 +48,18 @@ namespace scripting {
       return m_outputs;
     }
 
+    // Latest text clipboard content — mirrored from ClipboardService on the
+    // main thread so script bindings read it synchronously and race-free.
+    void setClipboardText(std::optional<std::string> text) {
+      std::scoped_lock lock(m_mutex);
+      m_clipboardText = std::move(text);
+    }
+
+    [[nodiscard]] std::optional<std::string> clipboardText() const {
+      std::scoped_lock lock(m_mutex);
+      return m_clipboardText;
+    }
+
     // Toggles the host wallpaper surface on an output. Wired to Wallpaper in Application;
     // invoked only on the main thread (from dispatchSideEffects).
     void setWallpaperEnabledHook(std::function<void(const std::string&, bool)> hook) {
@@ -85,6 +98,7 @@ namespace scripting {
     mutable std::mutex m_mutex;
     std::string m_wallpaperDirectory;
     std::vector<ScriptOutputInfo> m_outputs;
+    std::optional<std::string> m_clipboardText;
     std::function<void(const std::string&, bool)> m_wallpaperEnabledHook;
     std::function<void(const std::string&, const std::string&)> m_wallpaperHook;
     std::function<void(const std::string&)> m_togglePanelHook;

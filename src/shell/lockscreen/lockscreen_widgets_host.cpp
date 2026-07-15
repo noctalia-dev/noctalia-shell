@@ -198,7 +198,7 @@ void LockscreenWidgetsHost::createInstance(
     return;
   }
 
-  const float baseUiScale = m_config != nullptr ? m_config->config().shell.uiScale : 1.0f;
+  const float baseUiScale = m_config != nullptr ? m_config->config().accessibility.uiScale : 1.0f;
   auto widget = m_factory->create(state.type, state.settings, desktop_widgets::widgetContentScale(baseUiScale));
   if (widget == nullptr) {
     return;
@@ -348,7 +348,7 @@ void LockscreenWidgetsHost::prepareFrame(LockSurface& surface, bool needsUpdate,
 
   m_renderContext->makeCurrent(surface.renderTarget());
 
-  const float baseUiScale = m_config != nullptr ? m_config->config().shell.uiScale : 1.0f;
+  const float baseUiScale = m_config != nullptr ? m_config->config().accessibility.uiScale : 1.0f;
   const auto surfaceW = static_cast<float>(surface.width());
   const auto surfaceH = static_cast<float>(surface.height());
 

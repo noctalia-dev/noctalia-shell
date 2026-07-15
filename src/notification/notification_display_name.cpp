@@ -12,11 +12,6 @@
 
 namespace {
 
-  constexpr app_identity::DesktopEntryLookupOptions kLookupOptions{
-      .includeHidden = true,
-      .includeNoDisplay = true,
-  };
-
   std::string normalizeDesktopKey(std::string_view key) {
     std::string normalized(key);
     if (normalized.ends_with(".desktop")) {
@@ -33,7 +28,7 @@ namespace {
     if (key.empty()) {
       return std::nullopt;
     }
-    const auto entry = app_identity::findDesktopEntry(normalizeDesktopKey(key), desktopEntries(), kLookupOptions);
+    const auto entry = app_identity::findDesktopEntry(normalizeDesktopKey(key), desktopEntries());
     if (!entry.has_value()) {
       return std::nullopt;
     }

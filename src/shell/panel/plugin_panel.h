@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/file_watcher.h"
+#include "core/files/file_watcher.h"
 #include "core/timer_manager.h"
 #include "scripting/plugin_ipc.h"
 #include "scripting/plugin_panel_shell.h"
@@ -15,6 +15,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 
 class ClipboardService;
 class Flex;
@@ -29,6 +30,10 @@ namespace scripting {
 struct PluginPanelOptions {
   double width = 0.0;  // logical pixels; 0 = host default
   double height = 0.0; // logical pixels; 0 = host default
+  // Fill the output's available extent on this axis; the numeric size is then
+  // only the fallback if the compositor never assigns one.
+  bool widthFill = false;
+  bool heightFill = false;
   scripting::PluginPanelShellConfig shellConfig;
 };
 
@@ -48,9 +53,12 @@ public:
 
   [[nodiscard]] float preferredWidth() const override { return scaled(m_preferredWidth); }
   [[nodiscard]] float preferredHeight() const override { return scaled(m_preferredHeight); }
+  [[nodiscard]] bool fillsWidth() const noexcept override { return m_widthFill; }
+  [[nodiscard]] bool fillsHeight() const noexcept override { return m_heightFill; }
   [[nodiscard]] PanelPlacement panelPlacement() const noexcept override { return m_shellConfig.placement; }
   [[nodiscard]] std::string panelScreenPosition() const override { return m_shellConfig.position; }
   [[nodiscard]] bool panelOpenNearClick() const override { return m_shellConfig.openNearClick; }
+  [[nodiscard]] InputArea* takePendingFocusArea() override { return std::exchange(m_pendingFocusArea, nullptr); }
 
   // PluginIpcEndpoint
   [[nodiscard]] std::string_view ipcEntryId() const override { return m_entryId; }
@@ -86,6 +94,7 @@ private:
   Timer m_tickTimer;
 
   Flex* m_flex = nullptr;
+  InputArea* m_pendingFocusArea = nullptr;
   ui::UiTreeReconciler m_reconciler;
   std::optional<ui::UiTreeNode> m_tree;
   bool m_treeDirty = false;
@@ -95,6 +104,8 @@ private:
   bool m_hasOnIpcKnown = false;
   float m_preferredWidth;
   float m_preferredHeight;
+  bool m_widthFill = false;
+  bool m_heightFill = false;
   scripting::PluginPanelShellConfig m_shellConfig;
   std::shared_ptr<bool> m_alive = std::make_shared<bool>(true);
 };

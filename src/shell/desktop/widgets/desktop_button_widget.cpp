@@ -1,7 +1,7 @@
 #include "shell/desktop/widgets/desktop_button_widget.h"
 
 #include "core/log.h"
-#include "core/process.h"
+#include "core/process/process.h"
 #include "core/ui_phase.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"

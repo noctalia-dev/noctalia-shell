@@ -122,8 +122,8 @@ void NetworkWidget::create() {
       ui::label({
           .out = &m_label,
           .fontSize = Style::fontSizeBody * m_contentScale,
-          .fontFamily = labelFontFamily(),
           .fontWeight = labelFontWeight(),
+          .fontFamily = labelFontFamily(),
       })
   );
 

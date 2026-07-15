@@ -28,8 +28,7 @@
 
 "label" = "secondary"
 
-"punctuation" = "outlineVariant"
-"punctuation.special" = "outline"
+"punctuation" = "outline"
 
 "keyword" = { fg = "primary", modifiers = ["bold"] }
 "keyword.control.conditional" = { fg = "tertiary", modifiers = ["italic", "bold"] }

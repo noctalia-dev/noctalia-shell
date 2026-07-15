@@ -46,6 +46,8 @@ public:
   void onIconThemeChanged() override;
 
   void clearUsage();
+  // Drops persisted usage data when sort-by-usage is off (including after config reload).
+  void syncUsageTrackingState();
 
   [[nodiscard]] float preferredWidth() const override { return scaled(560.0f); }
   [[nodiscard]] float preferredHeight() const override { return scaled(500.0f); }
@@ -78,6 +80,8 @@ private:
   void applyEmptyState();
   void bindDetailResult();
   [[nodiscard]] bool shouldUseDetailPresentation() const;
+  [[nodiscard]] bool startsWithLauncherPrefix(std::string_view text) const;
+  void applyProviderConfig(LauncherProvider& provider) const;
   [[nodiscard]] std::vector<LauncherResult> providerOverviewResults(std::string_view text) const;
   void openAppActionsMenu(std::size_t index, float anchorX, float anchorY);
   void rebuildCategoryFilter(const std::vector<LauncherCategory>& categories);
@@ -89,6 +93,7 @@ private:
   [[nodiscard]] bool shouldUseAppGrid() const;
   void refreshLauncherAppIconColorization();
   void updateLauncherGridMetrics(Renderer& renderer);
+  [[nodiscard]] bool shouldTrackUsage() const;
 
   std::vector<std::unique_ptr<LauncherProvider>> m_providers;
   std::vector<LauncherResult> m_results;

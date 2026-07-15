@@ -1,6 +1,6 @@
 #include "system/dependency_service.h"
 
-#include "core/process.h"
+#include "core/process/process.h"
 
 #include <array>
 

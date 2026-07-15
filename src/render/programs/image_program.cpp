@@ -186,6 +186,8 @@ void ImageProgram::destroy() {
   m_transformLocation = -1;
 }
 
+void ImageProgram::abandon() noexcept { m_program.abandon(); }
+
 void ImageProgram::draw(
     TextureId texture, float surfaceWidth, float surfaceHeight, float width, float height, const Color& tint,
     bool monochromeTint, bool alphaMaskTint, float opacity, float radius, const Color& borderColor, float borderWidth,

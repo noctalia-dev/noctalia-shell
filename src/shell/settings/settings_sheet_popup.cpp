@@ -4,12 +4,15 @@
 #include "core/deferred_call.h"
 #include "render/render_context.h"
 #include "render/scene/node.h"
+#include "shell/settings/settings_content_common.h"
+#include "shell/tooltip/tooltip_manager.h"
 #include "ui/builders.h"
 #include "ui/controls/label.h"
 #include "ui/controls/select_dropdown_popup.h"
 #include "ui/popup_chrome.h"
 #include "ui/style.h"
 #include "wayland/popup_surface.h"
+#include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
 #include "xdg-shell-client-protocol.h"
 
@@ -51,6 +54,16 @@ namespace settings {
 
   void SettingsSheetPopup::initialize(WaylandConnection& wayland, ConfigService& config, RenderContext& renderContext) {
     initializeBase(wayland, config, renderContext);
+    inputDispatcher().setHoverChangeCallback([this](InputArea* /*old*/, InputArea* next) {
+      if (xdgSurface() == nullptr) {
+        return;
+      }
+      wl_output* output = m_parentOutput;
+      if (output == nullptr && this->wayland() != nullptr) {
+        output = this->wayland()->outputForSurface(wlSurface());
+      }
+      TooltipManager::instance().onHoverChange(next, xdgSurface(), output);
+    });
   }
 
   void SettingsSheetPopup::open(SettingsSheetPopupRequest request) {
@@ -71,6 +84,7 @@ namespace settings {
     m_onCloseRequested = std::move(request.onCloseRequested);
     m_sheetTitle = std::move(request.sheetTitle);
     m_removeAction = std::move(request.removeAction);
+    m_createHeaderAction = std::move(request.createHeaderAction);
     m_populateSheetBody = std::move(request.populateSheetBody);
     m_root = nullptr;
     m_parentWidth = request.parent.width;
@@ -98,6 +112,17 @@ namespace settings {
       m_sheetTitleLabel->setText(m_sheetTitle);
     }
   }
+
+  void SettingsSheetPopup::setStatusMessage(std::string message, bool error) {
+    m_statusMessage = std::move(message);
+    m_statusIsError = error;
+    if (m_statusBanner != nullptr && m_statusLabel != nullptr) {
+      updateSettingsStatusBanner(*m_statusBanner, *m_statusLabel, m_statusMessage, error);
+      requestLayout();
+    }
+  }
+
+  void SettingsSheetPopup::clearStatusMessage() { setStatusMessage({}, false); }
 
   void SettingsSheetPopup::rebuildBody() {
     if (!isOpen()) {
@@ -184,11 +209,17 @@ namespace settings {
             .out = &m_sheetTitleLabel,
             .text = m_sheetTitle,
             .fontSize = Style::fontSizeBody * m_scale,
-            .color = colorSpecFromRole(ColorRole::OnSurface),
             .fontWeight = FontWeight::Bold,
+            .color = colorSpecFromRole(ColorRole::OnSurface),
         })
     );
     header->addChild(ui::spacer());
+
+    if (m_createHeaderAction) {
+      if (auto action = m_createHeaderAction()) {
+        header->addChild(std::move(action));
+      }
+    }
 
     if (m_removeAction) {
       header->addChild(
@@ -235,6 +266,14 @@ namespace settings {
         })
     );
     root->addChild(std::move(header));
+    root->addChild(makeSettingsStatusBanner({
+        .message = m_statusMessage,
+        .error = m_statusIsError,
+        .scale = m_scale,
+        .onDismiss = [this]() { clearStatusMessage(); },
+        .out = &m_statusBanner,
+        .messageOut = &m_statusLabel,
+    }));
 
     if (m_scrollableBody) {
       // Body scrolls when its content exceeds the sheet's clamped height.
@@ -336,8 +375,12 @@ namespace settings {
       // for short bodies (e.g. a two-setting plugin sheet) and clips the last row.
       c.setExactWidth(innerCw);
       const float headerH = m_header->measure(renderer, c).height;
+      float statusH = 0.0f;
+      if (m_statusBanner != nullptr && m_statusBanner->visible()) {
+        statusH = m_statusBanner->measure(renderer, c).height + popupGap;
+      }
       const float contentH = m_body->measure(renderer, c).height;
-      return 2.0f * popupPadding + headerH + popupGap + contentH;
+      return 2.0f * popupPadding + headerH + popupGap + statusH + contentH;
     };
 
     float rootH = naturalHeight(cw);
@@ -376,6 +419,9 @@ namespace settings {
     m_parentOutput = nullptr;
     m_sheetTitle.clear();
     m_sheetTitleLabel = nullptr;
+    m_statusMessage.clear();
+    m_statusBanner = nullptr;
+    m_statusLabel = nullptr;
     m_removeAction = nullptr;
     m_populateSheetBody = nullptr;
     m_root = nullptr;

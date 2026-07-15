@@ -2,7 +2,7 @@
   "auth": {
     "fingerprint": {
       "disconnected": "Чытальнік адбіткаў пальцаў адключаны",
-      "error": "Не ўдалося аўтарызавацца па адбітку пальца",
+      "error": "Не ўдалося аўтэнтыфікавацца па адбітку пальца",
       "no-match": "Адбітак пальца не супадае",
       "not-centered": "Пастаўце ваш палец па цэнтру чытальніка і паспрабуйце яшчэ раз",
       "present": "Чытанне адбітку пальца...",
@@ -13,17 +13,17 @@
       "too-many-attempts": "Адбітак пальцу быў адключаны (надта шмат спроб)"
     },
     "pam": {
-      "authentication-failed": "Аўтарызацыя не ўдалася",
+      "authentication-failed": "Аўтэнтыфікацыя не ўдалася",
       "start-failed": "Не ўдалося запусціць PAM",
       "user-unavailable": "Не ўдалося вызначыць бягучага карыстальніка"
     },
     "polkit": {
       "authenticate": "Аўтарызавацца",
-      "authenticating": "Аўтарызацыя...",
-      "default-message": "Патрабуецца аўтарызацыя",
+      "authenticating": "Аўтэнтыфікацыя...",
+      "default-message": "Патрабуецца аўтэнтыфікацыя",
       "invalid-password": "Пароль памылковы",
       "password-placeholder": "Пароль",
-      "title": "Патрабуецца аўтарызацыя"
+      "title": "Патрабуецца аўтэнтыфікацыя"
     }
   },
   "bar": {
@@ -31,6 +31,7 @@
       "choose-display": "Выбраць дысплэй",
       "confirm-region": "Enter або Прабел каб зняць · Esc каб скасаваць · перацягніце, каб выбраць зноў",
       "fullscreen": "Увесь экран",
+      "overlay-alloc-failed": "Не ўдалося адлюстраваць накладку здымка экрана (у ГП скончылася відэапамяць?)",
       "region": "Выбраць рэгіён"
     },
     "widgets": {
@@ -166,7 +167,7 @@
       "application-volumes": "Гучнасць праграм",
       "choose-effects-profile": "Выберыце профіль",
       "effects-profile": "Эфекты",
-      "input-device-prefix": "Увод:",
+      "input-device-prefix": "Увод",
       "no-application-audio": "Аўдыя не прайграваецца",
       "no-application-audio-body": "Зараз няма праграм, якія прайграваюць аўдыя.",
       "no-input-devices": "Няма прылад уводу",
@@ -175,7 +176,7 @@
       "no-output-devices": "Няма прылад вываду",
       "no-output-devices-body": "Зараз няма даступных крыніц прайгравання.",
       "no-output-selected": "Прылады вываду не выбрана",
-      "output-device-prefix": "Вывад:",
+      "output-device-prefix": "Вывад",
       "unavailable-body": "PipeWire неактыўны.",
       "unavailable-title": "Аўдыя недаступна"
     },
@@ -211,7 +212,8 @@
       "all-day": "Увесь дзень",
       "events": "Падзеі",
       "no-events": "Падзей няма.",
-      "today": "Сёння"
+      "today": "Сёння",
+      "toggle-events-card": "Пераключыць картку з падзеямі"
     },
     "display": {
       "disabled": "Адключана",
@@ -249,8 +251,9 @@
     "network": {
       "connect": "Злучыцца",
       "current-connection": "Бягучае злучэнне",
+      "external-ip": "WAN {ip}",
       "no-networks": "У дыяпазоне няма сетак",
-      "not-connected": "Не падключана",
+      "not-connected": "Не злучана",
       "password": "Пароль",
       "password-prompt": "Увядзіце пароль",
       "password-prompt-for": "Увядзіце пароль для {ssid}",
@@ -370,6 +373,7 @@
     "weather": {
       "daily": {
         "tooltip": {
+          "condition": "Стан",
           "high": "Макс.",
           "low": "Мiн.",
           "sunrise": "Усход",
@@ -384,6 +388,7 @@
         "temp-max": "Максімальная тэмпература",
         "temp-min": "Мінімальная тэмпература",
         "timezone": "Часавы пояс",
+        "uv-index": "Узровень УФ",
         "wind": "Вецер"
       },
       "disabled": "Уключыце [weather] у config.toml",
@@ -393,13 +398,22 @@
         "description": "Надвор'е",
         "temperature": "10 / 4C"
       },
+      "forecast-view": {
+        "daily": "Па дням",
+        "hourly": "Па гадзінам"
+      },
       "hourly": {
+        "summary": "{condition} / Дождж {precip}%",
         "tooltip": {
+          "condition": "Стан",
           "humidity": "Вільг.",
+          "rain": "Дождж",
           "wind": "Вецер"
         }
       },
       "location-unavailable": "Месцазнаходжанне недаступна",
+      "no-location-body": "Дадайце ваш адрас або ўключыце аўтавызначэнне ў наладах месцазнаходжання.",
+      "no-location-title": "Месцазнаходжання не задана",
       "refreshing": "Абнаўленне надвор'я...",
       "waiting": "Чаканне дадзеных аб надвор'і"
     }
@@ -471,6 +485,11 @@
         "label-min-width": "Мінімальная шырыня загалоўка",
         "layout": "Макет",
         "mirrored": "Адлюстраванне",
+        "network-speed-compact": "Хуткасць кампактнай сеткі",
+        "network-speed-unit": "Адзінка хуткасці сеткі",
+        "network-speed-unit-auto": "Аўтаматычна",
+        "network-speed-unit-kilobytes": "кБ/с",
+        "network-speed-unit-megabytes": "МБ/с",
         "opacity": "Непразрыстасць",
         "primary-color": "Асноўны колер",
         "reset-defaults": "Скінуць да прадвызначэнняў",
@@ -479,9 +498,12 @@
         "secondary-color": "Другасны колер",
         "sensitivity": "Адчувальнасць",
         "shadow": "Цень",
+        "show-caps-lock": "Папярэджанне: Caps Lock",
         "show-forecast": "Паказаць прагноз",
+        "show-keyboard-layout": "Раскладка клавіятуры",
         "show-label": "Паказваць подпіс",
         "show-login-button": "Кнопка ўваходу",
+        "show-password-hint": "Падказка да пароля",
         "show-when-idle": "Паказваць пры неактыўнасці",
         "stat": "Статыстыка",
         "stat-cpu-temp": "Тэмпература ЦП",
@@ -630,8 +652,9 @@
     }
   },
   "lockscreen": {
-    "authenticating": "Аўтарызацыя...",
-    "authentication-failed": "Аўтарызацыя не ўдалася",
+    "authenticating": "Аўтэнтыфікацыя...",
+    "authentication-failed": "Аўтэнтыфікацыя не ўдалася",
+    "caps-lock-on": "Caps Lock уключаны",
     "password-cleared": "Пароль ачышчаны",
     "password-placeholder": "Пароль",
     "ready": "Увядзіце ваш пароль і націсніце Enter.",
@@ -738,6 +761,19 @@
       "on": "Wi-Fi уключаны"
     }
   },
+  "plugins": {
+    "auto-disabled": {
+      "body-errors": "{plugin} выклікала надта шмат памылак і была адключана. Уключыце яе ізноў пасля выпраўлення праблемы.",
+      "body-timeouts": "{plugin} перастала адказваць і была адключана. Уключыце яе ізноў пасля выпраўлення праблемы.",
+      "title": "Убудова адключана"
+    },
+    "enable-failed": {
+      "body-error": "{plugin}: {error}",
+      "body-incompatible": "{plugin} патрабуе версію Noctalia {version} або больш новую.",
+      "body-timeout": "{plugin} усталёўвалася надта доўга.",
+      "title": "Убудова не ўключана"
+    }
+  },
   "power": {
     "battery": {
       "states": {
@@ -785,7 +821,9 @@
       "reset": "Скінуць"
     },
     "badges": {
-      "advanced": "Пашыранае",
+      "advanced": "Пашыраныя",
+      "community": "Ад супольнасці",
+      "deprecated": "Састарэла",
       "inherited": "Узята з іншых налад",
       "monitor": "Манітор",
       "official": "Афіцыйны",
@@ -885,6 +923,8 @@
           "fill-description": "Колер фона капсулы; таксама падтрымліваюцца фіксаваныя колеры HEX",
           "foreground": "Пярэдні план",
           "foreground-description": "Колер значка і загалоўка для вілджтаў у гэтай групе",
+          "hide": "Схаваць гэту групу",
+          "hide-widget": "Схаваць гэты віджэт",
           "hint": "Частка групы капсулы",
           "members": "{count} віджэта(ў)",
           "opacity": "Непразрыстасць",
@@ -895,6 +935,8 @@
           "radius": "Радыус",
           "radius-description": "Радыус вуглоў капсулы ў пікселях; «Аўтаматычна» бярэ радыус капсулы ўсёй панэлі",
           "selected": "{count} выбрана",
+          "show": "Паказаць гэту групу",
+          "show-widget": "Паказаць гэты віджэт",
           "style": "Стыль",
           "title": "Група капсул",
           "ungroup": "Разгрупіраваць"
@@ -999,7 +1041,7 @@
         "name-label": "Назва",
         "name-placeholder": "dziejannie-pry-niekat",
         "resume-command-label": "Каманда пры ўзнаўленні",
-        "resume-command-placeholder": "noctalia:dpms-on",
+        "resume-command-placeholder": "",
         "summary": "{name} · {seconds} с",
         "summary-disabled-timeout": "{name} · без часу",
         "timeout-label": "Час да неактыўнасці",
@@ -1014,6 +1056,7 @@
     "navigation": {
       "groups": {
         "audio": "Аўдыя",
+        "authentication": "Аўтэнтыфікацыя",
         "automation": "Аўтаматызацыя",
         "backdrop": "Заднік",
         "background": "Фон",
@@ -1033,8 +1076,10 @@
         "focus-styling": "Стыль факусіроўкі",
         "formats": "Фарматы",
         "general": "Агульныя",
+        "greeter": "Greeter",
         "grouping": "Групіраванне",
         "home": "Дамашняя",
+        "hot-corners": "Гарачыя куты",
         "idle": "Неактыўнасць",
         "interface": "Інтэрфейс",
         "keybinds": "Спалучэнні клавішаў",
@@ -1058,7 +1103,6 @@
         "pinned-apps": "Замацаваныя праграмы",
         "polkit": "Polkit",
         "power": "Сілкаванне",
-        "privacy-security": "Прыватнасць і беспека",
         "profile": "Профіль",
         "screen-corners": "Куты экрану",
         "screen-time": "Экранны час",
@@ -1084,6 +1128,7 @@
         "desktop": "Працоўны стол",
         "dock": "Док",
         "hooks": "Хукі",
+        "keybinds": "Спалучэнні клавішаў",
         "location": "Месцазнаходжанне",
         "niri": "Niri",
         "notifications": "Апавяшчэнні",
@@ -1165,6 +1210,13 @@
         "ultra-heavy": "Ультрашырокі",
         "ultra-light": "Ультрасветлы"
       },
+      "hot-corners": {
+        "command": "Выканаць каманду",
+        "control-center": "Цэнтр кіравання",
+        "launcher": "Меню запуску",
+        "none": "Нічога",
+        "window-switcher": "Пераключальнік вокнаў"
+      },
       "layer": {
         "overlay": "Накладка",
         "top": "Верх"
@@ -1198,9 +1250,9 @@
           "floating": "Нефіксаваная"
         },
         "panel-transparency": {
-          "glass": "Шкло",
-          "soft": "Мяккасць",
-          "solid": "Цвёрдасць"
+          "glass": "Шкляная",
+          "soft": "Мяккая",
+          "solid": "Цвёрдая"
         },
         "password-style": {
           "filled-circles": "Запоўненыя кругі",
@@ -1226,21 +1278,309 @@
         "source": {
           "built-in": "Убудаваныя",
           "community": "Супольныя",
-          "custom": "Карыстацкiя"
+          "custom": "Карыстацкiя",
+          "wallpaper": "Шпалеры"
         }
       },
       "theme-role": {
         "custom": "Карыстацкiя...",
-        "default": "Па змаўчанні"
+        "default": "Прадвызначана"
+      },
+      "wallpaper": {
+        "fill": {
+          "center": "Цэнтраванне",
+          "crop": "Абрэзка",
+          "fit": "Уцісканне",
+          "repeat": "Паўтарэнне",
+          "span": "Запаўненне",
+          "stretch": "Расцягванне"
+        },
+        "order": {
+          "alphabetical": "Алфавітная",
+          "random": "Выпадковая"
+        },
+        "transition": {
+          "disc": "Дыск",
+          "fade": "Затуханне",
+          "honeycomb": "Соты",
+          "stripes": "Палосы",
+          "wipe": "Сціранне",
+          "zoom": "Маштабаванне"
+        }
+      },
+      "weather": {
+        "unit": {
+          "imperial": "Імперскія",
+          "metric": "Метрычныя"
+        }
+      }
+    },
+    "plugins": {
+      "browse-store": "Даследаванне ўбудоў",
+      "panels": {
+        "open-near-click": {
+          "description": "Адкрываць панэль побач з віджэтам, які яе актывіраваў",
+          "label": "Адкрываць побач з націсканнем"
+        },
+        "placement": {
+          "description": "Ці прымацоўваць панэль да краю",
+          "label": "Размяшчэнне"
+        },
+        "position": {
+          "description": "Пазіцыя экрана пры нефіксаванай панэлі",
+          "label": "Пазіцыя"
+        }
+      },
+      "plugins": {
+        "configure": "Наладзіць",
+        "delete": "Выдаліць",
+        "delete-confirm-desc": "Гэта ўбудова будзе дэінсталявана і выдалена з вашага дыску.",
+        "delete-confirm-title": "Выдаліць «{name}»?",
+        "deprecated": "састарэлая",
+        "empty": "Няма ўключаных убудоў.",
+        "loading": "Загрузка ўбудоў...",
+        "refreshing": "Абнаўленне сіпсу ўбудоў...",
+        "remove": "Выдаліць убудову",
+        "requires": "Патрабуе {dependencies}",
+        "requires-newer-noctalia": "патрабуе больш новую версію Noctalia",
+        "title": "Убудовы"
+      },
+      "settings": {
+        "empty": "Няма даступных налад."
+      },
+      "sources": {
+        "add": "Дадаць крыніцу",
+        "add-title": "Дадаць крыніцу ўбудоў",
+        "edit": "Рэдагаваць крыніцу",
+        "edit-title": "Рэдагаваць крыніцу ўбудоў",
+        "empty": "Няма сканфігураваных крыніц.",
+        "errors": {
+          "duplicate-name": "Крыніца з гэтым ID ужо існуе.",
+          "invalid-name": "ID крыніцы павінна змяшчаць літары, лічбы, кропкі, ‹_› або ‹-›, а таксама пачынацца з літары або лічбы.",
+          "location-required": "Патрабуецца месцазнаходжанне крыніцы."
+        },
+        "kind": {
+          "git": "Git",
+          "path": "Шлях"
+        },
+        "kind-label": "Тып",
+        "location-label": "Месцазнаходжанне",
+        "location-placeholder-git": "https://github.com/ja/ubudovy-noctalia",
+        "location-placeholder-path": "~/dev/ubudovy-noctalia",
+        "name-label": "ID крыніцы",
+        "name-placeholder": "maje-ubudovy",
+        "precedence-hint": "Крыніцы ніжэй перавызначаюць крыніцы вышэй, калі ёсць аднолькавыя ўбудовы.",
+        "remove": "Выдаліць крыніцы",
+        "save": "Захаваць",
+        "title": "Крыніцы",
+        "update": "Абнавіць",
+        "update-on-startup": "Абнаўляць на запуску"
+      },
+      "store": {
+        "add": "Дадаць у Noctalia",
+        "categories": "Катэгорыі",
+        "category-all": "Усе",
+        "empty": "Убудоў не знойдзена",
+        "incompatible": "Несумяшчальная",
+        "loading": "Загрузка каталога...",
+        "no-readme": "Апісання няма",
+        "results-count": "{count} убудовы(-оў)",
+        "search-placeholder": "Шукаць убудовы...",
+        "title": "Крама ўбудоў"
       }
     },
     "schema": {
+      "appearance": {
+        "animation-speed": {
+          "description": "Множнік хуткасці для ўсіх анімацый",
+          "label": "Хуткасць анімацыі"
+        },
+        "animations": {
+          "description": "Уключэнне або выключэнне анімацый інтэрфейсу",
+          "label": "Анімацыі"
+        },
+        "app-icon-color": {
+          "description": "Колер з палітры, які выкарыстоўваецца для значкоў праграм",
+          "label": "Колер значка праграмы"
+        },
+        "app-icon-colorize": {
+          "description": "Змяняць колер значкоў праграм па ўсёй абалонцы, каб ён адпавядаў колеру з палітры",
+          "label": "Надаць колер значкам праграм"
+        },
+        "builtin-palette": {
+          "description": "Выберыце палітру з гатовага каталога",
+          "label": "Убудаваная палітра"
+        },
+        "community-palette": {
+          "description": "Выберыце палітру з каталога супольнасці",
+          "label": "Каталог супольнасці",
+          "search-placeholder": "Пошук палітраў..."
+        },
+        "corner-roundness": {
+          "description": "Радыус кутоў у інтэрфейсе кантэйнераў і кіравання",
+          "label": "Скругленасць кутоў"
+        },
+        "custom-palette": {
+          "description": "Выберыце палітру з ~/.config/noctalia/palettes/",
+          "label": "Уласная палітра",
+          "search-placeholder": "Шукаць карыстальніцкія палітры..."
+        },
+        "export-wallpaper-palette": {
+          "button": "Захаваць як карыстальніцкую палітру",
+          "description": "Захаваць бягучую палітру, узятую са шпалер, як файл карыстальніцкай палітры",
+          "label": "Экспарт палітры са шпалер"
+        },
+        "font-family": {
+          "description": "Сямейства шрыфтоў для інтэрфейсу абалонкі",
+          "label": "Сямейства шрыфтоў"
+        },
+        "global-shadow-alpha": {
+          "description": "Агульны ўзровень непразрыстасці ценяў"
+        },
+        "global-shadow-direction": {
+          "description": "Бок, у які элементы інтэрфейсу адкідваюць цені"
+        },
+        "language": {
+          "description": "Перавызначэнне аўтаматычна выбранай лакалі",
+          "label": "Мова"
+        },
+        "palette-source": {
+          "description": "Адкуль браць колеры палітры",
+          "label": "Колеры палітры"
+        },
+        "pure-black-dark": {
+          "description": "Прымяняць сапраўдны чорны да цёмных паверхняў, каб папярэдзіць выгаранне",
+          "label": "Абсалютны чорны"
+        },
+        "theme-mode": {
+          "description": "Выбраць паміж цёмным, светлым, або аўтаматычным рэжымам",
+          "label": "Рэжым"
+        },
+        "ui-scale": {
+          "description": "Павелічэнне або памяншэнне ўсяго інтэрфейсу",
+          "label": "Памер інтэрфейсу"
+        },
+        "wallpaper-generation-scheme": {
+          "description": "Як колеры са шпалер канвертуюцца ў палітру",
+          "label": "Схема генерацыі палітры"
+        }
+      },
+      "backdrop": {
+        "blur-intensity": {
+          "description": "Інтэнсіўнасць размыцця задніка",
+          "label": "Інтэнсіўнасць размыцця"
+        },
+        "enabled": {
+          "description": "Уключэнне задніка"
+        },
+        "tint-intensity": {
+          "description": "Інтэнсіўнасць тону задніка",
+          "label": "Інтэнсіўнасць тону"
+        }
+      },
+      "bar": {
+        "auto-hide": {
+          "description": "Аўтаматычна хаваць панэль, калі яна не выкарыстоўваецца"
+        },
+        "background-opacity": {
+          "description": "Непразрыстасць фона панэлі"
+        },
+        "border": {
+          "description": "Колер арбысу панэлі; таксама падтрымліваюцца фіксаваныя колеры HEX",
+          "label": "Край"
+        },
+        "border-width": {
+          "description": "Шырыня ўнутранага абрысу панэлі",
+          "label": "Шырыня краёў"
+        },
+        "capsule-border": {
+          "description": "Прадвызначаны колер абрысу капсулы; таксама падтрымліваюцца фіксаваныя колеры HEX",
+          "label": "Край капсулы"
+        },
+        "capsule-fill": {
+          "description": "Прадвызначаны колер фона капсулы; таксама падтрымліваюцца фіксаваныя колеры HEX",
+          "label": "Запаўненне капсулы"
+        },
+        "capsule-foreground": {
+          "description": "Прадвызначаны колер значкоў і тэкста ўнутры капсулы; таксама падтрымліваюцца фіксаваныя колеры HEX",
+          "label": "Пярэдні план капсулы"
+        },
+        "capsule-opacity": {
+          "description": "Непразрыстасць фона капсулы віджэта",
+          "label": "Непразрыстасць капсулы"
+        },
+        "capsule-padding": {
+          "description": "Водступы ўнутры капсулы віджэта",
+          "label": "Водступы капсулы"
+        },
+        "capsule-radius": {
+          "description": "Прадвызначаны радыус для капсул віджэтаў, працоўных прастор і груп працоўных прастор; пакіньце пустым для аўтаматычнай формы, або задайце 0 для квадратных кутоў",
+          "label": "Радыус капсул"
+        },
+        "capsule-thickness": {
+          "description": "Памер капсул на панэлі як дроб таўшчыні панэлі (1.0 адпавядае таўшчыні панэлі)",
+          "label": "Таўшчыня панэлі"
+        },
+        "center-widgets": {
+          "description": "Віджэты ў сярэдзіне панэлі",
+          "label": "Віджэты па цэнтры"
+        },
+        "widget-color": {
+          "description": "Прадвызначаны колер значкоў і тэкста ўнутры віджэтаў на гэтай панэлі; таксама падтрымліваюцца фіксаваныя колеры HEX"
+        },
+        "widget-icon-color": {
+          "description": "Перавызначае колеры віджэтаў на гэтай панэлі; таксама падтрымліваюцца фіксаваныя колеры HEX"
+        }
+      },
       "shell": {
         "osd-kinds-dnd": {
           "description": "Паказваць усплывальнае акно OSD пры пераключэнні рэжыму «Не турбаваць»",
           "label": "Не турбаваць"
+        },
+        "polkit-agent": {
+          "description": "Уключыць убудаваны агент аўтэнтыфікацыі"
         }
       }
+    },
+    "widgets": {
+      "settings": {
+        "active-color": {
+          "description": "Колер актыўных індыкатараў прыватнасці; таксама падтрымліваюцца фіксаваныя колеры HEX"
+        },
+        "capsule-border": {
+          "description": "Колер абрысу капсулы; таксама падтрымліваюцца фіксаваныя колеры HEX"
+        },
+        "capsule-fill": {
+          "description": "Колер фона капсулы; таксама падтрымліваюцца фіксаваныя колеры HEX"
+        },
+        "capsule-foreground": {
+          "description": "Колер змесціва ўнутры капсулы; таксама падтрымліваюцца фіксаваныя колеры HEX"
+        },
+        "color": {
+          "description": "Колер значка і загалоўка гэтага віджэта; таксама падтрымліваюцца фіксаваныя колеры HEX"
+        },
+        "empty-color": {
+          "description": "Колер пустых працоўных прастор; таксама падтрымліваюцца фіксаваныя колеры HEX"
+        },
+        "focused-color": {
+          "description": "Колер сфакусаванай прасторы; таксама падтрымліваюцца фіксаваныя колеры HEX"
+        },
+        "icon-color": {
+          "description": "Перавызначае колер віджэта толькі для значкоў; таксама падтрымліваюцца фіксаваныя колеры HEX"
+        },
+        "inactive-color": {
+          "description": "Колер неактыўных індыкатараў прыватнасці; таксама падтрымліваюцца фіксаваныя колеры HEX"
+        },
+        "mute-color": {
+          "description": "Колер значка і загалоўка пры заглушэнні; таксама падтрымліваюцца фіксаваныя колеры HEX"
+        },
+        "occupied-color": {
+          "description": "Колер занятых прастор; таксама падтрымліваюцца фіксаваныя колеры HEX"
+        }
+      }
+    },
+    "window": {
+      "filter-modified": "Мадыфікаваныя"
     }
   }
 }

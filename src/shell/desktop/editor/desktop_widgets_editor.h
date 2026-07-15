@@ -135,6 +135,9 @@ private:
     float intrinsicHeight = 0.0f;
     ScaleCorner scaleCorner = ScaleCorner::BottomRight;
     std::string surfaceOutputName;
+    std::string moveSourceOutputName;
+    float movePointerOffsetX = 0.0f;
+    float movePointerOffsetY = 0.0f;
     float initialToolbarX = 0.0f;
     float initialToolbarY = 0.0f;
     float initialInspectorX = 0.0f;
@@ -193,8 +196,10 @@ private:
   [[nodiscard]] float duplicateOffset() const;
   [[nodiscard]] std::vector<DesktopWidgetState> selectedWidgetTemplates() const;
   std::vector<std::string> insertWidgetCopies(
-      const std::vector<DesktopWidgetState>& templates, float offsetX, float offsetY, bool selectInserted
+      const std::vector<DesktopWidgetState>& templates, float offsetX, float offsetY, bool selectInserted,
+      const std::string& targetOutputName = {}
   );
+  [[nodiscard]] std::string currentPointerOutputName() const;
   [[nodiscard]] bool isWidgetSelected(const std::string& id) const;
   void clearSelection();
   void setSingleSelection(const std::string& id);
@@ -227,5 +232,6 @@ private:
   bool m_rightAltHeld = false;
   float m_currentEventSceneX = 0.0f;
   float m_currentEventSceneY = 0.0f;
+  std::string m_currentEventOutputName;
   bool m_inspectorOpen = false;
 };

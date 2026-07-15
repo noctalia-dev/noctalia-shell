@@ -72,8 +72,8 @@ namespace {
             .out = &ptr,
             .text = text,
             .fontSize = Style::fontSizeCaption * scale,
-            .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
             .fontWeight = FontWeight::Bold,
+            .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
         })
     );
     return ptr;
@@ -194,8 +194,8 @@ std::unique_ptr<Flex> ScreenTimeTab::create() {
       ui::label({
           .out = &m_totalLabel,
           .fontSize = Style::fontSizeHeader * 1.6f * scale,
-          .color = colorSpecFromRole(ColorRole::OnSurface),
           .fontWeight = FontWeight::Bold,
+          .color = colorSpecFromRole(ColorRole::OnSurface),
       })
   );
 
@@ -1069,11 +1069,8 @@ std::string ScreenTimeTab::resolveIconPath(const std::string& appKey) const {
   }
 
   const int targetPx = static_cast<int>(std::round(kAppIconSize * contentScale()));
-  const auto lookupOptions = baseKey.starts_with("steam_app_")
-      ? app_identity::DesktopEntryLookupOptions{.includeHidden = true, .includeNoDisplay = true}
-      : app_identity::DesktopEntryLookupOptions{};
   std::string iconName;
-  if (const auto entry = app_identity::findDesktopEntry(baseKey, desktopEntries(), lookupOptions);
+  if (const auto entry = app_identity::findDesktopEntry(baseKey, desktopEntries());
       entry.has_value() && !entry->icon.empty()) {
     iconName = entry->icon;
   } else {

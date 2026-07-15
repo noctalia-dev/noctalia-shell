@@ -21,8 +21,12 @@ void PowerProfileWidget::create() {
     if (data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL) {
       return;
     }
+    const float steps = data.scrollSteps();
+    if (steps == 0.0f) {
+      return;
+    }
     // Scroll up moves forward; Wayland reports up as a negative delta.
-    cycleProfile(data.scrollDelta(1.0f) > 0 ? -1 : 1);
+    cycleProfile(steps > 0.0f ? -1 : 1);
   });
   m_area = area.get();
 

@@ -35,8 +35,8 @@ void TestPanel::create() {
       .out = &m_headerLabel,
       .text = "Test",
       .fontSize = Style::fontSizeTitle * scale,
-      .color = colorSpecFromRole(ColorRole::Primary),
       .fontWeight = FontWeight::Bold,
+      .color = colorSpecFromRole(ColorRole::Primary),
   });
   headerRow->addChild(std::move(header));
 
@@ -893,8 +893,8 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
         ui::label({
             .text = "Text Lab",
             .fontSize = Style::fontSizeHeader * scale,
-            .color = colorSpecFromRole(ColorRole::Primary),
             .fontWeight = FontWeight::Bold,
+            .color = colorSpecFromRole(ColorRole::Primary),
         })
     );
   }
@@ -1144,7 +1144,7 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
             .onChange = [this](bool checked) {
               if (m_baselineModeLabel != nullptr) {
                 m_baselineModeLabel->setBaselineMode(
-                    checked ? LabelBaselineMode::InkCentered : LabelBaselineMode::StableLogical
+                    checked ? LabelBaselineMode::InkCentered : LabelBaselineMode::Text
                 );
               }
             },

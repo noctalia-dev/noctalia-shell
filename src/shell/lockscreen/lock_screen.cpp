@@ -6,8 +6,8 @@
 #include "config/config_service.h"
 #include "config/config_types.h"
 #include "core/deferred_call.h"
-#include "core/key_chord.h"
-#include "core/keybind_matcher.h"
+#include "core/input/key_chord.h"
+#include "core/input/keybind_matcher.h"
 #include "core/log.h"
 #include "ext-session-lock-v1-client-protocol.h"
 #include "i18n/i18n.h"
@@ -294,6 +294,14 @@ void LockScreen::onGpuResourcesInvalidated() {
   for (auto& instance : m_instances) {
     if (instance.surface != nullptr) {
       instance.surface->onGpuResourcesInvalidated();
+    }
+  }
+}
+
+void LockScreen::prepareForGraphicsReset() noexcept {
+  for (auto& instance : m_instances) {
+    if (instance.surface != nullptr) {
+      instance.surface->prepareForGraphicsReset();
     }
   }
 }

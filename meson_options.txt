@@ -12,6 +12,5 @@ option(
   description: 'projectM/Milkdrop audio-visualizer wallpaper. Requires a GLES-enabled libprojectM 4 on the pkg-config path. The feature is also OFF by default at runtime; this controls whether the C++ code and the libprojectM dependency are compiled in at all.',
 )
 
-option('jemalloc', type: 'feature', value: 'auto', description: 'Use jemalloc on glibc builds')
 option('tests', type: 'feature', value: 'auto', description: 'Build unit tests (auto: on for unsanitized debug builds)')
-option('system_tomlplusplus', type: 'boolean', value: false, description: 'Use system tomlplusplus instead of vendored')
+option('jemalloc', type: 'feature', value: 'auto', description: 'Use jemalloc on glibc builds')

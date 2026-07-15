@@ -13,7 +13,7 @@
 #include <filesystem>
 #include <fstream>
 #include <optional>
-#include <stb_image_resize2.h>
+#include <stb/stb_image_resize2.h>
 #include <sys/eventfd.h>
 #include <system_error>
 #include <unistd.h>
@@ -411,6 +411,15 @@ void ThumbnailService::invalidateGpuResources(TextureManager& textures) {
   for (const RequestKey& key : liveKeys) {
     enqueueDecodeIfNeeded(key);
   }
+}
+
+void ThumbnailService::abandonGpuResources() noexcept {
+  for (auto& [key, entry] : m_entries) {
+    (void)key;
+    entry.handle = {};
+    entry.failed = false;
+  }
+  m_textureManager = nullptr;
 }
 
 void ThumbnailService::doAddPollFds(std::vector<pollfd>& fds) {

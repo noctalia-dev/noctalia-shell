@@ -19,6 +19,9 @@ struct HttpRequest {
   std::string body;                 // sent as the request body when non-empty
   bool followRedirects = false;
   bool allowRedirectAuth = false; // continue auth across redirect hosts; use only for trusted provider redirects
+  bool freshConnection = false;   // bypass curl's connection cache; needed when the route may have changed
+                                  // (e.g. probing the external IP after a VPN toggle), otherwise a reused
+                                  // keep-alive connection answers via the old path
   std::string basicUsername;
   std::string basicPassword;
 };

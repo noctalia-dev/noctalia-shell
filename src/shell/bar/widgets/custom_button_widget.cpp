@@ -1,7 +1,7 @@
 #include "shell/bar/widgets/custom_button_widget.h"
 
 #include "core/log.h"
-#include "core/process.h"
+#include "core/process/process.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
@@ -25,8 +25,8 @@ CustomButtonWidget::CustomButtonWidget(Options options)
     : m_glyphName(std::move(options.glyph)), m_labelText(std::move(options.label)),
       m_tooltip(std::move(options.tooltip)), m_command(std::move(options.command)),
       m_rightCommand(std::move(options.rightCommand)), m_middleCommand(std::move(options.middleCommand)),
-      m_scrollUpCommand(std::move(options.scrollUpCommand)), m_scrollDownCommand(std::move(options.scrollDownCommand)) {
-}
+      m_scrollUpCommand(std::move(options.scrollUpCommand)), m_scrollDownCommand(std::move(options.scrollDownCommand)),
+      m_customImage(std::move(options.customImage)) {}
 
 void CustomButtonWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -70,12 +70,12 @@ void CustomButtonWidget::create() {
       return false;
     }
 
-    const float delta = data.scrollDelta(1.0f);
-    if (delta == 0.0f) {
+    const float steps = data.scrollSteps();
+    if (steps == 0.0f) {
       return false;
     }
 
-    const std::string& command = delta < 0.0f ? m_scrollUpCommand : m_scrollDownCommand;
+    const std::string& command = steps < 0.0f ? m_scrollUpCommand : m_scrollDownCommand;
     if (command.empty()) {
       return false;
     }
@@ -88,25 +88,29 @@ void CustomButtonWidget::create() {
     area->setTooltip(m_tooltip);
   }
 
-  area->addChild(
-      ui::glyph({
-          .out = &m_glyph,
-          .glyph = m_glyphName,
-          .glyphSize = Style::baseGlyphSize * m_contentScale,
-          .color = widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)),
-          .visible = !m_glyphName.empty(),
-      })
-  );
+  if (m_customImage.enabled()) {
+    area->addChild(ui::image({.out = &m_image, .fit = ImageFit::Contain}));
+  } else {
+    area->addChild(
+        ui::glyph({
+            .out = &m_glyph,
+            .glyph = m_glyphName,
+            .glyphSize = Style::baseGlyphSize * m_contentScale,
+            .color = widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)),
+            .visible = !m_glyphName.empty(),
+        })
+    );
+  }
 
   area->addChild(
       ui::label({
           .out = &m_label,
           .text = m_labelText,
           .fontSize = Style::fontSizeBody * m_contentScale,
+          .fontWeight = labelFontWeight(),
           .fontFamily = labelFontFamily(),
           .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
           .maxLines = 1,
-          .fontWeight = labelFontWeight(),
           .visible = !m_labelText.empty(),
       })
   );
@@ -118,19 +122,27 @@ void CustomButtonWidget::create() {
 bool CustomButtonWidget::reservesMiddleClick() const noexcept { return !m_middleCommand.empty(); }
 
 void CustomButtonWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
-  if (m_area == nullptr || m_glyph == nullptr || m_label == nullptr) {
+  if (m_area == nullptr || m_label == nullptr) {
     return;
   }
 
   const bool isVertical = containerHeight > containerWidth;
-  const bool showGlyph = !m_glyphName.empty();
+  const bool showImage = m_image != nullptr;
+  const bool showGlyph = !showImage && m_glyph != nullptr && !m_glyphName.empty();
+  const bool showIcon = showImage || showGlyph;
   const bool showLabel = !m_labelText.empty();
-  const float spacing = (showGlyph && showLabel) ? Style::spaceXs * m_contentScale : 0.0f;
+  const float spacing = (showIcon && showLabel) ? Style::spaceXs * m_contentScale : 0.0f;
 
-  m_glyph->setVisible(showGlyph);
+  if (m_glyph != nullptr) {
+    m_glyph->setVisible(showGlyph);
+  }
   m_label->setVisible(showLabel);
 
-  if (showGlyph) {
+  if (showImage) {
+    widget_custom_image::sync(
+        *m_image, renderer, m_customImage, m_contentScale, widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface))
+    );
+  } else if (showGlyph) {
     m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
     m_glyph->setColor(widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)));
     m_glyph->measure(renderer);
@@ -148,7 +160,10 @@ void CustomButtonWidget::doLayout(Renderer& renderer, float containerWidth, floa
   if (isVertical) {
     float width = 0.0f;
     float height = 0.0f;
-    if (showGlyph) {
+    if (showImage) {
+      width = std::max(width, m_image->width());
+      height += m_image->height();
+    } else if (showGlyph) {
       width = std::max(width, m_glyph->width());
       height += m_glyph->height();
     }
@@ -161,7 +176,10 @@ void CustomButtonWidget::doLayout(Renderer& renderer, float containerWidth, floa
     }
 
     float y = 0.0f;
-    if (showGlyph) {
+    if (showImage) {
+      m_image->setPosition(std::round((width - m_image->width()) * 0.5f), y);
+      y += m_image->height() + spacing;
+    } else if (showGlyph) {
       m_glyph->setPosition(std::round((width - m_glyph->width()) * 0.5f), y);
       y += m_glyph->height() + spacing;
     }
@@ -174,7 +192,10 @@ void CustomButtonWidget::doLayout(Renderer& renderer, float containerWidth, floa
 
   float width = 0.0f;
   float height = 0.0f;
-  if (showGlyph) {
+  if (showImage) {
+    width += m_image->width();
+    height = std::max(height, m_image->height());
+  } else if (showGlyph) {
     width += m_glyph->width();
     height = std::max(height, m_glyph->height());
   }
@@ -187,7 +208,10 @@ void CustomButtonWidget::doLayout(Renderer& renderer, float containerWidth, floa
   }
 
   float x = 0.0f;
-  if (showGlyph) {
+  if (showImage) {
+    m_image->setPosition(x, std::round((height - m_image->height()) * 0.5f));
+    x += m_image->width() + spacing;
+  } else if (showGlyph) {
     m_glyph->setPosition(x, std::round((height - m_glyph->height()) * 0.5f));
     x += m_glyph->width() + spacing;
   }

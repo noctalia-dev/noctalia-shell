@@ -29,6 +29,16 @@ enum class FontWeight : int {
   UltraHeavy = 1000,
 };
 
+// Caret geometry for one byte offset in a laid-out text: caret x, top and
+// height in logical px from the layout origin. The wrapped variant of the
+// cursor-stops query fills these so editors can place carets and selections
+// in multi-line text.
+struct TextCursorStop {
+  float x = 0.0f;
+  float y = 0.0f;
+  float height = 0.0f;
+};
+
 struct TextMetrics {
   float width = 0.0f;
   float left = 0.0f;
@@ -72,6 +82,13 @@ public:
   virtual void measureTextCursorStops(
       std::string_view text, float fontSize, const std::vector<std::size_t>& byteOffsets, std::vector<float>& outStops,
       FontWeight fontWeight = FontWeight::Normal
+  ) = 0;
+  // Like measureTextCursorStops, but lays the text out wrapped at maxWidth
+  // (word-char wrap, '\n' honored — the same layout the draw path uses for a
+  // maxLines=0 text node) and reports full caret rects instead of x only.
+  virtual void measureTextCursorStopsWrapped(
+      std::string_view text, float fontSize, const std::vector<std::size_t>& byteOffsets, float maxWidth,
+      std::vector<TextCursorStop>& outStops, FontWeight fontWeight = FontWeight::Normal
   ) = 0;
   [[nodiscard]] virtual TextMetrics measureGlyph(char32_t codepoint, float fontSize) = 0;
   [[nodiscard]] virtual TextureManager& textureManager() = 0;

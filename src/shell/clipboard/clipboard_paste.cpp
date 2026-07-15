@@ -2,7 +2,7 @@
 
 #include "config/config_types.h"
 #include "core/log.h"
-#include "core/process.h"
+#include "core/process/process.h"
 #include "wayland/virtual_keyboard_service.h"
 
 #include <optional>

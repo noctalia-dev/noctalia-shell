@@ -22,6 +22,7 @@ struct wl_output;
 
 class Button;
 class Box;
+class Flex;
 class Input;
 class Label;
 class SharedTextureCache;
@@ -66,6 +67,7 @@ public:
   void clearPasswordSelection();
   void onThemeChanged();
   void onGpuResourcesInvalidated();
+  void prepareForGraphicsReset() noexcept;
   void onPointerEvent(const PointerEvent& event);
   void onKeyboardEvent(const KeyboardEvent& event);
   [[nodiscard]] wl_output* output() const noexcept { return m_output; }
@@ -94,6 +96,7 @@ private:
   void layoutScene(std::uint32_t width, std::uint32_t height);
   void updateCopy();
   [[nodiscard]] lockscreen_login_box::LoginBoxStyle resolveLoginStyle() const;
+  [[nodiscard]] bool isLoginBoxEnabled() const;
   [[nodiscard]] std::string resolveStatusText(const lockscreen_login_box::LoginBoxStyle& style, bool& isError) const;
   [[nodiscard]] bool passwordFieldContainsPoint(float sceneX, float sceneY) const;
   void focusPasswordField();
@@ -107,7 +110,8 @@ private:
   WallpaperNode* m_wallpaper = nullptr;
   Box* m_tintOverlay = nullptr;
   Box* m_backdrop = nullptr;
-  Box* m_loginPanel = nullptr;
+  Flex* m_loginPanel = nullptr;
+  Flex* m_loginContentRow = nullptr;
   Input* m_passwordField = nullptr;
   Button* m_loginButton = nullptr;
   Button* m_layoutChip = nullptr;

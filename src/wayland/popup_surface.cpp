@@ -157,7 +157,7 @@ bool PopupSurface::initialize(zwlr_layer_surface_v1* parentLayerSurface, wl_outp
 
 void PopupSurface::setDismissedCallback(std::function<void()> callback) { m_dismissedCallback = std::move(callback); }
 
-bool PopupSurface::resize(std::uint32_t width, std::uint32_t height) {
+bool PopupSurface::resize(std::uint32_t width, std::uint32_t height, bool commit) {
   if (m_surface == nullptr || m_popup == nullptr) {
     return false;
   }
@@ -189,12 +189,14 @@ bool PopupSurface::resize(std::uint32_t width, std::uint32_t height) {
     }
   }
 
-  wl_surface_commit(m_surface);
-  wl_display_flush(m_connection.display());
+  if (commit) {
+    wl_surface_commit(m_surface);
+    wl_display_flush(m_connection.display());
+  }
   return true;
 }
 
-bool PopupSurface::repositionAnchor(const PopupSurfaceConfig& anchorConfig) {
+bool PopupSurface::repositionAnchor(const PopupSurfaceConfig& anchorConfig, bool commit) {
   if (m_popup == nullptr) {
     return false;
   }
@@ -217,8 +219,10 @@ bool PopupSurface::repositionAnchor(const PopupSurfaceConfig& anchorConfig) {
     }
   }
 
-  wl_surface_commit(m_surface);
-  wl_display_flush(m_connection.display());
+  if (commit) {
+    wl_surface_commit(m_surface);
+    wl_display_flush(m_connection.display());
+  }
   return true;
 }
 

@@ -2,8 +2,8 @@
 
 #include "config/config_types.h"
 #include "core/deferred_call.h"
-#include "core/key_symbols.h"
-#include "core/keybind_matcher.h"
+#include "core/input/key_symbols.h"
+#include "core/input/keybind_matcher.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "cursor-shape-v1-client-protocol.h"
@@ -171,6 +171,8 @@ namespace capture {
 
   void ScreenshotRegionOverlay::setCompleteCallback(CompleteCallback callback) { m_onComplete = std::move(callback); }
 
+  void ScreenshotRegionOverlay::setFailureCallback(FailureCallback callback) { m_onFailure = std::move(callback); }
+
   void ScreenshotRegionOverlay::setFrozenScreenshots(std::vector<FrozenScreenshot> screenshots) {
     m_frozenScreenshots = std::move(screenshots);
   }
@@ -317,7 +319,7 @@ namespace capture {
   }
 
   void ScreenshotRegionOverlay::prepareFrame(Instance& inst, bool /*needsUpdate*/, bool /*needsLayout*/) {
-    if (m_renderContext == nullptr || inst.surface == nullptr) {
+    if (!m_active || m_renderContext == nullptr || inst.surface == nullptr) {
       return;
     }
 
@@ -327,7 +329,13 @@ namespace capture {
       return;
     }
 
-    m_renderContext->makeCurrent(inst.surface->renderTarget());
+    if (!m_renderContext->makeCurrent(inst.surface->renderTarget())) {
+      // The overlay's EGL surface could not be made current (e.g. EGL_BAD_ALLOC when the
+      // driver is out of video memory). Painting would be a no-op, leaving an invisible
+      // fullscreen surface that eats input, so tear down and report instead of spinning.
+      abortWithError(i18n::tr("bar.screenshot.overlay-alloc-failed"));
+      return;
+    }
 
     const bool needsSceneBuild = inst.sceneRoot == nullptr
         || static_cast<std::uint32_t>(std::round(inst.sceneRoot->width())) != width
@@ -625,6 +633,23 @@ namespace capture {
     }
     cancelSelection();
     return true;
+  }
+
+  void ScreenshotRegionOverlay::abortWithError(const std::string& message) {
+    if (!m_active) {
+      return;
+    }
+    // Stop further frames from re-triggering the abort while teardown is pending.
+    m_active = false;
+    kLog.warn("aborting screenshot region overlay: {}", message);
+    // Defer past the surface's prepareFrame callback before destroying its surfaces.
+    FailureCallback onFailure = m_onFailure;
+    DeferredCall::callLater([this, onFailure, message]() {
+      cancel();
+      if (onFailure) {
+        onFailure(message);
+      }
+    });
   }
 
   void ScreenshotRegionOverlay::updateSelectionVisuals() {

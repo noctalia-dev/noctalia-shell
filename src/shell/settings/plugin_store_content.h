@@ -32,7 +32,7 @@ namespace settings {
   };
 
   struct PluginStoreCallbacks {
-    std::function<void(const std::string& id, bool enable)> setEnabled;
+    std::function<void(std::string id, bool enable)> setEnabled;
     std::function<bool(const std::string& id)> isEnabling;
     float scale = 1.0f;
   };
@@ -53,6 +53,8 @@ namespace settings {
     void setOnRebuildNeeded(std::function<void()> cb);
 
     [[nodiscard]] bool isDetailView() const noexcept;
+    [[nodiscard]] std::optional<std::string> detailPageUrl() const;
+    [[nodiscard]] std::optional<std::string> detailSourceUrl() const;
     void openDetail(std::size_t filteredIndex);
     void closeDetail();
 
@@ -66,6 +68,7 @@ namespace settings {
     std::vector<std::size_t> m_filteredIndices;
     std::unordered_set<std::string> m_onDiskIds;
     std::vector<std::string> m_tags;
+    bool m_tagFiltersCollapsed = true;
     std::string m_searchQuery;
     std::string m_selectedTag;
     PluginStoreCallbacks m_callbacks;

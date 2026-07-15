@@ -18,6 +18,7 @@
 
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
+#include <optional>
 
 #include <cstdint>
 #include <unordered_map>
@@ -41,6 +42,7 @@ public:
   void endFrame(RenderTarget& target) override;
   [[nodiscard]] RenderGraphicsResetStatus graphicsResetStatus() override;
   void invalidateGpuResources() override;
+  void abandonAfterGraphicsReset() noexcept override;
 
   [[nodiscard]] std::unique_ptr<RenderSurfaceTarget> createSurfaceTarget(wl_surface* surface) override;
   [[nodiscard]] std::unique_ptr<RenderFramebuffer>
@@ -106,6 +108,7 @@ private:
   void ensureFullscreenTintProgram();
   void resolveGraphicsResetStatusProc();
   void destroyGpuObjects();
+  void abandonGpuObjects() noexcept;
 
   EGLDisplay m_display = EGL_NO_DISPLAY;
   EGLConfig m_config = nullptr;
@@ -118,6 +121,13 @@ private:
   // whenever the producer publishes a different image. See importLiveImage().
   void* m_liveImageCacheKey = nullptr;
   std::uint32_t m_liveImageCacheTex = 0;
+  bool m_viewportValid = false;
+  std::uint32_t m_viewportWidth = 0;
+  std::uint32_t m_viewportHeight = 0;
+  std::optional<RenderBlendMode> m_blendMode;
+  bool m_scissorEnabled = false;
+  bool m_scissorValid = false;
+  RenderScissor m_scissor;
   GlesTextureManager m_textureManager;
   RectProgram m_rectProgram;
   ImageProgram m_imageProgram;

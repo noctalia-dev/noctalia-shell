@@ -2,9 +2,9 @@
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
-#include "core/key_modifiers.h"
-#include "core/key_symbols.h"
-#include "core/keybind_matcher.h"
+#include "core/input/key_modifiers.h"
+#include "core/input/key_symbols.h"
+#include "core/input/keybind_matcher.h"
 #include "core/ui_phase.h"
 #include "i18n/i18n.h"
 #include "render/core/async_texture_cache.h"
@@ -62,8 +62,6 @@ namespace {
     // weak fuzzy hit outrank a much stronger lexical match.
     return std::min(rawBoost, kTypedUsageScoreCap);
   }
-
-  [[nodiscard]] bool startsWithSlash(std::string_view text) { return !text.empty() && text.front() == '/'; }
 
   [[nodiscard]] bool isDescendantOf(const Node* node, const Node* ancestor) {
     if (node == nullptr || ancestor == nullptr) {
@@ -123,7 +121,7 @@ namespace {
 
   [[nodiscard]] float launcherTextStackHeight(Renderer& renderer, const LauncherListStyle& style) {
     const float bodySize = Style::fontSizeBody * style.scale;
-    float textHeight = stableLabelHeight(renderer.measureFont(bodySize, FontWeight::Bold));
+    float textHeight = stableLabelHeight(renderer.measureFont(bodySize, FontWeight::SemiBold));
     if (!style.compact) {
       const float captionSize = Style::fontSizeCaption * style.scale;
       textHeight += stableLabelHeight(renderer.measureFont(captionSize, FontWeight::Normal));
@@ -256,17 +254,17 @@ namespace {
               ui::label({
                   .out = &m_title,
                   .fontSize = Style::fontSizeBody * m_style.scale,
+                  .fontWeight = FontWeight::SemiBold,
                   .color = colorSpecFromRole(ColorRole::OnSurface),
                   .maxLines = 1,
-                  .fontWeight = FontWeight::Bold,
-                  .baselineMode = LabelBaselineMode::StableFont,
+                  .baselineMode = LabelBaselineMode::TextFixedHeight,
               }),
               ui::label({
                   .out = &m_subtitle,
                   .fontSize = Style::fontSizeCaption * m_style.scale,
                   .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
                   .maxLines = 1,
-                  .baselineMode = LabelBaselineMode::StableFont,
+                  .baselineMode = LabelBaselineMode::TextFixedHeight,
               })
           )
       );
@@ -274,7 +272,8 @@ namespace {
 
     void setListStyle(LauncherListStyle style) { m_style = style; }
 
-    void bind(Renderer& renderer, const LauncherResult& result, float width, bool selected, bool hovered) {
+    void
+    bind(Renderer& renderer, const LauncherResult& result, float width, float height, bool selected, bool hovered) {
       m_selected = selected;
       m_hovered = hovered;
       m_iconPath = result.iconPath;
@@ -282,10 +281,10 @@ namespace {
       const float iconSize = launcherIconSize(m_style);
       m_iconTargetSize = static_cast<int>(std::round(iconSize));
       m_badgeVisible = !result.badge.empty();
-      m_rowHeight = launcherRowHeight(renderer, m_style);
+      m_rowHeight = height;
 
-      setSize(width, m_rowHeight);
-      m_row->setFrameSize(width, m_rowHeight);
+      setSize(width, height);
+      m_row->setFrameSize(width, height);
 
       m_badgeLabel->setVisible(false);
       m_badgeLabel->setParticipatesInLayout(false);
@@ -459,9 +458,9 @@ namespace {
           ui::label({
               .out = &m_title,
               .fontSize = Style::fontSizeCaption * m_style.scale,
+              .fontWeight = FontWeight::Normal,
               .color = colorSpecFromRole(ColorRole::OnSurface),
               .maxLines = 2,
-              .fontWeight = FontWeight::Normal,
               .configure = [](Label& label) { label.setTextAlign(TextAlign::Center); },
           })
       );
@@ -603,7 +602,7 @@ public:
     }
     auto* row = static_cast<LauncherResultRow*>(&tile);
     row->setListStyle(m_style);
-    row->bind(*m_renderer, (*m_results)[index], tile.width(), selected, hovered);
+    row->bind(*m_renderer, (*m_results)[index], tile.width(), tile.height(), selected, hovered);
   }
 
   void onActivate(std::size_t index) override {
@@ -677,7 +676,9 @@ private:
 };
 
 LauncherPanel::LauncherPanel(ConfigService* config, AsyncTextureCache* asyncTextures)
-    : m_config(config), m_asyncTextures(asyncTextures) {}
+    : m_config(config), m_asyncTextures(asyncTextures) {
+  syncUsageTrackingState();
+}
 
 LauncherPanel::~LauncherPanel() = default;
 
@@ -685,13 +686,37 @@ PanelPlacement LauncherPanel::panelPlacement() const noexcept {
   return m_config != nullptr ? m_config->config().shell.panel.launcherPlacement : PanelPlacement::Floating;
 }
 
+void LauncherPanel::applyProviderConfig(LauncherProvider& provider) const {
+  std::string triggerWord = std::string(provider.defaultPrefix());
+  std::string prefix = "/";
+  std::optional<bool> global;
+  if (m_config != nullptr) {
+    const auto& launcherCfg = m_config->config().shell.launcher;
+    prefix = launcherCfg.providerPrefix;
+    if (provider.allowCustomPrefix()) {
+      std::string key = StringUtils::toLower(std::string(provider.id()));
+      auto it = std::ranges::find(launcherCfg.providers, key, &LauncherProviderConfig::name);
+      if (it != launcherCfg.providers.end()) {
+        if (!it->prefix.empty()) {
+          triggerWord = it->prefix;
+        }
+        global = it->global;
+      }
+    }
+  }
+
+  provider.setCustomPrefix(triggerWord.empty() ? std::string() : prefix + triggerWord);
+  provider.setCustomIncludeInGlobalSearch(global);
+}
+
 void LauncherPanel::addProvider(std::unique_ptr<LauncherProvider> provider) {
+  applyProviderConfig(*provider);
   provider->initialize();
   provider->setResultsChangedCallback([this]() { onProviderResultsChanged(); });
   provider->setQueryRequestedCallback([this](std::string query) { setQuery(std::move(query)); });
   LauncherProvider* providerPtr = provider.get();
   provider->setActivationDoneCallback([this, providerPtr](const std::string& resultId) {
-    if (providerPtr->trackUsage()) {
+    if (shouldTrackUsage() && providerPtr->trackUsage()) {
       m_usageTracker.record(providerPtr->id(), resultId);
     }
     PanelManager::instance().closePanel(false);
@@ -923,7 +948,12 @@ void LauncherPanel::syncLauncherViewLayout(Renderer* renderer) {
     m_grid->setColumns(1);
     m_grid->setColumnGap(0.0f);
     m_grid->setRowGap(Style::spaceXs * scale);
-    m_grid->setCellHeight(launcherRowHeightEstimate(style));
+    const float listCellHeight =
+        renderer != nullptr ? launcherRowHeight(*renderer, style) : launcherRowHeightEstimate(style);
+    m_grid->setCellHeight(listCellHeight);
+    if (renderer != nullptr) {
+      m_launcherRowHeight = listCellHeight;
+    }
     if (modeChanged) {
       m_grid->setAdapter(m_listAdapter.get());
     }
@@ -1009,6 +1039,10 @@ void LauncherPanel::doLayout(Renderer& renderer, float width, float height) {
 }
 
 void LauncherPanel::onOpen(std::string_view context) {
+  for (auto& provider : m_providers) {
+    applyProviderConfig(*provider);
+  }
+
   // Pick up apps installed since the last scan (notably Nix profile swaps that
   // inotify cannot observe). Cheap stat-only check; only rescans on real change.
   refreshDesktopEntriesIfSourcesChanged();
@@ -1090,6 +1124,16 @@ void LauncherPanel::clearUsage() {
   m_usageTracker.clear();
   if (m_input != nullptr) {
     reapplyCurrentQuery();
+  }
+}
+
+bool LauncherPanel::shouldTrackUsage() const {
+  return m_config != nullptr && m_config->config().shell.launcher.sortByUsage;
+}
+
+void LauncherPanel::syncUsageTrackingState() {
+  if (!shouldTrackUsage()) {
+    clearUsage();
   }
 }
 
@@ -1229,7 +1273,7 @@ void LauncherPanel::onInputChanged(const std::string& text) {
       }
       sortResultsByScore(m_allResults);
       newCategories = activeProvider->categories();
-    } else if (startsWithSlash(text)) {
+    } else if (startsWithLauncherPrefix(text)) {
       m_allResults = providerOverviewResults(text);
     } else {
       // Query default providers (empty prefix), plus prefixed providers that opt into global search.
@@ -1378,10 +1422,16 @@ void LauncherPanel::setCategoryFilterVisible(bool visible) {
   }
 }
 
+bool LauncherPanel::startsWithLauncherPrefix(std::string_view text) const {
+  const std::string& prefix = m_config != nullptr ? m_config->config().shell.launcher.providerPrefix : "/";
+  return text.starts_with(prefix);
+}
+
 std::vector<LauncherResult> LauncherPanel::providerOverviewResults(std::string_view text) const {
   std::string filter;
-  if (startsWithSlash(text)) {
-    filter = StringUtils::toLower(StringUtils::trim(text.substr(1)));
+  if (startsWithLauncherPrefix(text)) {
+    const std::string& prefix = m_config != nullptr ? m_config->config().shell.launcher.providerPrefix : "/";
+    filter = StringUtils::toLower(StringUtils::trim(text.substr(prefix.size())));
   }
 
   std::vector<LauncherResult> results;
@@ -1642,7 +1692,7 @@ void LauncherPanel::openAppActionsMenu(std::size_t index, float anchorX, float a
       if (!provider->activate(result)) {
         return;
       }
-      if (provider->trackUsage()) {
+      if (shouldTrackUsage() && provider->trackUsage()) {
         m_usageTracker.record(provider->id(), result.id);
       }
       PanelManager::instance().closePanel(false);
@@ -1717,7 +1767,7 @@ void LauncherPanel::activateSelected() {
       return;
     }
 
-    if (provider->trackUsage()) {
+    if (shouldTrackUsage() && provider->trackUsage()) {
       m_usageTracker.record(provider->id(), result.id);
     }
     PanelManager::instance().closePanel(false);

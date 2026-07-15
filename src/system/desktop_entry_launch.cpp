@@ -1,7 +1,7 @@
 #include "system/desktop_entry_launch.h"
 
 #include "core/log.h"
-#include "core/process.h"
+#include "core/process/process.h"
 #include "system/desktop_entry.h"
 #include "system/terminal_launch.h"
 #include "util/file_utils.h"

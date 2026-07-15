@@ -1,26 +1,32 @@
 #include "ui/controls/context_menu_popup.h"
 
 #include "core/deferred_call.h"
+#include "core/input/keybind_matcher.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "render/render_context.h"
 #include "render/scene/node.h"
 #include "ui/popup_chrome.h"
 #include "ui/style.h"
+#include "wayland/layer_surface.h"
 #include "wayland/popup_surface.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
+#include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include "xdg-shell-client-protocol.h"
 
 #include <algorithm>
 #include <cmath>
 #include <utility>
+#include <wayland-client-protocol.h>
 
 namespace {
 
   constexpr Logger kLog("context-menu-popup");
 
 } // namespace
+
+ContextMenuPopup* ContextMenuPopup::s_openMenu = nullptr;
 
 ContextMenuPopup::ContextMenuPopup(WaylandConnection& wayland, RenderContext& renderContext)
     : m_wayland(wayland), m_renderContext(renderContext) {}
@@ -134,21 +140,40 @@ void ContextMenuPopup::open(ContextMenuPopupRequest request) {
 
   m_surface->setDismissedCallback([self]() { DeferredCall::callLater([self]() { self->close(); }); });
 
+  // Layer-shell popups inherit their parent's keyboard interactivity. A bar is
+  // None, so flip it to OnDemand before the popup maps or the grabbing popup
+  // gets no keyboard focus and ESC cannot reach it. Only bar-style callers pass
+  // a parent wlSurface; panels are already OnDemand and leave it null.
+  if (request.parent.layerSurface != nullptr && request.parent.wlSurface != nullptr) {
+    m_keyboardParentLayerSurface = request.parent.layerSurface;
+    m_keyboardParentWlSurface = request.parent.wlSurface;
+    zwlr_layer_surface_v1_set_keyboard_interactivity(
+        request.parent.layerSurface, static_cast<std::uint32_t>(LayerShellKeyboard::OnDemand)
+    );
+    wl_surface_commit(request.parent.wlSurface);
+  }
+
   const bool initialized = request.parent.xdgSurface != nullptr
       ? m_surface->initializeAsChild(request.parent.xdgSurface, request.parent.output, popupCfg)
       : m_surface->initialize(request.parent.layerSurface, request.parent.output, popupCfg);
   if (!initialized) {
     kLog.warn("failed to create context menu popup");
+    restoreParentKeyboardInteractivity();
     m_surface.reset();
     return;
   }
 
   popup_chrome::setContentInputRegion(*m_surface, chrome);
   m_wlSurface = m_surface->wlSurface();
+  s_openMenu = this;
 }
 
 void ContextMenuPopup::close() {
   const bool wasOpen = m_surface != nullptr;
+  if (s_openMenu == this) {
+    s_openMenu = nullptr;
+  }
+  restoreParentKeyboardInteractivity();
   m_sceneRoot.reset();
   m_surface.reset();
   m_wlSurface = nullptr;
@@ -226,6 +251,38 @@ bool ContextMenuPopup::onPointerEvent(const PointerEvent& event) {
   }
 
   return onPopup;
+}
+
+void ContextMenuPopup::onKeyboardEvent(const KeyboardEvent& event) {
+  if (!isOpen() || !event.pressed || event.preedit) {
+    return;
+  }
+  if (KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
+    auto* self = this;
+    DeferredCall::callLater([self]() { self->close(); });
+  }
+}
+
+void ContextMenuPopup::restoreParentKeyboardInteractivity() {
+  if (m_keyboardParentLayerSurface == nullptr) {
+    return;
+  }
+  zwlr_layer_surface_v1_set_keyboard_interactivity(
+      m_keyboardParentLayerSurface, static_cast<std::uint32_t>(LayerShellKeyboard::None)
+  );
+  if (m_keyboardParentWlSurface != nullptr) {
+    wl_surface_commit(m_keyboardParentWlSurface);
+  }
+  m_keyboardParentLayerSurface = nullptr;
+  m_keyboardParentWlSurface = nullptr;
+}
+
+bool ContextMenuPopup::dispatchKeyboardEvent(const KeyboardEvent& event) {
+  if (s_openMenu == nullptr || !s_openMenu->isOpen()) {
+    return false;
+  }
+  s_openMenu->onKeyboardEvent(event);
+  return true;
 }
 
 wl_surface* ContextMenuPopup::wlSurface() const noexcept { return m_wlSurface; }
