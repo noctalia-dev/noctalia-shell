@@ -23,6 +23,7 @@
 #include "ui/palette.h"
 #include "ui/split_pane_focus.h"
 #include "ui/style.h"
+#include "util/clamp.h"
 #include "wayland/toplevel_surface.h"
 #include "wayland/wayland_connection.h"
 
@@ -30,6 +31,7 @@
 #include <cmath>
 #include <cstdint>
 #include <linux/input-event-codes.h>
+#include <numbers>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -41,6 +43,10 @@ namespace {
 
   constexpr Logger kLog("settings");
 
+  // Golden rectangle oriented like the output: the constrained dimension takes the fraction,
+  // the other follows phi. The fixed size is only used when output geometry is unknown.
+  constexpr float kWindowOutputFraction = 0.66f;
+  constexpr float kGoldenRatio = std::numbers::phi_v<float>;
   constexpr float kWindowWidth = 1280.0f;
   constexpr float kWindowHeight = 600.0f;
   constexpr float kWindowMinWidth = 1020.0f;
@@ -398,10 +404,25 @@ void SettingsWindow::open(std::string context) {
   m_surface->setUpdateCallback([]() {});
 
   const float scale = uiScale();
-  const auto width = static_cast<std::uint32_t>(std::round(kWindowWidth * scale));
-  const auto height = static_cast<std::uint32_t>(std::round(kWindowHeight * scale));
-  const auto minWidth = static_cast<std::uint32_t>(std::round(kWindowMinWidth * scale));
-  const auto minHeight = static_cast<std::uint32_t>(std::round(kWindowMinHeight * scale));
+  const float minWidthF = kWindowMinWidth * scale;
+  const float minHeightF = kWindowMinHeight * scale;
+  float desiredWidth = kWindowWidth * scale;
+  float desiredHeight = kWindowHeight * scale;
+  if (const WaylandOutput* info = m_wayland->findOutputByWl(output); info != nullptr && info->hasUsableGeometry()) {
+    const auto outputW = static_cast<float>(info->effectiveLogicalWidth());
+    const auto outputH = static_cast<float>(info->effectiveLogicalHeight());
+    if (outputW >= outputH) {
+      desiredHeight = util::clampOrdered(outputH * kWindowOutputFraction, std::min(minHeightF, outputH), outputH);
+      desiredWidth = util::clampOrdered(desiredHeight * kGoldenRatio, std::min(minWidthF, outputW), outputW);
+    } else {
+      desiredWidth = util::clampOrdered(outputW * kWindowOutputFraction, std::min(minWidthF, outputW), outputW);
+      desiredHeight = util::clampOrdered(desiredWidth * kGoldenRatio, std::min(minHeightF, outputH), outputH);
+    }
+  }
+  const auto width = static_cast<std::uint32_t>(std::round(desiredWidth));
+  const auto height = static_cast<std::uint32_t>(std::round(desiredHeight));
+  const auto minWidth = static_cast<std::uint32_t>(std::round(minWidthF));
+  const auto minHeight = static_cast<std::uint32_t>(std::round(minHeightF));
 
   ToplevelSurfaceConfig cfg{
       .width = std::max<std::uint32_t>(1, width),
@@ -456,6 +477,9 @@ void SettingsWindow::dismissOpenSelectDropdown() {
 
 void SettingsWindow::destroyWindow() {
   if (m_surface != nullptr) {
+    // Drop stale pointer coords before tearing down the scene. Otherwise the next open
+    // replays hover at the last click (often the close button) and paints it hovered.
+    m_inputDispatcher.pointerLeave();
     m_inputDispatcher.setSceneRoot(nullptr);
     m_surface->setSceneRoot(nullptr);
   }
@@ -517,6 +541,7 @@ void SettingsWindow::destroyWindow() {
   m_pendingDeleteMonitorOverrideBarName.clear();
   m_pendingDeleteMonitorOverrideMatch.clear();
   m_pendingResetPageScope.clear();
+  m_pendingResetSettingPaths.clear();
   m_searchQuery.clear();
   m_selectedSection.clear();
   m_selectedBarName.clear();
@@ -714,7 +739,10 @@ void SettingsWindow::refreshPluginListIfNeeded() {
   auto* manager = m_pluginManager;
   PluginsConfig pluginsSnapshot = m_config->config().plugins;
   std::thread([this, manager, generation, pluginsSnapshot = std::move(pluginsSnapshot)]() {
-    auto plugins = manager->list(pluginsSnapshot);
+    // Refresh the browsable catalog (throttled) so newly published plugins and update
+    // badges appear on open, then list against the fetched revision.
+    manager->fetchStaleCatalogs(pluginsSnapshot);
+    auto plugins = manager->list(pluginsSnapshot, scripting::CatalogAccess::Network);
     DeferredCall::callLater([this, generation, plugins = std::move(plugins)]() mutable {
       m_pluginListRefreshInFlight = false;
       if (generation != m_pluginListRefreshGeneration) {
@@ -753,6 +781,7 @@ void SettingsWindow::clearTransientSettingsState() {
   m_pendingDeleteMonitorOverrideBarName.clear();
   m_pendingDeleteMonitorOverrideMatch.clear();
   m_pendingResetPageScope.clear();
+  m_pendingResetSettingPaths.clear();
   if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen()) {
     m_widgetAddPopup->close();
   }
@@ -776,7 +805,7 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
       && m_widgetAddPopup->isOpen()
       && !m_widgetAddPopup->isInitializing()
       && event.type == PointerEvent::Type::Button
-      && event.state == 1) {
+      && event.pressed) {
     m_widgetAddPopup->close();
     return true;
   }
@@ -787,7 +816,7 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
       && m_configExportDialogPopup->isOpen()
       && !m_configExportDialogPopup->isInitializing()
       && event.type == PointerEvent::Type::Button
-      && event.state == 1) {
+      && event.pressed) {
     m_configExportDialogPopup->close();
     return true;
   }
@@ -798,7 +827,7 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
       && m_searchPickerPopup->isOpen()
       && !m_searchPickerPopup->isInitializing()
       && event.type == PointerEvent::Type::Button
-      && event.state == 1) {
+      && event.pressed) {
     m_searchPickerPopup->close();
     return true;
   }
@@ -809,7 +838,7 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
       && m_editorSheetPopup->isOpen()
       && !m_editorSheetPopup->isInitializing()
       && event.type == PointerEvent::Type::Button
-      && event.state == 1) {
+      && event.pressed) {
     m_editorSheetPopup->close();
     return true;
   }
@@ -818,7 +847,7 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
     if (m_selectPopup->onPointerEvent(event)) {
       return true;
     }
-    if (event.type == PointerEvent::Type::Button && event.state == 1) {
+    if (event.type == PointerEvent::Type::Button && event.pressed) {
       m_selectPopup->closeSelectDropdown();
       return true;
     }
@@ -830,7 +859,7 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
   if (m_actionsMenuPopup != nullptr
       && m_actionsMenuPopup->isOpen()
       && event.type == PointerEvent::Type::Button
-      && event.state == 1) {
+      && event.pressed) {
     m_actionsMenuPopup->close();
     return true;
   }
@@ -863,7 +892,7 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
     }
     break;
   case PointerEvent::Type::Button: {
-    const bool pressed = (event.state == 1);
+    const bool pressed = event.pressed;
     if (onThis || m_pointerInside) {
       if (onThis) {
         m_pointerInside = true;

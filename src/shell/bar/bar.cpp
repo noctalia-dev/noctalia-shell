@@ -59,13 +59,9 @@ namespace {
     return {};
   }
 
-  [[nodiscard]] bool barConfigUsesSlideSurface(const BarConfig& cfg) noexcept {
-    return cfg.autoHide || cfg.smartAutoHide;
-  }
+  [[nodiscard]] bool barConfigUsesSlideSurface(const BarConfig& cfg) noexcept { return cfg.isAutoHideEnabled(); }
 
-  [[nodiscard]] bool barSupportsSlideBehavior(const BarConfig& cfg) noexcept {
-    return cfg.autoHide || cfg.smartAutoHide;
-  }
+  [[nodiscard]] bool barSupportsSlideBehavior(const BarConfig& cfg) noexcept { return cfg.isAutoHideEnabled(); }
 
   [[nodiscard]] bool barPointerHideAllowed(const BarInstance& instance) noexcept {
     if (instance.barConfig.smartAutoHide) {
@@ -483,6 +479,11 @@ namespace {
       if (root == nullptr || box == nullptr) {
         continue;
       }
+      // Skip hidden members — Flex leaves them at stale (0,0) geometry.
+      if (!root->visible() || !root->participatesInLayout()) {
+        box->setSize(0.0f, 0.0f);
+        continue;
+      }
       const float rootStart = contentMain + (isVertical ? root->y() : root->x());
       const float rootExtent = isVertical ? root->height() : root->width();
       const float mainStart = std::max(0.0f, rootStart - mainPad);
@@ -513,7 +514,7 @@ namespace {
         Widget* widget = !run.widgets.empty() ? run.widgets.front() : nullptr;
         Box* box = run.hoverBoxes.front();
         auto* area = widget != nullptr ? dynamic_cast<InputArea*>(widget->root()) : nullptr;
-        if (area == nullptr || box == nullptr) {
+        if (area == nullptr || box == nullptr || !area->visible() || !area->participatesInLayout()) {
           continue;
         }
         const float areaStart = isVertical ? area->y() : area->x();
@@ -532,7 +533,19 @@ namespace {
         continue;
       }
 
-      // Group runs: tile the capsule between members (midpoint of gaps).
+      // Tile only laid-out members; hidden ones keep stale geometry.
+      // Use Node visibility, some widgets (e.g. tray) root on Flex, not InputArea.
+      std::vector<std::size_t> laidOut;
+      laidOut.reserve(run.widgets.size());
+      for (std::size_t i = 0; i < run.widgets.size(); ++i) {
+        Widget* widget = run.widgets[i];
+        auto* root = widget != nullptr ? widget->root() : nullptr;
+        if (root == nullptr || !root->visible() || !root->participatesInLayout()) {
+          continue;
+        }
+        laidOut.push_back(i);
+      }
+
       const float shellMain = isVertical ? run.shell->height() : run.shell->width();
       const float containerMain = isVertical ? run.container->y() : run.container->x();
       auto memberStart = [&](std::size_t i) {
@@ -543,14 +556,15 @@ namespace {
         const Node* root = run.widgets[i]->root();
         return memberStart(i) + (isVertical ? root->height() : root->width());
       };
-      for (std::size_t i = 0; i < run.widgets.size(); ++i) {
-        Widget* widget = run.widgets[i];
-        auto* area = widget != nullptr ? dynamic_cast<InputArea*>(widget->root()) : nullptr;
+      for (std::size_t vi = 0; vi < laidOut.size(); ++vi) {
+        const std::size_t i = laidOut[vi];
+        auto* area = dynamic_cast<InputArea*>(run.widgets[i]->root());
         if (area == nullptr) {
           continue;
         }
-        const float sliceStart = i > 0 ? (memberEnd(i - 1) + memberStart(i)) * 0.5f : 0.0f;
-        const float sliceEnd = i + 1 < run.widgets.size() ? (memberEnd(i) + memberStart(i + 1)) * 0.5f : shellMain;
+        const float sliceStart = vi > 0 ? (memberEnd(laidOut[vi - 1]) + memberStart(i)) * 0.5f : 0.0f;
+        const float sliceEnd =
+            vi + 1 < laidOut.size() ? (memberEnd(i) + memberStart(laidOut[vi + 1])) * 0.5f : shellMain;
         auto outset = area->hitTestOutset();
         const float before = std::max(0.0f, memberStart(i) - sliceStart);
         const float after = std::max(0.0f, sliceEnd - memberEnd(i));
@@ -1105,6 +1119,10 @@ namespace {
           if (box == nullptr || root == nullptr || widget->barCapsuleShell() != nullptr) {
             continue;
           }
+          if (!root->visible() || !root->participatesInLayout()) {
+            box->setSize(0.0f, 0.0f);
+            continue;
+          }
           float rootX = 0.0f;
           float rootY = 0.0f;
           Node::absolutePosition(root, rootX, rootY);
@@ -1462,7 +1480,7 @@ void Bar::reevaluateSmartAutoHide() {
         needsRedraw = true;
       }
     } else if (!instance->pointerInside && instance->attachedPopupCount == 0 && !suppressAutoHide) {
-      if (instance->hideOpacity > 0.0f || pinnedChanged) {
+      if ((instance->hideOpacity > 0.0f || pinnedChanged) && !isWorkspacePeekActive()) {
         startHideFadeOut(*instance);
         needsRedraw = true;
       }
@@ -1472,6 +1490,10 @@ void Bar::reevaluateSmartAutoHide() {
       instance->surface->requestRedraw();
     }
   }
+}
+
+bool Bar::isWorkspacePeekActive() const noexcept {
+  return m_workspaceRevealDebounce.active() || m_workspacePeekHideTimer.active();
 }
 
 void Bar::applyPendingWorkspaceReveal() {
@@ -1490,8 +1512,7 @@ void Bar::applyPendingWorkspaceReveal() {
       if (instance == nullptr
           || instance->outputName != outputName
           || !instance->barConfig.enabled
-          || !instance->barConfig.autoHide
-          || instance->barConfig.smartAutoHide
+          || !instance->barConfig.isAutoHideEnabled()
           || !instance->barConfig.showOnWorkspaceSwitch
           || instance->surface == nullptr) {
         continue;
@@ -1515,7 +1536,10 @@ void Bar::applyPendingWorkspaceReveal() {
 
   m_workspacePeekHideTimer.start(kWorkspacePeekHold, [this, peeked = std::move(peeked)]() {
     for (BarInstance* instance : peeked) {
-      if (instance == nullptr || !instance->barConfig.autoHide || instance->pointerInside) {
+      if (instance == nullptr || !instance->barConfig.isAutoHideEnabled() || instance->pointerInside) {
+        continue;
+      }
+      if (instance->barConfig.smartAutoHide && instance->smartAutoHidePinnedVisible) {
         continue;
       }
       const bool suppressAutoHide =
@@ -2882,6 +2906,9 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
       m_platform->setCursorShape(serial, shape);
     });
     instance.inputDispatcher.setHoverChangeCallback([this, inst = &instance](InputArea* /*old*/, InputArea* next) {
+      if (next != nullptr) {
+        next->setTooltipPlacement(tooltipPlacementAwayFromEdge(inst->barConfig.position));
+      }
       TooltipManager::instance().onHoverChange(next, inst->surface->layerSurface(), inst->output);
       updateWidgetHoverHighlight(*inst, next);
     });
@@ -3092,12 +3119,12 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
   if (targetInstance != nullptr
       && event.type == PointerEvent::Type::Button
       && event.button == BTN_MIDDLE
-      && event.state == 1
+      && event.pressed
       && m_config != nullptr
       && m_config->config().shell.middleClickOpensWidgetSettings) {
     auto* widget = widgetAtPoint(*targetInstance, static_cast<float>(event.sx), static_cast<float>(event.sy));
     if (widget != nullptr
-        && !widget->reservesMiddleClick()
+        && !widget->reservesMiddleClick(static_cast<float>(event.sx), static_cast<float>(event.sy))
         && !widget->configName().empty()
         && m_openWidgetSettingsCallback) {
       m_openWidgetSettingsCallback(targetInstance->barConfig.name, std::string(widget->configName()));
@@ -3120,7 +3147,7 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
     case PointerEvent::Type::Motion:
     case PointerEvent::Type::Button:
     case PointerEvent::Type::Axis:
-      if (event.type == PointerEvent::Type::Button && event.button == BTN_RIGHT && event.state == 1) {
+      if (event.type == PointerEvent::Type::Button && event.button == BTN_RIGHT && event.pressed) {
         const auto sx = static_cast<float>(event.sx);
         const auto sy = static_cast<float>(event.sy);
         const auto& deadZone = targetInstance->barConfig.deadZone;
@@ -3192,7 +3219,7 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
     m_hoveredInstance->lastPointerSy = static_cast<float>(event.sy);
     const auto sx = static_cast<float>(event.sx);
     const auto sy = static_cast<float>(event.sy);
-    bool pressed = (event.state == 1); // WL_POINTER_BUTTON_STATE_PRESSED
+    bool pressed = event.pressed;
     consumed = m_hoveredInstance->inputDispatcher.pointerButton(sx, sy, event.button, pressed);
     if (pressed && !consumed) {
       if (handleBarDeadZoneButton(*m_hoveredInstance, sx, sy, event.button, m_platform)) {

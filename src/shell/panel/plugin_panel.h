@@ -20,6 +20,7 @@
 class ClipboardService;
 class Flex;
 class HttpClient;
+class Node;
 namespace scripting {
   struct PluginRuntimeContext;
   class ScriptApiContext;
@@ -34,6 +35,7 @@ struct PluginPanelOptions {
   // only the fallback if the compositor never assigns one.
   bool widthFill = false;
   bool heightFill = false;
+  bool dismissOnOutsideClick = true;
   scripting::PluginPanelShellConfig shellConfig;
 };
 
@@ -55,6 +57,7 @@ public:
   [[nodiscard]] float preferredHeight() const override { return scaled(m_preferredHeight); }
   [[nodiscard]] bool fillsWidth() const noexcept override { return m_widthFill; }
   [[nodiscard]] bool fillsHeight() const noexcept override { return m_heightFill; }
+  [[nodiscard]] bool dismissOnOutsideClick() const override { return m_dismissOnOutsideClick; }
   [[nodiscard]] PanelPlacement panelPlacement() const noexcept override { return m_shellConfig.placement; }
   [[nodiscard]] std::string panelScreenPosition() const override { return m_shellConfig.position; }
   [[nodiscard]] bool panelOpenNearClick() const override { return m_shellConfig.openNearClick; }
@@ -94,6 +97,8 @@ private:
   Timer m_tickTimer;
 
   Flex* m_flex = nullptr;
+  Flex* m_contentFlex = nullptr;
+  Node* m_dragOverlay = nullptr;
   InputArea* m_pendingFocusArea = nullptr;
   ui::UiTreeReconciler m_reconciler;
   std::optional<ui::UiTreeNode> m_tree;
@@ -106,6 +111,7 @@ private:
   float m_preferredHeight;
   bool m_widthFill = false;
   bool m_heightFill = false;
+  bool m_dismissOnOutsideClick = true;
   scripting::PluginPanelShellConfig m_shellConfig;
   std::shared_ptr<bool> m_alive = std::make_shared<bool>(true);
 };

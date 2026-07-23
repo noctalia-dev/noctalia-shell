@@ -1,10 +1,9 @@
 #include "scripting/plugin_catalog.h"
 
 #include "config/config_types.h"
-#include "core/build_info.h"
 #include "core/log.h"
 #include "core/toml.h" // IWYU pragma: keep
-#include "core/version.h"
+#include "scripting/plugin_api.h"
 #include "scripting/plugin_git.h"
 #include "scripting/plugin_id.h"
 #include "scripting/plugin_manifest.h"
@@ -14,6 +13,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <sstream>
 #include <system_error>
 #include <utility>
@@ -52,10 +52,7 @@ namespace scripting {
       return true;
     }
 
-    void fillCompat(CatalogEntry& e) {
-      e.compatible =
-          e.minNoctalia.empty() || noctalia::version::atLeast(noctalia::build_info::version(), e.minNoctalia);
-    }
+    void fillCompat(CatalogEntry& e) { e.compatible = supportsPluginApiVersion(e.pluginApiVersion); }
 
     // Build a catalog row from a full manifest (path-source scan fallback).
     CatalogEntry entryFromManifest(const PluginManifest& m) {
@@ -69,7 +66,7 @@ namespace scripting {
           .icon = m.icon,
           .description = m.description,
           .license = m.license,
-          .minNoctalia = m.minNoctalia,
+          .pluginApiVersion = m.pluginApiVersion,
           .deprecated = m.deprecated,
       };
       fillCompat(e);
@@ -128,7 +125,6 @@ namespace scripting {
           .icon = tableString(*tbl, "icon"),
           .description = tableString(*tbl, "description"),
           .license = tableString(*tbl, "license", "MIT"),
-          .minNoctalia = tableString(*tbl, "min_noctalia"),
           .deprecated = (*tbl)["deprecated"].value<bool>().value_or(false),
       };
       if (e.id.empty()) {
@@ -143,13 +139,21 @@ namespace scripting {
         kLog.warn("catalog row '{}' missing mandatory key 'name'", e.id);
         continue;
       }
+      const auto pluginApiVersion = (*tbl)["plugin_api"].value<std::int64_t>();
+      if (!pluginApiVersion.has_value()
+          || *pluginApiVersion <= 0
+          || static_cast<std::uint64_t>(*pluginApiVersion) > std::numeric_limits<std::uint32_t>::max()) {
+        kLog.warn("catalog row '{}' has invalid mandatory key 'plugin_api'; expected a positive integer", e.id);
+        continue;
+      }
+      e.pluginApiVersion = static_cast<std::uint32_t>(*pluginApiVersion);
       fillCompat(e);
       out.push_back(std::move(e));
     }
     return out;
   }
 
-  CatalogResult discoverCatalog(const PluginSourceConfig& source) {
+  CatalogResult discoverCatalog(const PluginSourceConfig& source, CatalogAccess access) {
     if (!isValidPluginSourceName(source.name)) {
       return {.ok = false, .error = "invalid plugin source name: " + source.name, .entries = {}};
     }
@@ -180,15 +184,34 @@ namespace scripting {
       return {.ok = false, .error = "empty plugin source repo path", .entries = {}};
     }
     auto sourceLock = plugin_source_locks::acquire(source.name);
+    const bool localOnly = access == CatalogAccess::LocalOnly;
     std::error_code ec;
     if (!std::filesystem::exists(dest / ".git", ec)) {
+      if (localOnly) {
+        return {.ok = false, .error = "source '" + source.name + "' is not cloned yet", .entries = {}};
+      }
       std::filesystem::create_directories(dest.parent_path(), ec);
       auto cloned = plugin_git::cloneBlobless(source.location, dest);
       if (!cloned) {
         return {.ok = false, .error = "clone failed: " + cloned.err, .entries = {}};
       }
     }
-    auto shown = plugin_git::showFile(dest, "catalog.toml");
+    // Browse the freshest catalog: when a prior fetch left FETCH_HEAD ahead of the
+    // applied HEAD, read the catalog there so newly published plugins are listed
+    // before they are exported. HEAD (what actually runs) is untouched. The fetch
+    // itself is throttled and off-thread in PluginManager::fetchStaleCatalogs.
+    std::string rev = "HEAD";
+    if (const auto fetched = plugin_git::remoteHead(dest); fetched && !fetched.out.empty()) {
+      const auto head = plugin_git::headRevision(dest);
+      if (!head || head.out != fetched.out) {
+        rev = fetched.out;
+      }
+    }
+    auto shown = plugin_git::showFile(dest, "catalog.toml", rev, localOnly);
+    if (!shown && rev != "HEAD") {
+      // Fetched blob unreachable (e.g. offline / local-only); fall back to the applied HEAD.
+      shown = plugin_git::showFile(dest, "catalog.toml", "HEAD", localOnly);
+    }
     if (!shown) {
       return {.ok = false, .error = "no catalog.toml in source '" + source.name + "'", .entries = {}};
     }

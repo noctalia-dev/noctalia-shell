@@ -19,7 +19,7 @@ namespace settings {
     explicit PluginStoreTile(float scale);
 
     void bind(
-        const scripting::CatalogEntry& entry, std::string_view source, bool onDisk, bool hovered,
+        const scripting::CatalogEntry& entry, std::string_view source, bool onDisk, bool selected, bool hovered,
         const std::string& thumbnailPath, Renderer* renderer, AsyncTextureCache* textureCache
     );
 

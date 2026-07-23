@@ -536,10 +536,6 @@
         "wave-thickness": "Độ dày sóng",
         "widget-section": "Tiện ích"
       },
-      "state": {
-        "grid-off": "Tắt lưới",
-        "grid-on": "Bật lưới"
-      },
       "title": "Tiện ích màn hình nền",
       "types": {
         "audio-visualizer": "Trực quan hóa âm thanh",
@@ -1376,7 +1372,6 @@
         "refreshing": "Đang làm mới các plugin...",
         "remove": "Loại bỏ plugin",
         "requires": "Cần: {dependencies}",
-        "requires-newer-noctalia": "Yêu cầu phiên bản Noctalia mới hơn",
         "title": "Plugins"
       },
       "settings": {
@@ -1407,8 +1402,7 @@
         "remove": "Xóa nguồn",
         "save": "Lưu",
         "title": "Các nguồn",
-        "update": "Cập nhật",
-        "update-on-startup": "Cập nhật khi khởi động"
+        "update": "Cập nhật"
       },
       "store": {
         "add": "Thêm vào Noctalia",
@@ -2813,7 +2807,6 @@
         "always": "Luôn",
         "cpu-temp": "Nhiệt độ CPU",
         "cpu-usage": "Sử dụng CPU",
-        "disk-percent": "Phần trăm ổ đĩa",
         "full": "Đầy đủ",
         "gauge": "Đồng hồ",
         "glyph": "Biểu tượng",
@@ -3128,8 +3121,7 @@
         },
         "minimal": {
           "description": "Chỉ hiển thị nhãn ID hoặc tên không gian làm việc, không có hiệu ứng viên thuốc động",
-          "label": "Phong cách tối giản",
-          "workspaces-description": "Nhãn không gian làm việc chỉ văn bản, không có nền viên thuốc hoặc hoạt ảnh trượt"
+          "label": "Phong cách tối giản"
         },
         "mirrored": {
           "description": "Phản chiếu trình hiển thị xung quanh tâm của nó",
@@ -3324,7 +3316,6 @@
     "window": {
       "export-config": "Xuất cấu hình…",
       "export-config-saved": "Xuất cấu hình đã lưu.",
-      "filter-modified": "Đã sửa đổi",
       "native-title": "Cài đặt Noctalia",
       "no-results": "Không tìm thấy cài đặt nào",
       "no-results-hint": "Thử một tên cài đặt hoặc khóa cấu hình khác.",

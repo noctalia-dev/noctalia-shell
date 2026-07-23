@@ -123,6 +123,7 @@ void Application::reloadPluginPanels() {
                 .height = resolved.entry->panelHeight,
                 .widthFill = resolved.entry->panelWidthFill,
                 .heightFill = resolved.entry->panelHeightFill,
+                .dismissOnOutsideClick = resolved.entry->panelDismissOnOutsideClick,
                 .shellConfig = shellConfig,
             }
         )
@@ -132,12 +133,11 @@ void Application::reloadPluginPanels() {
 }
 
 void Application::runPluginAutoUpdate() {
-  // Pull each git source flagged auto_update in the background. Each update runs
-  // off-thread and serializes per-source via a source lock, so a tick that overlaps
+  // With [plugins].auto_update on, pull every git source in the background. Each update
+  // runs off-thread and serializes per-source via a source lock, so a tick that overlaps
   // a still-running update queues behind it rather than racing (at 6h it never does).
-  for (const auto& source : m_configService.config().plugins.sources) {
-    if (source.kind == PluginSourceKind::Git && source.autoUpdate) {
-      m_pluginManager.update(source.name);
-    }
+  if (!m_configService.config().plugins.autoUpdate) {
+    return;
   }
+  m_pluginManager.updateAll();
 }

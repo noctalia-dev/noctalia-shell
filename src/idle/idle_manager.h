@@ -26,7 +26,8 @@ public:
       std::function<void()> onFadeComplete
   )>;
   /// `userCancelled` is true when input resumed during the fade before the idle action ran.
-  /// `willLockSession` is true when at least one lock action was dispatched after fade completion.
+  /// `willLockSession` is true when a pending idle action would lock the session (Lock / LockAndSuspend).
+  /// Invoked before idle actions run so the overlay can be torn down before suspend freezes the process.
   using GraceEndCallback = std::function<void(bool userCancelled, bool willLockSession)>;
 
   IdleManager();

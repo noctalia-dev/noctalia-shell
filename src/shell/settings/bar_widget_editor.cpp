@@ -2,7 +2,6 @@
 
 #include "config/config_service.h"
 #include "config/config_types.h"
-#include "core/files/resource_paths.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "i18n/i18n.h"
 #include "render/scene/node.h"
@@ -41,8 +40,6 @@ namespace settings {
   [[nodiscard]] std::optional<double> parseDoubleInput(std::string_view text);
 
   namespace {
-
-    constexpr float kDragStartThresholdPx = 6.0f;
 
     struct LaneWidgetDragState {
       bool active = false;
@@ -982,9 +979,32 @@ namespace settings {
       if (!spec.visibleWhen.has_value()) {
         return true;
       }
-      auto matches = [&](const std::string& key, const std::vector<std::string>& values) {
-        const auto currentValue = settingCurrentString(cfg, widgetName, key, allSpecs);
-        for (const auto& v : values) {
+      auto settingValueForKey = [&](const std::string& key) -> WidgetSettingValue {
+        if (const auto it = cfg.widgets.find(std::string(widgetName)); it != cfg.widgets.end()) {
+          if (const auto settingIt = it->second.settings.find(key); settingIt != it->second.settings.end()) {
+            return settingIt->second;
+          }
+        }
+        for (const auto& s : allSpecs) {
+          if (s.schema.key == key) {
+            return s.schema.defaultValue;
+          }
+        }
+        return {};
+      };
+      auto matches = [&](const WidgetSettingVisibilityCondition& condition) {
+        const WidgetSettingValue value = settingValueForKey(condition.key);
+        if (condition.nonEmpty) {
+          if (const auto* list = std::get_if<std::vector<std::string>>(&value)) {
+            return !list->empty();
+          }
+          if (const auto* str = std::get_if<std::string>(&value)) {
+            return !str->empty();
+          }
+          return false;
+        }
+        const auto currentValue = settingCurrentString(cfg, widgetName, condition.key, allSpecs);
+        for (const auto& v : condition.values) {
           if (v == currentValue) {
             return true;
           }
@@ -992,7 +1012,7 @@ namespace settings {
         return false;
       };
       for (const auto& condition : spec.visibleWhen->all) {
-        if (!matches(condition.key, condition.values)) {
+        if (!matches(condition)) {
           return false;
         }
       }
@@ -1000,7 +1020,7 @@ namespace settings {
         return true;
       }
       for (const auto& condition : spec.visibleWhen->any) {
-        if (matches(condition.key, condition.values)) {
+        if (matches(condition)) {
           return true;
         }
       }
@@ -1153,6 +1173,23 @@ namespace settings {
               }
               out += "]";
               return out;
+            } else if constexpr (std::is_same_v<T, WidgetSettingStringMap>) {
+              std::vector<std::string> keys;
+              keys.reserve(concrete.size());
+              for (const auto& [key, mapValue] : concrete) {
+                (void)mapValue;
+                keys.push_back(key);
+              }
+              std::ranges::sort(keys);
+              std::string out = "{";
+              for (std::size_t i = 0; i < keys.size(); ++i) {
+                if (i > 0) {
+                  out += ", ";
+                }
+                out += "\"" + keys[i] + "\" = \"" + concrete.at(keys[i]) + "\"";
+              }
+              out += "}";
+              return out;
             }
           },
           value
@@ -1239,14 +1276,40 @@ namespace settings {
       return selectSetting;
     }
 
-    SelectSetting batteryDeviceSelectSetting(const BarWidgetEditorContext& ctx, std::string selectedValue) {
-      if (selectedValue.empty()) {
-        selectedValue = "auto";
+    SelectSetting
+    sourcedSelectSetting(const BarWidgetEditorContext& ctx, const WidgetSettingSpec& spec, std::string selectedValue) {
+      std::vector<SelectOption> options;
+      const auto appendUnique = [&](SelectOption option) {
+        if (!std::ranges::contains(options, option.value, &SelectOption::value)) {
+          options.push_back(std::move(option));
+        }
+      };
+      options.reserve(spec.options.size());
+      for (const auto& option : spec.options) {
+        appendUnique(
+            SelectOption{
+                .value = option.value,
+                .label = spec.literalLabels ? option.labelKey : i18n::tr(option.labelKey),
+            }
+        );
       }
 
-      std::vector<SelectOption> options = ctx.batteryDeviceOptions;
-      if (options.empty()) {
-        options.push_back(SelectOption{.value = "auto", .label = i18n::tr("common.states.auto")});
+      std::vector<SelectOption> sourcedOptions;
+      switch (spec.optionSource) {
+      case WidgetSettingOptionSource::BatteryDevices:
+        sourcedOptions = ctx.batteryDeviceOptions;
+        break;
+      case WidgetSettingOptionSource::Static:
+        break;
+      }
+      options.reserve(options.size() + sourcedOptions.size());
+      for (auto& option : sourcedOptions) {
+        appendUnique(std::move(option));
+      }
+
+      const auto hasEmptyOption = std::ranges::contains(options, std::string_view{}, &SelectOption::value);
+      if (selectedValue.empty() && !hasEmptyOption) {
+        selectedValue = settingValueAsString(spec.schema.defaultValue);
       }
 
       const auto hasSelected = std::ranges::contains(options, selectedValue, &SelectOption::value);
@@ -1567,7 +1630,7 @@ namespace settings {
             options.defaultViewMode = FileDialogViewMode::Grid;
             options.title = i18n::tr("settings.widgets.settings.custom-image.dialog-title");
             options.extensions = {".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp", ".gif"};
-            options.startDirectory = paths::assetPath("images");
+            options.startDirectory = "/usr/share/icons";
             ctx.makeRow(
                 *panel, entry,
                 makePathBrowseControl(
@@ -1612,18 +1675,39 @@ namespace settings {
         case WidgetControlKind::StringList:
           ctx.makeListBlock(*panel, entry, ListSetting{.items = settingValueAsStringList(value)});
           break;
-        case WidgetControlKind::StringMap:
+        case WidgetControlKind::StringMap: {
+          const bool customLabels = spec.schema.key == "custom_labels";
+          const bool effectsProfileGlyphs = spec.schema.key == "effects_profile_glyphs";
+          WidgetSettingStringMap entries;
+          if (widgetConfig != nullptr) {
+            if (const auto tableIt = widgetConfig->tables.find(spec.schema.key);
+                tableIt != widgetConfig->tables.end()) {
+              entries = tableIt->second;
+            } else if (const auto* defaults = std::get_if<WidgetSettingStringMap>(&spec.schema.defaultValue)) {
+              entries = *defaults;
+            }
+          } else if (const auto* defaults = std::get_if<WidgetSettingStringMap>(&spec.schema.defaultValue)) {
+            entries = *defaults;
+          }
           ctx.makeStringMapBlock(
               *panel, entry,
               StringMapSetting{
-                  .entries = widgetConfig != nullptr ? widgetConfig->getStringMap(spec.schema.key)
-                                                     : std::unordered_map<std::string, std::string>{},
-                  .suggestedKeys = ctx.keyboardLayoutNames,
-                  .keyPlaceholder = "Layout name",
-                  .valuePlaceholder = "Label",
+                  .entries = std::move(entries),
+                  .suggestedKeys = customLabels ? ctx.keyboardLayoutNames : std::vector<std::string>{},
+                  .keyPlaceholder = i18n::tr(
+                      customLabels               ? "settings.widgets.map-placeholders.layout-name"
+                          : effectsProfileGlyphs ? "settings.widgets.map-placeholders.effects-profile-name"
+                                                 : "settings.widgets.map-placeholders.key"
+                  ),
+                  .valuePlaceholder = i18n::tr(
+                      customLabels               ? "settings.widgets.map-placeholders.label"
+                          : effectsProfileGlyphs ? "settings.widgets.map-placeholders.glyph-name"
+                                                 : "settings.widgets.map-placeholders.value"
+                  ),
               }
           );
           break;
+        }
         case WidgetControlKind::Select: {
           SelectSetting selectSetting;
           const std::string selectedValue = settingValueAsString(value);
@@ -1644,8 +1728,8 @@ namespace settings {
             ctx.makeRow(*panel, entry, ctx.makeSearchPicker(picker, entry.title, path));
             break;
           }
-          if (widgetType == "battery" && spec.schema.key == "device") {
-            selectSetting = batteryDeviceSelectSetting(ctx, selectedValue);
+          if (spec.optionSource != WidgetSettingOptionSource::Static) {
+            selectSetting = sourcedSelectSetting(ctx, spec, selectedValue);
           } else if (spec.schema.key == "font_weight") {
             selectSetting = labelFontWeightSelectSetting(
                 spec, widgetLabelFontWeightSelectedValue(ctx.config, widgetName),
@@ -2551,7 +2635,7 @@ namespace settings {
         dragState->lastLocalX = localX;
         dragState->lastLocalY = localY;
         if (std::hypot(localX - dragState->startLocalX, localY - dragState->startLocalY)
-            >= kDragStartThresholdPx * scale) {
+            >= Style::dragStartThreshold * scale) {
           dragState->moved = true;
         }
         if (!dragState->moved) {

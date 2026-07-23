@@ -40,7 +40,9 @@ namespace scripting {
 // defaults + the instance's configured values.
 class PluginWidget : public Widget, public scripting::PluginIpcEndpoint {
 public:
-  PluginWidget(scripting::PluginRuntimeContext context, std::string barName, std::string outputName);
+  PluginWidget(
+      scripting::PluginRuntimeContext context, std::string barName, std::string outputName, bool enableScroll = true
+  );
   ~PluginWidget() override;
 
   void create() override;
@@ -159,6 +161,7 @@ private:
   bool m_dirty = false;
   bool m_updateDeferred = false;
   bool m_isVertical = false;
+  bool m_enableScroll = true;
   bool m_glyphVisible = false;
   bool m_imageWatch = false;
   bool m_imageDirty = false;

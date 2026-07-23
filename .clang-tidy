@@ -23,4 +23,9 @@ Checks: >-
   readability-redundant-casting,
   readability-redundant-member-init,
   readability-static-definition-in-anonymous-namespace,
+  readability-uppercase-literal-suffix,
   readability-use-std-min-max,
+HeaderFilterRegex: '(^|/)src/.*\.h$'
+CheckOptions:
+  - key: readability-uppercase-literal-suffix.NewSuffixes
+    value: 'f;U;L;UL;ULL;z;uz'

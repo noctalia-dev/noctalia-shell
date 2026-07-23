@@ -874,8 +874,7 @@
         "remove": "Çavkaniyê rake",
         "save": "Tomar bike",
         "title": "Çavkanî",
-        "update": "Rojane bike",
-        "update-on-startup": "Li ser destpêkê rojane bike"
+        "update": "Rojane bike"
       },
       "store": {
         "add": "Tevlî Noctalia bike",
@@ -1063,7 +1062,6 @@
       }
     },
     "window": {
-      "filter-modified": "Guhertî",
       "title": "Sazkarî"
     }
   },

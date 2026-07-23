@@ -33,6 +33,7 @@ public:
     ColorSpec focusedColor = colorSpecFromRole(ColorRole::Primary);
     ColorSpec occupiedColor = colorSpecFromRole(ColorRole::Secondary);
     ColorSpec emptyColor = colorSpecFromRole(ColorRole::Secondary);
+    ColorSpec urgentColor = colorSpecFromRole(ColorRole::Error);
     std::size_t maxLabelChars = 1;
     bool labelsOnlyWhenOccupied = false;
     bool hideWhenEmpty = false;
@@ -42,6 +43,7 @@ public:
     bool minimal = false;
     bool focusedPill = false;
     bool focusedOutputOnly = false;
+    bool enableScroll = true;
   };
 
   WorkspacesWidget(CompositorPlatform& platform, ConfigService& config, wl_output* output, Options options);
@@ -152,6 +154,7 @@ private:
   bool m_minimal = false;
   bool m_focusedPill = false;
   bool m_focusedOutputOnly = false;
+  bool m_enableScroll = true;
   bool m_wasFocusedOutput = true;
   bool m_activeUsesFocusedColor = true;
   std::string m_cachedActiveWindowAppId;
@@ -178,4 +181,5 @@ private:
   ColorSpec m_focusedColor = colorSpecFromRole(ColorRole::Primary);
   ColorSpec m_occupiedColor = colorSpecFromRole(ColorRole::Secondary);
   ColorSpec m_emptyColor = colorSpecFromRole(ColorRole::Secondary);
+  ColorSpec m_urgentColor = colorSpecFromRole(ColorRole::Error);
 };

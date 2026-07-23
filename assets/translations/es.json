@@ -76,6 +76,7 @@
         "signal": "Señal",
         "upload": "Subida",
         "vpn": "VPN",
+        "wan-ip": "IP WAN",
         "wifi": "Wi-Fi",
         "wired": "Cable (Ethernet)",
         "yes": "Sí"
@@ -182,6 +183,7 @@
     },
     "bluetooth": {
       "accept": "Aceptar",
+      "address": "Direccion",
       "auto-reconnect": "Reconectar automáticamente",
       "bluetooth": "Bluetooth",
       "enter-code": "Ingrese el código",
@@ -447,6 +449,7 @@
         "bands": "Grupos",
         "bar-width": "Ancho de la barra",
         "bloom-intensity": "Bloom",
+        "center-password-text": "Centrar el texto de la contraseña",
         "center-text": "Centrar texto",
         "centered": "Centrado",
         "change-image": "Cambiar...",
@@ -461,10 +464,12 @@
         "command": "Comando",
         "custom-color": "Personalizado",
         "description": "Descripción",
+        "device": "Dispositivo",
         "display": "Pantalla",
         "display-gauge": "Medidor",
         "display-graph": "Gráfico",
         "fade-when-idle": "Atenuar cuando esté inactivo",
+        "fill-color": "Color de relleno",
         "font-family": "Fuente",
         "font-family-default": "Fuente del sistema por defecto",
         "forecast-days": "Días de previsión",
@@ -495,15 +500,18 @@
         "reset-defaults": "Restablecer valores por defecto",
         "ring-opacity": "Opacidad del anillo",
         "rotation-speed": "Velocidad de rotación",
+        "scroll-step": "Pasos de desplazamiento",
         "secondary-color": "Color Secundario",
         "sensitivity": "Sensibilidad",
         "shadow": "Sombra",
         "show-caps-lock": "Advertencia de Bloq Mayús",
+        "show-device": "Mostrar dispositivo",
         "show-forecast": "Mostrar previsión",
         "show-keyboard-layout": "Distribución de teclado",
         "show-label": "Mostrar Etiqueta",
         "show-login-button": "Botón de login",
         "show-password-hint": "Sugerencia de contraseña",
+        "show-vpn-label": "Mostrar etiqueta VPN",
         "show-when-idle": "Mostrar cuando este inactivo",
         "stat": "Estadistica",
         "stat-cpu-temp": "Temp. de CPU",
@@ -536,10 +544,6 @@
         "wave-thickness": "Grosor de la Ola",
         "widget-section": "Widget"
       },
-      "state": {
-        "grid-off": "Rejilla desactivada",
-        "grid-on": "Rejilla activada"
-      },
       "title": "Widgets de Escritorio",
       "types": {
         "audio-visualizer": "Visualizador de Audio",
@@ -551,11 +555,17 @@
         "media-player": "Reproductor Multimedia",
         "sticker": "Pegatina",
         "system-monitor": "Monitor de sistema",
+        "volume": "Volumen",
         "weather": "Clima"
       }
     },
     "media": {
       "nothing-playing": "Nada reproduciéndose"
+    },
+    "volume": {
+      "mic": "Mic",
+      "muted": "Silenciado",
+      "volume": "Volumen"
     },
     "weather": {
       "error": "Error",
@@ -688,6 +698,7 @@
       "calendar-google-connect-start-http": "No se pudo iniciar la autorización de Google. El intermediario de OAuth devolvió HTTP {status}.",
       "calendar-google-connect-timeout": "La autorización de Google expiró. Inicie la conexión nuevamente cuando esté listo para iniciar sesión.",
       "config-migration-body": "La configuración heredada se está migrando en memoria, incluyendo {path}. Actualice la configuración de origen; Settings y noctalia config validate muestran el reemplazo necesario.",
+      "config-migration-title": "Se necesita actualizar configuracion",
       "dbus-disabled": "Notificaciones DBus deshabilitada",
       "desktop-widgets-editor": "Editor de Widget",
       "desktop-widgets-editor-enabled": "El editor de widgets del escritorio está activado. Cambia a un espacio de trabajo vacío para ver el panel del editor.",
@@ -832,13 +843,17 @@
     },
     "calendar-accounts": {
       "add-title": "Agregar Cuenta de Calendario",
+      "calendars-label": "Calendarios",
       "color-label": "Color",
+      "credential-source-file": "Archivo de contraseña",
+      "credential-source-label": "Almacen de credenciales",
       "delete-error": "No se pudo eliminar la cuenta de calendario.",
       "edit-title": "Modificar Cuenta de Calendario",
       "id-label": "ID de la Cuenta",
       "invalid": "Revisa los campos resaltados de la cuenta del calendario.",
       "name-label": "Nombre mostrado",
       "name-placeholder": "Calendario Personal",
+      "password-file-label": "Archivo de contraseña",
       "password-keep-placeholder": "Deje vacío para mantener la contraseña actual",
       "password-label": "Clave de aplicación",
       "password-placeholder": "Contraseña específica de la aplicación",
@@ -919,6 +934,9 @@
           "border": "Borde",
           "border-description": "Rol de color del contorno de la cápsula; deja en Predeterminado para no tener contorno",
           "clear": "Eliminar",
+          "drawer-detached": "Panel Desacoplado",
+          "drawer-glyph-closed": "Icono cuando Cerrado",
+          "drawer-glyph-opened": "Icono cuando Abierto",
           "edit": "Eliminar estilo",
           "fill": "Fondo",
           "fill-description": "Rol de color de fondo de la cápsula; también se admiten colores hexadecimales fijos",
@@ -982,7 +1000,15 @@
             "grouping": "Agrupación",
             "presentation": "Presentación",
             "runtime": "Runtime",
-            "widget": "Widget"
+            "taskbar": {
+              "grouping": "Agrupado",
+              "workspace-labels": "Etiquetas Espacios de Trabajo"
+            },
+            "widget": "Widget",
+            "workspaces": {
+              "colors": "Colores",
+              "list": "Espacios de trabajo"
+            }
           }
         }
       }
@@ -1042,7 +1068,7 @@
         "name-label": "Nombre",
         "name-placeholder": "idle-behavior",
         "resume-command-label": "Comando de reanudación",
-        "resume-command-placeholder": "",
+        "resume-command-placeholder": "notify-send 'Back from idle'",
         "summary": "{name} · {seconds}s",
         "summary-disabled-timeout": "{name} · tiempo de espera desactivado",
         "timeout-label": "Segundos de tiempo de espera",
@@ -1056,6 +1082,7 @@
     },
     "navigation": {
       "groups": {
+        "accessibility": "Accesibilidad",
         "audio": "Sonido",
         "authentication": "Autenticacion",
         "automation": "Automatizacion",
@@ -1063,6 +1090,7 @@
         "background": "Fondo",
         "battery": "Batería",
         "behavior": "Comportamiento",
+        "borders": "Bordes",
         "brightness": "Brillo",
         "built-in": "Integrado",
         "calendar": "Calendario",
@@ -1106,6 +1134,7 @@
         "power": "Energía",
         "privacy": "Privacidad",
         "profile": "Perfil",
+        "providers": "Proveedores",
         "screen-corners": "Esquinas de pantalla",
         "screen-time": "Tiempo de pantalla",
         "screenshot": "Captura de pantalla",
@@ -1123,6 +1152,7 @@
         "widgets": "Widgets"
       },
       "sections": {
+        "accessibility": "Accesibilidad",
         "appearance": "Apariencia",
         "backdrop": "Fondo",
         "bar": "Barra",
@@ -1173,6 +1203,12 @@
       }
     },
     "options": {
+      "bar": {
+        "auto-hide": {
+          "off": "Apagado",
+          "on": "Encendido"
+        }
+      },
       "clipboard": {
         "auto-paste": {
           "ctrl-shift-v": "Ctrl+Shift+V",
@@ -1232,6 +1268,9 @@
       "orientation": {
         "horizontal": "Horizontal",
         "vertical": "Vertical"
+      },
+      "panel-bar-alignment": {
+        "centered": "Centrado"
       },
       "panel-position": {
         "auto": "Seguir barra"
@@ -1341,12 +1380,15 @@
         "delete-confirm-title": "¿Borrar \"{name}\"?",
         "deprecated": "obsoleto",
         "empty": "No hay plugins activados.",
+        "incompatible-plugin-api": "API de plugin incompatible",
         "loading": "Cargando plugins...",
         "refreshing": "Actualizando plugins...",
         "remove": "Eliminar plugin",
         "requires": "Requiere: {dependencies}",
-        "requires-newer-noctalia": "requiere una versión más reciente de Noctalia",
-        "title": "Plugins"
+        "title": "Plugins",
+        "update-all": "Actualizar los ({count})",
+        "update-available": "actualizacion disponible",
+        "update-to": "actualizar a {version}"
       },
       "settings": {
         "empty": "No hay configuraciones disponibles."
@@ -1354,6 +1396,7 @@
       "sources": {
         "add": "Añadir fuente",
         "add-title": "Añadir fuente de plugin",
+        "auto-update": "Auto-actualizar plugins",
         "edit": "Editar fuente",
         "edit-title": "Editar fuente del plugin",
         "empty": "No hay fuentes configuradas.",
@@ -1376,8 +1419,7 @@
         "remove": "Eliminar fuente",
         "save": "Guardar",
         "title": "Fuentes",
-        "update": "Actualizar",
-        "update-on-startup": "Actualizar al iniciar"
+        "update": "Actualizar"
       },
       "store": {
         "add": "Añadir a Noctalia",
@@ -1387,12 +1429,21 @@
         "incompatible": "Incompatible",
         "loading": "Cargando catálogo...",
         "no-readme": "No hay descripción disponible.",
+        "open-page": "Abrir la pagina de plugins en noctalia.dev",
+        "open-source": "Abrir repositorio del plugin",
         "results-count": "{count} plugins",
         "search-placeholder": "Buscar plugins...",
+        "source-all": "Todos",
+        "sources": "Fuentes",
         "title": "Tienda de plugins"
       }
     },
     "schema": {
+      "accessibility": {
+        "high-contrast": {
+          "label": "Alto contraste"
+        }
+      },
       "appearance": {
         "animation-speed": {
           "description": "Multiplicador de velocidad para todas las animaciones",
@@ -1413,6 +1464,9 @@
         "builtin-palette": {
           "description": "Elige una paleta del catálogo incluido",
           "label": "Paleta integrada"
+        },
+        "button-borders": {
+          "label": "Bordes de Botones"
         },
         "community-palette": {
           "description": "Elige una paleta del catálogo de la comunidad",
@@ -1450,6 +1504,9 @@
         "palette-source": {
           "description": "Dónde obtener la paleta de colores",
           "label": "Fuente de la paleta"
+        },
+        "pure-black-dark": {
+          "label": "Negro puro"
         },
         "theme-mode": {
           "description": "Elige oscuro, claro o automático según la hora del día",
@@ -1717,6 +1774,12 @@
         },
         "background-opacity": {
           "description": "Opacidad de fondo del dock"
+        },
+        "border": {
+          "label": "Borde"
+        },
+        "border-width": {
+          "label": "Ancho del borde"
         },
         "concave-edge-corners": {
           "description": "Interior concavo en el lado que toca el limite de pantalla; requiere que el margen del borde de pantalla sea 0",
@@ -2000,6 +2063,9 @@
         "blacklist-allow-critical": {
           "description": "Seguir mostrando notificaciones críticas de remitentes en la lista negra"
         },
+        "border": {
+          "label": "Borde"
+        },
         "collapse-on-dismiss": {
           "description": "Deslizar las notificaciones emergentes restantes para cerrar huecos cuando se descarta una",
           "label": "Contraer al descartar"
@@ -2089,6 +2155,9 @@
         "launcher-compact": {
           "description": "Usar iconos más pequeños y filas de resultados más compactas",
           "label": "Filas compactas"
+        },
+        "launcher-global-calculator": {
+          "label": "Calculadora en la Busqueda Global"
         },
         "launcher-reset-usage": {
           "button": "Restablecer",
@@ -2480,6 +2549,12 @@
           "description": "Opacidad de fondo de las ventanas emergentes OSD",
           "label": "Opacidad del fondo"
         },
+        "osd-border": {
+          "label": "Borde"
+        },
+        "osd-enabled": {
+          "label": "Habilitar OSD"
+        },
         "osd-kinds-bluetooth": {
           "description": "Mostrar una ventana emergente OSD al alternar el Bluetooth",
           "label": "Bluetooth"
@@ -2626,6 +2701,9 @@
         "screenshot-save-to-file": {
           "description": "Escribir las capturas de pantalla como archivos PNG en el directorio de salida",
           "label": "Guardar en archivo"
+        },
+        "screenshot-show-cursor": {
+          "label": "Mostrar Cursor"
         },
         "show-location": {
           "description": "Mostrar el nombre de la ubicacion en el widget del pronóstico",
@@ -2791,12 +2869,16 @@
         "ram": "RAM",
         "temp": "Temperatura"
       },
+      "map-placeholders": {
+        "effects-profile-name": "Nombre de perfil",
+        "label": "Etiqueta",
+        "value": "Valor"
+      },
       "options": {
         "always": "Siempre",
         "auto": "Auto",
         "cpu-temp": "Temperatura de la CPU",
         "cpu-usage": "Uso de la CPU",
-        "disk-percent": "Porcentaje de disco",
         "full": "Lleno",
         "gauge": "Gauge",
         "glyph": "Glifo",
@@ -2812,14 +2894,18 @@
         "instance": "Por ubicación",
         "kilobytes": "kB/s",
         "megabytes": "MB/s",
+        "minimal": "Minimo",
         "name": "Nombre",
         "net-rx": "Recepción de red",
         "net-tx": "Transmisión de red",
         "none": "Ninguno",
         "on-hover": "Al pasar el cursor",
         "output": "Salida",
+        "percent": "Porcentaje",
         "ram-percent": "Porcentaje de RAM",
         "ram-used": "RAM usada",
+        "rate": "Ratio",
+        "regular": "Regular",
         "screenshot-primary-fullscreen": "Pantalla completa",
         "screenshot-primary-region": "Región",
         "shared": "Compartido",
@@ -2964,6 +3050,9 @@
         "empty-color": {
           "description": "Rol de color usado para espacios de trabajo vacíos; también se admiten colores hexadecimales fijos",
           "label": "Color vacío"
+        },
+        "enable-scroll": {
+          "label": "Habilitar scroll"
         },
         "focused-color": {
           "description": "Rol de color usado para el espacio de trabajo enfocado; también se admiten colores hexadecimales fijos",
@@ -3135,8 +3224,7 @@
         },
         "minimal": {
           "description": "Mostrar solo etiquetas de ID o nombre de espacio de trabajo, sin píldoras animadas",
-          "label": "Estilo minimalista",
-          "workspaces-description": "Etiquetas de espacio de trabajo de solo texto sin fondos de píldora ni animación de deslizamiento"
+          "label": "Estilo minimalista"
         },
         "mirrored": {
           "description": "Reflejar el visualizador alrededor de su centro",
@@ -3251,6 +3339,9 @@
           "description": "Mostrar el texto de temperatura actual",
           "label": "Mostrar temperatura"
         },
+        "show-vpn-label": {
+          "label": "Mostrar etiqueta VPN"
+        },
         "show-when-idle": {
           "description": "Mantener el visualizador visible incluso cuando no se reproduzca ningún medio",
           "label": "Mostrar en inactividad"
@@ -3267,9 +3358,18 @@
           "description": "Estadística del sistema a mostrar",
           "label": "Estadística"
         },
+        "style": {
+          "label": "Estilo"
+        },
         "taskbar-max-width": {
           "description": "Presupuesto de ancho total en píxeles; los títulos de ventana se reducen para ajustarse y se ocultan cuando son demasiado estrechos",
           "label": "Ancho máximo de la barra de tareas"
+        },
+        "text": {
+          "label": "Texto"
+        },
+        "timezone": {
+          "label": "Zona horaria"
         },
         "title-scroll": {
           "description": "Cuándo debe desplazarse el título del widget",
@@ -3286,6 +3386,9 @@
         "type": {
           "description": "Tipo de widget integrado para este widget con nombre",
           "label": "Tipo"
+        },
+        "urgent-color": {
+          "label": "Color URGENTE"
         },
         "vertical-format": {
           "description": "Formato opcional usado en barras verticales",
@@ -3340,6 +3443,7 @@
         "sysmon": "Monitor de sistema",
         "taskbar": "Barra de tareas",
         "test": "Prueba",
+        "text": "Texto",
         "theme-mode": "Modo de tema",
         "tray": "Tray",
         "volume": "Volumen",
@@ -3351,7 +3455,6 @@
     "window": {
       "export-config": "Exportar configuración...",
       "export-config-saved": "Exportación de configuración guardada.",
-      "filter-modified": "Modificado",
       "native-title": "Ajustes de Noctalia",
       "no-results": "Ajustes no encontrados.",
       "no-results-hint": "Prueba con otro nombre de configuración o clave de config.",
@@ -3423,8 +3526,10 @@
       "day": "{count} día",
       "day-plural": "{count} días",
       "hour": "{count} hora",
+      "hour-compact": "{count}h",
       "hour-plural": "{count} horas",
       "minute": "{count} minuto",
+      "minute-compact": "{count}m",
       "minute-plural": "{count} minutos",
       "month": "{count} mes",
       "month-plural": "{count} meses",

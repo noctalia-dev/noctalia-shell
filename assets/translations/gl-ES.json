@@ -537,10 +537,6 @@
         "wave-thickness": "Grosor da onda",
         "widget-section": "Widget"
       },
-      "state": {
-        "grid-off": "Cadrícula desactivada",
-        "grid-on": "Cadrícula activada"
-      },
       "title": "Widgets do escritorio",
       "types": {
         "audio-visualizer": "Visualizador de audio",
@@ -1385,7 +1381,6 @@
         "refreshing": "Actualizando complementos...",
         "remove": "Eliminar complemento",
         "requires": "Require: {dependencies}",
-        "requires-newer-noctalia": "require unha versión máis nova de Noctalia",
         "title": "Complementos"
       },
       "settings": {
@@ -1416,8 +1411,7 @@
         "remove": "Eliminar orixe",
         "save": "Gardar",
         "title": "Orixes",
-        "update": "Actualizar",
-        "update-on-startup": "Actualizar ao iniciar"
+        "update": "Actualizar"
       },
       "store": {
         "add": "Engadir a Noctalia",
@@ -2858,7 +2852,6 @@
         "auto": "Automático",
         "cpu-temp": "Temperatura da CPU",
         "cpu-usage": "Uso de CPU",
-        "disk-percent": "Porcentaxe de disco",
         "full": "Completo",
         "gauge": "Medidor",
         "glyph": "Glifo",
@@ -3206,8 +3199,7 @@
         "minimal": {
           "description": "Mostra só etiquetas de ID ou nome dos espazos de traballo, sen pílulas animadas",
           "label": "Estilo mínimo",
-          "taskbar-description": "Etiquetas de espazo de traballo só con texto, sen fondos de disco de cor",
-          "workspaces-description": "Etiquetas de espazos de traballo só con texto, sen fondos de pílula nin animación de desprazamento"
+          "taskbar-description": "Etiquetas de espazo de traballo só con texto, sen fondos de disco de cor"
         },
         "mirrored": {
           "description": "Espella o visualizador arredor do seu centro",
@@ -3426,7 +3418,6 @@
     "window": {
       "export-config": "Exportar configuración…",
       "export-config-saved": "Exportación da configuración gardada.",
-      "filter-modified": "Modificado",
       "legacy-config-warning": "A configuración antiga estase migrando na memoria: {issue}. Executa noctalia config validate para ver todos os cambios requiridos.",
       "native-title": "Axustes de Noctalia",
       "no-results": "Non se atoparon axustes",

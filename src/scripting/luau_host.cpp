@@ -30,6 +30,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -57,6 +58,7 @@ namespace {
   constexpr int kMaxGlobalDetachedCommands = 32;
   constexpr std::size_t kMaxAsyncHttpPerHost = 8;
   constexpr std::size_t kMaxStreamsPerHost = 4;
+  constexpr std::size_t kMaxHttpStreamsPerHost = 4;
   // A single stream line can't exceed this; protects against a process spewing one
   // unbounded line with no newline.
   constexpr std::size_t kMaxStreamLineBytes = 64 * 1024;
@@ -108,7 +110,7 @@ namespace {
     try {
       std::thread([command = std::move(command)]() mutable {
         try {
-          (void)process::runAsync(command);
+          (void)process::runAsync(std::vector<std::string>{"/bin/sh", "-c", std::move(command)});
         } catch (...) {
         }
         releaseDetachedCommandSlot();
@@ -160,6 +162,18 @@ namespace {
         timeoutMs, static_cast<double>(kMinCommandTimeout.count()), static_cast<double>(kMaxCommandTimeout.count())
     );
     return std::chrono::milliseconds(static_cast<int>(bounded));
+  }
+
+  // CPU time consumed by the calling thread. Callback budgets meter against this, so
+  // a worker thread descheduled by a system-wide stall stays within budget. The
+  // interrupt hook runs only between VM instructions, so a callback blocked in a
+  // syscall is not interruptible at all.
+  std::chrono::nanoseconds threadCpuTime() {
+    timespec ts{};
+    if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts) != 0) {
+      return std::chrono::nanoseconds::zero();
+    }
+    return std::chrono::seconds(ts.tv_sec) + std::chrono::nanoseconds(ts.tv_nsec);
   }
 
   void budgetInterrupt(lua_State* L, int /*gc*/) {
@@ -902,23 +916,16 @@ namespace {
     return out;
   }
 
-  int luau_http(lua_State* L) {
-    luaL_checktype(L, 1, LUA_TTABLE);
-    luaL_checktype(L, 2, LUA_TFUNCTION);
-    auto* host = hostForState(L);
-    if (host == nullptr) {
-      lua_pushboolean(L, 0);
-      return 1;
-    }
-
+  HttpRequest httpRequestFromTable(lua_State* L, int tableIdx) {
     HttpRequest request;
-    request.url = reqStringField(L, 1, "url");
-    request.method = reqStringField(L, 1, "method", "GET");
-    request.body = reqStringField(L, 1, "body");
-    request.basicUsername = reqStringField(L, 1, "basic_username");
-    request.basicPassword = reqStringField(L, 1, "basic_password");
-    request.followRedirects = reqBoolField(L, 1, "follow_redirects", false);
-    lua_getfield(L, 1, "headers");
+    request.url = reqStringField(L, tableIdx, "url");
+    request.method = reqStringField(L, tableIdx, "method", "GET");
+    request.body = reqStringField(L, tableIdx, "body");
+    request.basicUsername = reqStringField(L, tableIdx, "basic_username");
+    request.basicPassword = reqStringField(L, tableIdx, "basic_password");
+    request.followRedirects = reqBoolField(L, tableIdx, "follow_redirects", false);
+    request.allowInsecureTls = reqBoolField(L, tableIdx, "allow_insecure_tls", false);
+    lua_getfield(L, tableIdx, "headers");
     if (lua_istable(L, -1)) {
       const int headersIdx = lua_gettop(L);
       const int count = lua_objlen(L, headersIdx);
@@ -931,7 +938,19 @@ namespace {
       }
     }
     lua_pop(L, 1);
+    return request;
+  }
 
+  int luau_http(lua_State* L) {
+    luaL_checktype(L, 1, LUA_TTABLE);
+    luaL_checktype(L, 2, LUA_TFUNCTION);
+    auto* host = hostForState(L);
+    if (host == nullptr) {
+      lua_pushboolean(L, 0);
+      return 1;
+    }
+
+    HttpRequest request = httpRequestFromTable(L, 1);
     if (request.url.empty()) {
       lua_pushboolean(L, 0);
       return 1;
@@ -943,6 +962,46 @@ namespace {
       lua_unref(L, callbackRef);
     }
     lua_pushboolean(L, ok ? 1 : 0);
+    return 1;
+  }
+
+  int luau_httpStreamStop(lua_State* L) {
+    if (auto* host = hostForState(L)) {
+      host->stopHttpStream(lua_tointeger(L, lua_upvalueindex(1)));
+    }
+    return 0;
+  }
+
+  int luau_httpStream(lua_State* L) {
+    luaL_checktype(L, 1, LUA_TTABLE);
+    luaL_checktype(L, 2, LUA_TFUNCTION);
+    luaL_checktype(L, 3, LUA_TFUNCTION);
+    auto* host = hostForState(L);
+    if (host == nullptr) {
+      lua_pushnil(L);
+      return 1;
+    }
+
+    HttpRequest request = httpRequestFromTable(L, 1);
+    if (request.url.empty()) {
+      lua_pushnil(L);
+      return 1;
+    }
+
+    const int lineRef = lua_ref(L, 2);
+    const int closeRef = lua_ref(L, 3);
+    const int streamKey = host->startHttpStream(std::move(request), lineRef, closeRef);
+    if (streamKey == 0) {
+      lua_unref(L, lineRef);
+      lua_unref(L, closeRef);
+      lua_pushnil(L);
+      return 1;
+    }
+
+    lua_createtable(L, 0, 1);
+    lua_pushinteger(L, streamKey);
+    lua_pushcclosure(L, luau_httpStreamStop, "httpStreamStop", 1);
+    lua_setfield(L, -2, "stop");
     return 1;
   }
 
@@ -1261,6 +1320,7 @@ namespace {
       {"tr", luau_tr},
       {"trp", luau_trp},
       {"http", luau_http},
+      {"httpStream", luau_httpStream},
       {"download", luau_download},
       {"openColorPicker", luau_openColorPicker},
       {"fuzzyScore", luau_fuzzyScore},
@@ -1333,8 +1393,10 @@ LuauHost::LuauHost(scripting::ScriptApiContext& api, CompositorPlatform* platfor
 }
 
 LuauHost::~LuauHost() {
-  // Terminate any long-lived stream subprocesses before tearing down the state.
+  // Terminate any long-lived stream subprocesses and HTTP streams before tearing
+  // down the state.
   stopAllStreams();
+  stopAllHttpStreams();
   if (m_L) {
     if (m_T != nullptr) {
       for (int callbackRef : m_asyncCommandCallbackRefs) {
@@ -1629,7 +1691,12 @@ void LuauHost::stateWatch(std::string key, int callbackRef) {
 bool LuauHost::hasStateWatchCallback(int callbackRef) const { return m_stateWatchCallbackRefs.contains(callbackRef); }
 
 bool LuauHost::startStream(std::string command, int callbackRef) {
-  if (command.empty() || callbackRef <= LUA_REFNIL || m_streamCancels.size() >= kMaxStreamsPerHost) {
+  // Drop finished streams so the per-host cap only counts live children.
+  std::erase_if(m_streams, [](const StreamRecord& stream) {
+    return stream.alive == nullptr || !stream.alive->load(std::memory_order_relaxed);
+  });
+
+  if (command.empty() || callbackRef <= LUA_REFNIL || m_streams.size() >= kMaxStreamsPerHost) {
     return false;
   }
   auto handler = m_streamLineHandler;
@@ -1639,7 +1706,8 @@ bool LuauHost::startStream(std::string command, int callbackRef) {
 
   m_streamCallbackRefs.insert(callbackRef);
   auto cancel = std::make_shared<std::atomic<bool>>(false);
-  m_streamCancels.push_back(cancel);
+  auto alive = std::make_shared<std::atomic<bool>>(true);
+  m_streams.push_back(StreamRecord{.cancel = cancel, .alive = alive});
 
   const std::uint64_t hostId = m_hostId;
   auto buffer = std::make_shared<std::string>();
@@ -1662,11 +1730,16 @@ bool LuauHost::startStream(std::string command, int callbackRef) {
       buffer->clear(); // drop a pathological unbounded line
     }
   };
+  callbacks.onExit = [alive](process::RunResult) { alive->store(false, std::memory_order_relaxed); };
 
   process::RunOptions options;
   options.cancel = std::move(cancel);
-  // No timeout (long-lived); no onExit so output is never accumulated, only streamed.
-  return process::runAsync({"/bin/sh", "-c", std::move(command)}, std::move(callbacks), std::move(options));
+  options.maxOutputBytes = 0; // stream only; do not accumulate for onExit
+  if (!process::runAsync({"/bin/sh", "-c", std::move(command)}, std::move(callbacks), std::move(options))) {
+    m_streams.pop_back();
+    return false;
+  }
+  return true;
 }
 
 bool LuauHost::callStreamCallback(int callbackRef, const std::string& line, std::chrono::milliseconds budget) {
@@ -1687,12 +1760,154 @@ bool LuauHost::callStreamCallback(int callbackRef, const std::string& line, std:
 bool LuauHost::hasStreamCallback(int callbackRef) const { return m_streamCallbackRefs.contains(callbackRef); }
 
 void LuauHost::stopAllStreams() noexcept {
-  for (const auto& cancel : m_streamCancels) {
-    if (cancel) {
-      cancel->store(true, std::memory_order_relaxed);
+  for (const auto& stream : m_streams) {
+    if (stream.cancel) {
+      stream.cancel->store(true, std::memory_order_relaxed);
     }
   }
-  m_streamCancels.clear();
+  m_streams.clear();
+}
+
+int LuauHost::startHttpStream(HttpRequest request, int lineRef, int closeRef) {
+  if (m_httpClient == nullptr
+      || lineRef <= LUA_REFNIL
+      || closeRef <= LUA_REFNIL
+      || m_httpStreams.size() >= kMaxHttpStreamsPerHost) {
+    return 0;
+  }
+  auto handler = m_httpStreamEventHandler;
+  if (!handler) {
+    return 0;
+  }
+
+  const int streamKey = lineRef;
+  auto control = std::make_shared<HttpStreamControl>();
+  m_httpStreams.emplace(streamKey, HttpStreamRecord{lineRef, closeRef, control});
+
+  const std::uint64_t hostId = m_hostId;
+  auto buffer = std::make_shared<std::string>();
+
+  // HttpClient must be driven from the main loop; marshal there. The chunk/close
+  // lambdas run on the main loop and forward through the handler, which enqueues
+  // onto the runtime thread. Line splitting mirrors runStream.
+  DeferredCall::callLater([client = m_httpClient, request = std::move(request), handler = std::move(handler), hostId,
+                           streamKey, control, buffer]() mutable {
+    if (control->cancelled.load(std::memory_order_relaxed)) {
+      return;
+    }
+    auto onData = [handler, hostId, streamKey, control, buffer](std::string_view chunk) {
+      if (control->cancelled.load(std::memory_order_relaxed)) {
+        return;
+      }
+      buffer->append(chunk);
+      std::size_t pos = 0;
+      while ((pos = buffer->find('\n')) != std::string::npos) {
+        std::string line = buffer->substr(0, pos);
+        buffer->erase(0, pos + 1);
+        if (!line.empty() && line.back() == '\r') {
+          line.pop_back();
+        }
+        handler(hostId, streamKey, false, std::move(line), false, 0);
+      }
+      if (buffer->size() > kMaxStreamLineBytes) {
+        buffer->clear(); // drop a pathological unbounded line
+      }
+    };
+    auto onClose = [handler, hostId, streamKey, control](HttpStreamResult result) {
+      if (control->cancelled.load(std::memory_order_relaxed)) {
+        return;
+      }
+      handler(hostId, streamKey, true, std::string(), result.transportOk, static_cast<int>(result.status));
+    };
+    const auto id = client->startStream(std::move(request), std::move(onData), std::move(onClose));
+    control->clientStreamId.store(id, std::memory_order_relaxed);
+    if (id != 0 && control->cancelled.load(std::memory_order_relaxed)) {
+      client->cancelStream(id); // a stop raced stream startup
+    }
+  });
+  return streamKey;
+}
+
+void LuauHost::stopHttpStream(int streamKey) {
+  const auto it = m_httpStreams.find(streamKey);
+  if (it == m_httpStreams.end()) {
+    return;
+  }
+  const HttpStreamRecord record = it->second;
+  m_httpStreams.erase(it);
+  if (m_T != nullptr) {
+    lua_unref(m_T, record.lineRef);
+    lua_unref(m_T, record.closeRef);
+  }
+  if (record.control) {
+    record.control->cancelled.store(true, std::memory_order_relaxed);
+    DeferredCall::callLater([client = m_httpClient, control = record.control]() {
+      const auto id = control->clientStreamId.load(std::memory_order_relaxed);
+      if (id != 0 && client != nullptr) {
+        client->cancelStream(id);
+      }
+    });
+  }
+}
+
+bool LuauHost::callHttpStreamLineCallback(int streamKey, const std::string& line, std::chrono::milliseconds budget) {
+  const auto it = m_httpStreams.find(streamKey);
+  if (m_T == nullptr || it == m_httpStreams.end()) {
+    return false;
+  }
+  // Line callbacks fire repeatedly; the refs are released when the stream closes
+  // or is stopped.
+  lua_getref(m_T, it->second.lineRef);
+  if (!lua_isfunction(m_T, -1)) {
+    lua_pop(m_T, 1);
+    return false;
+  }
+  lua_pushlstring(m_T, line.data(), line.size());
+  return callWithBudget("http stream callback", 1, 0, budget);
+}
+
+bool LuauHost::callHttpStreamCloseCallback(int streamKey, bool ok, int status, std::chrono::milliseconds budget) {
+  const auto it = m_httpStreams.find(streamKey);
+  if (m_T == nullptr || it == m_httpStreams.end()) {
+    return false;
+  }
+  const HttpStreamRecord record = it->second;
+  m_httpStreams.erase(it);
+
+  lua_getref(m_T, record.closeRef);
+  lua_unref(m_T, record.lineRef);
+  lua_unref(m_T, record.closeRef);
+  if (!lua_isfunction(m_T, -1)) {
+    lua_pop(m_T, 1);
+    return false;
+  }
+
+  lua_createtable(m_T, 0, 2);
+  setTableBool(m_T, "ok", ok);
+  setTableInteger(m_T, "status", status);
+  return callWithBudget("http stream close callback", 1, 0, budget);
+}
+
+bool LuauHost::hasHttpStream(int streamKey) const { return m_httpStreams.contains(streamKey); }
+
+void LuauHost::stopAllHttpStreams() noexcept {
+  for (const auto& [streamKey, record] : m_httpStreams) {
+    if (m_T != nullptr) {
+      lua_unref(m_T, record.lineRef);
+      lua_unref(m_T, record.closeRef);
+    }
+    if (!record.control) {
+      continue;
+    }
+    record.control->cancelled.store(true, std::memory_order_relaxed);
+    DeferredCall::callLater([client = m_httpClient, control = record.control]() {
+      const auto id = control->clientStreamId.load(std::memory_order_relaxed);
+      if (id != 0 && client != nullptr) {
+        client->cancelStream(id);
+      }
+    });
+  }
+  m_httpStreams.clear();
 }
 
 bool LuauHost::callStateWatchCallback(int callbackRef, const std::string& json, std::chrono::milliseconds budget) {
@@ -1770,12 +1985,15 @@ void LuauHost::interruptIfBudgetExceeded(lua_State* L) {
   if (!m_budgetActive) {
     return;
   }
-  if (std::chrono::steady_clock::now() <= m_callDeadline) {
+  if (threadCpuTime() <= m_callCpuDeadline) {
     return;
   }
   m_lastCallTimedOut = true;
   m_budgetActive = false;
-  luaL_error(L, "script callback '%s' timed out", m_currentCallName.empty() ? "(unknown)" : m_currentCallName.c_str());
+  luaL_error(
+      L, "script callback '%s' exceeded its CPU budget",
+      m_currentCallName.empty() ? "(unknown)" : m_currentCallName.c_str()
+  );
 }
 
 void LuauHost::loadTranslations() { m_translations.load(m_pluginDir); }
@@ -1866,7 +2084,7 @@ std::optional<std::string> LuauHost::scriptFocusedOutputName() const {
 
 void LuauHost::beginBudget(std::string_view name, std::chrono::milliseconds budget) {
   m_currentCallName = std::string(name);
-  m_callDeadline = std::chrono::steady_clock::now() + std::max(budget, std::chrono::milliseconds(1));
+  m_callCpuDeadline = threadCpuTime() + std::max(budget, std::chrono::milliseconds(1));
   m_lastCallTimedOut = false;
   m_budgetActive = true;
 }

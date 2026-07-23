@@ -18,12 +18,17 @@ class RenderContext;
 class SharedTextureCache;
 class VisualizerService;
 class WaylandConnection;
+enum class ThemeMode : std::uint8_t;
 enum class WallpaperTransitionDirection;
 struct TextureHandle;
 struct WallpaperInstance;
 struct PointerEvent;
 struct WaylandOutput;
 struct wl_surface;
+
+namespace noctalia::theme {
+  class ThemeService;
+}
 
 struct WallpaperChange {
   std::string path;
@@ -36,7 +41,8 @@ public:
   ~Wallpaper();
 
   bool initialize(
-      WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext, SharedTextureCache* textureCache
+      WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext, SharedTextureCache* textureCache,
+      noctalia::theme::ThemeService* themeService = nullptr
   );
 
   // Optional live-paper plumbing. Both pointers are non-owning. Pass nulls
@@ -100,6 +106,7 @@ private:
   [[nodiscard]] bool automationAllowed() const noexcept;
   [[nodiscard]] SwitchOutcome
   switchWallpaperTo(PickWallpaper action, std::optional<std::string_view> connector = std::nullopt);
+  [[nodiscard]] ThemeMode directoryThemeMode() const noexcept;
   void createInstance(const WaylandOutput& output);
   [[nodiscard]] TextureHandle acquireTexture(const std::string& path);
   void releaseTexture(TextureHandle& handle, const std::string& path);
@@ -127,6 +134,7 @@ private:
   SharedTextureCache* m_textureCache = nullptr;
   ProjectMRenderer* m_visualizer = nullptr;
   VisualizerService* m_visualizerService = nullptr;
+  noctalia::theme::ThemeService* m_themeService = nullptr;
   bool m_wallpaperEnabled = false;
   WallpaperConfig m_lastWallpaperConfig{};
   std::int64_t m_lastAutomationSecondStamp = -1;

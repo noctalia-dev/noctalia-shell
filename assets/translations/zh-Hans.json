@@ -29,7 +29,7 @@
   "bar": {
     "screenshot": {
       "choose-display": "选择屏幕",
-      "confirm-region": "Enter 或 Space 键截图 · Esc 取消 · 拖动重新选择",
+      "confirm-region": "Enter 或 Space 键截图 · Esc 取消 · 拖动重选",
       "fullscreen": "全屏",
       "overlay-alloc-failed": "无法显示截图覆盖层（GPU 显存不足？）",
       "region": "选择区域"
@@ -76,6 +76,7 @@
         "signal": "信号",
         "upload": "上传",
         "vpn": "VPN",
+        "wan-ip": "WAN IP",
         "wifi": "Wi-Fi",
         "wired": "有线网络",
         "yes": "是"
@@ -182,6 +183,7 @@
     },
     "bluetooth": {
       "accept": "接受",
+      "address": "地址",
       "auto-reconnect": "自动重连",
       "bluetooth": "蓝牙",
       "enter-code": "输入配对码",
@@ -206,7 +208,7 @@
       },
       "unavailable": "蓝牙服务不可用",
       "unknown-device": "未知设备",
-      "visible": "可被附近的设备发现"
+      "visible": "可被附近设备发现"
     },
     "calendar": {
       "all-day": "全天",
@@ -235,7 +237,7 @@
       },
       "select-avatar": "选择头像",
       "unknown": "未知",
-      "uptime": "已运行 - {uptime}",
+      "uptime": "已运行 – {uptime}",
       "weather": {
         "data-unavailable": "天气数据不可用。",
         "disabled": "天气已在配置中禁用。",
@@ -257,8 +259,8 @@
       "password": "密码",
       "password-prompt": "输入密码",
       "password-prompt-for": "输入 {ssid} 的密码",
-      "unavailable-detail": "安装并启用 NetworkManager 以在此管理网络。",
-      "unavailable-title": "NetworkManager 不可用",
+      "unavailable-detail": "请安装并启用 NetworkManager、wpa_supplicant 或 iwd 以在此管理网络。",
+      "unavailable-title": "网络服务不可用",
       "vpns": "VPN",
       "wi-fi": "Wi-Fi",
       "wifi": "Wi-Fi",
@@ -284,7 +286,7 @@
     },
     "power": {
       "battery": "电池",
-      "design-capacity": "设计容量",
+      "design-capacity": "相对于设计容量",
       "health": "电池健康度",
       "performance-inhibited": "性能模式不可用",
       "peripherals": "已连接设备",
@@ -447,6 +449,7 @@
         "bands": "频段",
         "bar-width": "条形宽度",
         "bloom-intensity": "泛光",
+        "center-password-text": "密码文本居中",
         "center-text": "文字居中",
         "centered": "居中",
         "change-image": "更改…",
@@ -461,10 +464,12 @@
         "command": "命令",
         "custom-color": "自定义",
         "description": "描述",
+        "device": "设备",
         "display": "显示",
         "display-gauge": "仪表",
         "display-graph": "图表",
         "fade-when-idle": "空闲时淡出",
+        "fill-color": "填充颜色",
         "font-family": "字体",
         "font-family-default": "系统默认",
         "forecast-days": "预报天数",
@@ -495,15 +500,18 @@
         "reset-defaults": "恢复默认设置",
         "ring-opacity": "圆环不透明度",
         "rotation-speed": "旋转速度",
+        "scroll-step": "滚动步长",
         "secondary-color": "辅助色",
         "sensitivity": "灵敏度",
         "shadow": "阴影",
         "show-caps-lock": "大写锁定提示",
+        "show-device": "显示设备",
         "show-forecast": "显示天气预报",
         "show-keyboard-layout": "键盘布局",
         "show-label": "显示标签",
         "show-login-button": "登录按钮",
         "show-password-hint": "密码提示",
+        "show-vpn-label": "显示 VPN 标签",
         "show-when-idle": "空闲时显示",
         "stat": "统计项",
         "stat-cpu-temp": "CPU 温度",
@@ -518,6 +526,7 @@
         "stat-swap-pct": "Swap %",
         "stat2": "统计项 2",
         "title": "标题",
+        "track-color": "轨道颜色",
         "variant": "样式",
         "variant-default": "默认",
         "variant-destructive": "Destructive",
@@ -536,10 +545,6 @@
         "wave-thickness": "波浪厚度",
         "widget-section": "小组件"
       },
-      "state": {
-        "grid-off": "网格关闭",
-        "grid-on": "网格开启"
-      },
       "title": "桌面小组件",
       "types": {
         "audio-visualizer": "音频可视化",
@@ -551,11 +556,17 @@
         "media-player": "媒体播放器",
         "sticker": "贴纸",
         "system-monitor": "系统监视器",
+        "volume": "音量",
         "weather": "天气"
       }
     },
     "media": {
       "nothing-playing": "无播放内容"
+    },
+    "volume": {
+      "mic": "麦克风",
+      "muted": "已静音",
+      "volume": "音量"
     },
     "weather": {
       "error": "错误",
@@ -672,7 +683,7 @@
     },
     "internal": {
       "battery": "电池",
-      "battery-critical-body": "{device}：{percent}% - 即将关机",
+      "battery-critical-body": "{device}：{percent}% – 即将关机",
       "battery-critical-title": "电量严重不足",
       "battery-device": "电池设备",
       "battery-low-body": "{device}：剩余 {percent}%",
@@ -771,7 +782,7 @@
     },
     "enable-failed": {
       "body-error": "{plugin}：{error}",
-      "body-incompatible": "{plugin} 需要 Noctalia {version} 或更高版本。",
+      "body-incompatible": "{plugin} 要求插件 API 版本为 {version}；当前 Noctalia 支持的 API 版本为 {oldest}–{current}。",
       "body-timeout": "{plugin} 安装耗时过长。",
       "title": "插件启用失败"
     }
@@ -833,6 +844,7 @@
     },
     "calendar-accounts": {
       "add-title": "添加日历账户",
+      "calendars-label": "日历",
       "color-label": "颜色",
       "delete-error": "无法删除日历账户。",
       "edit-title": "编辑日历账户",
@@ -883,7 +895,7 @@
       "bar": {
         "create": "创建",
         "delete": "删除",
-        "delete-confirm-desc": "此状态栏由 GUI 创建，将从 settings.toml 中移除。",
+        "delete-confirm-desc": "该状态栏由 GUI 创建，将从 settings.toml 中移除。",
         "delete-confirm-title": "删除“{name}”？",
         "id-placeholder": "状态栏 ID",
         "label": "状态栏：{name}",
@@ -897,7 +909,7 @@
       "monitor-override": {
         "create": "创建",
         "delete": "删除",
-        "delete-confirm-desc": "此屏幕设置由 GUI 创建，将从 settings.toml 中移除。",
+        "delete-confirm-desc": "该屏幕设置由 GUI 创建，将从 settings.toml 中移除。",
         "delete-confirm-title": "删除“{name}”？",
         "label": "屏幕：{name}",
         "management": "屏幕设置",
@@ -918,7 +930,7 @@
         "group": {
           "action": "组合",
           "border": "边框",
-          "border-description": "将颜色应用于胶囊轮廓；保持“默认”则不显示轮廓",
+          "border-description": "将颜色应用于胶囊轮廓；保持“默认”时不显示轮廓",
           "clear": "清除",
           "drawer-columns": "抽屉列数",
           "drawer-columns-description": "抽屉面板中每行显示的小组件数量",
@@ -932,7 +944,7 @@
           "drawer-glyph-opened-description": "面板打开时显示在抽屉切换按钮上的图标",
           "edit": "编辑样式",
           "fill": "背景",
-          "fill-description": "胶囊背景的颜色；也支持固定的十六进制颜色值",
+          "fill-description": "胶囊背景的颜色；支持固定的十六进制颜色值",
           "foreground": "前景",
           "foreground-description": "将颜色应用于组内小组件图标和标签",
           "hide": "隐藏此组合",
@@ -1086,6 +1098,7 @@
         "background": "背景",
         "battery": "电池",
         "behavior": "行为",
+        "borders": "边框",
         "brightness": "亮度",
         "built-in": "内置",
         "calendar": "日历",
@@ -1130,6 +1143,7 @@
         "power": "电源",
         "privacy": "隐私",
         "profile": "个人资料",
+        "providers": "提供者",
         "screen-corners": "屏幕圆角",
         "screen-time": "屏幕时间",
         "screenshot": "截图",
@@ -1380,12 +1394,15 @@
         "delete-confirm-title": "删除“{name}”？",
         "deprecated": "已弃用",
         "empty": "未启用任何插件。",
+        "incompatible-plugin-api": "插件 API 不兼容",
         "loading": "正在加载插件…",
         "refreshing": "正在刷新插件…",
         "remove": "移除插件",
         "requires": "依赖：{dependencies}",
-        "requires-newer-noctalia": "需要更高版本的 Noctalia",
-        "title": "插件"
+        "title": "插件",
+        "update-all": "全部更新 ({count})",
+        "update-available": "有可用更新",
+        "update-to": "更新至 {version}"
       },
       "settings": {
         "empty": "无可用设置。"
@@ -1393,6 +1410,8 @@
       "sources": {
         "add": "添加源",
         "add-title": "添加插件源",
+        "auto-update": "自动更新插件",
+        "auto-update-desc": "在后台检查已启用的源是否有更新，并保持已安装的插件为最新版本",
         "edit": "编辑源",
         "edit-title": "编辑插件源",
         "empty": "未配置任何源。",
@@ -1415,8 +1434,7 @@
         "remove": "移除源",
         "save": "保存",
         "title": "源",
-        "update": "更新",
-        "update-on-startup": "启动时更新"
+        "update": "更新该源"
       },
       "store": {
         "add": "添加到 Noctalia",
@@ -1426,8 +1444,12 @@
         "incompatible": "不兼容",
         "loading": "正在加载目录…",
         "no-readme": "没有可用的描述。",
+        "open-page": "在 noctalia.dev 上打开插件页面",
+        "open-source": "打开插件源码仓库",
         "results-count": "共 {count} 个插件",
         "search-placeholder": "搜索插件…",
+        "source-all": "全部",
+        "sources": "源",
         "title": "插件商店"
       }
     },
@@ -1460,7 +1482,7 @@
           "label": "内置配色方案"
         },
         "button-borders": {
-          "description": "为 Shell 中的所有按钮绘制轮廓",
+          "description": "为 Shell 的所有按钮绘制轮廓",
           "label": "按钮边框"
         },
         "community-palette": {
@@ -1492,6 +1514,10 @@
         "global-shadow-direction": {
           "description": "表面投射阴影的方向"
         },
+        "input-borders": {
+          "description": "为 Shell 的文本输入框及其他输入控件绘制轮廓",
+          "label": "输入框边框"
+        },
         "language": {
           "description": "覆盖自动检测的语言设置",
           "label": "语言"
@@ -1499,6 +1525,14 @@
         "palette-source": {
           "description": "选择配色方案的来源",
           "label": "配色方案来源"
+        },
+        "popup-borders": {
+          "description": "为弹窗和下拉菜单绘制轮廓",
+          "label": "弹出层边框"
+        },
+        "popup-shadows": {
+          "description": "为弹窗和下拉菜单绘制阴影",
+          "label": "弹出层阴影"
         },
         "pure-black-dark": {
           "description": "将深色界面固定为纯黑色，避免 OLED 屏幕出现色带（仅限深色模式）",
@@ -1532,13 +1566,13 @@
       },
       "bar": {
         "auto-hide": {
-          "description": "“关闭”时保持状态栏可见；“开启”时隐藏，直到将指针移至屏幕边缘。“智能”模式会在空工作区显示，并在有窗口时隐藏。"
+          "description": "“关闭”时保持状态栏可见；“开启”时隐藏，直到将指针移至屏幕边缘；“智能”模式会在空工作区显示，并在有窗口时隐藏。"
         },
         "background-opacity": {
           "description": "状态栏的背景不透明度"
         },
         "border": {
-          "description": "状态栏轮廓的颜色；也支持固定的十六进制颜色值",
+          "description": "状态栏轮廓的颜色；支持固定的十六进制颜色值",
           "label": "边框"
         },
         "border-width": {
@@ -1546,15 +1580,15 @@
           "label": "边框宽度"
         },
         "capsule-border": {
-          "description": "胶囊轮廓的默认颜色；也支持固定的十六进制颜色值",
+          "description": "胶囊轮廓的默认颜色；支持固定的十六进制颜色值",
           "label": "胶囊边框"
         },
         "capsule-fill": {
-          "description": "胶囊背景的默认颜色；也支持固定的十六进制颜色值",
+          "description": "胶囊背景的默认颜色；支持固定的十六进制颜色值",
           "label": "胶囊填充"
         },
         "capsule-foreground": {
-          "description": "胶囊内部图标和标签的默认颜色；也支持固定的十六进制颜色值",
+          "description": "胶囊内部图标和标签的默认颜色；支持固定的十六进制颜色值",
           "label": "胶囊前景"
         },
         "capsule-opacity": {
@@ -1566,7 +1600,7 @@
           "label": "胶囊内边距"
         },
         "capsule-radius": {
-          "description": "小组件胶囊、工作区胶囊和任务栏工作区组的默认圆角半径。留空将自动应用胶囊形状，设为 0 时显示为直角",
+          "description": "小组件胶囊、工作区胶囊和任务栏工作区组的默认圆角半径；设为 0 时显示为直角",
           "label": "胶囊圆角半径"
         },
         "capsule-thickness": {
@@ -1616,7 +1650,7 @@
           "label": "中键点击"
         },
         "dead-zone-right-command": {
-          "description": "右键点击时执行的 Shell 命令；留空则打开控制中心",
+          "description": "右键点击时执行的 Shell 命令；留空时打开控制中心",
           "label": "右键点击"
         },
         "dead-zone-scroll-down-command": {
@@ -1641,7 +1675,7 @@
           "description": "状态栏两端与屏幕边缘的距离；设为 0 时显示为全宽或全高"
         },
         "font-family": {
-          "description": "状态栏上小组件的字体；留空则继承全局字体（单独设置的小组件字体将覆盖此项）",
+          "description": "状态栏上小组件的字体；留空时继承全局字体（单独设置的小组件字体将覆盖此项）",
           "label": "字体"
         },
         "font-weight": {
@@ -1689,11 +1723,11 @@
           "label": "小组件胶囊"
         },
         "widget-color": {
-          "description": "状态栏上小组件图标和标签的默认颜色；也支持固定的十六进制颜色值",
+          "description": "状态栏上小组件图标和标签的默认颜色；支持固定的十六进制颜色值",
           "label": "小组件颜色"
         },
         "widget-icon-color": {
-          "description": "覆盖状态栏上小组件图标的颜色；也支持固定的十六进制颜色值",
+          "description": "覆盖状态栏上小组件图标的颜色；支持固定的十六进制颜色值",
           "label": "小组件图标颜色"
         },
         "widget-spacing": {
@@ -1717,6 +1751,10 @@
         "hot-corners-bottom-right-command": {
           "description": "触碰右下角时执行的 Shell 命令",
           "label": "命令"
+        },
+        "hot-corners-delay-ms": {
+          "description": "指针停留在角落多久后执行操作（0 = 立即）",
+          "label": "触发延迟"
         },
         "hot-corners-enabled": {
           "description": "将鼠标指针移动至屏幕角落时触发指定操作",
@@ -1770,10 +1808,18 @@
           "label": "仅当前屏幕应用"
         },
         "auto-hide": {
-          "description": "“关闭”时保持 Dock 可见；“开启”时隐藏，直到将指针移至屏幕边缘。“智能”模式会在空工作区显示，并在有窗口时隐藏。"
+          "description": "“关闭”时保持 Dock 可见；“开启”时隐藏，直到将指针移至屏幕边缘；“智能”模式会在空工作区显示，并在有窗口时隐藏。"
         },
         "background-opacity": {
           "description": "Dock 的背景不透明度"
+        },
+        "border": {
+          "description": "Dock 轮廓的颜色；支持固定的十六进制颜色值",
+          "label": "边框"
+        },
+        "border-width": {
+          "description": "Dock 的内部轮廓宽度",
+          "label": "边框宽度"
         },
         "concave-edge-corners": {
           "description": "在贴近屏幕边缘的一侧形成内凹圆角；要求“边缘边距”为 0",
@@ -1908,7 +1954,7 @@
             "label": "蓝牙启用时"
           },
           "colors-changed": {
-            "description": "当前配色方案更改时执行的命令",
+            "description": "当前配色方案改变时执行的命令",
             "label": "配色改变时"
           },
           "logging-out": {
@@ -1963,7 +2009,7 @@
           "label": "行为"
         },
         "pre-action-fade": {
-          "description": "在执行空闲命令前全屏变暗的秒数；设为 0 时禁用",
+          "description": "在执行空闲命令前全屏变暗的秒数（设为 0 时禁用）",
           "label": "空闲变暗"
         }
       },
@@ -2003,7 +2049,7 @@
       },
       "lockscreen": {
         "allow-empty-password": {
-          "description": "允许按下 Enter 键提交空密码；适用于安全密钥或无密码 PAM 验证；保持关闭可避免误操作导致锁屏问题",
+          "description": "允许按下 Enter 键提交空密码（适用于安全密钥或无密码 PAM 验证；保持关闭可避免误操作导致锁屏问题）",
           "label": "允许空密码提交"
         },
         "blur-intensity": {
@@ -2023,7 +2069,7 @@
           "label": "指纹解锁"
         },
         "monitors": {
-          "description": "选择显示锁屏的屏幕；留空则在所有屏幕上显示",
+          "description": "选择显示锁屏的屏幕；留空时在所有屏幕上显示",
           "label": "屏幕"
         },
         "tint-intensity": {
@@ -2031,7 +2077,7 @@
           "label": "着色强度"
         },
         "wallpaper": {
-          "description": "锁屏背景的自定义图片；留空则使用桌面壁纸",
+          "description": "锁屏背景的自定义图片；留空时使用桌面壁纸",
           "label": "壁纸",
           "placeholder": "使用桌面壁纸"
         },
@@ -2057,6 +2103,10 @@
         "blacklist-allow-critical": {
           "description": "仍显示来自黑名单发送方的重要通知"
         },
+        "border": {
+          "description": "为 Toast 通知绘制轮廓",
+          "label": "边框"
+        },
         "collapse-on-dismiss": {
           "description": "关闭 Toast 通知时，其余通知会自动滑动填补间隙",
           "label": "关闭时折叠"
@@ -2074,7 +2124,7 @@
           "label": "Wayland 层级"
         },
         "monitors": {
-          "description": "选择显示 Toast 通知的屏幕；留空则在所有屏幕上显示",
+          "description": "选择显示 Toast 通知的屏幕；留空时在所有屏幕上显示",
           "label": "屏幕"
         },
         "offset-x": {
@@ -2139,6 +2189,10 @@
           "description": "当搜索结果仅包含应用时，以网格形式显示应用图标并在下方附带标签",
           "label": "应用网格视图"
         },
+        "launcher-auto-paste": {
+          "description": "选择计算结果、表情符号等可复制项后，自动粘贴到焦点窗口（快捷键选项与剪贴板自动粘贴相同）",
+          "label": "自动粘贴"
+        },
         "launcher-categories": {
           "description": "在启动器中显示类别筛选；按 F6 显示和切换，Shift+F6 反向切换",
           "label": "显示类别"
@@ -2146,6 +2200,54 @@
         "launcher-compact": {
           "description": "使用更小的图标和更紧凑的结果行",
           "label": "紧凑行"
+        },
+        "launcher-currency-exchange": {
+          "description": "从第三方在线来源获取汇率",
+          "label": "货币汇率换算"
+        },
+        "launcher-global-calculator": {
+          "description": "在无前缀搜索中显示计算器",
+          "label": "全局搜索中的计算器"
+        },
+        "launcher-global-emoji": {
+          "description": "在无前缀搜索中显示表情符号",
+          "label": "全局搜索中的表情符号"
+        },
+        "launcher-global-session": {
+          "description": "在无前缀搜索中显示会话操作",
+          "label": "全局搜索中的会话操作"
+        },
+        "launcher-global-wallpaper": {
+          "description": "在无前缀搜索中显示壁纸",
+          "label": "全局搜索中的壁纸"
+        },
+        "launcher-global-windows": {
+          "description": "在无前缀搜索中显示打开的窗口",
+          "label": "全局搜索中的窗口"
+        },
+        "launcher-prefix-calculator": {
+          "description": "触发计算器计算的前缀",
+          "label": "计算器前缀"
+        },
+        "launcher-prefix-character": {
+          "description": "用于触发所有提供者前缀的通用前缀字符（例如 /）",
+          "label": "通用前缀字符"
+        },
+        "launcher-prefix-emoji": {
+          "description": "触发表情符号搜索的前缀",
+          "label": "表情符号前缀"
+        },
+        "launcher-prefix-session": {
+          "description": "触发会话电源操作的前缀",
+          "label": "会话前缀"
+        },
+        "launcher-prefix-wallpaper": {
+          "description": "触发壁纸选择器的前缀",
+          "label": "壁纸前缀"
+        },
+        "launcher-prefix-windows": {
+          "description": "触发窗口搜索的前缀",
+          "label": "窗口前缀"
         },
         "launcher-reset-usage": {
           "button": "重置",
@@ -2163,6 +2265,10 @@
         "launcher-sort-by-usage": {
           "description": "优先显示常用应用，并显示“最近使用”类别筛选器",
           "label": "按使用情况排序"
+        },
+        "list-item-background": {
+          "description": "为每个启动器和剪贴板列表项绘制圆角背景",
+          "label": "列表项背景"
         },
         "open-near-click-clipboard": {
           "description": "从状态栏打开剪贴板面板时，将其显示在小组件附近；其他方式打开时居中显示",
@@ -2252,6 +2358,10 @@
         "session-grid-columns": {
           "description": "网格布局的列数",
           "label": "列数"
+        },
+        "session-show-shortcuts": {
+          "description": "显示或隐藏快捷键提示",
+          "label": "显示快捷键"
         }
       },
       "services": {
@@ -2270,7 +2380,7 @@
         },
         "calendar-edit": {
           "button": "编辑",
-          "description": "更新此日历账户"
+          "description": "更新日历账户"
         },
         "calendar-refresh-interval": {
           "description": "同步日历事件的频率（分钟）",
@@ -2287,7 +2397,7 @@
         "ddcutil": {
           "description": "通过 DDC/CI 控制外接屏幕的亮度",
           "label": "DDC/CI（ddcutil）",
-          "requires-ddcutil": "安装 ddcutil 以启用 DDC/CI 亮度控制"
+          "requires-ddcutil": "请安装 ddcutil 以启用 DDC/CI 亮度控制"
         },
         "force-night-light": {
           "description": "始终开启夜间模式，忽略时间设置",
@@ -2501,7 +2611,7 @@
           "placeholder": "gimp {path} 或 satty -f -"
         },
         "date-format": {
-          "description": "Shell UI 默认日期格式",
+          "description": "Shell UI 的默认日期格式",
           "label": "日期格式"
         },
         "external-ip": {
@@ -2518,11 +2628,12 @@
         },
         "launch-apps-as-systemd-services": {
           "description": "将应用程序作为独立的 systemd 服务启动，避免与 Noctalia 共享同一 cgroup",
-          "label": "作为 systemd 服务启动应用"
+          "label": "作为 systemd 服务启动应用",
+          "requires-systemd-session": "需要将 Noctalia 作为 systemd 用户服务运行（使用 uwsm 或 systemd 用户单元）"
         },
         "launch-apps-custom-command": {
-          "description": "应用启动器使用的自定义命令，其中 $CMD 会被替换为原命令",
-          "label": "自定义启动器命令",
+          "description": "包装从启动器、Dock 和任务栏启动的应用；$CMD 会被替换为原命令",
+          "label": "自定义应用启动命令",
           "placeholder": "$CMD"
         },
         "middle-click-opens-widget-settings": {
@@ -2541,6 +2652,14 @@
           "description": "OSD 弹窗的背景不透明度",
           "label": "背景不透明度"
         },
+        "osd-border": {
+          "description": "为 OSD 弹窗绘制轮廓",
+          "label": "边框"
+        },
+        "osd-enabled": {
+          "description": "所有 OSD 弹窗的总开关；关闭后不显示任何 OSD",
+          "label": "启用 OSD"
+        },
         "osd-kinds-bluetooth": {
           "description": "切换蓝牙时显示 OSD 弹窗",
           "label": "蓝牙"
@@ -2556,6 +2675,10 @@
         "osd-kinds-dnd": {
           "description": "切换勿扰模式时显示 OSD 弹窗",
           "label": "勿扰模式"
+        },
+        "osd-kinds-keyboard-backlight": {
+          "description": "键盘背光亮度变化时显示 OSD 弹窗",
+          "label": "键盘背光"
         },
         "osd-kinds-keyboard-layout": {
           "description": "输入键盘布局变化时显示 OSD 弹窗",
@@ -2598,7 +2721,7 @@
           "label": "Wi-Fi"
         },
         "osd-monitors": {
-          "description": "选择显示 OSD 弹窗的屏幕；留空则在所有屏幕上显示",
+          "description": "选择显示 OSD 弹窗的屏幕；留空时在所有屏幕上显示",
           "label": "屏幕"
         },
         "osd-offset-x": {
@@ -2663,7 +2786,7 @@
           "label": "复制到剪贴板"
         },
         "screenshot-directory": {
-          "description": "保存 PNG 文件的文件夹；留空则使用 ~/Pictures",
+          "description": "保存 PNG 文件的文件夹；留空时使用 ~/Pictures",
           "label": "输出目录",
           "placeholder": "~/Pictures"
         },
@@ -2688,6 +2811,10 @@
           "description": "将截图以 PNG 文件保存到输出目录",
           "label": "保存到文件"
         },
+        "screenshot-show-cursor": {
+          "description": "在截图中包含鼠标指针",
+          "label": "显示光标"
+        },
         "show-location": {
           "description": "在天气小组件中显示位置",
           "label": "显示位置"
@@ -2702,17 +2829,17 @@
           "label": "发送匿名统计信息"
         },
         "time-format": {
-          "description": "Shell UI 默认时间格式",
+          "description": "Shell UI 的默认时间格式",
           "label": "时间格式"
         }
       },
       "system": {
         "battery-device-warning-threshold": {
-          "description": "覆盖当前设备的电池警告阈值。设为 0 时禁用设备警告。",
+          "description": "覆盖当前设备的电池警告阈值（设为 0 时禁用设备警告）",
           "label": "{device} 警告阈值"
         },
         "battery-warning-threshold": {
-          "description": "当系统电量低于或等于此百分比时，Shell 将发送低电量通知，电池小组件也会使用警告颜色。设为 0 时禁用。",
+          "description": "当系统电量低于或等于此百分比时，Shell 将发送低电量通知，电池小组件也会使用警告颜色（设为 0 时禁用）",
           "label": "电池警告阈值"
         }
       },
@@ -2821,7 +2948,7 @@
       "add": "添加操作",
       "clear-glyph": "清除",
       "command-label": "Shell 命令",
-      "command-placeholder": "可选的 Bash 命令；留空则使用内置行为",
+      "command-placeholder": "可选的 Bash 命令；留空时使用内置行为",
       "command-required-placeholder": "执行的 Shell 命令",
       "countdown-seconds-description": "执行前等待的时间。再次触发可立即确认。设为 0 时直接执行。",
       "countdown-seconds-label": "倒计时（秒）",
@@ -2852,12 +2979,20 @@
         "ram": "内存",
         "temp": "温度"
       },
+      "map-placeholders": {
+        "effects-profile-name": "配置名称",
+        "glyph-name": "图标名称",
+        "key": "键",
+        "label": "标签",
+        "layout-name": "布局名称",
+        "value": "值"
+      },
       "options": {
         "always": "始终",
         "auto": "自动",
         "cpu-temp": "CPU 温度",
         "cpu-usage": "CPU 使用率",
-        "disk-percent": "磁盘使用率",
+        "focus-hint": "焦点提示",
         "full": "完整",
         "gauge": "仪表",
         "glyph": "图标",
@@ -2873,14 +3008,18 @@
         "instance": "独立运行",
         "kilobytes": "kB/s",
         "megabytes": "MB/s",
+        "minimal": "简约",
         "name": "名称",
         "net-rx": "网络下行",
         "net-tx": "网络上行",
         "none": "无",
         "on-hover": "悬停时",
         "output": "输出",
+        "percent": "百分比",
         "ram-percent": "内存百分比",
         "ram-used": "内存使用量",
+        "rate": "功耗",
+        "regular": "常规",
         "screenshot-primary-fullscreen": "全屏",
         "screenshot-primary-region": "区域",
         "shared": "共享运行",
@@ -2888,13 +3027,14 @@
         "swap-percent": "Swap 百分比",
         "text": "文字",
         "text-only": "仅文字",
+        "time": "时间",
         "workspace-label-centered": "居中",
         "workspace-label-corner": "角落",
         "workspace-label-inside": "胶囊内部"
       },
       "settings": {
         "active-color": {
-          "description": "隐私指示器活动时的颜色；也支持固定的十六进制颜色值",
+          "description": "隐私指示器活动时的颜色；支持固定的十六进制颜色值",
           "label": "活动颜色"
         },
         "active-opacity": {
@@ -2918,6 +3058,10 @@
           "description": "媒体专辑封面大小（像素）",
           "label": "封面大小"
         },
+        "artist-first": {
+          "description": "在曲目标题前显示艺术家（艺术家 - 标题）",
+          "label": "艺术家在前"
+        },
         "bands": {
           "description": "可视化频段数量",
           "label": "频段"
@@ -2931,15 +3075,15 @@
           "label": "胶囊"
         },
         "capsule-border": {
-          "description": "胶囊轮廓的颜色；也支持固定的十六进制颜色值",
+          "description": "胶囊轮廓的颜色；支持固定的十六进制颜色值",
           "label": "胶囊边框"
         },
         "capsule-fill": {
-          "description": "胶囊背景的颜色；也支持固定的十六进制颜色值",
+          "description": "胶囊背景的颜色；支持固定的十六进制颜色值",
           "label": "胶囊填充"
         },
         "capsule-foreground": {
-          "description": "胶囊内容的颜色；也支持固定的十六进制颜色值",
+          "description": "胶囊内容的颜色；支持固定的十六进制颜色值",
           "label": "胶囊前景"
         },
         "capsule-opacity": {
@@ -2951,17 +3095,17 @@
           "label": "胶囊内边距"
         },
         "capsule-radius": {
-          "description": "小组件胶囊的圆角半径；留空自动，0 为直角",
+          "description": "小组件胶囊的圆角半径；设为 0 时显示为直角",
           "label": "胶囊圆角半径",
-          "taskbar-description": "小组件胶囊、工作区圆点指示器和工作区分组胶囊的圆角半径；留空自动，0 为直角",
-          "workspaces-description": "小组件胶囊和工作区胶囊的圆角半径；留空自动，0 为直角"
+          "taskbar-description": "小组件胶囊、工作区圆点指示器和工作区分组胶囊的圆角半径；设为 0 时显示为直角",
+          "workspaces-description": "小组件胶囊和工作区胶囊的圆角半径；设为 0 时显示为直角"
         },
         "centered": {
           "description": "居中显示可视化条，而非边缘对齐",
           "label": "居中"
         },
         "color": {
-          "description": "小组件图标和标签的颜色；也支持固定的十六进制颜色值",
+          "description": "小组件图标和标签的颜色；支持固定的十六进制颜色值",
           "label": "颜色"
         },
         "color-1": {
@@ -2977,7 +3121,7 @@
           "label": "左键点击命令"
         },
         "custom-image": {
-          "description": "自定义图片的路径；留空则使用图标",
+          "description": "自定义图片的路径；留空时使用图标",
           "dialog-title": "选择自定义图片",
           "label": "自定义图片"
         },
@@ -3007,7 +3151,7 @@
           "label": "显示"
         },
         "display-mode": {
-          "description": "以电池图形或 Tabler 图标显示电池状态",
+          "description": "将电池显示为图形形状、Tabler 图标或仅显示标签",
           "label": "显示模式"
         },
         "drawer": {
@@ -3022,12 +3166,20 @@
           "description": "抽屉面板中托盘图标的大小（像素）",
           "label": "抽屉图标大小"
         },
+        "effects-profile-glyphs": {
+          "description": "将 EasyEffects 配置名称映射到图标",
+          "label": "音效配置图标"
+        },
         "empty-color": {
-          "description": "空工作区的颜色；也支持固定的十六进制颜色值",
+          "description": "空工作区的颜色；支持固定的十六进制颜色值",
           "label": "空工作区颜色"
         },
+        "enable-scroll": {
+          "description": "允许在小组件上使用鼠标滚轮和触控板滚动操作",
+          "label": "启用滚动"
+        },
         "focused-color": {
-          "description": "焦点工作区的颜色；也支持固定的十六进制颜色值",
+          "description": "焦点工作区的颜色；支持固定的十六进制颜色值",
           "label": "焦点工作区颜色"
         },
         "focused-output-only": {
@@ -3037,7 +3189,7 @@
           "workspaces-description": "仅当前聚焦屏幕上的活动工作区使用焦点颜色；其他屏幕的活动工作区使用非空颜色"
         },
         "font-family": {
-          "description": "小组件的字体；留空则继承状态栏字体",
+          "description": "小组件的字体；留空时继承状态栏字体",
           "label": "字体"
         },
         "font-weight": {
@@ -3051,8 +3203,8 @@
         "glyph": {
           "description": "图标名称",
           "label": "图标",
-          "sysmon-description": "自定义图标；留空则使用所选统计项对应的图标",
-          "volume-description": "自定义图标；留空则使用内置的动态图标"
+          "sysmon-description": "自定义图标；留空时使用所选统计项对应的图标",
+          "volume-description": "自定义图标；留空时使用内置的动态图标"
         },
         "group-by-workspace": {
           "description": "可获取合成器数据时，按工作区将任务栏图标分组到胶囊中",
@@ -3096,11 +3248,11 @@
           "label": "充满时隐藏"
         },
         "hide-when-no-connected-device": {
-          "description": "没有已连接设备时隐藏蓝牙小组件",
-          "label": "无已连接设备时隐藏"
+          "description": "没有已连接的设备时隐藏蓝牙小组件",
+          "label": "无设备连接时隐藏"
         },
         "hide-when-no-media": {
-          "description": "没有活动的 MPRIS 播放器时隐藏媒体小组件",
+          "description": "没有可用的 MPRIS 播放器时隐藏媒体小组件",
           "label": "无播放内容时隐藏"
         },
         "hide-when-no-unread": {
@@ -3112,7 +3264,7 @@
           "label": "关闭时隐藏"
         },
         "hide-when-plugged": {
-          "description": "连接到交流电源时隐藏电池小组件",
+          "description": "接通电源时隐藏电池小组件",
           "label": "插电时隐藏"
         },
         "hide-when-single-layout": {
@@ -3128,7 +3280,7 @@
           "label": "热重载"
         },
         "icon-color": {
-          "description": "仅覆盖小组件图标的颜色；也支持固定的十六进制颜色值",
+          "description": "仅覆盖小组件图标的颜色；支持固定的十六进制颜色值",
           "label": "图标颜色"
         },
         "icon-size": {
@@ -3140,7 +3292,7 @@
           "label": "图标间距"
         },
         "inactive-color": {
-          "description": "隐私指示器未活动时的颜色；也支持固定的十六进制颜色值",
+          "description": "隐私指示器未活动时的颜色；支持固定的十六进制颜色值",
           "label": "未活动颜色"
         },
         "inactive-opacity": {
@@ -3157,12 +3309,16 @@
           "label": "交互"
         },
         "interface": {
-          "description": "监视的网络接口；留空则统计所有接口的总流量",
+          "description": "监视的网络接口；留空时统计所有接口的总流量",
           "label": "网络接口"
         },
         "label": {
           "description": "可选的按钮固定文本",
           "label": "标签"
+        },
+        "label-content": {
+          "description": "电池标签显示的内容：电量百分比、剩余时间或功耗",
+          "label": "标签内容"
         },
         "label-min-width": {
           "description": "标签的最小宽度（像素），防止因内容变化而调整大小",
@@ -3203,21 +3359,20 @@
           "label": "最小长度"
         },
         "minimal": {
-          "description": "仅显示工作区 ID 或名称标签，不显示动画胶囊",
+          "description": "仅显示工作区 ID 或名称标签，不显示动态胶囊",
           "label": "简约样式",
-          "taskbar-description": "仅显示工作区文字标签，不显示彩色圆形背景",
-          "workspaces-description": "仅显示工作区文字标签，不显示胶囊背景和滑动动画"
+          "taskbar-description": "仅显示工作区文字标签，不显示彩色圆形背景"
         },
         "mirrored": {
           "description": "将可视化围绕其中心镜像显示",
           "label": "镜像"
         },
         "mute-color": {
-          "description": "静音时图标和标签的颜色；也支持固定的十六进制颜色值",
+          "description": "静音时图标和标签的颜色；支持固定的十六进制颜色值",
           "label": "静音颜色"
         },
         "mute-glyph": {
-          "description": "静音或 0% 音量时使用的图标；留空则使用内置的静音图标",
+          "description": "静音或 0% 音量时使用的图标；留空时使用内置的静音图标",
           "label": "静音图标"
         },
         "network-speed-compact": {
@@ -3229,11 +3384,11 @@
           "label": "网速单位"
         },
         "occupied-color": {
-          "description": "非空工作区的颜色；也支持固定的十六进制颜色值",
+          "description": "非空工作区的颜色；支持固定的十六进制颜色值",
           "label": "非空工作区颜色"
         },
         "only-active-workspace": {
-          "description": "隐藏非活动工作区上的窗口。",
+          "description": "隐藏非活动工作区上的窗口",
           "label": "仅活动工作区"
         },
         "path": {
@@ -3247,7 +3402,13 @@
         },
         "pinned": {
           "description": "启用抽屉模式时，仍显示在状态栏的托盘项 ID",
-          "label": "固定项目"
+          "label": "固定项目",
+          "taskbar-description": "未运行时仍保留在任务栏上的桌面应用；启用“按工作区分组”时将忽略此设置",
+          "taskbar-label": "已固定应用"
+        },
+        "pinned-opacity": {
+          "description": "当前未运行的已固定应用的不透明度",
+          "label": "已固定应用不透明度"
         },
         "primary-click": {
           "description": "左键点击状态栏按钮时执行的操作",
@@ -3321,6 +3482,10 @@
           "description": "显示当前气温文本",
           "label": "显示气温"
         },
+        "show-vpn-label": {
+          "description": "在图标旁显示 VPN 标签而不是接口标签",
+          "label": "显示 VPN 标签"
+        },
         "show-when-idle": {
           "description": "未播放媒体时保持可视化显示",
           "label": "空闲时显示"
@@ -3337,12 +3502,21 @@
           "description": "显示的系统统计项",
           "label": "统计项"
         },
+        "style": {
+          "description": "工作区切换器的外观",
+          "label": "样式",
+          "workspaces-description": "“常规”显示动态胶囊；“简约”仅显示文字标签；“焦点提示”以圆点表示非活动工作区，活动工作区显示为带焦点应用图标的展开胶囊"
+        },
         "taskbar-max-width": {
           "description": "总宽度限制（像素）；窗口标题会自适应缩小，过窄时隐藏",
           "label": "任务栏最大宽度"
         },
+        "text": {
+          "description": "显示在状态栏的文本",
+          "label": "文本"
+        },
         "timezone": {
-          "description": "时钟的时区标识符（例如 Europe/Berlin）；留空则使用系统本地时间",
+          "description": "时钟的时区标识符（例如 Europe/Berlin）；留空时使用系统本地时间",
           "label": "时区"
         },
         "title-scroll": {
@@ -3360,6 +3534,10 @@
         "type": {
           "description": "具名小组件的内置类型",
           "label": "类型"
+        },
+        "urgent-color": {
+          "description": "紧急工作区的颜色；支持固定的十六进制颜色值",
+          "label": "紧急工作区颜色"
         },
         "vertical-format": {
           "description": "可选的垂直状态栏格式",
@@ -3414,6 +3592,7 @@
         "sysmon": "系统监视器",
         "taskbar": "任务栏",
         "test": "测试",
+        "text": "文本",
         "theme-mode": "主题模式",
         "tray": "托盘",
         "volume": "音量",
@@ -3425,7 +3604,6 @@
     "window": {
       "export-config": "导出配置…",
       "export-config-saved": "配置导出已保存。",
-      "filter-modified": "已修改",
       "legacy-config-warning": "旧版配置项已在内存中临时转换：{issue}。请执行 noctalia config validate 命令查看所有需要的更改。",
       "native-title": "Noctalia 设置",
       "no-results": "未找到相关设置",
@@ -3498,8 +3676,10 @@
       "day": "{count} 天",
       "day-plural": "{count} 天",
       "hour": "{count} 小时",
+      "hour-compact": "{count} 小时",
       "hour-plural": "{count} 小时",
       "minute": "{count} 分钟",
+      "minute-compact": "{count} 分钟",
       "minute-plural": "{count} 分钟",
       "month": "{count} 个月",
       "month-plural": "{count} 个月",

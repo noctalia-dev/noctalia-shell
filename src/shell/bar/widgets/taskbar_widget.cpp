@@ -8,6 +8,7 @@
 #include "render/core/color.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
+#include "shell/dock/pinned_apps.h"
 #include "shell/panel/panel_manager.h"
 #include "system/app_identity.h"
 #include "system/desktop_entry.h"
@@ -143,6 +144,25 @@ namespace {
     return 0;
   }
 
+  [[nodiscard]] bool isOrphanAppIdentity(
+      const std::string& appId, const std::string& appIdLower, const std::string& idLower,
+      const std::string& startupWmClassLower, const std::string& nameLower
+  ) {
+    return appId.empty() && appIdLower.empty() && idLower.empty() && startupWmClassLower.empty() && nameLower.empty();
+  }
+
+  [[nodiscard]] std::uintptr_t
+  syntheticAssignmentHandleKey(const WorkspaceWindowAssignment& assignment, std::size_t index) {
+    const std::string seed = assignment.windowId.empty()
+        ? assignment.workspaceKey + "\n" + assignment.appId + "\n" + assignment.title + "\n" + std::to_string(index)
+        : assignment.windowId;
+    std::uintptr_t value = static_cast<std::uintptr_t>(std::hash<std::string>{}(seed));
+    if (value == 0) {
+      value = static_cast<std::uintptr_t>(index + 1);
+    }
+    return value;
+  }
+
   [[nodiscard]] float barCapsuleThicknessFor(const ConfigService& config, std::string_view barName) {
     for (const auto& bar : config.config().bars) {
       if (bar.name == barName) {
@@ -179,12 +199,14 @@ TaskbarWidget::TaskbarWidget(
 )
     : m_platform(platform), m_configService(config), m_output(output), m_configOptions(std::move(options)),
       m_showAllOutputs(m_configOptions.showAllOutputs), m_focusedOutputOnly(m_configOptions.focusedOutputOnly),
-      m_minimal(m_configOptions.minimal), m_showActiveIndicator(m_configOptions.showActiveIndicator),
-      m_activeOpacity(m_configOptions.activeOpacity), m_inactiveOpacity(m_configOptions.inactiveOpacity),
+      m_minimal(m_configOptions.minimal), m_enableScroll(m_configOptions.enableScroll),
+      m_showActiveIndicator(m_configOptions.showActiveIndicator), m_activeOpacity(m_configOptions.activeOpacity),
+      m_inactiveOpacity(m_configOptions.inactiveOpacity), m_pinnedOpacity(m_configOptions.pinnedOpacity),
       m_focusedColor(m_configOptions.focusedColor), m_occupiedColor(m_configOptions.occupiedColor),
-      m_emptyColor(m_configOptions.emptyColor), m_windowTitleMaxWidth(m_configOptions.windowTitleMaxWidth),
-      m_taskbarMaxWidth(m_configOptions.taskbarMaxWidth), m_barPosition(std::move(m_configOptions.barPosition)),
-      m_barName(std::move(m_configOptions.barName)), m_shadowConfig(m_configOptions.shadowConfig) {
+      m_emptyColor(m_configOptions.emptyColor), m_urgentColor(m_configOptions.urgentColor),
+      m_windowTitleMaxWidth(m_configOptions.windowTitleMaxWidth), m_taskbarMaxWidth(m_configOptions.taskbarMaxWidth),
+      m_barPosition(std::move(m_configOptions.barPosition)), m_barName(std::move(m_configOptions.barName)),
+      m_widgetName(std::move(m_configOptions.widgetName)) {
   syncWorkspaceGroupingCapability();
   buildDesktopIconIndex();
 }
@@ -197,6 +219,7 @@ void TaskbarWidget::syncWorkspaceGroupingCapability() {
   const bool hideEmptyWorkspaces = supported && m_configOptions.hideEmptyWorkspaces;
   const bool workspaceGroupCapsule = !supported || m_configOptions.workspaceGroupCapsule;
   const bool groupSingleIconPerApp = supported && m_configOptions.groupSingleIconPerApp;
+  const auto workspaceGroupContent = supported ? m_configOptions.workspaceGroupContent : WorkspaceGroupContent::Icons;
   const bool showWindowTitle =
       m_configOptions.showWindowTitle && m_barPosition != "left" && m_barPosition != "right" && !groupByWorkspace;
 
@@ -207,6 +230,7 @@ void TaskbarWidget::syncWorkspaceGroupingCapability() {
       || hideEmptyWorkspaces != m_hideEmptyWorkspaces
       || workspaceGroupCapsule != m_workspaceGroupCapsule
       || groupSingleIconPerApp != m_groupSingleIconPerApp
+      || workspaceGroupContent != m_workspaceGroupContent
       || showWindowTitle != m_showWindowTitle;
 
   m_groupByWorkspace = groupByWorkspace;
@@ -216,6 +240,7 @@ void TaskbarWidget::syncWorkspaceGroupingCapability() {
   m_hideEmptyWorkspaces = hideEmptyWorkspaces;
   m_workspaceGroupCapsule = workspaceGroupCapsule;
   m_groupSingleIconPerApp = groupSingleIconPerApp;
+  m_workspaceGroupContent = workspaceGroupContent;
   m_showWindowTitle = showWindowTitle;
 
   if (changed) {
@@ -264,9 +289,237 @@ void TaskbarWidget::activateTaskModel(const TaskModel& task) {
   }
 }
 
+void TaskbarWidget::closeTaskModel(const TaskModel& task) {
+  if (task.firstHandle != nullptr) {
+    m_platform.closeToplevel(task.firstHandle);
+    return;
+  }
+  if (compositors::isKde() && (!task.title.empty() || !task.appId.empty() || !task.workspaceWindowId.empty())) {
+    ToplevelInfo info{};
+    info.title = task.title;
+    info.appId = task.appId;
+    info.identifier = task.workspaceWindowId;
+    m_platform.closeToplevelInfo(info);
+  }
+}
+
+std::vector<std::string> TaskbarWidget::pinnedConfigIds() const {
+  if (m_widgetName.empty()) {
+    return {};
+  }
+  const auto it = m_configService.config().widgets.find(m_widgetName);
+  if (it == m_configService.config().widgets.end()) {
+    return {};
+  }
+  return it->second.getStringList("pinned");
+}
+
+bool TaskbarWidget::taskMatchesDesktopEntry(const TaskModel& task, const DesktopEntry& entry) {
+  const std::string entryIdLower = StringUtils::toLower(entry.id);
+  if (!entryIdLower.empty()) {
+    if (task.idLower == entryIdLower || task.appIdLower == entryIdLower || task.desktopEntryId == entry.id) {
+      return true;
+    }
+  }
+  if (!entry.startupWmClassLower.empty()
+      && (task.startupWmClassLower == entry.startupWmClassLower || task.appIdLower == entry.startupWmClassLower)) {
+    return true;
+  }
+  if (!entry.nameLower.empty() && task.nameLower == entry.nameLower) {
+    return true;
+  }
+  if (!task.appId.empty() && shell::dock::pinned_apps::matchesEntry(entry, task.appId)) {
+    return true;
+  }
+  if (!task.idLower.empty() && shell::dock::pinned_apps::matchesEntry(entry, task.idLower)) {
+    return true;
+  }
+  return !task.appIdLower.empty() && app_identity::desktopEntryMatchesLower(entry, task.appIdLower);
+}
+
+std::optional<DesktopEntry> TaskbarWidget::desktopEntryForTask(const TaskModel& task) const {
+  if (!task.desktopEntryId.empty()) {
+    for (const auto& entry : desktopEntries()) {
+      if (entry.id == task.desktopEntryId || entry.idLower == StringUtils::toLower(task.desktopEntryId)) {
+        return entry;
+      }
+    }
+    for (const auto& entry : shell::dock::pinned_apps::resolveEntries(pinnedConfigIds())) {
+      if (entry.id == task.desktopEntryId || entry.idLower == StringUtils::toLower(task.desktopEntryId)) {
+        return entry;
+      }
+    }
+  }
+  for (const auto& entry : desktopEntries()) {
+    if (taskMatchesDesktopEntry(task, entry)) {
+      return entry;
+    }
+  }
+  return std::nullopt;
+}
+
+void TaskbarWidget::setEntryPinned(const DesktopEntry& entry, bool pinned) {
+  if (m_widgetName.empty() || entry.id.empty()) {
+    return;
+  }
+  std::vector<std::string> pinnedList = pinnedConfigIds();
+  if (pinned) {
+    if (shell::dock::pinned_apps::containsEntry(pinnedList, entry)) {
+      return;
+    }
+    pinnedList.push_back(entry.id);
+  } else {
+    shell::dock::pinned_apps::removeEntry(pinnedList, entry);
+  }
+  (void)m_configService.setOverride({"widget", m_widgetName, "pinned"}, std::move(pinnedList));
+}
+
+void TaskbarWidget::launchDesktopEntry(const TaskModel& task) {
+  auto entry = desktopEntryForTask(task);
+  if (!entry.has_value() || entry->exec.empty()) {
+    return;
+  }
+  auto& platform = m_platform;
+  auto& configService = m_configService;
+  wl_output* const launchOutput = m_output;
+  DeferredCall::callLater([&platform, &configService, entry = std::move(*entry), launchOutput]() mutable {
+    std::string token;
+    if (platform.hasXdgActivation()) {
+      token = platform.requestActivationToken(nullptr);
+    }
+    platform.prepareAppLaunchOnOutput(launchOutput);
+    (void)desktop_entry_launch::launchEntry(
+        entry,
+        desktop_entry_launch::LaunchOptions{
+            .activationToken = std::move(token),
+            .runAsSystemdService = configService.config().shell.launchAppsAsSystemdServices,
+            .customCommand = configService.config().shell.launchAppsCustomCommand,
+        }
+    );
+  });
+}
+
+void TaskbarWidget::activateOrLaunchPinned(const TaskModel& task) {
+  auto windows = m_platform.windowsForApp(task.idLower, task.startupWmClassLower, toplevelOutputFilter());
+  if (windows.empty() && !task.appIdLower.empty() && task.appIdLower != task.idLower) {
+    windows = m_platform.windowsForApp(task.appIdLower, task.startupWmClassLower, toplevelOutputFilter());
+  }
+  if (windows.empty()) {
+    launchDesktopEntry(task);
+    return;
+  }
+  if (windows.size() == 1) {
+    m_platform.activateToplevelInfo(windows[0]);
+    return;
+  }
+
+  const std::string cycleKey = !task.desktopEntryId.empty() ? task.desktopEntryId : task.idLower;
+  std::size_t& cursor = m_groupedAppCycleCursor[cycleKey];
+  if (cursor >= windows.size()) {
+    cursor = 0;
+  }
+  m_platform.activateToplevelInfo(windows[cursor]);
+  cursor = (cursor + 1) % windows.size();
+}
+
+void TaskbarWidget::applyPinnedMerge(std::vector<TaskModel>& tasks) {
+  const auto pinnedIds = pinnedConfigIds();
+  if (pinnedIds.empty()) {
+    return;
+  }
+
+  const auto pinnedEntries = shell::dock::pinned_apps::resolveEntries(pinnedIds);
+  if (pinnedEntries.empty()) {
+    return;
+  }
+
+  std::vector<bool> consumed(tasks.size(), false);
+  std::vector<TaskModel> merged;
+  merged.reserve(pinnedEntries.size() + tasks.size());
+
+  for (const auto& entry : pinnedEntries) {
+    std::vector<std::size_t> matching;
+    matching.reserve(tasks.size());
+    for (std::size_t i = 0; i < tasks.size(); ++i) {
+      if (!consumed[i] && taskMatchesDesktopEntry(tasks[i], entry)) {
+        matching.push_back(i);
+      }
+    }
+
+    TaskModel tile{};
+    tile.pinned = true;
+    tile.desktopEntryId = entry.id;
+    tile.idLower = !entry.idLower.empty() ? entry.idLower : StringUtils::toLower(entry.id);
+    tile.startupWmClassLower = entry.startupWmClassLower;
+    tile.nameLower = entry.nameLower;
+    tile.appId = entry.id;
+    tile.appIdLower = tile.idLower;
+    tile.iconPath = resolveIconPath(entry.id, entry.icon);
+    tile.title = entry.name;
+
+    if (matching.empty()) {
+      tile.running = false;
+      tile.active = false;
+      tile.firstHandle = nullptr;
+      tile.handleKey = 0;
+      tile.instanceCount = 0;
+      merged.push_back(std::move(tile));
+      continue;
+    }
+
+    std::size_t rep = matching.front();
+    for (const std::size_t index : matching) {
+      if (tasks[index].active) {
+        rep = index;
+        break;
+      }
+    }
+
+    tile = tasks[rep];
+    tile.pinned = true;
+    tile.running = true;
+    tile.desktopEntryId = entry.id;
+    tile.instanceCount = matching.size();
+    if (tile.idLower.empty()) {
+      tile.idLower = entry.idLower;
+    }
+    if (tile.startupWmClassLower.empty()) {
+      tile.startupWmClassLower = entry.startupWmClassLower;
+    }
+    if (tile.iconPath.empty()) {
+      tile.iconPath = resolveIconPath(entry.id, entry.icon);
+    }
+    merged.push_back(std::move(tile));
+    for (const std::size_t index : matching) {
+      consumed[index] = true;
+    }
+  }
+
+  for (std::size_t i = 0; i < tasks.size(); ++i) {
+    if (!consumed[i]) {
+      merged.push_back(std::move(tasks[i]));
+    }
+  }
+  tasks = std::move(merged);
+}
+
+bool TaskbarWidget::reservesMiddleClick(float sceneX, float sceneY) const noexcept {
+  Node* hit = Node::hitTest(root(), sceneX, sceneY);
+  while (hit != nullptr) {
+    if (auto* area = dynamic_cast<InputArea*>(hit); area != nullptr && area->acceptsButton(BTN_MIDDLE)) {
+      return true;
+    }
+    hit = hit->parent();
+  }
+  return false;
+}
+
 void TaskbarWidget::create() {
   auto container = std::make_unique<InputArea>();
   container->setOnAxisHandler([this](const InputArea::PointerData& data) {
+    if (!m_enableScroll) {
+      return false;
+    }
     if (data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL && data.axis != WL_POINTER_AXIS_HORIZONTAL_SCROLL) {
       return false;
     }
@@ -429,7 +682,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
   const float tileWidthWithTitle = tileSize + (showWindowTitle ? windowTitleWidth + windowTitleGap : 0.0f);
 
   const auto workspaceAxisHandler = [this](const InputArea::PointerData& data) -> bool {
-    if (!m_groupByWorkspace) {
+    if (!m_enableScroll || !m_groupByWorkspace) {
       return false;
     }
     if (data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL && data.axis != WL_POINTER_AXIS_HORIZONTAL_SCROLL) {
@@ -501,8 +754,13 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
                             std::string cycleKey = {}, std::size_t badgeCount = 1) {
     auto area = std::make_unique<InputArea>();
     area->setFrameSize(tileWidthWithTitle, tileSize);
-    area->setOpacity(task.active ? m_activeOpacity : m_inactiveOpacity);
-    area->setAcceptedButtons(InputArea::buttonMask({BTN_LEFT, BTN_RIGHT}));
+    float tileOpacity = task.active ? m_activeOpacity : m_inactiveOpacity;
+    // Pinned-but-not-running tiles are launchers, dim them so they don't read as open apps.
+    if (task.pinned && !task.running) {
+      tileOpacity *= m_pinnedOpacity;
+    }
+    area->setOpacity(tileOpacity);
+    area->setAcceptedButtons(InputArea::buttonMask({BTN_LEFT, BTN_RIGHT, BTN_MIDDLE}));
     area->setOnAxisHandler(workspaceAxisHandler);
 
     const WorkspaceModel* taskWorkspace = nullptr;
@@ -522,11 +780,40 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
         || !task.workspaceWindowId.empty()
         || (compositors::isKde() && (!task.title.empty() || !task.appId.empty()))
         || clickWorkspace.has_value()
-        || !cycleCandidates.empty()) {
+        || !cycleCandidates.empty()
+        || task.pinned) {
       auto* areaPtr = area.get();
       area->setOnClick([this, task, areaPtr, handle = task.firstHandle, windowId = task.workspaceWindowId,
                         clickWorkspace, taskWsHost, cycleCandidates = std::move(cycleCandidates),
                         cycleKey = std::move(cycleKey)](const InputArea::PointerData& data) {
+        if (task.pinned) {
+          if (data.button == BTN_MIDDLE) {
+            if (task.running) {
+              closeTaskModel(task);
+            }
+            return;
+          }
+          if (data.button == BTN_LEFT) {
+            activateOrLaunchPinned(task);
+            return;
+          }
+          if (data.button == BTN_RIGHT && areaPtr != nullptr) {
+            openTaskContextMenu(task, *areaPtr);
+          }
+          return;
+        }
+        if (data.button == BTN_MIDDLE) {
+          if (!cycleCandidates.empty()) {
+            for (const auto& candidate : cycleCandidates) {
+              if (candidate.active) {
+                closeTaskModel(candidate);
+                return;
+              }
+            }
+          }
+          closeTaskModel(task);
+          return;
+        }
         if (data.button == BTN_LEFT) {
           if (!cycleCandidates.empty()) {
             std::size_t& cursor = m_groupedAppCycleCursor[cycleKey];
@@ -555,7 +842,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
           }
           return;
         }
-        if (data.button == BTN_RIGHT && areaPtr != nullptr && handle != nullptr) {
+        if (data.button == BTN_RIGHT && areaPtr != nullptr && (handle != nullptr || compositors::isKde())) {
           openTaskContextMenu(task, *areaPtr);
         }
       });
@@ -667,6 +954,8 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
     }
     if (!task.title.empty()) {
       area->setTooltip(task.title);
+    } else {
+      area->clearTooltip();
     }
     attachHover(*area, tileWidthWithTitle, tileSize);
     return area;
@@ -761,6 +1050,143 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       return badge;
     };
 
+    auto createWorkspaceWindowSummary = [&](const WorkspaceModel& ws, const std::vector<const TaskModel*>& tasks) {
+      const bool anyActive =
+          std::ranges::any_of(tasks, [](const TaskModel* task) { return task != nullptr && task->active; });
+      const float summaryOpacity = anyActive ? m_activeOpacity : m_inactiveOpacity;
+
+      auto area = std::make_unique<InputArea>();
+      area->setOpacity(summaryOpacity);
+      area->setAcceptedButtons(InputArea::buttonMask(BTN_LEFT));
+      area->setOnAxisHandler(workspaceAxisHandler);
+      auto wsCopy = ws.workspace;
+      wl_output* const wsHost = workspaceHostOutput(ws);
+      area->setOnClick([this, wsCopy, wsHost](const InputArea::PointerData& data) {
+        if (data.button == BTN_LEFT) {
+          m_platform.activateWorkspace(wsHost, wsCopy);
+        }
+      });
+
+      if (m_workspaceGroupContent == WorkspaceGroupContent::Count) {
+        const std::string countText = std::to_string(tasks.size());
+        const float countFontSize = std::round(Style::fontSizeCaption * m_contentScale);
+        auto content = ui::flex(
+            FlexDirection::Horizontal,
+            {
+                .align = FlexAlign::Center,
+                .justify = FlexJustify::Center,
+                .width = tileSize,
+                .height = tileSize,
+            }
+        );
+        auto label = ui::label({
+            .text = countText,
+            .fontSize = countFontSize,
+            .fontWeight = fontWeight,
+            .fontFamily = fontFamily,
+            .color = colorSpecFromRole(ColorRole::OnSurface),
+        });
+        label->measure(renderer);
+        content->addChild(std::move(label));
+        area->setFrameSize(tileSize, tileSize);
+        area->addChild(std::move(content));
+        attachHover(*area, tileSize, tileSize);
+        return area;
+      }
+
+      // Dots: one per window along the bar main axis. Cap visible dots and show +N for the rest.
+      constexpr std::size_t kMaxVisibleDots = 5;
+      std::vector<const TaskModel*> visibleDots;
+      visibleDots.reserve(std::min(tasks.size(), kMaxVisibleDots));
+      const std::size_t overflow = tasks.size() > kMaxVisibleDots ? tasks.size() - kMaxVisibleDots : 0;
+      if (overflow == 0) {
+        visibleDots = tasks;
+      } else {
+        const TaskModel* activeTask = nullptr;
+        for (const TaskModel* task : tasks) {
+          if (task != nullptr && task->active) {
+            activeTask = task;
+            break;
+          }
+        }
+        if (activeTask != nullptr) {
+          visibleDots.push_back(activeTask);
+        }
+        for (const TaskModel* task : tasks) {
+          if (visibleDots.size() >= kMaxVisibleDots) {
+            break;
+          }
+          if (task == activeTask) {
+            continue;
+          }
+          visibleDots.push_back(task);
+        }
+      }
+
+      const float dotSize = std::round(std::max(4.0f, Style::baseGlyphSize * 0.28f * m_contentScale));
+      const float dotGap = std::round(std::max(2.0f, Style::spaceXs * 0.5f * m_contentScale));
+      const float overflowFontSize = std::round(Style::fontSizeCaption * 0.85f * m_contentScale);
+      float overflowLabelWidth = 0.0f;
+      float overflowLabelHeight = 0.0f;
+      std::string overflowText;
+      if (overflow > 0) {
+        overflowText = "+" + std::to_string(overflow);
+        const TextMetrics tm = renderer.measureText(overflowText, overflowFontSize, fontWeight);
+        overflowLabelWidth = std::max(tm.right - tm.left, tm.inkRight - tm.inkLeft);
+        overflowLabelHeight = tm.bottom - tm.top;
+      }
+
+      const std::size_t visibleCount = visibleDots.size();
+      const float dotsRun = visibleCount == 0
+          ? 0.0f
+          : (dotSize * static_cast<float>(visibleCount)
+             + dotGap * static_cast<float>(visibleCount > 1 ? visibleCount - 1 : 0));
+      const float overflowRun = overflow > 0 ? (dotGap + overflowLabelWidth) : 0.0f;
+      const float run = dotsRun + overflowRun;
+      const float mainExtent = std::max(tileSize, run + Style::spaceXs * m_contentScale);
+      area->setFrameSize(m_vertical ? tileSize : mainExtent, m_vertical ? mainExtent : tileSize);
+
+      auto content = ui::flex(
+          m_vertical ? FlexDirection::Vertical : FlexDirection::Horizontal,
+          {
+              .align = FlexAlign::Center,
+              .justify = FlexJustify::Center,
+              .gap = dotGap,
+              .width = m_vertical ? tileSize : mainExtent,
+              .height = m_vertical ? mainExtent : tileSize,
+          }
+      );
+      for (const TaskModel* task : visibleDots) {
+        const bool highlight = task != nullptr && task->active && m_showActiveIndicator;
+        const ColorSpec fill = highlight ? colorSpecFromRole(ColorRole::Primary, 0.95f)
+                                         : colorSpecFromRole(ColorRole::OnSurface, anyActive ? 0.55f : 0.35f);
+        content->addChild(
+            ui::box({
+                .fill = fill,
+                .radius = resolvedBarCapsuleRadius(dotSize, dotSize),
+                .width = dotSize,
+                .height = dotSize,
+            })
+        );
+      }
+      if (overflow > 0) {
+        auto overflowLabel = ui::label({
+            .text = overflowText,
+            .fontSize = overflowFontSize,
+            .fontWeight = fontWeight,
+            .fontFamily = fontFamily,
+            .color = colorSpecFromRole(ColorRole::OnSurface, anyActive ? 0.7f : 0.5f),
+            .width = overflowLabelWidth,
+            .height = std::max(dotSize, overflowLabelHeight),
+        });
+        overflowLabel->measure(renderer);
+        content->addChild(std::move(overflowLabel));
+      }
+      area->addChild(std::move(content));
+      attachHover(*area, m_vertical ? tileSize : mainExtent, m_vertical ? mainExtent : tileSize);
+      return area;
+    };
+
     std::unordered_set<std::string> cycleKeysThisFrame;
     for (const auto& ws : m_workspaces) {
       std::vector<const TaskModel*> tasks;
@@ -783,7 +1209,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       std::unordered_map<std::uintptr_t, std::vector<TaskModel>> cycleCandidatesByHandle;
       std::unordered_map<std::uintptr_t, std::string> cycleKeyByHandle;
       std::unordered_map<std::uintptr_t, std::size_t> badgeCountByHandle;
-      if (m_groupSingleIconPerApp && !tasks.empty()) {
+      if (m_workspaceGroupContent == WorkspaceGroupContent::Icons && m_groupSingleIconPerApp && !tasks.empty()) {
         struct GroupedTaskItem {
           const TaskModel* representative = nullptr;
           std::string cycleKey;
@@ -836,7 +1262,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
         }
       }
 
-      const bool emptyWorkspace = renderedTasks.empty();
+      const bool emptyWorkspace = tasks.empty();
       const auto surfaceFill = colorSpecFromRole(ColorRole::SurfaceVariant, ws.workspace.active ? 0.52f : 0.18f);
       const auto borderColor = colorSpecFromRole(ColorRole::Primary, ws.workspace.active ? 0.65f : 0.16f);
 
@@ -925,7 +1351,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
             group->setMinHeight(groupPadTop + tileSize + groupPadBottom);
           }
         }
-      } else {
+      } else if (m_workspaceGroupContent == WorkspaceGroupContent::Icons) {
         for (const auto* task : renderedTasks) {
           const auto cycleIt = cycleCandidatesByHandle.find(task->handleKey);
           const auto cycleKeyIt = cycleKeyByHandle.find(task->handleKey);
@@ -936,6 +1362,8 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
               cycleKeyIt != cycleKeyByHandle.end() ? cycleKeyIt->second : std::string{}, badgeCount
           ));
         }
+      } else {
+        group->addChild(createWorkspaceWindowSummary(ws, tasks));
       }
 
       if (externalBadge) {
@@ -962,10 +1390,17 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
   }
   m_taskStrip->setPadding(0.0f, 0.0f, 0.0f, 0.0f);
   m_taskStrip->setGap(tileGap);
-  m_groupedAppCycleCursor.clear();
+  std::unordered_set<std::string> pinnedCycleKeysThisFrame;
   for (const auto& task : m_tasks) {
-    m_taskStrip->addChild(createTaskTile(task));
+    if (task.pinned && task.running && task.instanceCount > 1) {
+      pinnedCycleKeysThisFrame.insert(!task.desktopEntryId.empty() ? task.desktopEntryId : task.idLower);
+    }
+    const std::size_t badgeCount = task.pinned ? std::max<std::size_t>(1, task.instanceCount) : 1;
+    m_taskStrip->addChild(createTaskTile(task, {}, {}, badgeCount));
   }
+  std::erase_if(m_groupedAppCycleCursor, [&](const auto& item) {
+    return !pinnedCycleKeysThisFrame.contains(item.first);
+  });
 }
 
 void TaskbarWidget::updateModels() {
@@ -1130,9 +1565,26 @@ void TaskbarWidget::updateModels() {
     }
   }
 
+  // Windows with no app id still get a task keyed by toplevel handle / window id.
+  for (const auto& window : m_platform.windowsWithoutAppId(topFilter)) {
+    const auto handleKey = taskHandleKey(window);
+    if (handleKey == 0 || !processedHandles.insert(handleKey).second) {
+      continue;
+    }
+
+    TaskModel task{};
+    task.handleKey = handleKey;
+    task.order = window.order;
+    task.title = window.title;
+    task.active = activeHandle != nullptr && activeHandle == window.handle;
+    task.firstHandle = window.handle;
+    task.iconPath = resolveIconPath({}, {});
+    nextTasks.push_back(std::move(task));
+  }
+
   if (compositors::isKde() && nextTasks.empty()) {
     for (const auto& assignment : workspaceAssignments) {
-      if (assignment.appId.empty()) {
+      if (assignment.appId.empty() && assignment.windowId.empty() && assignment.title.empty()) {
         continue;
       }
       const std::string idLower = toLower(assignment.appId);
@@ -1301,9 +1753,20 @@ void TaskbarWidget::updateModels() {
               && toLower(assignment.appId) != task.idLower
               && toLower(assignment.appId) != task.startupWmClassLower
               && toLower(assignment.appId) != task.nameLower) {
-            continue;
+            if (!assignment.appId.empty()
+                || !isOrphanAppIdentity(
+                    task.appId, task.appIdLower, task.idLower, task.startupWmClassLower, task.nameLower
+                )) {
+              continue;
+            }
           }
           if (!assigned.title.empty() && !assignment.title.empty() && assignment.title != assigned.title) {
+            continue;
+          }
+          if (assignment.appId.empty()
+              && !assignment.title.empty()
+              && !task.title.empty()
+              && assignment.title != task.title) {
             continue;
           }
           task.workspaceOrder = assignmentIndex;
@@ -1313,14 +1776,7 @@ void TaskbarWidget::updateModels() {
       }
 
       auto syntheticTaskKey = [](const WorkspaceWindowAssignment& assignment, std::size_t index) {
-        const std::string seed = assignment.windowId.empty()
-            ? assignment.workspaceKey + "\n" + assignment.appId + "\n" + assignment.title + "\n" + std::to_string(index)
-            : assignment.windowId;
-        std::uintptr_t value = static_cast<std::uintptr_t>(std::hash<std::string>{}(seed));
-        if (value == 0) {
-          value = static_cast<std::uintptr_t>(index + 1);
-        }
-        return value;
+        return syntheticAssignmentHandleKey(assignment, index);
       };
 
       if (m_groupByWorkspace) {
@@ -1330,7 +1786,10 @@ void TaskbarWidget::updateModels() {
           }
 
           const auto& assignment = workspaceAssignments[i];
-          if (assignment.workspaceKey.empty() || assignment.appId.empty()) {
+          if (assignment.workspaceKey.empty()) {
+            continue;
+          }
+          if (assignment.appId.empty() && assignment.windowId.empty()) {
             continue;
           }
 
@@ -1393,6 +1852,14 @@ void TaskbarWidget::updateModels() {
 
       std::vector<bool> used(workspaceAssignments.size(), false);
       auto matchesApp = [&](const TaskModel& task, const WorkspaceWindowAssignment& assignment) {
+        if (assignment.appId.empty()) {
+          return isOrphanAppIdentity(
+              task.appId, task.appIdLower, task.idLower, task.startupWmClassLower, task.nameLower
+          );
+        }
+        if (isOrphanAppIdentity(task.appId, task.appIdLower, task.idLower, task.startupWmClassLower, task.nameLower)) {
+          return false;
+        }
         const std::string assignmentAppLower = toLower(assignment.appId);
         return assignmentAppLower == task.appIdLower
             || assignmentAppLower == task.idLower
@@ -1534,10 +2001,18 @@ void TaskbarWidget::updateModels() {
           }
           const auto& assignment = workspaceAssignments[i];
           const std::string assignmentAppLower = toLower(assignment.appId);
-          if (assignmentAppLower != task.appIdLower
+          if (assignment.appId.empty()) {
+            if (!isOrphanAppIdentity(
+                    task.appId, task.appIdLower, task.idLower, task.startupWmClassLower, task.nameLower
+                )) {
+              continue;
+            }
+          } else if (
+              assignmentAppLower != task.appIdLower
               && assignmentAppLower != task.idLower
               && assignmentAppLower != task.startupWmClassLower
-              && assignmentAppLower != task.nameLower) {
+              && assignmentAppLower != task.nameLower
+          ) {
             continue;
           }
           if (assignment.workspaceKey != task.workspaceKey) {
@@ -1590,6 +2065,16 @@ void TaskbarWidget::updateModels() {
         const std::string assignmentAppLower = toLower(assignment.appId);
 
         auto appMatches = [&](const TaskModel& task) {
+          if (assignment.appId.empty()) {
+            return isOrphanAppIdentity(
+                task.appId, task.appIdLower, task.idLower, task.startupWmClassLower, task.nameLower
+            );
+          }
+          if (isOrphanAppIdentity(
+                  task.appId, task.appIdLower, task.idLower, task.startupWmClassLower, task.nameLower
+              )) {
+            return false;
+          }
           return assignmentAppLower == task.appIdLower
               || assignmentAppLower == task.idLower
               || assignmentAppLower == task.startupWmClassLower
@@ -1639,17 +2124,6 @@ void TaskbarWidget::updateModels() {
     }
 
     if (compositors::isHyprland()) {
-      auto syntheticTaskHandleKey = [](const WorkspaceWindowAssignment& assignment, std::size_t index) {
-        const std::string seed = assignment.windowId.empty()
-            ? assignment.workspaceKey + "\n" + assignment.appId + "\n" + assignment.title + "\n" + std::to_string(index)
-            : assignment.windowId;
-        std::uintptr_t value = static_cast<std::uintptr_t>(std::hash<std::string>{}(seed));
-        if (value == 0) {
-          value = static_cast<std::uintptr_t>(index + 1);
-        }
-        return value;
-      };
-
       std::unordered_set<std::string> representedWindowIds;
       representedWindowIds.reserve(nextTasks.size());
       for (const auto& task : nextTasks) {
@@ -1673,7 +2147,7 @@ void TaskbarWidget::updateModels() {
         }
 
         TaskModel task{};
-        task.handleKey = syntheticTaskHandleKey(assignment, i);
+        task.handleKey = syntheticAssignmentHandleKey(assignment, i);
         task.order = static_cast<std::uint64_t>(std::numeric_limits<std::int32_t>::max()) + i;
         task.appId = assignment.appId;
         task.idLower = toLower(task.appId);
@@ -1689,6 +2163,46 @@ void TaskbarWidget::updateModels() {
         if (!assignment.windowId.empty()) {
           representedWindowIds.insert(assignment.windowId);
         }
+      }
+    }
+
+    // Compositor-agnostic: workspace windows with no app id become their own tasks.
+    {
+      std::unordered_set<std::string> representedWindowIds;
+      representedWindowIds.reserve(nextTasks.size());
+      std::unordered_set<std::uintptr_t> representedHandles;
+      representedHandles.reserve(nextTasks.size());
+      for (const auto& task : nextTasks) {
+        if (!task.workspaceWindowId.empty()) {
+          representedWindowIds.insert(task.workspaceWindowId);
+        }
+        representedHandles.insert(task.handleKey);
+      }
+
+      for (std::size_t i = 0; i < workspaceAssignments.size(); ++i) {
+        const auto& assignment = workspaceAssignments[i];
+        if (!assignment.appId.empty() || assignment.windowId.empty()) {
+          continue;
+        }
+        if (representedWindowIds.contains(assignment.windowId)) {
+          continue;
+        }
+
+        const std::uintptr_t handleKey = syntheticAssignmentHandleKey(assignment, i);
+        if (!representedHandles.insert(handleKey).second) {
+          continue;
+        }
+
+        TaskModel task{};
+        task.handleKey = handleKey;
+        task.order = static_cast<std::uint64_t>(std::numeric_limits<std::int32_t>::max()) + i;
+        task.title = assignment.title;
+        task.iconPath = resolveIconPath({}, {});
+        task.workspaceKey = assignment.workspaceKey;
+        task.workspaceWindowId = assignment.windowId;
+        task.workspaceOrder = i;
+        nextTasks.push_back(std::move(task));
+        representedWindowIds.insert(assignment.windowId);
       }
     }
   }
@@ -1814,6 +2328,7 @@ void TaskbarWidget::updateModels() {
   }
 
   if (m_groupByWorkspace && m_hideEmptyWorkspaces && !nextWorkspaces.empty()) {
+    m_allWorkspaces = nextWorkspaces;
     const auto workspaceHasTask = [](const WorkspaceModel& wsm, const std::vector<TaskModel>& tasks) {
       for (const auto& t : tasks) {
         if (taskInWorkspaceGroup(t, wsm)) {
@@ -1825,10 +2340,13 @@ void TaskbarWidget::updateModels() {
     std::erase_if(nextWorkspaces, [&](const WorkspaceModel& wsm) {
       return !wsm.workspace.active && !workspaceHasTask(wsm, nextTasks);
     });
+  } else {
+    m_allWorkspaces.clear();
   }
 
   if (!m_groupByWorkspace) {
     nextWorkspaces.clear();
+    m_allWorkspaces.clear();
     std::ranges::stable_sort(nextTasks, [](const TaskModel& a, const TaskModel& b) {
       if (a.workspaceOrder != b.workspaceOrder) {
         return a.workspaceOrder < b.workspaceOrder;
@@ -1838,6 +2356,7 @@ void TaskbarWidget::updateModels() {
       }
       return a.handleKey < b.handleKey;
     });
+    applyPinnedMerge(nextTasks);
   }
 
   if (modelsEqual(nextTasks, nextWorkspaces)) {
@@ -1858,7 +2377,7 @@ bool TaskbarWidget::onPointerEvent(const PointerEvent& event) {
     return false;
   }
   const bool consumed = m_contextMenuPopup->onPointerEvent(event);
-  if (!consumed && event.type == PointerEvent::Type::Button && event.state == 1) {
+  if (!consumed && event.type == PointerEvent::Type::Button && event.pressed) {
     m_contextMenuPopup->close();
     return true;
   }
@@ -1879,36 +2398,94 @@ void TaskbarWidget::openTaskContextMenu(const TaskModel& task, InputArea& area) 
 
   const auto windows = m_platform.windowsForApp(task.idLower, task.startupWmClassLower, toplevelOutputFilter());
   m_contextMenuHandles.clear();
-  m_contextMenuHandles.reserve(windows.size());
-  for (const auto& window : windows) {
-    if (window.handle != nullptr) {
-      m_contextMenuHandles.push_back(window.handle);
+  m_contextMenuKdeWindows.clear();
+  m_contextMenuPrimaryHandle = task.firstHandle;
+  m_contextMenuKdePrimary = {};
+
+  const bool kde = compositors::isKde();
+  if (kde) {
+    m_contextMenuKdeWindows = windows;
+    m_contextMenuKdePrimary = ToplevelInfo{
+        .title = task.title,
+        .appId = task.appId,
+        .identifier = task.workspaceWindowId,
+        .handle = task.firstHandle,
+    };
+    for (const auto& window : m_contextMenuKdeWindows) {
+      if (!task.workspaceWindowId.empty() && window.identifier == task.workspaceWindowId) {
+        m_contextMenuKdePrimary = window;
+        break;
+      }
+      if (task.firstHandle != nullptr && window.handle == task.firstHandle) {
+        m_contextMenuKdePrimary = window;
+        break;
+      }
+    }
+  } else {
+    m_contextMenuHandles.reserve(windows.size());
+    for (const auto& window : windows) {
+      if (window.handle != nullptr) {
+        m_contextMenuHandles.push_back(window.handle);
+      }
     }
   }
-  m_contextMenuPrimaryHandle = task.firstHandle;
 
   std::vector<DesktopAction> entryActions;
   std::string entryAppName = task.idLower.empty() ? task.appId : task.idLower;
   std::string entryWorkingDir;
   bool entryTerminal = false;
-  const auto& entriesIndex = desktopEntries();
-  for (const auto& entry : entriesIndex) {
-    if (entry.idLower == task.idLower
-        || entry.idLower == task.appIdLower
-        || entry.startupWmClassLower == task.idLower
-        || entry.startupWmClassLower == task.startupWmClassLower
-        || entry.nameLower == task.nameLower) {
-      entryActions = entry.actions;
-      entryAppName = entry.id.empty() ? entry.name : entry.id;
-      entryWorkingDir = entry.workingDir;
-      entryTerminal = entry.terminal;
-      break;
+  std::optional<DesktopEntry> menuEntry = desktopEntryForTask(task);
+  if (menuEntry.has_value()) {
+    entryActions = menuEntry->actions;
+    entryAppName = menuEntry->id.empty() ? menuEntry->name : menuEntry->id;
+    entryWorkingDir = menuEntry->workingDir;
+    entryTerminal = menuEntry->terminal;
+  } else {
+    const auto& entriesIndex = desktopEntries();
+    for (const auto& entry : entriesIndex) {
+      if (entry.idLower == task.idLower
+          || entry.idLower == task.appIdLower
+          || entry.startupWmClassLower == task.idLower
+          || entry.startupWmClassLower == task.startupWmClassLower
+          || entry.nameLower == task.nameLower) {
+        entryActions = entry.actions;
+        entryAppName = entry.id.empty() ? entry.name : entry.id;
+        entryWorkingDir = entry.workingDir;
+        entryTerminal = entry.terminal;
+        menuEntry = entry;
+        break;
+      }
     }
   }
 
-  // IDs 0..N-1 => desktop actions, -1 => close single, -2 => close all.
+  const auto kdeCanClose = [](const ToplevelInfo& window) {
+    return !window.identifier.empty() || !window.title.empty() || !window.appId.empty();
+  };
+  const bool showClose = task.running
+      && (kde ? (kdeCanClose(m_contextMenuKdePrimary) || !m_contextMenuKdeWindows.empty())
+              : !m_contextMenuHandles.empty());
+  const bool closePrimaryEnabled = kde ? kdeCanClose(m_contextMenuKdePrimary) : m_contextMenuPrimaryHandle != nullptr;
+  const std::size_t closeAllCount = kde
+      ? (m_contextMenuKdeWindows.empty() ? (closePrimaryEnabled ? 1U : 0U) : m_contextMenuKdeWindows.size())
+      : m_contextMenuHandles.size();
+
+  const bool pinAvailable = !m_groupByWorkspace && menuEntry.has_value() && !menuEntry->id.empty();
+  const bool isPinned = pinAvailable && shell::dock::pinned_apps::containsEntry(pinnedConfigIds(), *menuEntry);
+
+  // IDs 0..N-1 => desktop actions, -1 => close single, -2 => close all, -4 => pin toggle.
   std::vector<ContextMenuControlEntry> entries;
-  entries.reserve(entryActions.size() + 3);
+  entries.reserve(entryActions.size() + 5);
+  if (pinAvailable) {
+    entries.push_back(
+        ContextMenuControlEntry{
+            .id = -4,
+            .label = i18n::tr(isPinned ? "tray.menu.unpin" : "tray.menu.pin"),
+            .enabled = true,
+            .separator = false,
+            .hasSubmenu = false,
+        }
+    );
+  }
   for (std::int32_t i = 0; i < static_cast<std::int32_t>(entryActions.size()); ++i) {
     entries.push_back(
         ContextMenuControlEntry{
@@ -1920,7 +2497,7 @@ void TaskbarWidget::openTaskContextMenu(const TaskModel& task, InputArea& area) 
         }
     );
   }
-  if (!m_contextMenuHandles.empty()) {
+  if (showClose) {
     if (!entries.empty()) {
       entries.push_back(
           ContextMenuControlEntry{.id = -3, .label = {}, .enabled = false, .separator = true, .hasSubmenu = false}
@@ -1930,12 +2507,12 @@ void TaskbarWidget::openTaskContextMenu(const TaskModel& task, InputArea& area) 
         ContextMenuControlEntry{
             .id = -1,
             .label = i18n::tr("dock.actions.close"),
-            .enabled = m_contextMenuPrimaryHandle != nullptr,
+            .enabled = closePrimaryEnabled,
             .separator = false,
             .hasSubmenu = false,
         }
     );
-    if (m_contextMenuHandles.size() > 1) {
+    if (closeAllCount > 1) {
       entries.push_back(
           ContextMenuControlEntry{
               .id = -2,
@@ -1955,9 +2532,15 @@ void TaskbarWidget::openTaskContextMenu(const TaskModel& task, InputArea& area) 
   if (m_contextMenuPopup == nullptr) {
     m_contextMenuPopup = std::make_unique<ContextMenuPopup>(m_platform.wayland(), *renderContext);
   }
-  m_contextMenuPopup->setShadowConfig(m_shadowConfig);
-  m_contextMenuPopup->setOnActivate([this, entryActions, entryAppName, entryWorkingDir,
-                                     entryTerminal](const ContextMenuControlEntry& entry) {
+  m_contextMenuPopup->setShadowConfig(m_configService.config().shell.shadow);
+  m_contextMenuPopup->setOnActivate([this, entryActions, entryAppName, entryWorkingDir, entryTerminal, menuEntry,
+                                     isPinned](const ContextMenuControlEntry& entry) {
+    if (entry.id == -4) {
+      if (menuEntry.has_value()) {
+        setEntryPinned(*menuEntry, !isPinned);
+      }
+      return;
+    }
     if (entry.id >= 0) {
       const auto idx = static_cast<std::size_t>(entry.id);
       if (idx < entryActions.size()) {
@@ -1983,15 +2566,27 @@ void TaskbarWidget::openTaskContextMenu(const TaskModel& task, InputArea& area) 
       return;
     }
     if (entry.id == -1) {
-      if (m_contextMenuPrimaryHandle != nullptr) {
+      if (compositors::isKde()) {
+        m_platform.closeToplevelInfo(m_contextMenuKdePrimary);
+      } else if (m_contextMenuPrimaryHandle != nullptr) {
         m_platform.closeToplevel(m_contextMenuPrimaryHandle);
       }
       return;
     }
     if (entry.id == -2) {
-      for (auto* handle : m_contextMenuHandles) {
-        if (handle != nullptr) {
-          m_platform.closeToplevel(handle);
+      if (compositors::isKde()) {
+        if (!m_contextMenuKdeWindows.empty()) {
+          for (const auto& window : m_contextMenuKdeWindows) {
+            m_platform.closeToplevelInfo(window);
+          }
+        } else {
+          m_platform.closeToplevelInfo(m_contextMenuKdePrimary);
+        }
+      } else {
+        for (auto* handle : m_contextMenuHandles) {
+          if (handle != nullptr) {
+            m_platform.closeToplevel(handle);
+          }
         }
       }
     }
@@ -2007,7 +2602,6 @@ void TaskbarWidget::openTaskContextMenu(const TaskModel& task, InputArea& area) 
   float anchorH = std::max(1.0f, area.height() - (anchorInset * 2.0f));
 
   constexpr float kTaskMenuWidth = 240.0f;
-  const float menuWidth = kTaskMenuWidth * m_contentScale;
   const std::int32_t gap = std::max(2, static_cast<std::int32_t>(std::lround(Style::spaceMd * m_contentScale)));
 
   std::optional<ContextMenuPopupPlacement> placement;
@@ -2031,17 +2625,35 @@ void TaskbarWidget::openTaskContextMenu(const TaskModel& task, InputArea& area) 
         },
     };
   } else if (m_barPosition == "left") {
-    anchorX = absX + area.width() + (menuWidth * 0.5f) + static_cast<float>(gap);
-    anchorW = 1.0f;
+    // Gravity-based placement instead of a width-derived anchor offset, so the menu can auto-size.
+    placement = ContextMenuPopupPlacement{
+        .anchor = XDG_POSITIONER_ANCHOR_RIGHT,
+        .gravity = XDG_POSITIONER_GRAVITY_RIGHT,
+        .offsetX = gap,
+        .offsetY = 0,
+        .chromeAttachment = popup_chrome::Attachment{
+            .horizontal = popup_chrome::HorizontalAttachment::Left,
+            .vertical = popup_chrome::VerticalAttachment::Center,
+        },
+    };
   } else if (m_barPosition == "right") {
-    anchorX = absX - (menuWidth * 0.5f) - static_cast<float>(gap);
-    anchorW = 1.0f;
+    placement = ContextMenuPopupPlacement{
+        .anchor = XDG_POSITIONER_ANCHOR_LEFT,
+        .gravity = XDG_POSITIONER_GRAVITY_LEFT,
+        .offsetX = -gap,
+        .offsetY = 0,
+        .chromeAttachment = popup_chrome::Attachment{
+            .horizontal = popup_chrome::HorizontalAttachment::Right,
+            .vertical = popup_chrome::VerticalAttachment::Center,
+        },
+    };
   }
 
   m_contextMenuPopup->open(
       ContextMenuPopupRequest{
           .entries = std::move(entries),
-          .menuWidth = menuWidth,
+          .minMenuWidth = kTaskMenuWidth * m_contentScale,
+          .maxMenuWidth = Style::menuAutoMaxWidth * m_contentScale,
           .maxVisible = 12,
           .anchor =
               PopupAnchorRect{
@@ -2090,7 +2702,7 @@ std::string TaskbarWidget::workspaceLabel(const Workspace& workspace, std::size_
     return workspace.id;
   }
   if (!workspace.coordinates.empty()) {
-    return std::to_string(static_cast<std::size_t>(workspace.coordinates.front()) + 1u);
+    return std::to_string(static_cast<std::size_t>(workspace.coordinates.front()) + 1U);
   }
   return std::to_string(index + 1);
 }
@@ -2109,7 +2721,11 @@ bool TaskbarWidget::modelsEqual(
         || tasks[i].workspaceKey != m_tasks[i].workspaceKey
         || tasks[i].order != m_tasks[i].order
         || tasks[i].workspaceOrder != m_tasks[i].workspaceOrder
-        || (m_showWindowTitle && tasks[i].title != m_tasks[i].title)) {
+        || tasks[i].title != m_tasks[i].title
+        || tasks[i].pinned != m_tasks[i].pinned
+        || tasks[i].running != m_tasks[i].running
+        || tasks[i].instanceCount != m_tasks[i].instanceCount
+        || tasks[i].desktopEntryId != m_tasks[i].desktopEntryId) {
       return false;
     }
   }
@@ -2195,11 +2811,16 @@ std::string TaskbarWidget::resolveIconPath(const std::string& appId, const std::
 }
 
 bool TaskbarWidget::activeWorkspaceIndex(std::size_t& index) const {
+  const auto& workspaces = navigationWorkspaces();
+  if (workspaces.empty()) {
+    return false;
+  }
+
   // Try to find the workspace of the globally active task first
   for (const auto& task : m_tasks) {
     if (task.active) {
-      for (std::size_t i = 0; i < m_workspaces.size(); ++i) {
-        if (taskInWorkspaceGroup(task, m_workspaces[i])) {
+      for (std::size_t i = 0; i < workspaces.size(); ++i) {
+        if (taskInWorkspaceGroup(task, workspaces[i])) {
           index = i;
           return true;
         }
@@ -2209,16 +2830,16 @@ bool TaskbarWidget::activeWorkspaceIndex(std::size_t& index) const {
   }
 
   // Fallback to the active workspace on the current output
-  for (std::size_t i = 0; i < m_workspaces.size(); ++i) {
-    if (m_workspaces[i].workspace.active && m_workspaces[i].hostOutput == m_output) {
+  for (std::size_t i = 0; i < workspaces.size(); ++i) {
+    if (workspaces[i].workspace.active && workspaces[i].hostOutput == m_output) {
       index = i;
       return true;
     }
   }
 
   // Fallback to any active workspace
-  for (std::size_t i = 0; i < m_workspaces.size(); ++i) {
-    if (m_workspaces[i].workspace.active) {
+  for (std::size_t i = 0; i < workspaces.size(); ++i) {
+    if (workspaces[i].workspace.active) {
       index = i;
       return true;
     }
@@ -2226,17 +2847,22 @@ bool TaskbarWidget::activeWorkspaceIndex(std::size_t& index) const {
   return false;
 }
 
+const std::vector<TaskbarWidget::WorkspaceModel>& TaskbarWidget::navigationWorkspaces() const noexcept {
+  return (m_hideEmptyWorkspaces && !m_allWorkspaces.empty()) ? m_allWorkspaces : m_workspaces;
+}
+
 void TaskbarWidget::activateAdjacentWorkspace(int direction) {
-  if (!m_groupByWorkspace || m_workspaces.empty() || direction == 0) {
+  const auto& workspaces = navigationWorkspaces();
+  if (!m_groupByWorkspace || workspaces.empty() || direction == 0) {
     return;
   }
 
   std::size_t targetIndex = 0;
   std::size_t current = 0;
   if (!activeWorkspaceIndex(current)) {
-    targetIndex = direction > 0 ? 0 : (m_workspaces.size() - 1);
+    targetIndex = direction > 0 ? 0 : (workspaces.size() - 1);
   } else if (direction > 0) {
-    if (current + 1 >= m_workspaces.size()) {
+    if (current + 1 >= workspaces.size()) {
       return;
     }
     targetIndex = current + 1;
@@ -2247,7 +2873,7 @@ void TaskbarWidget::activateAdjacentWorkspace(int direction) {
     targetIndex = current - 1;
   }
 
-  const auto& targetWs = m_workspaces[targetIndex];
+  const auto& targetWs = workspaces[targetIndex];
   m_platform.activateWorkspace(workspaceHostOutput(targetWs), targetWs.workspace);
 }
 
@@ -2261,17 +2887,31 @@ void TaskbarWidget::activateAdjacentTask(int direction) {
   if (activeTaskIndex >= m_tasks.size()) {
     return;
   }
+
   size_t newIndex = activeTaskIndex;
-  if (direction > 0 && activeTaskIndex + 1 < m_tasks.size()) {
-    ++newIndex;
-  } else if (direction < 0 && activeTaskIndex > 0) {
-    --newIndex;
-  }
-  if (newIndex == activeTaskIndex) {
+  for (size_t tries = 0; tries < m_tasks.size(); ++tries) {
+    if (direction > 0) {
+      if (newIndex + 1 >= m_tasks.size()) {
+        return;
+      }
+      ++newIndex;
+    } else {
+      if (newIndex == 0) {
+        return;
+      }
+      --newIndex;
+    }
+    const auto& candidate = m_tasks[newIndex];
+    if (!candidate.running && candidate.pinned) {
+      continue;
+    }
+    if (candidate.pinned) {
+      activateOrLaunchPinned(candidate);
+    } else {
+      activateTaskModel(candidate);
+    }
     return;
   }
-  const auto& targetTask = m_tasks[newIndex];
-  m_platform.activateToplevel(targetTask.firstHandle);
 }
 
 wl_output* TaskbarWidget::toplevelOutputFilter() const noexcept { return m_showAllOutputs ? nullptr : m_output; }
@@ -2315,7 +2955,7 @@ ColorSpec TaskbarWidget::workspaceFillColor(const Workspace& workspace) const {
     return m_occupiedColor;
   }
   if (workspace.urgent) {
-    return colorSpecFromRole(ColorRole::Error);
+    return m_urgentColor;
   }
   if (workspace.occupied) {
     return m_occupiedColor;
@@ -2329,7 +2969,7 @@ bool TaskbarWidget::isFocusedOutput() const { return m_platform.preferredInterac
 
 ColorSpec TaskbarWidget::workspaceTextColor(const Workspace& workspace) const {
   if (workspace.urgent) {
-    return m_minimal ? colorSpecFromRole(ColorRole::Error) : colorSpecFromRole(ColorRole::OnError);
+    return m_minimal ? m_urgentColor : readableColorForFill(m_urgentColor);
   }
   if (!m_minimal) {
     return readableColorForFill(workspaceFillColor(workspace));

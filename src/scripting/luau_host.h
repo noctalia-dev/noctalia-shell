@@ -105,6 +105,20 @@ public:
   bool callStreamCallback(int callbackRef, const std::string& line, std::chrono::milliseconds budget);
   [[nodiscard]] bool hasStreamCallback(int callbackRef) const;
 
+  // noctalia.httpStream — long-lived streaming HTTP request through the main-thread
+  // HttpClient. Each received line goes to the line callback; the close callback fires
+  // exactly once when the transfer ends (unless the stream was stopped). Streams are
+  // cancelled on host destruction. `streamKey` identifies the stream (the line ref).
+  using HttpStreamEventHandler =
+      std::function<void(std::uint64_t hostId, int streamKey, bool closed, std::string line, bool ok, int status)>;
+  void setHttpStreamEventHandler(HttpStreamEventHandler handler) { m_httpStreamEventHandler = std::move(handler); }
+  // Returns the stream key (> 0) on success, 0 on failure (caller keeps ref ownership on failure).
+  [[nodiscard]] int startHttpStream(HttpRequest request, int lineRef, int closeRef);
+  void stopHttpStream(int streamKey);
+  bool callHttpStreamLineCallback(int streamKey, const std::string& line, std::chrono::milliseconds budget);
+  bool callHttpStreamCloseCallback(int streamKey, bool ok, int status, std::chrono::milliseconds budget);
+  [[nodiscard]] bool hasHttpStream(int streamKey) const;
+
   // Load the plugin's own translations/<lang>.json (over en.json) into a flat dotted-key
   // catalog. Call after setPluginDir().
   void loadTranslations();
@@ -169,7 +183,20 @@ private:
   // offending call instead of OOM-killing the whole process. `ud` is the owning host.
   static void* allocate(void* ud, void* ptr, std::size_t osize, std::size_t nsize);
 
+  // Shared with the main-loop stream lambdas: the HttpClient stream id once known,
+  // and a cancelled flag so a stop that races stream startup still cancels.
+  struct HttpStreamControl {
+    std::atomic<std::uint64_t> clientStreamId{0};
+    std::atomic<bool> cancelled{false};
+  };
+  struct HttpStreamRecord {
+    int lineRef = 0;
+    int closeRef = 0;
+    std::shared_ptr<HttpStreamControl> control;
+  };
+
   void stopAllStreams() noexcept;
+  void stopAllHttpStreams() noexcept;
   bool callGlobalInternal(const char* name, int args, std::chrono::milliseconds budget);
   bool callWithBudget(const char* name, int args, int results, std::chrono::milliseconds budget);
   void beginBudget(std::string_view name, std::chrono::milliseconds budget);
@@ -185,8 +212,15 @@ private:
   std::unordered_set<int> m_stateWatchCallbackRefs;
   StateWatchHandler m_stateWatchHandler;
   std::unordered_set<int> m_streamCallbackRefs;
-  std::vector<std::shared_ptr<std::atomic<bool>>> m_streamCancels;
+  // Active runStream children; `alive` clears on process exit so the slot can be reused.
+  struct StreamRecord {
+    std::shared_ptr<std::atomic<bool>> cancel;
+    std::shared_ptr<std::atomic<bool>> alive;
+  };
+  std::vector<StreamRecord> m_streams;
   StreamLineHandler m_streamLineHandler;
+  std::unordered_map<int, HttpStreamRecord> m_httpStreams; // keyed by stream key (line ref)
+  HttpStreamEventHandler m_httpStreamEventHandler;
   lua_State* m_L = nullptr; // main state, frozen by luaL_sandbox
   lua_State* m_T = nullptr; // sandboxed thread; user code runs here
   int m_threadRef = -1;     // registry ref pinning m_T against the GC
@@ -200,7 +234,7 @@ private:
   AsyncHttpResultHandler m_asyncHttpResultHandler;
   ColorPickerResultHandler m_colorPickerResultHandler;
   std::size_t m_memUsed = 0; // bytes tracked by allocate(); guarded by the worker-thread serialization
-  std::chrono::steady_clock::time_point m_callDeadline;
+  std::chrono::nanoseconds m_callCpuDeadline{};
   std::string m_currentCallName;
   bool m_budgetActive = false;
   bool m_lastCallTimedOut = false;

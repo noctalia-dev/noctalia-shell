@@ -111,6 +111,10 @@ public:
   void addPluginSource(const PluginSourceConfig& source);
   void removePluginSource(std::string_view name);
 
+  // Persist the global [plugins].auto_update override to settings.toml and trigger the
+  // reload pipeline. Drives background auto-update of every git source.
+  void setPluginsAutoUpdate(bool enabled);
+
   // Persist a theme-mode override to settings.toml and trigger the reload pipeline.
   void setThemeMode(ThemeMode mode);
   // Persist `[theme].source` and the palette field for that source, then reload.
@@ -123,6 +127,7 @@ public:
   // Persist app-owned UI/runtime state to state.toml. This does not affect Config reloads.
   bool setStateBool(std::string_view owner, std::string_view key, bool value);
   bool setStateString(std::string_view owner, std::string_view key, std::string_view value);
+  bool clearStateOwner(std::string_view owner);
   bool markSetupWizardCompleted();
   [[nodiscard]] bool hasOverride(const std::vector<std::string>& path) const;
   [[nodiscard]] bool hasEffectiveOverride(const std::vector<std::string>& path) const;

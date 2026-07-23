@@ -54,8 +54,7 @@ namespace {
   dockLaunchOptions(const CompositorPlatform& platform, const ConfigService& config) {
     std::string token;
     if (platform.hasXdgActivation()) {
-      // Match launcher/taskbar: no layer-shell surface. Binding the dock surface can misplace
-      // first launches on Hyprland multi-monitor setups (see issue #3451).
+      // No layer-shell surface — binding it can misplace first launches on Hyprland.
       token = platform.requestActivationToken(nullptr);
     }
     return desktop_entry_launch::LaunchOptions{
@@ -473,16 +472,18 @@ void Dock::requestLayout() {
 // ── Input ─────────────────────────────────────────────────────────────────────
 
 bool Dock::onPointerEvent(const PointerEvent& event) {
-  // Route to any open popup first.
-  // If a pointer press is not consumed by the popup, close it and let the same
-  // event continue to dock item hit-testing.
+  // Route open popups first. Unconsumed presses dismiss the menu; only continue to
+  // dock hit-testing when the press is on the dock itself.
   if (m_itemMenu != nullptr) {
     const bool consumed = shell::dock::routePopupEvent(*m_itemMenu, event);
     if (consumed) {
       return true;
     }
-    if (event.type == PointerEvent::Type::Button && event.state == 1) {
+    if (event.type == PointerEvent::Type::Button && event.pressed) {
       closeItemMenu();
+      if (event.surface == nullptr || !m_surfaceMap.contains(event.surface)) {
+        return true;
+      }
     }
   }
 
@@ -588,7 +589,7 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
 
     if (m_hoveredInstance == nullptr)
       break;
-    const bool pressed = (event.state == 1);
+    const bool pressed = event.pressed;
     m_hoveredInstance->inputDispatcher.pointerButton(
         static_cast<float>(event.sx), static_cast<float>(event.sy), event.button, pressed
     );
@@ -706,6 +707,27 @@ void Dock::reevaluateSmartAutoHide() {
     shell::dock::DockInstance* instance = instanceUp.get();
     if (instance == nullptr || instance->surface == nullptr) {
       continue;
+    }
+
+    // Stale pointerInside blocks hide (and can leave smart-hide stuck after grabs / focus
+    // changes). Resync from the compositor before deciding.
+    const wl_surface* surface = instance->surface->wlSurface();
+    const bool pointerOnDock =
+        m_platform->hasPointerPosition() && surface != nullptr && m_platform->lastPointerSurface() == surface;
+    if (instance->pointerInside && !pointerOnDock) {
+      clearHoverZoomPointer(*instance);
+      instance->pointerInside = false;
+      instance->inputDispatcher.pointerLeave();
+      if (m_hoveredInstance == instance) {
+        m_hoveredInstance = nullptr;
+      }
+    } else if (!instance->pointerInside && pointerOnDock) {
+      instance->pointerInside = true;
+      instance->inputDispatcher.pointerEnter(
+          static_cast<float>(m_platform->lastPointerX()), static_cast<float>(m_platform->lastPointerY()),
+          m_platform->lastInputSerial()
+      );
+      m_hoveredInstance = instance;
     }
 
     const bool wantsPinned = dockSmartAutoHideWantsPinnedVisible(*m_platform, instance->output);
@@ -1023,15 +1045,42 @@ void Dock::closeItemMenu() {
   shell::dock::DockInstance* owner = m_popupOwnerInstance;
   m_popupOwnerInstance = nullptr;
   m_itemMenu.reset();
-  // Fade the owner out — the pointer left the dock to interact with the menu,
-  // whether or not the compositor sent a Leave event at that time.
-  if (owner != nullptr && owner->hideOpacity > 0.0f && dockPointerHideAllowed(m_config->config().dock, *owner)) {
-    owner->pointerInside = false;
+  if (owner == nullptr) {
+    return;
+  }
+
+  // Resync hover after grab dismiss — Leave is often missing while the menu is open.
+  const wl_surface* ownerSurface = owner->surface != nullptr ? owner->surface->wlSurface() : nullptr;
+  owner->pointerInside = m_platform != nullptr
+      && ownerSurface != nullptr
+      && m_platform->hasPointerPosition()
+      && m_platform->lastPointerSurface() == ownerSurface;
+
+  if (owner->pointerInside) {
+    const auto sx = static_cast<float>(m_platform->lastPointerX());
+    const auto sy = static_cast<float>(m_platform->lastPointerY());
+    owner->inputDispatcher.pointerEnter(sx, sy, m_platform->lastInputSerial());
+    m_hoveredInstance = owner;
+    updateHoverZoomPointer(*owner, sx, sy);
+  } else {
+    clearHoverZoomPointer(*owner);
+    owner->inputDispatcher.pointerLeave();
     if (m_hoveredInstance == owner) {
       m_hoveredInstance = nullptr;
     }
-    shell::dock::startHideFadeOut(*owner, *m_config);
   }
+
+  if (owner->surface != nullptr) {
+    owner->surface->requestRedraw();
+  }
+
+  if (owner->pointerInside
+      || m_config == nullptr
+      || owner->hideOpacity <= 0.0f
+      || !dockPointerHideAllowed(m_config->config().dock, *owner)) {
+    return;
+  }
+  shell::dock::startHideFadeOut(*owner, *m_config);
 }
 
 void Dock::tryFulfillPendingLaunchFocus() {
@@ -1045,15 +1094,23 @@ void Dock::tryFulfillPendingLaunchFocus() {
     return;
   }
 
-  auto windows =
-      shell::dock::windowsForDockItem(*m_platform, pending.idLower, pending.wmClassLower, pending.outputFilter);
-  if (windows.empty() && pending.outputFilter != nullptr) {
-    windows = shell::dock::windowsForDockItem(*m_platform, pending.idLower, pending.wmClassLower, nullptr);
-  }
-
-  const ToplevelInfo* window = newestActivatableWindow(windows);
+  auto windowsOnTarget =
+      shell::dock::windowsForDockItem(*m_platform, pending.idLower, pending.wmClassLower, pending.targetOutput);
+  const ToplevelInfo* window = newestActivatableWindow(windowsOnTarget);
   if (window == nullptr) {
-    return;
+    auto windows =
+        shell::dock::windowsForDockItem(*m_platform, pending.idLower, pending.wmClassLower, pending.outputFilter);
+    if (windows.empty() && pending.outputFilter != nullptr) {
+      windows = shell::dock::windowsForDockItem(*m_platform, pending.idLower, pending.wmClassLower, nullptr);
+    }
+    window = newestActivatableWindow(windows);
+    if (window == nullptr) {
+      return;
+    }
+    // Landed off the launch monitor; relocate before activate.
+    if (pending.targetOutput != nullptr) {
+      m_platform->moveToplevelToOutput(*window, pending.targetOutput);
+    }
   }
 
   m_pendingLaunchFocus.reset();
@@ -1075,8 +1132,10 @@ void Dock::activateOrLaunchItem(shell::dock::DockInstance& instance, const shell
         .idLower = action.windowLookupIdLower,
         .wmClassLower = action.windowLookupWmClassLower,
         .outputFilter = shell::dock::dockFilterOutput(m_config->config().dock, instance.output),
+        .targetOutput = instance.output,
         .deadline = std::chrono::steady_clock::now() + std::chrono::seconds(8),
     };
+    m_platform->prepareAppLaunchOnOutput(instance.output);
     (void)desktop_entry_launch::launchEntry(action.entry, dockLaunchOptions(*m_platform, *m_config));
     return;
   }
@@ -1147,7 +1206,9 @@ void Dock::openItemMenu(shell::dock::DockInstance& instance, const shell::dock::
             }
           },
       .launchAction =
-          [this, entryId, entryWorkingDir, entryTerminal](const DesktopAction& desktopAction) {
+          [this, entryId, entryWorkingDir, entryTerminal,
+           output = instance.output](const DesktopAction& desktopAction) {
+            m_platform->prepareAppLaunchOnOutput(output);
             (void)desktop_entry_launch::launchAction(
                 desktopAction, entryId, entryWorkingDir, entryTerminal, dockLaunchOptions(*m_platform, *m_config)
             );

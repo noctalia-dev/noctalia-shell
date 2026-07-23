@@ -15,6 +15,7 @@
 #include <vector>
 
 class AccountsService;
+class AsyncTextureCache;
 class Button;
 class Box;
 class CompositorPlatform;
@@ -69,6 +70,7 @@ private:
   void startCrispFade();
   void cancelCrispFade();
   void sync(Renderer& renderer);
+  void warnOnOversizedAvatarSource(const std::string& path);
   void syncScaledFonts();
   void syncShortcuts();
   bool resizeMediaArtToCard();
@@ -81,6 +83,7 @@ private:
   AccountsService* m_accounts = nullptr;
   Wallpaper* m_wallpaper = nullptr;
   ThumbnailService* m_thumbnails = nullptr;
+  AsyncTextureCache* m_asyncTextures = nullptr;
   ShortcutServices m_services;
   bool m_active = false;
 
@@ -107,8 +110,8 @@ private:
   InputArea* m_userCardArea = nullptr;
   InputArea* m_mediaCardArea = nullptr;
   InputArea* m_dateTimeCardArea = nullptr;
-  std::string m_loadedAvatarPath;
-  int m_loadedAvatarSize = 0;
+  // Survives onClose() so the oversized-source warning fires once per session.
+  std::string m_sizeCheckedAvatarPath;
 
   // Two stacked layers: m_wallpaperPlaceholder shows the resident full-screen
   // wallpaper texture immediately (slightly soft), m_wallpaperBg holds the crisp

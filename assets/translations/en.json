@@ -76,6 +76,7 @@
         "signal": "Signal",
         "upload": "Upload",
         "vpn": "VPN",
+        "wan-ip": "WAN IP",
         "wifi": "Wi-Fi",
         "wired": "Wired",
         "yes": "Yes"
@@ -93,6 +94,10 @@
         "cpu": "CPU",
         "cpu-temp": "CPU Temp",
         "disk": "Disk",
+        "disk-free": "Disk Free",
+        "disk-free-pct": "Disk Free %",
+        "disk-used": "Disk Used",
+        "disk-used-pct": "Disk Used %",
         "download": "Download",
         "gpu-temp": "GPU Temp",
         "gpu-usage": "GPU Usage",
@@ -182,6 +187,7 @@
     },
     "bluetooth": {
       "accept": "Accept",
+      "address": "Address",
       "auto-reconnect": "Auto-reconnect",
       "bluetooth": "Bluetooth",
       "enter-code": "Enter code",
@@ -235,7 +241,7 @@
       },
       "select-avatar": "Select Avatar",
       "unknown": "unknown",
-      "uptime": "Uptime - {uptime}",
+      "uptime": "Uptime – {uptime}",
       "weather": {
         "data-unavailable": "Weather data unavailable.",
         "disabled": "Weather is disabled in config.",
@@ -322,7 +328,7 @@
       "mic-mute": "Microphone",
       "nightlight": "Night Light",
       "nightlight-states": {
-        "forced": "Always on",
+        "forced": "Always On",
         "off": "Night Light",
         "scheduled-day": "Scheduled",
         "scheduled-night": "Running"
@@ -462,10 +468,12 @@
         "command": "Command",
         "custom-color": "Custom",
         "description": "Description",
+        "device": "Device",
         "display": "Display",
         "display-gauge": "Gauge",
         "display-graph": "Graph",
         "fade-when-idle": "Fade When Idle",
+        "fill-color": "Fill Color",
         "font-family": "Font",
         "font-family-default": "System default",
         "forecast-days": "Forecast Days",
@@ -496,15 +504,18 @@
         "reset-defaults": "Reset to Defaults",
         "ring-opacity": "Ring Opacity",
         "rotation-speed": "Rotation Speed",
+        "scroll-step": "Scroll Step",
         "secondary-color": "Secondary Color",
         "sensitivity": "Sensitivity",
         "shadow": "Shadow",
         "show-caps-lock": "Caps Lock Warning",
+        "show-device": "Show Device",
         "show-forecast": "Show Forecast",
         "show-keyboard-layout": "Keyboard Layout",
         "show-label": "Show Label",
         "show-login-button": "Login Button",
         "show-password-hint": "Password Hint",
+        "show-vpn-label": "Show VPN Label",
         "show-when-idle": "Show When Idle",
         "stat": "Stat",
         "stat-cpu-temp": "CPU Temp",
@@ -519,6 +530,7 @@
         "stat-swap-pct": "Swap %",
         "stat2": "Stat 2",
         "title": "Title",
+        "track-color": "Track Color",
         "variant": "Style",
         "variant-default": "Default",
         "variant-destructive": "Destructive",
@@ -538,8 +550,7 @@
         "widget-section": "Widget"
       },
       "state": {
-        "grid-off": "Grid Off",
-        "grid-on": "Grid On"
+        "grid": "Grid"
       },
       "title": "Desktop Widgets",
       "types": {
@@ -552,11 +563,17 @@
         "media-player": "Media Player",
         "sticker": "Sticker",
         "system-monitor": "System Monitor",
+        "volume": "Volume",
         "weather": "Weather"
       }
     },
     "media": {
       "nothing-playing": "Nothing playing"
+    },
+    "volume": {
+      "mic": "Mic",
+      "muted": "Muted",
+      "volume": "Volume"
     },
     "weather": {
       "error": "Error",
@@ -673,13 +690,14 @@
     },
     "internal": {
       "battery": "Battery",
-      "battery-critical-body": "{device}: {percent}% - your computer will shut down soon",
+      "battery-critical-body": "{device}: {percent}% – your computer will shut down soon",
       "battery-critical-title": "Battery critically low",
       "battery-device": "Battery device",
       "battery-low-body": "{device}: {percent}% remaining",
       "battery-low-title": "Battery low",
       "calendar": "Calendar",
       "calendar-google-connect-browser-failed": "No browser opener could be launched for Google authorization. Check your default browser or xdg-open setup.",
+      "calendar-google-connect-credential-store-failed": "Authorization completed, but the refresh token could not be saved. Unlock or start Secret Service, then connect again.",
       "calendar-google-connect-expired": "Google authorization expired before sign-in finished. Start the connection again.",
       "calendar-google-connect-failed-title": "Google Calendar connection failed",
       "calendar-google-connect-missing-account": "No configured Google calendar account matched \"{account}\".",
@@ -772,7 +790,7 @@
     },
     "enable-failed": {
       "body-error": "{plugin}: {error}",
-      "body-incompatible": "{plugin} requires Noctalia {version} or newer.",
+      "body-incompatible": "{plugin} targets plugin API {version}; this Noctalia supports API {oldest}–{current}.",
       "body-timeout": "{plugin} took too long to install.",
       "title": "Plugin not enabled"
     }
@@ -793,8 +811,8 @@
         "health": "Health",
         "rate": "Rate",
         "status": "Status",
-        "time-left": "Time left",
-        "time-to-full": "Time to full",
+        "time-left": "Time Left",
+        "time-to-full": "Time to Full",
         "unknown-device": "Unknown Device"
       }
     },
@@ -821,6 +839,7 @@
   },
   "settings": {
     "actions": {
+      "confirm-reset": "Confirm Reset",
       "reset": "Reset"
     },
     "badges": {
@@ -834,13 +853,19 @@
     },
     "calendar-accounts": {
       "add-title": "Add Calendar Account",
+      "calendars-label": "Calendars",
       "color-label": "Color",
+      "credential-source-file": "Password file",
+      "credential-source-keyring": "Keyring",
+      "credential-source-label": "Credential Storage",
       "delete-error": "Could not delete calendar account.",
       "edit-title": "Edit Calendar Account",
       "id-label": "Account ID",
       "invalid": "Check the highlighted calendar account fields.",
       "name-label": "Display Name",
       "name-placeholder": "Personal Calendar",
+      "password-file-error": "Could not read the configured password file. Check that it exists, is a readable regular file, and contains a password.",
+      "password-file-label": "Password File",
       "password-keep-placeholder": "Leave blank to keep current password",
       "password-label": "App Password",
       "password-placeholder": "App-specific password",
@@ -854,6 +879,11 @@
       "save": "Save",
       "save-connect": "Save and Connect",
       "save-error": "Could not save calendar account.",
+      "secret-cleanup-error": "The account could not be saved, and its keyring credential could not be restored or cleaned up. Retry after unlocking Secret Service.",
+      "secret-service-cancelled": "The Secret Service prompt was cancelled. Retry when you are ready to unlock it.",
+      "secret-service-error": "Could not access calendar credentials in Secret Service. Retry the operation.",
+      "secret-service-locked": "Calendar credentials are locked or access was denied. Unlock Secret Service and retry.",
+      "secret-service-unavailable": "No Secret Service provider is available. Start a compatible provider and retry.",
       "server-url-label": "Server URL",
       "username-label": "Username",
       "username-placeholder": "name@example.com"
@@ -1087,6 +1117,7 @@
         "background": "Background",
         "battery": "Battery",
         "behavior": "Behavior",
+        "borders": "Borders",
         "brightness": "Brightness",
         "built-in": "Built-In",
         "calendar": "Calendar",
@@ -1111,7 +1142,6 @@
         "keybinds": "Keybinds",
         "kinds": "Kinds",
         "launcher": "Launcher",
-        "providers": "Providers",
         "layout": "Layout",
         "lifecycle": "Lifecycle",
         "location": "Location",
@@ -1132,6 +1162,7 @@
         "power": "Power",
         "privacy": "Privacy",
         "profile": "Profile",
+        "providers": "Providers",
         "screen-corners": "Screen Corners",
         "screen-time": "Screen Time",
         "screenshot": "Screenshot",
@@ -1382,12 +1413,15 @@
         "delete-confirm-title": "Delete \"{name}\"?",
         "deprecated": "deprecated",
         "empty": "No enabled plugins.",
+        "incompatible-plugin-api": "incompatible plugin API",
         "loading": "Loading plugins…",
         "refreshing": "Refreshing plugins…",
         "remove": "Remove plugin",
         "requires": "Requires: {dependencies}",
-        "requires-newer-noctalia": "requires newer Noctalia",
-        "title": "Plugins"
+        "title": "Plugins",
+        "update-all": "Update all ({count})",
+        "update-available": "update available",
+        "update-to": "update to {version}"
       },
       "settings": {
         "empty": "No settings available."
@@ -1395,6 +1429,8 @@
       "sources": {
         "add": "Add source",
         "add-title": "Add plugin source",
+        "auto-update": "Auto-update plugins",
+        "auto-update-desc": "Check enabled sources for new versions in the background and keep installed plugins current",
         "edit": "Edit source",
         "edit-title": "Edit plugin source",
         "empty": "No sources configured.",
@@ -1417,8 +1453,7 @@
         "remove": "Remove source",
         "save": "Save",
         "title": "Sources",
-        "update": "Update",
-        "update-on-startup": "Update on startup"
+        "update": "Update source"
       },
       "store": {
         "add": "Add to Noctalia",
@@ -1432,6 +1467,8 @@
         "open-source": "Open plugin source repository",
         "results-count": "{count} plugins",
         "search-placeholder": "Search plugins…",
+        "source-all": "All",
+        "sources": "Sources",
         "title": "Plugin Store"
       }
     },
@@ -1496,6 +1533,10 @@
         "global-shadow-direction": {
           "description": "Direction the shadow is cast from surfaces"
         },
+        "input-borders": {
+          "description": "Draw outlines around text fields and other inputs throughout the shell",
+          "label": "Input Borders"
+        },
         "language": {
           "description": "Override automatic locale detection",
           "label": "Language"
@@ -1503,6 +1544,14 @@
         "palette-source": {
           "description": "Where to derive the color palette from",
           "label": "Palette Source"
+        },
+        "popup-borders": {
+          "description": "Draw outlines around popups and dropdowns",
+          "label": "Popup Borders"
+        },
+        "popup-shadows": {
+          "description": "Draw drop shadows behind popups and dropdowns",
+          "label": "Popup Shadows"
         },
         "pure-black-dark": {
           "description": "Anchor dark surfaces to true black, preventing banding on OLED panels (dark mode only)",
@@ -1722,6 +1771,10 @@
           "description": "Shell command to run when hitting the bottom right corner",
           "label": "Command"
         },
+        "hot-corners-delay-ms": {
+          "description": "How long the pointer must stay in a corner before the action runs (0 = immediate)",
+          "label": "Activation Delay"
+        },
         "hot-corners-enabled": {
           "description": "Trigger actions by pushing the mouse pointer into screen corners",
           "label": "Hot Corners"
@@ -1778,6 +1831,14 @@
         },
         "background-opacity": {
           "description": "Background opacity of the dock"
+        },
+        "border": {
+          "description": "Color role for the dock outline; fixed hex colors are also supported",
+          "label": "Border"
+        },
+        "border-width": {
+          "description": "Inside outline width for the dock",
+          "label": "Border Width"
         },
         "concave-edge-corners": {
           "description": "Carve inward corners on the side that touches the screen edge; requires the margin to the screen edge to be 0",
@@ -1967,7 +2028,7 @@
           "label": "Behaviors"
         },
         "pre-action-fade": {
-          "description": "Seconds of fullscreen dim before the idle command; use 0 to disable",
+          "description": "Seconds of fullscreen dim before the idle command (0 disables)",
           "label": "Idle Dim"
         }
       },
@@ -2061,6 +2122,10 @@
         "blacklist-allow-critical": {
           "description": "Still show critical notifications from blacklisted senders"
         },
+        "border": {
+          "description": "Draw an outline around notification toasts",
+          "label": "Border"
+        },
         "collapse-on-dismiss": {
           "description": "Slide remaining toasts to close gaps when one is dismissed",
           "label": "Collapse on Dismiss"
@@ -2143,6 +2208,10 @@
           "description": "Show a grid of application icons with labels underneath when results are apps only",
           "label": "App Grid View"
         },
+        "launcher-auto-paste": {
+          "description": "After calculator, emoji, and other copy activations, paste into the focused window (same shortcuts as clipboard auto-paste)",
+          "label": "Auto-Paste"
+        },
         "launcher-categories": {
           "description": "Display category filters in the launcher; reveal with F6, then cycle with F6 and Shift+F6",
           "label": "Show Categories"
@@ -2150,6 +2219,10 @@
         "launcher-compact": {
           "description": "Use smaller icons and tighter result rows",
           "label": "Compact Rows"
+        },
+        "launcher-currency-exchange": {
+          "description": "Fetch rates from third party online sources",
+          "label": "Currency Exchange Conversion"
         },
         "launcher-global-calculator": {
           "description": "Also show calculator results in unprefixed search",
@@ -2200,6 +2273,10 @@
           "description": "Clear launch counts and recently used history used for launcher sorting",
           "label": "Reset Usage Data"
         },
+        "launcher-session-search": {
+          "description": "Include session actions (lock, suspend, reboot, shutdown, logout) in general launcher searches, not only behind the /session prefix",
+          "label": "Enable Session Search"
+        },
         "launcher-show-icons": {
           "description": "Show application icons in launcher results",
           "label": "Show App Icons"
@@ -2207,6 +2284,10 @@
         "launcher-sort-by-usage": {
           "description": "Boost frequently used apps toward the top and show a Recently Used category filter",
           "label": "Sort by Usage"
+        },
+        "list-item-background": {
+          "description": "Draw a rounded background behind each launcher and clipboard list item",
+          "label": "List Item Background"
         },
         "open-near-click-clipboard": {
           "description": "Position the clipboard panel near the bar widget that opened it; openings without a bar trigger are centered",
@@ -2296,6 +2377,10 @@
         "session-grid-columns": {
           "description": "Number of columns for the grid layout",
           "label": "Columns"
+        },
+        "session-show-shortcuts": {
+          "description": "Show or hide the shortcut hints",
+          "label": "Show shortcuts"
         }
       },
       "services": {
@@ -2312,9 +2397,27 @@
           "description": "Add iCloud, CalDAV, or Google accounts",
           "label": "Calendar Accounts"
         },
+        "calendar-credentials": {
+          "button": "Retry",
+          "description-cancelled": "The Secret Service prompt was cancelled. Retry when you are ready.",
+          "description-error": "Calendar credentials could not be accessed through Secret Service.",
+          "description-locked": "Calendar credentials are locked or access was denied. Unlock Secret Service and retry.",
+          "description-migration": "Plaintext calendar credentials are waiting to be moved into Secret Service. They are not used for calendar sync.",
+          "description-opening": "Calendar credentials are being opened through Secret Service.",
+          "description-unavailable": "No Secret Service provider is available in this session.",
+          "label": "Calendar Credential Storage"
+        },
         "calendar-edit": {
           "button": "Edit",
           "description": "Update this calendar account"
+        },
+        "calendar-event-date-format": {
+          "description": "The date format shown in the event card for the selected date",
+          "label": "Event Date Format"
+        },
+        "calendar-event-time-format": {
+          "description": "The time format shown for calendar events",
+          "label": "Event Time Format"
         },
         "calendar-refresh-interval": {
           "description": "How often to sync calendar events (minutes)",
@@ -2407,7 +2510,7 @@
             "label": "Disk Poll Interval"
           },
           "gpu-poll": {
-            "description": "Seconds between GPU temperature and VRAM samples (0 disables it, which avoids waking a discrete GPU; 5 is a good interval if you do enable it)",
+            "description": "Seconds between GPU temperature, usage, and VRAM samples. The GPU is only sampled while something displays a GPU stat, so an idle machine is never woken (0 disables it entirely)",
             "label": "GPU Poll Interval"
           },
           "label": "System Monitor",
@@ -2422,7 +2525,11 @@
           "stats": {
             "cpu-temp": "CPU Temp",
             "cpu-usage": "CPU Usage",
+            "disk-free": "Disk Free",
+            "disk-free-pct": "Disk Free %",
             "disk-usage": "Disk Usage",
+            "disk-used": "Disk Used",
+            "disk-used-pct": "Disk Used %",
             "gpu-temp": "GPU Temp",
             "gpu-usage": "GPU Usage",
             "gpu-vram": "GPU VRAM",
@@ -2562,11 +2669,12 @@
         },
         "launch-apps-as-systemd-services": {
           "description": "Launches applications in separate systemd services so they don't share Noctalia's cgroup",
-          "label": "Launch Apps as systemd Services"
+          "label": "Launch Apps as systemd Services",
+          "requires-systemd-session": "Requires Noctalia to run as a systemd user service (uwsm or a systemd user unit)"
         },
         "launch-apps-custom-command": {
-          "description": "Custom command used by the app launcher; substitutes $CMD with the original command",
-          "label": "Custom Launcher Command",
+          "description": "Wraps apps launched from the launcher, dock, and taskbar; substitutes $CMD with the original command",
+          "label": "Custom App Launch Command",
           "placeholder": "$CMD"
         },
         "middle-click-opens-widget-settings": {
@@ -2585,6 +2693,14 @@
           "description": "Background opacity of OSD popups",
           "label": "Background Opacity"
         },
+        "osd-border": {
+          "description": "Draw an outline around OSD popups",
+          "label": "Border"
+        },
+        "osd-enabled": {
+          "description": "Master switch for all OSD popups; when off no OSD is shown",
+          "label": "Enable OSD"
+        },
         "osd-kinds-bluetooth": {
           "description": "Show an OSD popup when Bluetooth is toggled",
           "label": "Bluetooth"
@@ -2600,6 +2716,10 @@
         "osd-kinds-dnd": {
           "description": "Show an OSD popup when Do Not Disturb is toggled",
           "label": "Do Not Disturb"
+        },
+        "osd-kinds-keyboard-backlight": {
+          "description": "Show an OSD popup when the keyboard backlight level changes",
+          "label": "Keyboard Backlight"
         },
         "osd-kinds-keyboard-layout": {
           "description": "Show an OSD popup when the input keyboard layout changes",
@@ -2732,6 +2852,10 @@
           "description": "Write screenshots as PNG files to the output directory",
           "label": "Save to File"
         },
+        "screenshot-show-cursor": {
+          "description": "Include the mouse pointer in screenshots",
+          "label": "Show Cursor"
+        },
         "show-location": {
           "description": "Show location name in weather widgets",
           "label": "Show Location"
@@ -2752,11 +2876,11 @@
       },
       "system": {
         "battery-device-warning-threshold": {
-          "description": "Override the battery warning threshold for this device. Set 0 to disable warnings for this device.",
+          "description": "Override the battery warning threshold for this device (0 disables warnings for this device)",
           "label": "{device} Warning Threshold"
         },
         "battery-warning-threshold": {
-          "description": "System battery percentage at or below which the shell sends a low-battery notification and battery widgets use their warning color. Set 0 to disable.",
+          "description": "System battery percentage at or below which the shell sends a low-battery notification and battery widgets use their warning color (0 disables)",
           "label": "Battery Warning Threshold"
         }
       },
@@ -2896,12 +3020,29 @@
         "ram": "RAM",
         "temp": "Temperature"
       },
+      "map-placeholders": {
+        "effects-profile-name": "Profile name",
+        "glyph-name": "Glyph name",
+        "key": "Key",
+        "label": "Label",
+        "layout-name": "Layout name",
+        "value": "Value"
+      },
       "options": {
+        "after": "After",
         "always": "Always",
         "auto": "Auto",
+        "before": "Before",
+        "both": "Both",
+        "count": "Count",
         "cpu-temp": "CPU Temperature",
         "cpu-usage": "CPU Usage",
-        "disk-percent": "Disk Percent",
+        "disk-free": "Disk Free",
+        "disk-free-percent": "Disk Free Percent",
+        "disk-used": "Disk Used",
+        "disk-used-percent": "Disk Used Percent",
+        "dots": "Dots",
+        "focus-hint": "Focus Hint",
         "full": "Full",
         "gauge": "Gauge",
         "glyph": "Glyph",
@@ -2910,8 +3051,10 @@
         "gpu-vram": "GPU VRAM",
         "graph": "Graph",
         "graphic": "Graphic",
+        "hidden": "Hidden",
         "icon-and-text": "Icon and Text",
         "icon-only": "Icon Only",
+        "icons": "Icons",
         "id": "ID",
         "input": "Input",
         "instance": "Per Placement",
@@ -2924,9 +3067,12 @@
         "none": "None",
         "on-hover": "On Hover",
         "output": "Output",
+        "percent": "Percent",
         "ram-percent": "RAM Percent",
         "ram-used": "RAM Used",
+        "rate": "Rate",
         "regular": "Regular",
+        "replace": "Replace",
         "screenshot-primary-fullscreen": "Fullscreen",
         "screenshot-primary-region": "Region",
         "shared": "Shared",
@@ -2934,10 +3080,10 @@
         "swap-percent": "Swap Percent",
         "text": "Text",
         "text-only": "Text Only",
-        "focus-hint": "Focus Hint",
+        "time": "Time",
         "workspace-label-centered": "Centered",
         "workspace-label-corner": "Corner",
-        "workspace-label-inside": "Inside pill"
+        "workspace-label-inside": "Inside Pill"
       },
       "settings": {
         "active-color": {
@@ -2964,6 +3110,10 @@
         "art-size": {
           "description": "Media artwork size in pixels",
           "label": "Art Size"
+        },
+        "artist-first": {
+          "description": "Show the artist before the track title (Artist - Title)",
+          "label": "Artist First"
         },
         "bands": {
           "description": "Number of visualizer bands",
@@ -3054,7 +3204,7 @@
           "label": "Display"
         },
         "display-mode": {
-          "description": "Render the battery as a graphical shape or a Tabler glyph",
+          "description": "Render the battery as a graphical shape, a Tabler glyph, or label only",
           "label": "Display Mode"
         },
         "drawer": {
@@ -3069,9 +3219,17 @@
           "description": "Size of tray icons inside the drawer panel in pixels",
           "label": "Drawer Icon Size"
         },
+        "effects-profile-glyphs": {
+          "description": "Map EasyEffects profile names to icon glyphs",
+          "label": "Effects Profile Glyphs"
+        },
         "empty-color": {
           "description": "Color role used for empty workspaces; fixed hex colors are also supported",
           "label": "Empty Color"
+        },
+        "enable-scroll": {
+          "description": "Allow mouse wheel and trackpad scroll actions on this widget",
+          "label": "Enable Scroll"
         },
         "focused-color": {
           "description": "Color role used for the focused workspace; fixed hex colors are also supported",
@@ -3101,12 +3259,16 @@
           "sysmon-description": "Custom icon glyph; leave empty to use the icon for the selected stat",
           "volume-description": "Custom icon glyph; leave empty to use the built-in dynamic icons"
         },
+        "glyph-position": {
+          "description": "In which order to display the glyph in relation to the text/graph/gauge",
+          "label": "Glyph Position"
+        },
         "group-by-workspace": {
           "description": "Group taskbar icons into workspace capsules when compositor data is available",
           "label": "Group by Workspace"
         },
         "group-single-icon-per-app": {
-          "description": "When grouping by workspace, collapse multiple windows from the same app into one icon with a count badge.",
+          "description": "When grouping by workspace with icons, collapse multiple windows from the same app into one icon with a count badge.",
           "label": "Single Icon per App"
         },
         "height": {
@@ -3211,9 +3373,17 @@
           "description": "Optional static text shown on this button",
           "label": "Label"
         },
+        "label-content": {
+          "description": "What the battery label shows: charge percentage, time remaining, or power draw",
+          "label": "Label Content"
+        },
         "label-min-width": {
           "description": "Minimum label width in pixels to prevent resizing",
           "label": "Label Min Width"
+        },
+        "label-show-units": {
+          "description": "Show units like percent / GiB / °C",
+          "label": "Show Units"
         },
         "labels-only-when-occupied": {
           "description": "Hide workspace labels on empty, inactive workspaces",
@@ -3293,7 +3463,13 @@
         },
         "pinned": {
           "description": "Tray item IDs that stay visible in the bar when drawer mode is enabled",
-          "label": "Pinned Items"
+          "label": "Pinned Items",
+          "taskbar-description": "Desktop apps that stay on the taskbar when not running. Ignored while Group by Workspace is on.",
+          "taskbar-label": "Pinned Apps"
+        },
+        "pinned-opacity": {
+          "description": "Opacity of pinned apps that are not currently running",
+          "label": "Pinned App Opacity"
         },
         "primary-click": {
           "description": "Action performed when left-clicking the bar button",
@@ -3322,11 +3498,6 @@
         "scroll-step": {
           "description": "Percentage change applied on each mouse wheel step",
           "label": "Scroll Step"
-        },
-        "style": {
-          "description": "Workspace switcher appearance",
-          "label": "Style",
-          "workspaces-description": "Regular shows animated pills; Minimal is text-only labels; Focus Hint uses dots for inactive workspaces and an expanded active pill with the focused app icon"
         },
         "scroll-up-command": {
           "description": "Shell command run when scrolling up over this button",
@@ -3372,6 +3543,10 @@
           "description": "Show current temperature text",
           "label": "Show Temperature"
         },
+        "show-vpn-label": {
+          "description": "Show VPN name: replaces network label in replace mode, adds label next to VPN icon in both mode",
+          "label": "Show VPN Label"
+        },
         "show-when-idle": {
           "description": "Keep the visualizer visible even when no media is playing",
           "label": "Show When Idle"
@@ -3388,9 +3563,18 @@
           "description": "System statistic to display",
           "label": "Stat"
         },
+        "style": {
+          "description": "Workspace switcher appearance",
+          "label": "Style",
+          "workspaces-description": "Regular shows animated pills; Minimal is text-only labels; Focus Hint uses dots for inactive workspaces and an expanded active pill with the focused app icon"
+        },
         "taskbar-max-width": {
           "description": "Total width budget in pixels; window titles shrink to fit and hide when too narrow",
           "label": "Taskbar Max Width"
+        },
+        "text": {
+          "description": "Text shown on the bar",
+          "label": "Text"
         },
         "timezone": {
           "description": "Timezone identifier (e.g. Europe/Berlin) to use for this clock; leave empty to use system local time",
@@ -3412,9 +3596,17 @@
           "description": "Built-in widget type for this named widget",
           "label": "Type"
         },
+        "urgent-color": {
+          "description": "Color role used for urgent workspaces; fixed hex colors are also supported",
+          "label": "Urgent Color"
+        },
         "vertical-format": {
           "description": "Optional format used on vertical bars",
           "label": "Vertical Format"
+        },
+        "vpn-status": {
+          "description": "How to display VPN status: replace swaps the network icon for a VPN shield, both shows them side by side, hidden disables the VPN indicator",
+          "label": "VPN Status"
         },
         "warning-color": {
           "description": "Color applied when charge is at or below the System battery warning threshold",
@@ -3431,6 +3623,10 @@
         "workspace-group-capsule": {
           "description": "Draw the background and border around each grouped workspace. Turn off to keep icon grouping and workspace disc labels only.",
           "label": "Workspace Group Capsule"
+        },
+        "workspace-group-content": {
+          "description": "What each workspace group shows: app icons, a window count, or dots (up to five, then +N for the rest)",
+          "label": "Group Content"
         },
         "workspace-label-placement": {
           "description": "Corner, centered on the edge, or inside the pill",
@@ -3465,6 +3661,7 @@
         "sysmon": "System Monitor",
         "taskbar": "Taskbar",
         "test": "Test",
+        "text": "Text",
         "theme-mode": "Theme Mode",
         "tray": "Tray",
         "volume": "Volume",
@@ -3476,7 +3673,7 @@
     "window": {
       "export-config": "Export Config…",
       "export-config-saved": "Config export saved.",
-      "filter-modified": "Modified",
+      "filter-overridden": "Overridden",
       "legacy-config-warning": "Legacy configuration is being migrated in memory: {issue}. Run noctalia config validate for all required changes.",
       "native-title": "Noctalia Settings",
       "no-results": "No settings found",
@@ -3549,8 +3746,10 @@
       "day": "{count} day",
       "day-plural": "{count} days",
       "hour": "{count} hour",
+      "hour-compact": "{count}h",
       "hour-plural": "{count} hours",
       "minute": "{count} minute",
+      "minute-compact": "{count}m",
       "minute-plural": "{count} minutes",
       "month": "{count} month",
       "month-plural": "{count} months",

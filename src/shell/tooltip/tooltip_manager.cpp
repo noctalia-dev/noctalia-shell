@@ -179,10 +179,14 @@ void TooltipManager::initialize(WaylandConnection& wayland, ConfigService* confi
   m_renderContext = renderContext;
 }
 
-void TooltipManager::shutdown() {
+void TooltipManager::forceDestroy() {
   m_showTimer.stop();
   m_refreshTimer.stop();
   m_pendingArea = nullptr;
+  m_pendingContent = {};
+  m_pendingLayerParent = nullptr;
+  m_pendingXdgParent = nullptr;
+  m_pendingOutput = nullptr;
   m_reshowQueued = false;
   m_retargetQueued = false;
   m_destroyScheduled = false;
@@ -192,6 +196,13 @@ void TooltipManager::shutdown() {
     m_surface->setSceneRoot(nullptr);
   }
   destroyPopup();
+}
+
+void TooltipManager::shutdown() {
+  forceDestroy();
+  m_wayland = nullptr;
+  m_config = nullptr;
+  m_renderContext = nullptr;
 }
 
 void TooltipManager::onHoverChange(InputArea* area, zwlr_layer_surface_v1* parentLayerSurface, wl_output* output) {
@@ -572,7 +583,7 @@ TooltipManager::Size TooltipManager::measureContent(const TooltipContent& conten
     auto metrics = m_renderContext->measureText(*text, fontSize, FontWeight::Normal, maxContentWidth, kMaxTextLines);
     auto w = static_cast<std::uint32_t>(std::ceil(metrics.width + padH * 2.0f + kBorder * 2.0f));
     auto h = static_cast<std::uint32_t>(std::ceil((metrics.bottom - metrics.top) + padV * 2.0f + kBorder * 2.0f));
-    return {std::max(w, 1u), std::max(h, 1u)};
+    return {std::max(w, 1U), std::max(h, 1U)};
   }
 
   if (const auto* rows = std::get_if<std::vector<TooltipRow>>(&content)) {
@@ -594,7 +605,7 @@ TooltipManager::Size TooltipManager::measureContent(const TooltipContent& conten
     float contentH = static_cast<float>(rows->size()) * rowH + static_cast<float>(rows->size() - 1) * tableGap;
     auto w = static_cast<std::uint32_t>(std::ceil(contentW + padH * 2.0f + kBorder * 2.0f));
     auto h = static_cast<std::uint32_t>(std::ceil(contentH + padV * 2.0f + kBorder * 2.0f));
-    return {std::max(w, 1u), std::max(h, 1u)};
+    return {std::max(w, 1U), std::max(h, 1U)};
   }
 
   return {};

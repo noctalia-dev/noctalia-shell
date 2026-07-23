@@ -14,6 +14,7 @@
 #include "shell/panel/panel_manager.h"
 #include "time/time_format.h"
 #include "ui/builders.h"
+#include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/grid_tile.h"
 #include "ui/controls/grid_view.h"
@@ -577,9 +578,8 @@ void CalendarTab::rebuild() {
   const float dotDiameter = std::round(5.0f * scale);
   const float dotGap = std::round(2.0f * scale);
   const float dotStripHeight = dotDiameter;
-  const float dayButtonSize = std::round(
-      std::min({dayCellHeight - dotStripHeight - dotGap, dayColumnWidth, kCalendarDayButtonSizeMax * scale})
-  );
+  const float buttonBudget = std::max(0.0f, dayCellHeight - dotStripHeight - dotGap);
+  const float dayButtonSize = std::floor(std::min({buttonBudget, dayColumnWidth, kCalendarDayButtonSizeMax * scale}));
 
   if (m_header != nullptr) {
     m_header->setSize(innerWidth, kCalendarHeaderHeight * scale);
@@ -633,6 +633,7 @@ void CalendarTab::rebuild() {
   auto weekdayRow = std::make_unique<GridView>();
   weekdayRow->setColumns(weekdays.size());
   weekdayRow->setColumnGap(kCalendarGridGap * scale);
+  weekdayRow->setStretchItems(true);
   weekdayRow->setSize(innerWidth, weekdayHeight);
   weekdayRow->setMinCellHeight(weekdayHeight);
   for (std::size_t i = 0; i < weekdays.size(); ++i) {
@@ -691,6 +692,7 @@ void CalendarTab::rebuild() {
   auto dayGrid = std::make_unique<GridView>();
   dayGrid->setColumns(7);
   dayGrid->setColumnGap(kCalendarGridGap * scale);
+  dayGrid->setStretchItems(true);
   dayGrid->setSize(innerWidth, 0.0f);
   dayGrid->setMinCellHeight(dayCellHeight);
 
@@ -722,7 +724,7 @@ void CalendarTab::rebuild() {
     int cellMonthShift = 0;
     bool inMonth = false;
 
-    const auto mutedDayPalette = [] {
+    const Button::ButtonPalette mutedDayPalette = [] {
       Button::ButtonPalette ghostPalette = Button::defaultPalette(ButtonVariant::Ghost);
       ghostPalette.normal.label = colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.75f);
       return ghostPalette;
@@ -746,14 +748,18 @@ void CalendarTab::rebuild() {
     } else {
       cellDay = day;
       inMonth = true;
-      const bool selected = m_selectedYear == year && m_selectedMonth == month && m_selectedDay == day;
-      const bool isToday = state.isCurrentMonth && day == state.today;
       dayButton->setText(std::to_string(day));
+      const bool selected = m_selectedYear == year && m_selectedMonth == month && m_selectedDay == day;
       if (selected) {
         dayButton->setVariant(ButtonVariant::Primary);
       } else {
+        const bool isToday = state.isCurrentMonth && day == state.today;
+        if (isToday) {
+          Button::ButtonPalette currentDayButtonPalette = Button::defaultPalette(ButtonVariant::Ghost);
+          currentDayButtonPalette.normal.label = colorSpecFromRole(ColorRole::Primary);
+          dayButton->setCustomPalette(currentDayButtonPalette);
+        }
         dayButton->label()->setFontWeight(FontWeight::Bold);
-        dayButton->label()->setColor(colorSpecFromRole(isToday ? ColorRole::Primary : ColorRole::OnSurface));
       }
       ++day;
     }
@@ -838,9 +844,10 @@ void CalendarTab::rebuildEventList(float scale) {
   selectedTm.tm_mon = m_selectedMonth;
   selectedTm.tm_mday = m_selectedDay;
   selectedTm.tm_isdst = -1;
-  std::mktime(&selectedTm); // normalize tm_wday
+  const std::time_t selectedRaw = std::mktime(&selectedTm); // normalize tm_wday
   if (m_eventsTitle != nullptr) {
-    m_eventsTitle->setText(formatStrftime("%A %e %B", selectedTm));
+    const char* format = m_config != nullptr ? m_config->config().calendar.eventDateFormat.c_str() : "%A %e %B";
+    m_eventsTitle->setText(formatLocalUnixTime(static_cast<std::int64_t>(selectedRaw), format));
   }
 
   const int selectedKey = dateKey(m_selectedYear, m_selectedMonth, m_selectedDay);
@@ -879,9 +886,8 @@ void CalendarTab::rebuildEventList(float scale) {
       timeText = i18n::tr("control-center.calendar.all-day");
     } else {
       const std::time_t raw = std::chrono::system_clock::to_time_t(event->start);
-      std::tm tm{};
-      localtime_r(&raw, &tm);
-      timeText = formatStrftime("%H:%M", tm);
+      const char* format = m_config != nullptr ? m_config->config().calendar.eventTimeFormat.c_str() : "%H:%M";
+      timeText = formatLocalUnixTime(static_cast<std::int64_t>(raw), format);
     }
 
     auto dot = ui::box({

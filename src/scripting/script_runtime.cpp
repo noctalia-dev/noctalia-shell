@@ -32,6 +32,8 @@ namespace scripting {
       return counter.fetch_add(1, std::memory_order_relaxed);
     }
 
+    // Per-call budgets, spent in worker-thread CPU time (see threadCpuTime() in
+    // luau_host.cpp).
     constexpr auto kLoadBudget = std::chrono::milliseconds(100);
     constexpr auto kUpdateBudget = std::chrono::milliseconds(12);
     constexpr auto kCallbackBudget = std::chrono::milliseconds(25);
@@ -447,6 +449,19 @@ namespace scripting {
       (void)enqueue(std::move(event));
     }
 
+    void
+    enqueueHttpStreamEvent(std::uint64_t hostId, int streamKey, bool closed, std::string line, bool ok, int status) {
+      ScriptEvent event;
+      event.kind = closed ? ScriptEventKind::HttpStreamClosed : ScriptEventKind::HttpStreamLine;
+      event.hostId = hostId;
+      event.callbackRef = streamKey;
+      event.first = std::move(line);
+      event.httpOk = ok;
+      event.httpStatus = status;
+      event.budget = kCallbackBudget;
+      (void)enqueue(std::move(event));
+    }
+
     void drain() {
       for (;;) {
         ScriptEvent event;
@@ -562,6 +577,25 @@ namespace scripting {
         return collectResult(event, "stream callback", ok);
       }
 
+      if (event.kind == ScriptEventKind::HttpStreamLine) {
+        if (event.hostId != host->hostId() || !host->hasHttpStream(event.callbackRef)) {
+          return std::nullopt; // stale (reloaded host) or stopped stream
+        }
+        bindingContext.beginCall(event.snapshot);
+        const bool ok = host->callHttpStreamLineCallback(event.callbackRef, event.first, event.budget);
+        return collectResult(event, "http stream callback", ok);
+      }
+
+      if (event.kind == ScriptEventKind::HttpStreamClosed) {
+        if (event.hostId != host->hostId() || !host->hasHttpStream(event.callbackRef)) {
+          return std::nullopt;
+        }
+        bindingContext.beginCall(event.snapshot);
+        const bool ok =
+            host->callHttpStreamCloseCallback(event.callbackRef, event.httpOk, event.httpStatus, event.budget);
+        return collectResult(event, "http stream close callback", ok);
+      }
+
       if (event.kind == ScriptEventKind::SettingsChanged) {
         // Swap the live snapshot first, so getConfig() returns the new values
         // both inside onConfigChanged and on the next update().
@@ -649,6 +683,13 @@ namespace scripting {
           state->enqueueStreamLine(hostId, callbackRef, std::move(line));
         }
       });
+      host->setHttpStreamEventHandler(
+          [weak](std::uint64_t hostId, int streamKey, bool closed, std::string line, bool ok, int status) {
+            if (auto state = weak.lock()) {
+              state->enqueueHttpStreamEvent(hostId, streamKey, closed, std::move(line), ok, status);
+            }
+          }
+      );
 
       ScriptResult result;
       result.generation = event.generation;
@@ -714,7 +755,7 @@ namespace scripting {
       result.sideEffects = bindingContext.sideEffects;
       result.hasOnIpcKnown = false;
       if (!ok) {
-        result.error = result.timedOut ? "script execution timed out" : "script callback failed";
+        result.error = result.timedOut ? "script callback exceeded its CPU budget" : "script callback failed";
       }
 
       if (result.patch.updateIntervalMs.has_value()) {
@@ -727,8 +768,8 @@ namespace scripting {
     }
 
     // Health verdict for a finished call. Two independent budgets feed `unhealthy`:
-    // repeated timeouts (a script that won't return) and repeated hard errors (a
-    // script that keeps throwing — including hitting the VM memory ceiling). When
+    // repeated CPU-budget overruns (a script that won't yield) and repeated hard
+    // errors (a script that keeps throwing, including hitting the VM memory ceiling). When
     // either trips, the runtime is auto-disabled (enqueue() drops further events
     // until reload) and the user is notified once.
     void updateHealth(ScriptResult& result) {
@@ -817,6 +858,12 @@ namespace scripting {
       }
 
       dispatchSideEffects(result.sideEffects, clipboard, scriptApi, togglePanelCallback);
+      for (const auto& effect : result.sideEffects) {
+        if (effect.kind == ScriptSideEffectKind::CopyToClipboard) {
+          result.copiedToClipboard = true;
+          break;
+        }
+      }
       result.sideEffects.clear();
 
       for (auto& callback : callbacks) {

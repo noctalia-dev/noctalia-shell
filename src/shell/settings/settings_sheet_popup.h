@@ -38,6 +38,8 @@ namespace settings {
     bool scrollableBody = true;
     // When set, called instead of close(). Return true to consume (prevent close).
     std::function<bool()> onCloseRequested;
+    // Optional keyboard pre-dispatch (e.g. plugin-store grid navigation). Return true to consume.
+    std::function<bool(const KeyboardEvent&)> preDispatchKeyboard;
   };
 
   class SettingsSheetPopup final : public DialogPopupHost {
@@ -56,6 +58,7 @@ namespace settings {
     [[nodiscard]] wl_surface* wlSurface() const noexcept;
     [[nodiscard]] bool ownsSelectDropdownSurface(wl_surface* surface) const noexcept;
     [[nodiscard]] bool isSelectDropdownOpen() const noexcept;
+    [[nodiscard]] InputArea* focusedArea() noexcept;
 
     void setSheetTitle(std::string title);
     void setStatusMessage(std::string message, bool error);
@@ -70,6 +73,7 @@ namespace settings {
     void layoutSheet(float contentWidth, float contentHeight) override;
     void cancelToFacade() override;
     [[nodiscard]] InputArea* initialFocusArea() override;
+    [[nodiscard]] bool preDispatchKeyboard(const KeyboardEvent& event) override;
     void onSheetClose() override;
 
   private:
@@ -87,6 +91,7 @@ namespace settings {
     bool m_fillParentHeight = false;
     bool m_scrollableBody = true;
     std::function<bool()> m_onCloseRequested;
+    std::function<bool(const KeyboardEvent&)> m_preDispatchKeyboard;
     std::string m_sheetTitle;
     Label* m_sheetTitleLabel = nullptr;
     std::string m_statusMessage;

@@ -88,10 +88,10 @@ namespace {
   }
 
   [[nodiscard]] std::uint32_t hashAppKey(std::string_view appKey) {
-    std::uint32_t hash = 2166136261u;
+    std::uint32_t hash = 2166136261U;
     for (const unsigned char byte : appKey) {
       hash ^= byte;
-      hash *= 16777619u;
+      hash *= 16777619U;
     }
     return hash;
   }
@@ -103,7 +103,7 @@ namespace {
     float baseV = 0.0f;
     rgbToHsv(primary, baseH, baseS, baseV);
 
-    const float hashT = static_cast<float>(hashAppKey(appKey) % 1000u) / 1000.0f;
+    const float hashT = static_cast<float>(hashAppKey(appKey) % 1000U) / 1000.0f;
     const float hue = baseH + hashT * 0.72f;
     const float sat = std::clamp(baseS * (0.82f + hashT * 0.22f), 0.38f, 0.82f);
     const float val = std::clamp(baseV * (0.86f + (1.0f - hashT) * 0.14f), 0.52f, 0.90f);

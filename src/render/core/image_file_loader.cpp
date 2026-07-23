@@ -358,7 +358,13 @@ namespace {
       return std::unexpected(decoded.error());
     }
 
-    LoadedImageFile loaded{.rgba = std::move(decoded->pixels), .width = decoded->width, .height = decoded->height};
+    LoadedImageFile loaded{
+        .rgba = std::move(decoded->pixels),
+        .width = decoded->width,
+        .height = decoded->height,
+        .sourceWidth = decoded->width,
+        .sourceHeight = decoded->height,
+    };
 
     // Crop before resizing so the kept square fills targetSize at full detail,
     // instead of resizing the whole frame and discarding most of it afterwards.
@@ -470,6 +476,8 @@ namespace {
         .rgba = std::vector<std::uint8_t>(static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4U),
         .width = width,
         .height = height,
+        .sourceWidth = width,
+        .sourceHeight = height,
     };
     argb32ToRgba(
         cairo_image_surface_get_data(surface), cairo_image_surface_get_stride(surface), loaded.rgba.data(), width,

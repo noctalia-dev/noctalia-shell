@@ -29,6 +29,8 @@
   libqalculate,
   libxml2,
   md4c,
+  libsecret,
+  libsodium,
   stb,
   fetchFromGitHub,
   nlohmann_json,
@@ -43,7 +45,7 @@
 
 let
   inherit (builtins) head match readFile;
-  version = head (match ".*version: '([^']+)'.*" (readFile ../meson.build));
+  version = head (match ".*version: '([0-9][^']+)'.*" (readFile ../meson.build));
 
   # libprojectm 4.x links against desktop GL by default, but noctalia uses an
   # EGL/GLESv2 share group. Toggle the upstream CMake ENABLE_GLES option so the
@@ -51,15 +53,13 @@ let
   # pkg-config file: upstream emits "-l:projectM-4" (GCC exact-filename syntax)
   # whose literal filename does not exist (the real .so is "libprojectM-4.so"),
   # so the linker can't resolve it. Rewrite to the conventional "-lprojectM-4".
+  #
+  # (The former ./patches/libprojectm-null-texture-descriptor.patch guarded
+  # TextureSamplerDescriptor::Empty() against a null m_texture; that null check
+  # is now upstream in the libprojectm version nixpkgs ships, so the patch was
+  # dropped.)
   libprojectm-gles = libprojectm.overrideAttrs (old: {
     pname = "libprojectm-gles";
-    patches = (old.patches or [ ]) ++ [
-      # TextureSamplerDescriptor::Empty() dereferences m_texture without a null
-      # check. GetRandomTexture() returns a default-constructed descriptor (null
-      # m_texture) when no texture search paths are configured, causing a SIGSEGV
-      # in MilkdropShader::LoadVariables on any preset that uses rand-samplers.
-      ./patches/libprojectm-null-texture-descriptor.patch
-    ];
     cmakeFlags = (old.cmakeFlags or [ ]) ++ [
       "-DENABLE_GLES=ON"
     ];
@@ -90,11 +90,6 @@ stdenv.mkDerivation {
   inherit version;
 
   src = lib.cleanSource ./..;
-
-  postPatch = ''
-    # Remove -march=native and -mtune=native for reproducible builds
-    sed -i "s/'-march=native', '-mtune=native',//" meson.build
-  '';
 
   postFixup = ''
     wrapProgram $out/bin/noctalia \
@@ -136,6 +131,8 @@ stdenv.mkDerivation {
     libqalculate
     libxml2
     md4c
+    libsecret
+    libsodium
     stb'
     nlohmann_json
     tomlplusplus
@@ -146,7 +143,7 @@ stdenv.mkDerivation {
   ninjaFlags = [ "-v" ];
 
   meta = with lib; {
-    description = "A lightweight Wayland shell and bar built directly on Wayland + OpenGL ES";
+    description = "A sleek, customizable desktop shell crafted for Wayland.";
     homepage = "https://github.com/noctalia-dev/noctalia";
     license = licenses.mit;
     platforms = platforms.linux;

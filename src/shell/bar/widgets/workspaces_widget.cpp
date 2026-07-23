@@ -35,6 +35,10 @@ namespace {
   constexpr float kWorkspacePillDefaultHeight = Style::baseGlyphSize;
   constexpr float kWorkspaceAnimDurationMs = static_cast<float>(Style::animNormal);
 
+  [[nodiscard]] constexpr float workspaceLabelFontSize(bool minimal) {
+    return minimal ? Style::fontSizeBody : Style::fontSizeMini;
+  }
+
   [[nodiscard]] FontWeight workspaceFontWeight(FontWeight baseWeight, bool minimal, bool active) {
     if (minimal && active) {
       return static_cast<FontWeight>(static_cast<int>(baseWeight) + 200);
@@ -78,7 +82,8 @@ WorkspacesWidget::WorkspacesWidget(
       m_activePillSize(std::clamp(options.activePillSize, 0.25f, 8.0f)),
       m_inactivePillSize(std::clamp(options.inactivePillSize, 0.25f, 8.0f)), m_minimal(options.minimal),
       m_focusedPill(options.focusedPill), m_focusedOutputOnly(options.focusedOutputOnly),
-      m_focusedColor(options.focusedColor), m_occupiedColor(options.occupiedColor), m_emptyColor(options.emptyColor) {
+      m_enableScroll(options.enableScroll), m_focusedColor(options.focusedColor),
+      m_occupiedColor(options.occupiedColor), m_emptyColor(options.emptyColor), m_urgentColor(options.urgentColor) {
   buildDesktopIconIndex();
 }
 
@@ -109,6 +114,9 @@ bool WorkspacesWidget::isWorkspaceHidden(const Workspace& workspace) const noexc
 void WorkspacesWidget::create() {
   auto container = std::make_unique<InputArea>();
   container->setOnAxis([this](const InputArea::PointerData& data) {
+    if (!m_enableScroll) {
+      return;
+    }
     if (data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL) {
       return;
     }
@@ -120,7 +128,6 @@ void WorkspacesWidget::create() {
     // as moving to the next workspace and negative as previous.
     activateAdjacentWorkspace(steps > 0.0f ? 1 : -1);
   });
-  container->setClipChildren(true);
   m_container = container.get();
   setRoot(std::move(container));
 
@@ -427,7 +434,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
   }
 
   const float gap = kWorkspaceGap * m_contentScale;
-  const float labelFontSize = Style::fontSizeMini * m_contentScale;
+  const float labelFontSize = workspaceLabelFontSize(m_minimal) * m_contentScale;
   const float pillHeight = std::round(kWorkspacePillDefaultHeight * m_contentScale * m_pillScale);
   const FontWeight configuredFontWeight = labelFontWeight();
 
@@ -698,18 +705,21 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     m_container->setFrameSize(total, m_indicatorHeight);
   }
 
-  ColorSpec hoverFill = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface));
-  hoverFill.alpha = 0.0f;
-  m_hoverOverlay = static_cast<Box*>(m_container->addChild(
-      ui::box({
-          .fill = hoverFill,
-          .visible = false,
-          .configure = [](Box& box) {
-            box.setParticipatesInLayout(false);
-            box.setHitTestVisible(false);
-          },
-      })
-  ));
+  // Only minimal style draws the translucent per-item hover overlay.
+  if (m_minimal && barCapsuleSpec().hoverHighlight) {
+    ColorSpec hoverFill = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface));
+    hoverFill.alpha = 0.0f;
+    m_hoverOverlay = static_cast<Box*>(m_container->addChild(
+        ui::box({
+            .fill = hoverFill,
+            .visible = false,
+            .configure = [](Box& box) {
+              box.setParticipatesInLayout(false);
+              box.setHitTestVisible(false);
+            },
+        })
+    ));
+  }
 
   if (needsAnimation) {
     startAnimation();
@@ -734,23 +744,17 @@ void WorkspacesWidget::computeTargets() {
 }
 
 void WorkspacesWidget::updateItemFlowPositions() {
-  const auto gapProgress = [](const Item& item) {
-    if (item.currentWidth <= 0.0f) {
-      return 0.0f;
-    }
-    if (item.fromWidth <= 0.0f && item.targetWidth > 0.0f) {
-      return std::clamp(item.currentWidth / item.targetWidth, 0.0f, 1.0f);
-    }
-    if (item.targetWidth <= 0.0f && item.fromWidth > 0.0f) {
-      return std::clamp(item.currentWidth / item.fromWidth, 0.0f, 1.0f);
-    }
-    return 1.0f;
-  };
-
+  // A gap precedes an item only in proportion to how visible both it and the items before it are, so
+  // gaps grow and collapse with the pills they separate. precedingProgress is the accumulated (clamped)
+  // visibility of earlier items: it keeps the first visible pill from getting a leading gap.
   float cursor = 0.0f;
+  float precedingProgress = 0.0f;
   for (auto& item : m_items) {
+    const float itemProgress = std::clamp(item.currentOpacity, 0.0f, 1.0f);
+    cursor += m_gap * std::min(precedingProgress, itemProgress);
     item.currentX = cursor;
-    cursor += item.currentWidth + m_gap * gapProgress(item);
+    cursor += item.currentWidth;
+    precedingProgress = std::min(1.0f, precedingProgress + itemProgress);
   }
 }
 
@@ -766,13 +770,16 @@ void WorkspacesWidget::updateContainerSize() {
   }
 
   if (m_animId != 0) {
+    // The container is not clipped: it must always enclose the pills, so reserve the larger of the
+    // current and target bounds. Taking the max keeps a shrinking transition from clipping pills that
+    // are still wide, and a growing one from snapping the bar wider than the pills have reached.
     float targetTotal = 0.0f;
     for (const auto& item : m_items) {
       if (item.targetWidth > 0.0f) {
         targetTotal = std::max(targetTotal, item.targetX + item.targetWidth);
       }
     }
-    total = targetTotal;
+    total = std::max(total, targetTotal);
   }
   const float nextWidth = m_isVertical ? m_indicatorHeight : total;
   const float nextHeight = m_isVertical ? total : m_indicatorHeight;
@@ -792,7 +799,7 @@ void WorkspacesWidget::ensureItemLabel(Renderer& renderer, Item& item, const Wor
     return;
   }
 
-  const float labelFontSize = Style::fontSizeMini * m_contentScale;
+  const float labelFontSize = workspaceLabelFontSize(m_minimal) * m_contentScale;
   item.text = static_cast<Label*>(item.area->addChild(
       ui::label({
           .text = item.label,
@@ -810,7 +817,7 @@ void WorkspacesWidget::recalculateItemMetrics(
     Renderer& renderer, Item& item, const Workspace& workspace, std::size_t displayIndex
 ) {
   const std::string label = workspaceLabel(workspace, displayIndex);
-  const float labelFontSize = Style::fontSizeMini * m_contentScale;
+  const float labelFontSize = workspaceLabelFontSize(m_minimal) * m_contentScale;
   const float pillHeight = std::round(kWorkspacePillDefaultHeight * m_contentScale * m_pillScale);
   const float baseSize = std::round(pillHeight);
   const float padding = m_minimal ? (Style::spaceXs * m_contentScale) : (baseSize * 0.6f);
@@ -1177,9 +1184,6 @@ void WorkspacesWidget::updateHoverOverlay() {
   Item& hoveredItem = *hoveredIt;
 
   if (!m_minimal) {
-    if (m_hoverOverlay != nullptr) {
-      m_hoverOverlay->setVisible(false);
-    }
     for (auto& item : m_items) {
       if (&item == &hoveredItem) {
         if (item.indicator != nullptr) {
@@ -1471,7 +1475,7 @@ ColorSpec WorkspacesWidget::workspaceFillColor(const Workspace& workspace) const
     return m_occupiedColor;
   }
   if (workspace.urgent) {
-    return colorSpecFromRole(ColorRole::Error);
+    return m_urgentColor;
   }
   if (workspace.occupied) {
     return m_occupiedColor;
@@ -1483,7 +1487,7 @@ ColorSpec WorkspacesWidget::workspaceFillColor(const Workspace& workspace) const
 
 ColorSpec WorkspacesWidget::workspaceTextColor(const Workspace& workspace) const {
   if (workspace.urgent) {
-    return m_minimal ? colorSpecFromRole(ColorRole::Error) : colorSpecFromRole(ColorRole::OnError);
+    return m_minimal ? m_urgentColor : readableColorForFill(m_urgentColor);
   }
   if (!m_minimal) {
     return readableColorForFill(workspaceFillColor(workspace));

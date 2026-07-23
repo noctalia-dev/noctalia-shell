@@ -16,10 +16,42 @@
 #include "ui/palette.h"
 #include "ui/style.h"
 
+#include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <memory>
 
 namespace {
+
+  int wrappedLineCount(std::string_view text, int charsPerLine, int maxLines) {
+    if (text.empty()) {
+      return 0;
+    }
+    int lines = 0;
+    int col = 0;
+    for (char ch : text) {
+      if (ch == '\n') {
+        ++lines;
+        col = 0;
+        if (lines >= maxLines) {
+          return maxLines;
+        }
+        continue;
+      }
+      ++col;
+      if (charsPerLine > 0 && col > charsPerLine) {
+        ++lines;
+        col = 1;
+        if (lines >= maxLines) {
+          return maxLines;
+        }
+      }
+    }
+    if (col > 0 || lines == 0) {
+      ++lines;
+    }
+    return std::min(lines, maxLines);
+  }
 
   std::string wrapLongRuns(std::string text, std::size_t maxRun = 48) {
     std::string out;
@@ -50,13 +82,72 @@ PanelPlacement PolkitPanel::panelPlacement() const noexcept {
   return m_config != nullptr ? m_config->config().shell.panel.polkitPlacement : PanelPlacement::Floating;
 }
 
+float PolkitPanel::preferredHeight() const {
+  const float scale = contentScale();
+  const float bodyLine = Style::fontSizeBody * scale * 1.35f;
+  const float titleLine = Style::fontSizeTitle * scale * 1.35f;
+  const float captionLine = Style::fontSizeCaption * scale * 1.35f;
+  const float iconSize = scaled(48.0f);
+  const float pad = Style::spaceLg * scale;
+  const float gapMd = Style::spaceMd * scale;
+  const float gapSm = Style::spaceSm * scale;
+
+  const float contentW = preferredWidth() - scaled(Style::panelPadding) * 2.0f;
+  const float innerW = std::max(1.0f, contentW - pad * 2.0f);
+  const float messageW = std::max(1.0f, innerW - iconSize - gapMd);
+  const float avgChar = Style::fontSizeBody * scale * 0.55f;
+  const int messageChars = std::max(1, static_cast<int>(messageW / avgChar));
+  const int promptChars = std::max(1, static_cast<int>(innerW / avgChar));
+
+  int messageLines = 1;
+  int promptLines = 1;
+  int supplementaryLines = 0;
+
+  if (PolkitAgent* agent = m_agentProvider != nullptr ? m_agentProvider() : nullptr;
+      agent != nullptr && agent->hasPendingRequest()) {
+    const PolkitRequest request = agent->pendingRequest();
+    const std::string message = wrapLongRuns(request.message.empty() ? request.actionId : request.message);
+    messageLines = std::max(1, wrappedLineCount(message, messageChars, 6));
+
+    const std::string supplementaryRaw = agent->supplementaryMessage();
+    const bool supplementaryError = agent->supplementaryIsError();
+    std::string promptText = wrapLongRuns(agent->inputPrompt());
+    std::string supplementaryText = wrapLongRuns(supplementaryRaw);
+    if (!agent->isResponseRequired() && !supplementaryText.empty() && !supplementaryError) {
+      promptText = supplementaryText;
+      supplementaryText.clear();
+    } else if (
+        !supplementaryText.empty()
+        && (supplementaryError || supplementaryText == i18n::tr("auth.polkit.authenticating"))
+    ) {
+      promptText = supplementaryText;
+      supplementaryText.clear();
+    }
+    // Preferred height is applied once at open. The password request arrives right after
+    // BeginAuthentication, so always reserve prompt+input chrome even if responseRequired
+    // is still false when the panel is first opened.
+    promptLines = std::max(1, wrappedLineCount(promptText, promptChars, 3));
+    supplementaryLines = wrappedLineCount(supplementaryText, promptChars, 4);
+  }
+
+  const float top = std::max(iconSize, titleLine + static_cast<float>(messageLines) * bodyLine);
+  float bottom = static_cast<float>(promptLines) * bodyLine + gapSm;
+  bottom += Style::controlHeight * scale + gapSm;
+  if (supplementaryLines > 0) {
+    bottom += static_cast<float>(supplementaryLines) * captionLine + gapSm;
+  }
+  bottom += Style::controlHeight * scale;
+
+  return std::ceil(pad * 2.0f + top + gapMd + bottom + scaled(Style::panelPadding) * 2.0f + gapSm);
+}
+
 void PolkitPanel::create() {
   const float scale = contentScale();
   const float iconSize = scaled(48.0f);
   auto root = ui::column({
       .out = &m_rootLayout,
       .align = FlexAlign::Stretch,
-      .justify = FlexJustify::SpaceBetween,
+      .gap = Style::spaceMd * scale,
       .padding = Style::spaceLg * scale,
   });
 
@@ -170,6 +261,19 @@ void PolkitPanel::onClose() {
   }
   m_lastResponseRequired = false;
   clearReleasedRoot();
+
+  m_rootLayout = nullptr;
+  m_focusArea = nullptr;
+  m_titleLabel = nullptr;
+  m_messageLabel = nullptr;
+  m_promptLabel = nullptr;
+  m_supplementaryLabel = nullptr;
+  m_input = nullptr;
+  m_submitButton = nullptr;
+  m_cancelButton = nullptr;
+  m_iconContainer = nullptr;
+  m_icon = nullptr;
+  m_fallbackIcon = nullptr;
 }
 
 InputArea* PolkitPanel::initialFocusArea() const {

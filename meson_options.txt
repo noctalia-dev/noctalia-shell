@@ -14,3 +14,9 @@ option(
 
 option('tests', type: 'feature', value: 'auto', description: 'Build unit tests (auto: on for unsanitized debug builds)')
 option('jemalloc', type: 'feature', value: 'auto', description: 'Use jemalloc on glibc builds')
+option(
+  'native_optimizations',
+  type: 'boolean',
+  value: false,
+  description: 'Optimize for the build machine CPU; output may not be portable',
+)

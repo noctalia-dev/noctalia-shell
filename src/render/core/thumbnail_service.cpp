@@ -40,10 +40,10 @@ namespace {
   }
 
   std::uint64_t fnv1a64(std::string_view text) {
-    std::uint64_t hash = 14695981039346656037ull;
+    std::uint64_t hash = 14695981039346656037ULL;
     for (char ch : text) {
       hash ^= static_cast<std::uint64_t>(static_cast<unsigned char>(ch));
-      hash *= 1099511628211ull;
+      hash *= 1099511628211ULL;
     }
     return hash;
   }
@@ -150,7 +150,7 @@ namespace {
 std::size_t ThumbnailService::RequestKeyHash::operator()(const RequestKey& key) const noexcept {
   const std::size_t pathHash = std::hash<std::string>{}(key.path);
   const std::size_t sizeHash = std::hash<int>{}(key.targetPx);
-  return pathHash ^ (sizeHash + 0x9e3779b97f4a7c15ull + (pathHash << 6U) + (pathHash >> 2U));
+  return pathHash ^ (sizeHash + 0x9e3779b97f4a7c15ULL + (pathHash << 6U) + (pathHash >> 2U));
 }
 
 ThumbnailService::Subscription::Subscription(std::function<void()> disconnect) : m_disconnect(std::move(disconnect)) {}

@@ -101,12 +101,15 @@ namespace {
 
 } // namespace
 
-PluginWidget::PluginWidget(scripting::PluginRuntimeContext context, std::string barName, std::string outputName)
+PluginWidget::PluginWidget(
+    scripting::PluginRuntimeContext context, std::string barName, std::string outputName, bool enableScroll
+)
     : m_entryId(std::move(context.entryId)), m_sourcePath(std::move(context.sourcePath)),
       m_pluginDir(m_sourcePath.parent_path()), m_barName(std::move(barName)), m_outputName(std::move(outputName)),
       m_scriptApi(context.scriptApi), m_settings(std::move(context.settings)), m_fileWatcher(context.fileWatcher),
       m_platform(context.platform), m_clipboard(context.clipboard), m_httpClient(context.httpClient),
-      m_audioSpectrum(context.audioSpectrum), m_mpris(context.mpris), m_timerPhase(nextTimerPhase()) {
+      m_audioSpectrum(context.audioSpectrum), m_mpris(context.mpris), m_timerPhase(nextTimerPhase()),
+      m_enableScroll(enableScroll) {
   m_audioSpectrumEnabled = settingBool(m_settings, "audio_spectrum", false);
   m_audioSpectrumBands =
       static_cast<int>(std::clamp<std::int64_t>(settingInt(m_settings, "audio_spectrum_bands", 16), 1, 128));
@@ -178,7 +181,7 @@ void PluginWidget::create() {
       (void)m_runtime->enqueueCallBool("onHover", false, makeScriptSnapshot());
   });
   area->setOnAxisHandler([this](const InputArea::PointerData& data) {
-    if (m_runtime == nullptr || !m_runtime->hasOnScroll())
+    if (!m_enableScroll || m_runtime == nullptr || !m_runtime->hasOnScroll())
       return false;
     // Whole detent steps, so a wheel notch and a touchpad flick mean the same
     // thing to the script. Continuous sources report 0 until a detent accrues.

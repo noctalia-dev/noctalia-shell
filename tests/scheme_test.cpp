@@ -22,7 +22,7 @@ namespace {
   }
 
   std::vector<uint8_t> makeColorfulBuffer() {
-    std::vector<uint8_t> rgb(112u * 112u * 3u);
+    std::vector<uint8_t> rgb(112U * 112U * 3U);
     for (std::size_t y = 0; y < 112; ++y) {
       for (std::size_t x = 0; x < 112; ++x) {
         std::array<uint8_t, 3> color;
@@ -33,7 +33,7 @@ namespace {
         } else {
           color = {236, 166, 51};
         }
-        const std::size_t i = (y * 112u + x) * 3u;
+        const std::size_t i = (y * 112U + x) * 3U;
         rgb[i + 0] = color[0];
         rgb[i + 1] = color[1];
         rgb[i + 2] = color[2];
@@ -44,7 +44,7 @@ namespace {
 
   uint32_t token(const noctalia::theme::GeneratedPalette& palette, const std::string& name) {
     const auto it = palette.dark.find(name);
-    return it == palette.dark.end() ? 0u : it->second;
+    return it == palette.dark.end() ? 0U : it->second;
   }
 
   double saturation(uint32_t argb) {

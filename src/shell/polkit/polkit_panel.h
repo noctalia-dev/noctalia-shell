@@ -27,10 +27,11 @@ public:
   void onClose() override;
 
   [[nodiscard]] float preferredWidth() const override { return scaled(480.0f); }
-  [[nodiscard]] float preferredHeight() const override { return scaled(240.0f); }
+  [[nodiscard]] float preferredHeight() const override;
   [[nodiscard]] PanelPlacement panelPlacement() const noexcept override;
   [[nodiscard]] LayerShellLayer layer() const override { return LayerShellLayer::Overlay; }
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::Exclusive; }
+  [[nodiscard]] bool dismissOnOutsideClick() const override { return false; }
   [[nodiscard]] InputArea* initialFocusArea() const override;
 
 private:

@@ -19,6 +19,7 @@ public:
   [[nodiscard]] std::string_view id() const override { return "Calculator"; }
   [[nodiscard]] std::string displayName() const override;
   [[nodiscard]] std::string_view defaultGlyphName() const override { return "calculator"; }
+  [[nodiscard]] bool supportsAutoPaste() const override { return true; }
 
   void initialize() override;
 
@@ -27,7 +28,8 @@ public:
   bool activate(const LauncherResult& result) override;
 
 private:
-  // Download fresh exchange rates over the async HTTP client, gated on offline mode.
+  // Download fresh exchange rates over the async HTTP client, gated on
+  // shell.launcher.fetch_exchange_rates and shell.offline_mode.
   void refreshExchangeRates();
 
   ClipboardService* m_clipboard = nullptr;

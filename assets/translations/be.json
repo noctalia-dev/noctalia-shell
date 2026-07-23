@@ -536,10 +536,6 @@
         "wave-thickness": "Таўшчыня хвалі",
         "widget-section": "Віджэт"
       },
-      "state": {
-        "grid-off": "Сетка выключана",
-        "grid-on": "Сетка ўключана"
-      },
       "title": "Віджэты працоўнага стала",
       "types": {
         "audio-visualizer": "Візуалізатар аўдыя",
@@ -1342,7 +1338,6 @@
         "refreshing": "Абнаўленне сіпсу ўбудоў...",
         "remove": "Выдаліць убудову",
         "requires": "Патрабуе {dependencies}",
-        "requires-newer-noctalia": "патрабуе больш новую версію Noctalia",
         "title": "Убудовы"
       },
       "settings": {
@@ -1373,8 +1368,7 @@
         "remove": "Выдаліць крыніцы",
         "save": "Захаваць",
         "title": "Крыніцы",
-        "update": "Абнавіць",
-        "update-on-startup": "Абнаўляць на запуску"
+        "update": "Абнавіць"
       },
       "store": {
         "add": "Дадаць у Noctalia",
@@ -1410,6 +1404,10 @@
         "builtin-palette": {
           "description": "Выберыце палітру з гатовага каталога",
           "label": "Убудаваная палітра"
+        },
+        "button-borders": {
+          "description": "Дадаць рамкі кнопкам абалонкі",
+          "label": "Рамкі кнопак"
         },
         "community-palette": {
           "description": "Выберыце палітру з каталога супольнасці",
@@ -1578,9 +1576,6 @@
           "description": "Колер занятых прастор; таксама падтрымліваюцца фіксаваныя колеры HEX"
         }
       }
-    },
-    "window": {
-      "filter-modified": "Мадыфікаваныя"
     }
   }
 }

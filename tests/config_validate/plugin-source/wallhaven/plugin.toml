@@ -1,6 +1,6 @@
 id = "noctalia/wallhaven"
 name = "Wallhaven"
-min_noctalia = "5.0.0"
+plugin_api = 3
 
 [[panel]]
 id = "browser"

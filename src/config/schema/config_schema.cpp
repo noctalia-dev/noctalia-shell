@@ -10,6 +10,7 @@
 #include "util/file_utils.h"
 
 #include <algorithm>
+#include <filesystem>
 #include <format>
 #include <stdexcept>
 #include <unordered_map>
@@ -54,17 +55,20 @@ namespace noctalia::config::schema {
         field(&OsdKindsConfig::keyboardLayout, "keyboard_layout"),
         field(&OsdKindsConfig::media, "media"),
         field(&OsdKindsConfig::privacy, "privacy"),
+        field(&OsdKindsConfig::keyboardBacklight, "keyboard_backlight"),
     };
     return s;
   }
 
   const Schema<OsdConfig>& osdSchema() {
     static const Schema<OsdConfig> s = {
+        field(&OsdConfig::enabled, "enabled"),
         field(&OsdConfig::position, "position"),
         field(&OsdConfig::positionVertical, "position_vertical"),
         field(&OsdConfig::orientation, "orientation"),
         field(&OsdConfig::scale, "scale", kScaleRange),
         field(&OsdConfig::backgroundOpacity, "background_opacity", kUnitRange),
+        field(&OsdConfig::border, "border"),
         field(&OsdConfig::offsetX, "offset_x", Range<std::int64_t>{0, std::nullopt}),
         field(&OsdConfig::offsetY, "offset_y", Range<std::int64_t>{0, std::nullopt}),
         field(&OsdConfig::monitors, "monitors"),
@@ -122,8 +126,14 @@ namespace noctalia::config::schema {
           field(&SystemConfig::MonitorConfig::ramPctCriticalThreshold, "ram_pct_critical_threshold"),
           field(&SystemConfig::MonitorConfig::swapPctActivityThreshold, "swap_pct_activity_threshold"),
           field(&SystemConfig::MonitorConfig::swapPctCriticalThreshold, "swap_pct_critical_threshold"),
-          field(&SystemConfig::MonitorConfig::diskPctActivityThreshold, "disk_pct_activity_threshold"),
-          field(&SystemConfig::MonitorConfig::diskPctCriticalThreshold, "disk_pct_critical_threshold"),
+          field(&SystemConfig::MonitorConfig::diskUsedPctActivityThreshold, "disk_used_pct_activity_threshold"),
+          field(&SystemConfig::MonitorConfig::diskUsedPctCriticalThreshold, "disk_used_pct_critical_threshold"),
+          field(&SystemConfig::MonitorConfig::diskUsedActivityThreshold, "disk_used_activity_threshold"),
+          field(&SystemConfig::MonitorConfig::diskUsedCriticalThreshold, "disk_used_critical_threshold"),
+          field(&SystemConfig::MonitorConfig::diskFreePctActivityThreshold, "disk_free_pct_activity_threshold"),
+          field(&SystemConfig::MonitorConfig::diskFreePctCriticalThreshold, "disk_free_pct_critical_threshold"),
+          field(&SystemConfig::MonitorConfig::diskFreeActivityThreshold, "disk_free_activity_threshold"),
+          field(&SystemConfig::MonitorConfig::diskFreeCriticalThreshold, "disk_free_critical_threshold"),
           field(&SystemConfig::MonitorConfig::netRxActivityThreshold, "net_rx_activity_threshold"),
           field(&SystemConfig::MonitorConfig::netRxCriticalThreshold, "net_rx_critical_threshold"),
           field(&SystemConfig::MonitorConfig::netTxActivityThreshold, "net_tx_activity_threshold"),
@@ -237,6 +247,7 @@ namespace noctalia::config::schema {
         field(&NotificationConfig::layer, "layer"),
         field(&NotificationConfig::scale, "scale", kScaleRange),
         field(&NotificationConfig::backgroundOpacity, "background_opacity", kUnitRange),
+        field(&NotificationConfig::border, "border"),
         field(&NotificationConfig::offsetX, "offset_x"),
         field(&NotificationConfig::offsetY, "offset_y"),
         field(&NotificationConfig::monitors, "monitors"),
@@ -353,63 +364,6 @@ namespace noctalia::config::schema {
     return s;
   }
 
-  const Schema<DockConfig>& dockSchema() {
-    static const Schema<DockConfig> s = {
-        field(&DockConfig::enabled, "enabled"),
-        enumField(&DockConfig::position, "position", kDockEdges),
-        field(&DockConfig::activeMonitorOnly, "active_monitor_only"),
-        field(&DockConfig::iconSize, "icon_size", kDockIconSizeRange),
-        field(&DockConfig::mainAxisPadding, "main_axis_padding", kDockPaddingRange),
-        field(&DockConfig::crossAxisPadding, "cross_axis_padding", kDockPaddingRange),
-        field(&DockConfig::itemSpacing, "item_spacing", kDockItemSpacingRange),
-        field(&DockConfig::backgroundOpacity, "background_opacity", kUnitRange),
-        // `radius` seeds all four corners; per-corner keys below override it.
-        custom<DockConfig>(
-            "radius",
-            [](const toml::table& tbl, DockConfig& d, std::string_view, Diagnostics&) {
-              if (auto v = tbl["radius"].value<std::int64_t>()) {
-                const auto r = static_cast<std::int32_t>(applyRange<std::int64_t>(*v, kDockRadiusRange));
-                d.radius = r;
-                d.radiusTopLeft = r;
-                d.radiusTopRight = r;
-                d.radiusBottomLeft = r;
-                d.radiusBottomRight = r;
-              }
-            },
-            [](toml::table& tbl, const DockConfig& d) {
-              tbl.insert_or_assign("radius", static_cast<std::int64_t>(d.radius));
-            }
-        ),
-        field(&DockConfig::radiusTopLeft, "radius_top_left", kDockRadiusRange),
-        field(&DockConfig::radiusTopRight, "radius_top_right", kDockRadiusRange),
-        field(&DockConfig::radiusBottomLeft, "radius_bottom_left", kDockRadiusRange),
-        field(&DockConfig::radiusBottomRight, "radius_bottom_right", kDockRadiusRange),
-        field(&DockConfig::concaveEdgeCorners, "concave_edge_corners"),
-        field(&DockConfig::marginEnds, "margin_ends", kDockMarginEndsRange),
-        field(&DockConfig::marginEdge, "margin_edge", kDockMarginEdgeRange),
-        field(&DockConfig::shadow, "shadow"),
-        field(&DockConfig::showRunning, "show_running"),
-        field(&DockConfig::autoHide, "auto_hide"),
-        field(&DockConfig::smartAutoHide, "smart_auto_hide"),
-        field(&DockConfig::reserveSpace, "reserve_space"),
-        field(&DockConfig::activeScale, "active_scale", kDockActiveScaleRange),
-        field(&DockConfig::inactiveScale, "inactive_scale", kDockInactiveScaleRange),
-        field(&DockConfig::magnification, "magnification"),
-        field(&DockConfig::magnificationScale, "magnification_scale", kDockMagnificationScaleRange),
-        field(&DockConfig::activeOpacity, "active_opacity", kUnitRange),
-        field(&DockConfig::inactiveOpacity, "inactive_opacity", kUnitRange),
-        field(&DockConfig::showDots, "show_dots"),
-        field(&DockConfig::showInstanceCount, "show_instance_count"),
-        enumField(&DockConfig::launcherPosition, "launcher_position", kDockLauncherPositions),
-        field(&DockConfig::launcherIcon, "launcher_icon"),
-        pathStringField(&DockConfig::launcherCustomImage, "launcher_custom_image"),
-        field(&DockConfig::launcherCustomImageColorize, "launcher_custom_image_colorize"),
-        field(&DockConfig::pinned, "pinned"),
-        field(&DockConfig::monitors, "monitors"),
-    };
-    return s;
-  }
-
   namespace {
     const Schema<DesktopWidgetsGridState>& desktopWidgetsGridSchema() {
       static const Schema<DesktopWidgetsGridState> s = {
@@ -446,6 +400,7 @@ namespace noctalia::config::schema {
     };
     static const Schema<HotCornersConfig> s = {
         field(&HotCornersConfig::enabled, "enabled"),
+        field(&HotCornersConfig::delayMs, "delay_ms", kHotCornersDelayMsRange),
         subTable(&HotCornersConfig::topLeft, "top_left", cornerSchema),
         subTable(&HotCornersConfig::topRight, "top_right", cornerSchema),
         subTable(&HotCornersConfig::bottomLeft, "bottom_left", cornerSchema),
@@ -548,7 +503,6 @@ namespace noctalia::config::schema {
           field(&PluginSourceConfig::name, "name"),
           enumField(&PluginSourceConfig::kind, "kind", kPluginSourceKinds),
           field(&PluginSourceConfig::location, "location"),
-          field(&PluginSourceConfig::autoUpdate, "auto_update"),
           field(&PluginSourceConfig::enabled, "enabled"),
           finalize<PluginSourceConfig>([](PluginSourceConfig& src, std::string_view parentPath, Diagnostics& diag) {
             if (!src.name.empty() && !isValidPluginSourceName(src.name)) {
@@ -570,6 +524,7 @@ namespace noctalia::config::schema {
             [](const PluginSourceConfig& src) { return isValidPluginSourceName(src.name); }
         ),
         field(&PluginsConfig::enabled, "enabled"),
+        field(&PluginsConfig::autoUpdate, "auto_update"),
         finalize<PluginsConfig>([](PluginsConfig& plugins, std::string_view parentPath, Diagnostics& diag) {
           for (auto it = plugins.enabled.begin(); it != plugins.enabled.end();) {
             if (scripting::isValidPluginId(*it)) {
@@ -595,10 +550,56 @@ namespace noctalia::config::schema {
           field(&CalendarConfig::Account::serverUrl, "server_url"),
           field(&CalendarConfig::Account::username, "username"),
           field(&CalendarConfig::Account::calendars, "calendars"),
+          custom<CalendarConfig::Account>(
+              "credential_source",
+              [](const toml::table& table, CalendarConfig::Account& out, std::string_view parentPath,
+                 Diagnostics& diag) {
+                const auto value = table["credential_source"].value<std::string>();
+                if (!value.has_value()) {
+                  return;
+                }
+                const std::string source = StringUtils::trim(*value);
+                if (source == "secret-service") {
+                  out.credentialSource = CalendarCredentialSource::SecretService;
+                } else if (source == "file") {
+                  out.credentialSource = CalendarCredentialSource::File;
+                } else {
+                  diag.error(
+                      joinPath(parentPath, "credential_source"),
+                      R"(credential_source must be "secret-service" or "file")"
+                  );
+                }
+              },
+              [](toml::table& table, const CalendarConfig::Account& in) {
+                table.insert_or_assign(
+                    "credential_source",
+                    in.credentialSource == CalendarCredentialSource::File ? "file" : "secret-service"
+                );
+              }
+          ),
+          pathStringField(&CalendarConfig::Account::passwordFile, "password_file"),
           finalize<CalendarConfig::Account>([](CalendarConfig::Account& out, std::string_view parentPath,
                                                Diagnostics& diag) {
             if (out.type != "caldav") {
+              if (out.credentialSource != CalendarCredentialSource::SecretService) {
+                diag.error(joinPath(parentPath, "credential_source"), "credential_source is only valid for caldav");
+              }
+              if (!out.passwordFile.empty()) {
+                diag.error(joinPath(parentPath, "password_file"), "password_file is only valid for caldav");
+              }
               return;
+            }
+            if (out.credentialSource == CalendarCredentialSource::File) {
+              if (out.passwordFile.empty()) {
+                diag.error(
+                    joinPath(parentPath, "password_file"),
+                    R"(caldav accounts with credential_source = "file" require password_file)"
+                );
+              } else if (!std::filesystem::path(out.passwordFile).is_absolute()) {
+                diag.error(joinPath(parentPath, "password_file"), "password_file must resolve to an absolute path");
+              }
+            } else if (!out.passwordFile.empty()) {
+              diag.error(joinPath(parentPath, "password_file"), R"(password_file requires credential_source = "file")");
             }
             if (out.provider.empty()) {
               diag.error(
@@ -1113,6 +1114,7 @@ namespace noctalia::config::schema {
           ),
           field(&UserTemplate::preHook, "pre_hook"),
           field(&UserTemplate::postHook, "post_hook"),
+          field(&UserTemplate::postAction, "post_action"),
           field(&UserTemplate::index, "index"),
       };
       return s;
@@ -1254,6 +1256,7 @@ namespace noctalia::config::schema {
           enumField(&ShellConfig::PanelConfig::transparencyMode, "transparency_mode", kPanelTransparencyModes),
           field(&ShellConfig::PanelConfig::borders, "borders"),
           field(&ShellConfig::PanelConfig::shadow, "shadow"),
+          field(&ShellConfig::PanelConfig::listItemBackground, "list_item_background"),
           enumField(&ShellConfig::PanelConfig::launcherPlacement, "launcher_placement", kPanelPlacements),
           enumField(&ShellConfig::PanelConfig::clipboardPlacement, "clipboard_placement", kPanelPlacements),
           enumField(&ShellConfig::PanelConfig::controlCenterPlacement, "control_center_placement", kPanelPlacements),
@@ -1291,7 +1294,9 @@ namespace noctalia::config::schema {
           field(&ShellConfig::LauncherConfig::compact, "compact"),
           field(&ShellConfig::LauncherConfig::appGrid, "app_grid"),
           field(&ShellConfig::LauncherConfig::sortByUsage, "sort_by_usage"),
+          field(&ShellConfig::LauncherConfig::fetchExchangeRates, "fetch_exchange_rates"),
           field(&ShellConfig::LauncherConfig::providerPrefix, "provider_prefix"),
+          enumField(&ShellConfig::LauncherConfig::autoPaste, "auto_paste", kClipboardAutoPasteModes),
           subTable(&ShellConfig::LauncherConfig::dmenu, "dmenu", shellLauncherDmenuSchema()),
           namedMap<ShellConfig::LauncherConfig, LauncherProviderConfig>(
               &ShellConfig::LauncherConfig::providers, "providers", launcherProviderSchema(),
@@ -1327,6 +1332,7 @@ namespace noctalia::config::schema {
           field(&ShellConfig::ScreenshotConfig::copyToClipboard, "copy_to_clipboard"),
           field(&ShellConfig::ScreenshotConfig::freezeScreen, "freeze_screen"),
           field(&ShellConfig::ScreenshotConfig::confirmRegion, "confirm_region"),
+          field(&ShellConfig::ScreenshotConfig::showCursor, "show_cursor"),
           field(&ShellConfig::ScreenshotConfig::pipeToCommand, "pipe_to_command"),
           field(&ShellConfig::ScreenshotConfig::pipeCommand, "pipe_command"),
           field(&ShellConfig::ScreenshotConfig::directory, "directory"),
@@ -1428,6 +1434,7 @@ namespace noctalia::config::schema {
           ),
           field(&ShellSessionConfig::grid, "grid"),
           field(&ShellSessionConfig::gridColumns, "grid_columns", kSessionGridColumnsRange),
+          field(&ShellSessionConfig::showShortcuts, "show_shortcuts"),
           subTable(&ShellSessionConfig::power, "power", shellSessionPowerSchema()),
       };
       return s;
@@ -1438,6 +1445,9 @@ namespace noctalia::config::schema {
     static const Schema<ShellConfig> s = {
         field(&ShellConfig::cornerRadiusScale, "corner_radius_scale", kCornerRadiusScaleRange),
         field(&ShellConfig::buttonBorders, "button_borders"),
+        field(&ShellConfig::inputBorders, "input_borders"),
+        field(&ShellConfig::popupBorders, "popup_borders"),
+        field(&ShellConfig::popupShadows, "popup_shadows"),
         // font_family is trimmed; empty falls back to sans-serif.
         custom<ShellConfig>(
             "font_family",
@@ -1499,8 +1509,7 @@ namespace noctalia::config::schema {
         enumField(&WallpaperConfig::fillMode, "fill_mode", kWallpaperFillModes),
         colorSpecField(&WallpaperConfig::fillColor, "fill_color", /*alwaysEmit=*/true),
         enumArrayField(
-            &WallpaperConfig::transitions, "transition", kWallpaperTransitions,
-            std::optional<WallpaperTransition>{WallpaperTransition::Fade}
+            &WallpaperConfig::transitions, "transition", kWallpaperTransitions, std::optional<WallpaperTransition>{}
         ),
         field(&WallpaperConfig::transitionDurationMs, "transition_duration", kWallpaperTransitionDurationRange),
         field(&WallpaperConfig::edgeSmoothness, "edge_smoothness", kUnitRange),
@@ -1571,6 +1580,8 @@ namespace noctalia::config::schema {
     static const Schema<CalendarConfig> s = {
         field(&CalendarConfig::enabled, "enabled"),
         field(&CalendarConfig::refreshMinutes, "refresh_minutes", kRefreshMinutesRange),
+        field(&CalendarConfig::eventDateFormat, "event_date_format"),
+        field(&CalendarConfig::eventTimeFormat, "event_time_format"),
         namedMap<CalendarConfig, CalendarConfig::Account>(
             &CalendarConfig::accounts, "account", calendarAccountSchema(),
             [](CalendarConfig::Account& a, std::string_view id) { a.id = std::string(id); },
@@ -1721,7 +1732,68 @@ namespace noctalia::config::schema {
           }
       );
     }
+  } // namespace
 
+  const Schema<DockConfig>& dockSchema() {
+    static const Schema<DockConfig> s = {
+        field(&DockConfig::enabled, "enabled"),
+        enumField(&DockConfig::position, "position", kDockEdges),
+        field(&DockConfig::activeMonitorOnly, "active_monitor_only"),
+        field(&DockConfig::iconSize, "icon_size", kDockIconSizeRange),
+        field(&DockConfig::mainAxisPadding, "main_axis_padding", kDockPaddingRange),
+        field(&DockConfig::crossAxisPadding, "cross_axis_padding", kDockPaddingRange),
+        field(&DockConfig::itemSpacing, "item_spacing", kDockItemSpacingRange),
+        field(&DockConfig::backgroundOpacity, "background_opacity", kUnitRange),
+        colorField(&DockConfig::border, "border"),
+        field(&DockConfig::borderWidth, "border_width", kDockBorderWidthRange),
+        // `radius` seeds all four corners; per-corner keys below override it.
+        custom<DockConfig>(
+            "radius",
+            [](const toml::table& tbl, DockConfig& d, std::string_view, Diagnostics&) {
+              if (auto v = tbl["radius"].value<std::int64_t>()) {
+                const auto r = static_cast<std::int32_t>(applyRange<std::int64_t>(*v, kDockRadiusRange));
+                d.radius = r;
+                d.radiusTopLeft = r;
+                d.radiusTopRight = r;
+                d.radiusBottomLeft = r;
+                d.radiusBottomRight = r;
+              }
+            },
+            [](toml::table& tbl, const DockConfig& d) {
+              tbl.insert_or_assign("radius", static_cast<std::int64_t>(d.radius));
+            }
+        ),
+        field(&DockConfig::radiusTopLeft, "radius_top_left", kDockRadiusRange),
+        field(&DockConfig::radiusTopRight, "radius_top_right", kDockRadiusRange),
+        field(&DockConfig::radiusBottomLeft, "radius_bottom_left", kDockRadiusRange),
+        field(&DockConfig::radiusBottomRight, "radius_bottom_right", kDockRadiusRange),
+        field(&DockConfig::concaveEdgeCorners, "concave_edge_corners"),
+        field(&DockConfig::marginEnds, "margin_ends", kDockMarginEndsRange),
+        field(&DockConfig::marginEdge, "margin_edge", kDockMarginEdgeRange),
+        field(&DockConfig::shadow, "shadow"),
+        field(&DockConfig::showRunning, "show_running"),
+        field(&DockConfig::autoHide, "auto_hide"),
+        field(&DockConfig::smartAutoHide, "smart_auto_hide"),
+        field(&DockConfig::reserveSpace, "reserve_space"),
+        field(&DockConfig::activeScale, "active_scale", kDockActiveScaleRange),
+        field(&DockConfig::inactiveScale, "inactive_scale", kDockInactiveScaleRange),
+        field(&DockConfig::magnification, "magnification"),
+        field(&DockConfig::magnificationScale, "magnification_scale", kDockMagnificationScaleRange),
+        field(&DockConfig::activeOpacity, "active_opacity", kUnitRange),
+        field(&DockConfig::inactiveOpacity, "inactive_opacity", kUnitRange),
+        field(&DockConfig::showDots, "show_dots"),
+        field(&DockConfig::showInstanceCount, "show_instance_count"),
+        enumField(&DockConfig::launcherPosition, "launcher_position", kDockLauncherPositions),
+        field(&DockConfig::launcherIcon, "launcher_icon"),
+        pathStringField(&DockConfig::launcherCustomImage, "launcher_custom_image"),
+        field(&DockConfig::launcherCustomImageColorize, "launcher_custom_image_colorize"),
+        field(&DockConfig::pinned, "pinned"),
+        field(&DockConfig::monitors, "monitors"),
+    };
+    return s;
+  }
+
+  namespace {
     // optional<ColorSpec>, emitted only when set, read when present. Unlike
     // colorSpecField it does NOT treat an empty string as nullopt — it matches the
     // legacy bar/capsule_group reads (which parse whatever string is present).

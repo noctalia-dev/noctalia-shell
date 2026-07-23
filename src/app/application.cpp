@@ -85,6 +85,7 @@
 #include "system/brightness_service.h"
 #include "system/distro_info.h"
 #include "system/easyeffects_service.h"
+#include "system/keyboard_backlight_service.h"
 #include "system/system_monitor_service.h"
 #include "ui/app_icon_colorization.h"
 #include "ui/controls/input.h"
@@ -141,7 +142,7 @@ namespace {
 Application::Application()
     : m_lockKeysService(m_wayland), m_gammaService(m_wayland), m_locationService(m_configService, m_httpClient),
       m_weatherService(m_configService, m_httpClient),
-      m_calendarService(m_configService, m_httpClient, &m_notificationManager) {
+      m_calendarService(m_configService, m_httpClient, m_secretStore, &m_notificationManager) {
   m_notificationManager.loadPersistedHistory();
   notify::setInstance(&m_notificationManager);
 

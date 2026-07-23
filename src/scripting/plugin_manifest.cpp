@@ -2,12 +2,14 @@
 
 #include "core/log.h"
 #include "core/toml.h" // IWYU pragma: keep
+#include "scripting/plugin_api.h"
 #include "scripting/plugin_id.h"
 #include "scripting/plugin_panel_shell.h"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <limits>
 #include <type_traits>
 #include <unordered_set>
 #include <utility>
@@ -71,6 +73,9 @@ namespace scripting {
       if (type == "string_list") {
         return ManifestFieldType::StringList;
       }
+      if (type == "string_map") {
+        return ManifestFieldType::StringMap;
+      }
       if (type == "select" || type == "enum") {
         return ManifestFieldType::Select;
       }
@@ -126,7 +131,7 @@ namespace scripting {
       return std::nullopt;
     }
 
-    void parseFieldDefault(const toml::table& field, ManifestField& out) {
+    bool parseFieldDefault(const toml::table& field, ManifestField& out, std::string& error) {
       const auto node = field["default"];
       switch (out.type) {
       case ManifestFieldType::Bool:
@@ -149,10 +154,26 @@ namespace scripting {
           }
         }
         break;
+      case ManifestFieldType::StringMap:
+        if (const auto* values = node.as_table()) {
+          for (const auto& [key, valueNode] : *values) {
+            const auto value = valueNode.value<std::string>();
+            if (!value.has_value()) {
+              error = "setting '" + out.key + "' string_map default values must be strings";
+              return false;
+            }
+            out.stringMapDefault.emplace(std::string(key.str()), *value);
+          }
+        } else if (node) {
+          error = "setting '" + out.key + "' string_map default must be a table";
+          return false;
+        }
+        break;
       default:
         out.stringDefault = node.value<std::string>().value_or(std::string{});
         break;
       }
+      return true;
     }
 
     bool parseFieldOptions(const toml::table& field, ManifestField& out, std::string& error) {
@@ -173,7 +194,11 @@ namespace scripting {
           return false;
         }
         if (optTable->contains("label")) {
-          error = "setting '" + out.key + "' option '" + opt.value + "' uses 'label'; use 'label_key' instead";
+          error = "setting '"
+              + out.key
+              + "' option '"
+              + opt.value
+              + "' uses 'label'; use 'label_key' that points to translation key instead";
           return false;
         }
         opt.labelKey = tableString(*optTable, "label_key");
@@ -219,19 +244,29 @@ namespace scripting {
       }
     }
 
-    std::optional<ManifestField> parseField(const toml::table& field, std::string& error) {
+    std::optional<ManifestField>
+    parseField(const toml::table& field, std::uint32_t pluginApiVersion, std::string& error) {
       ManifestField out;
       out.key = tableString(field, "key");
       if (out.key.empty()) {
         return out;
       }
       out.type = parseFieldType(tableString(field, "type", "string"));
+      if (out.type == ManifestFieldType::StringMap && pluginApiVersion < kStringMapSettingPluginApiVersion) {
+        error = "setting '"
+            + out.key
+            + "' type 'string_map' requires plugin_api >= "
+            + std::to_string(kStringMapSettingPluginApiVersion);
+        return std::nullopt;
+      }
       if (field.contains("label")) {
-        error = "setting '" + out.key + "' uses 'label'; use 'label_key' instead";
+        error = "setting '" + out.key + "' uses 'label'; use 'label_key' that points to translation key instead";
         return std::nullopt;
       }
       if (field.contains("description")) {
-        error = "setting '" + out.key + "' uses 'description'; use 'description_key' instead";
+        error = "setting '"
+            + out.key
+            + "' uses 'description'; use 'description_key' that points to translation key instead";
         return std::nullopt;
       }
       out.labelKey = tableString(field, "label_key");
@@ -246,7 +281,9 @@ namespace scripting {
       if (auto step = tableNumber(field, "step")) {
         out.step = *step;
       }
-      parseFieldDefault(field, out);
+      if (!parseFieldDefault(field, out, error)) {
+        return std::nullopt;
+      }
       if (!parseFieldOptions(field, out, error)) {
         return std::nullopt;
       }
@@ -304,7 +341,7 @@ namespace scripting {
           }
           for (const auto& settingNode : *settings) {
             if (const auto* settingTable = settingNode.as_table()) {
-              auto field = parseField(*settingTable, error);
+              auto field = parseField(*settingTable, manifest.pluginApiVersion, error);
               if (!field.has_value()) {
                 return false;
               }
@@ -355,6 +392,21 @@ namespace scripting {
           if (const auto* openNearClick = (*entryTable)["open_near_click"].as_boolean()) {
             entry.panelOpenNearClickDefault = openNearClick->get();
           }
+          if ((*entryTable)["dismiss_on_outside_click"]) {
+            if (manifest.pluginApiVersion < kPanelDismissOnOutsideClickPluginApiVersion) {
+              error = "panel entry '"
+                  + entry.id
+                  + "': dismiss_on_outside_click requires plugin_api >= "
+                  + std::to_string(kPanelDismissOnOutsideClickPluginApiVersion);
+              return false;
+            }
+            if (const auto* dismissOutside = (*entryTable)["dismiss_on_outside_click"].as_boolean()) {
+              entry.panelDismissOnOutsideClick = dismissOutside->get();
+            } else {
+              error = "panel entry '" + entry.id + "': dismiss_on_outside_click must be a bool";
+              return false;
+            }
+          }
           injectStandardPanelShellSettings(entry);
         }
         if (kind == PluginEntryKind::LauncherProvider) {
@@ -393,6 +445,8 @@ namespace scripting {
       return WidgetSettingValue{numberDefault};
     case ManifestFieldType::StringList:
       return WidgetSettingValue{stringListDefault};
+    case ManifestFieldType::StringMap:
+      return WidgetSettingValue{stringMapDefault};
     default:
       return WidgetSettingValue{stringDefault};
     }
@@ -453,10 +507,16 @@ namespace scripting {
     if (manifest.name.empty()) {
       return fail("missing mandatory key 'name'");
     }
-    manifest.minNoctalia = tableString(root, "min_noctalia");
-    if (manifest.minNoctalia.empty()) {
-      return fail("missing mandatory key 'min_noctalia'");
+    if (!root.contains("plugin_api")) {
+      return fail("missing mandatory key 'plugin_api'");
     }
+    const auto pluginApiVersion = root["plugin_api"].value<std::int64_t>();
+    if (!pluginApiVersion.has_value()
+        || *pluginApiVersion <= 0
+        || static_cast<std::uint64_t>(*pluginApiVersion) > std::numeric_limits<std::uint32_t>::max()) {
+      return fail("invalid 'plugin_api' (expected a positive integer)");
+    }
+    manifest.pluginApiVersion = static_cast<std::uint32_t>(*pluginApiVersion);
 
     manifest.version = tableString(root, "version");
     manifest.author = tableString(root, "author");
@@ -477,7 +537,7 @@ namespace scripting {
     if (const auto* settings = root["setting"].as_array()) {
       for (const auto& node : *settings) {
         if (const auto* settingTable = node.as_table()) {
-          auto field = parseField(*settingTable, manifestError);
+          auto field = parseField(*settingTable, manifest.pluginApiVersion, manifestError);
           if (!field.has_value()) {
             return fail(manifestError);
           }

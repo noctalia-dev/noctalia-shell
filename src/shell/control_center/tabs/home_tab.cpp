@@ -12,6 +12,7 @@
 #include "i18n/i18n.h"
 #include "notification/notifications.h"
 #include "render/animation/animation_manager.h"
+#include "render/core/async_texture_cache.h"
 #include "render/scene/input_area.h"
 #include "shell/control_center/shortcut_registry.h"
 #include "shell/panel/panel_button_style.h"
@@ -27,6 +28,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
 #include <filesystem>
 #include <format>
@@ -42,6 +44,8 @@ namespace {
   constexpr Logger kLog("control-center");
 
   constexpr float kHomeAvatarScale = 2.6f;
+  // Avatar sources above this size decode noticeably slowly; warn so users understand why.
+  constexpr std::uintmax_t kHomeAvatarSourceWarnBytes = 8ULL * 1024ULL * 1024ULL;
   // Bottom row split: media/clock column grows more than the shortcuts column so the row feels balanced
   // (tweak either value slightly if needed).
   constexpr float kHomeMainColumnFlexGrow = 1.66f;
@@ -157,7 +161,8 @@ namespace {
 HomeTab::HomeTab(const ControlCenterServices& services)
     : m_mpris(services.mpris), m_httpClient(services.httpClient), m_weather(services.weather),
       m_config(services.config), m_accounts(services.accounts), m_wallpaper(services.wallpaper),
-      m_thumbnails(services.thumbnails), m_services(services.shortcutServices()) {
+      m_thumbnails(services.thumbnails), m_asyncTextures(services.asyncTextures),
+      m_services(services.shortcutServices()) {
   if (m_thumbnails != nullptr) {
     m_thumbnailPendingSub = m_thumbnails->subscribePendingUpload([this]() {
       if (m_wallpaperBg == nullptr) {
@@ -262,7 +267,6 @@ std::unique_ptr<Flex> HomeTab::create() {
       }
       const auto applyResult = shell::applyAvatarPath(m_accounts, m_config, pickedPath->string());
       if (applyResult.success()) {
-        m_loadedAvatarPath.clear();
         DeferredCall::callLater([]() {
           PanelManager::instance().refresh();
           PanelManager::instance().requestRedraw();
@@ -299,6 +303,7 @@ std::unique_ptr<Flex> HomeTab::create() {
           .configure = [](Image& image) {
             image.setBorder(colorSpecFromRole(ColorRole::Primary), Style::borderWidth * 3.0f);
             image.setHitTestVisible(false);
+            image.setAsyncReadyCallback([]() { PanelManager::instance().refresh(); });
           },
       })
   );
@@ -657,7 +662,7 @@ void HomeTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight)
     const float scale = contentScale();
     const float bottomRowGap = m_bottomRow != nullptr ? m_bottomRow->gap() : 0.0f;
     const bool stacked = m_shortcutPads.size() <= kHomeStackedShortcutMax;
-    const std::size_t cols = stacked ? 1u : kHomeShortcutGridColumns;
+    const std::size_t cols = stacked ? 1U : kHomeShortcutGridColumns;
     const std::size_t rows = (m_shortcutPads.size() + cols - 1) / cols;
     const float padH = m_shortcutsGrid->paddingLeft() + m_shortcutsGrid->paddingRight();
     const float padV = m_shortcutsGrid->paddingTop() + m_shortcutsGrid->paddingBottom();
@@ -1180,8 +1185,6 @@ void HomeTab::onClose() {
   m_userCardArea = nullptr;
   m_mediaCardArea = nullptr;
   m_dateTimeCardArea = nullptr;
-  m_loadedAvatarPath.clear();
-  m_loadedAvatarSize = 0;
   // The crisp fade animation is tagged with the m_wallpaperBg node as owner, so
   // it is cancelled automatically when the node tree is destroyed on close.
   m_wallpaperCrispAnimId = 0;
@@ -1271,20 +1274,18 @@ void HomeTab::sync(Renderer& renderer) {
 
   syncWallpaperBackground(renderer);
 
-  if (m_userAvatar != nullptr && m_config != nullptr) {
+  if (m_userAvatar != nullptr && m_config != nullptr && m_asyncTextures != nullptr) {
     const std::string displayPath = shell::avatarDisplayPath(m_accounts, m_config->config());
-    const int avatarSize = static_cast<int>(std::round(m_userAvatar->width()));
-    if (displayPath != m_loadedAvatarPath || avatarSize != m_loadedAvatarSize) {
-      if (displayPath.empty()) {
-        m_userAvatar->clear(renderer);
-      } else {
-        // Decode at the avatar's final on-screen size with no mipmaps: layout grows the
-        // avatar to match the user text block, and trilinear mipmap sampling softens an
-        // image displayed near 1:1. Both made the avatar look blurry.
-        (void)m_userAvatar->setSourceFile(renderer, displayPath, avatarSize, false);
-      }
-      m_loadedAvatarPath = displayPath;
-      m_loadedAvatarSize = avatarSize;
+    if (displayPath.empty()) {
+      m_userAvatar->clear(renderer);
+    } else {
+      warnOnOversizedAvatarSource(displayPath);
+      // Decode at the avatar's final on-screen size with no mipmaps: layout grows the
+      // avatar to match the user text block, and trilinear mipmap sampling softens an
+      // image displayed near 1:1. Both made the avatar look blurry. The decode runs on
+      // the async cache workers so a large source never stalls the panel open.
+      const int avatarSize = static_cast<int>(std::round(m_userAvatar->width()));
+      (void)m_userAvatar->setSourceFileAsync(renderer, *m_asyncTextures, displayPath, avatarSize, false);
     }
   }
 
@@ -1477,6 +1478,23 @@ void HomeTab::sync(Renderer& renderer) {
       }
     }
   }
+}
+
+void HomeTab::warnOnOversizedAvatarSource(const std::string& path) {
+  if (path == m_sizeCheckedAvatarPath) {
+    return;
+  }
+  m_sizeCheckedAvatarPath = path;
+
+  std::error_code ec;
+  const std::uintmax_t bytes = std::filesystem::file_size(path, ec);
+  if (ec || bytes <= kHomeAvatarSourceWarnBytes) {
+    return;
+  }
+  kLog.warn(
+      "avatar source '{}' is {} MiB; large images decode slowly, consider a smaller image", path,
+      bytes / (1024ULL * 1024ULL)
+  );
 }
 
 void HomeTab::syncShortcuts() {

@@ -1,5 +1,6 @@
 #include "wayland/clipboard_service.h"
 
+#include "config/atomic_file.h"
 #include "config/config_limits.h"
 #include "core/log.h"
 #include "ext-data-control-v1-client-protocol.h"
@@ -25,8 +26,8 @@ namespace {
 
   constexpr std::size_t kMinHistoryMaxEntries = static_cast<std::size_t>(noctalia::config::kClipboardHistoryMinEntries);
   constexpr std::size_t kMaxHistoryMaxEntries = static_cast<std::size_t>(noctalia::config::kClipboardHistoryMaxEntries);
-  constexpr std::size_t kMaxHistoryBytes = 64u * 1024u * 1024u;
-  constexpr std::size_t kMaxEntryBytes = 10u * 1024u * 1024u;
+  constexpr std::size_t kMaxHistoryBytes = 64U * 1024U * 1024U;
+  constexpr std::size_t kMaxEntryBytes = 10U * 1024U * 1024U;
   constexpr std::size_t kPreviewBytes = 200;
 
   constexpr std::array kTextMimeTypes = {
@@ -57,6 +58,62 @@ namespace {
 
   constexpr Logger kLog("clipboard");
   std::uint64_t gStorageCounter = 0;
+
+  void secureFile(const std::filesystem::path& path) {
+    std::error_code ec;
+    if (!FileUtils::setPrivateFilePermissions(path, ec)) {
+      kLog.warn("failed to secure clipboard storage path {}: {}", path.string(), ec.message());
+    }
+  }
+
+  void secureDirectory(const std::filesystem::path& path) {
+    std::error_code ec;
+    if (!FileUtils::setPrivateDirectoryPermissions(path, ec)) {
+      kLog.warn("failed to secure clipboard storage path {}: {}", path.string(), ec.message());
+    }
+  }
+
+  void secureClipboardStorage(const std::filesystem::path& root) {
+    namespace fs = std::filesystem;
+
+    std::error_code ec;
+    if (!fs::exists(root, ec)) {
+      if (ec) {
+        kLog.warn("failed to inspect clipboard storage {}: {}", root.string(), ec.message());
+      }
+      return;
+    }
+
+    secureDirectory(root);
+    fs::recursive_directory_iterator current(root, fs::directory_options::skip_permission_denied, ec);
+    const fs::recursive_directory_iterator end;
+    while (!ec && current != end) {
+      const fs::file_status status = current->status(ec);
+      if (ec) {
+        break;
+      }
+      if (fs::is_directory(status)) {
+        secureDirectory(current->path());
+      } else if (fs::is_regular_file(status)) {
+        secureFile(current->path());
+      }
+      current.increment(ec);
+    }
+    if (ec) {
+      kLog.warn("failed to inspect clipboard storage {}: {}", root.string(), ec.message());
+    }
+  }
+
+  void ensurePrivateDirectory(const std::filesystem::path& path) {
+    std::error_code ec;
+    if (!FileUtils::createPrivateDirectories(path, ec)) {
+      throw std::filesystem::filesystem_error("failed to create private clipboard directory", path, ec);
+    }
+  }
+
+  std::string_view binaryView(const std::vector<std::uint8_t>& data) {
+    return {reinterpret_cast<const char*>(data.data()), data.size()};
+  }
 
   std::string extensionForImageMimeType(std::string_view mimeType) {
     if (mimeType == "image/png")
@@ -103,7 +160,7 @@ namespace {
   }
 
   void* bindExtManager(wl_registry* registry, std::uint32_t name, std::uint32_t version) {
-    const auto bindVersion = std::min(version, 1u);
+    const auto bindVersion = std::min(version, 1U);
     return wl_registry_bind(registry, name, &ext_data_control_manager_v1_interface, bindVersion);
   }
 
@@ -167,7 +224,7 @@ namespace {
   }
 
   void* bindWlrManager(wl_registry* registry, std::uint32_t name, std::uint32_t version) {
-    const auto bindVersion = std::min(version, 2u);
+    const auto bindVersion = std::min(version, 2U);
     return wl_registry_bind(registry, name, &zwlr_data_control_manager_v1_interface, bindVersion);
   }
 
@@ -528,16 +585,11 @@ std::optional<std::string> ClipboardService::exportEntryForExternalTool(std::siz
     }
 
     const fs::path exportDir = fs::path(stateDirectory()) / "exports";
-    fs::create_directories(exportDir);
+    ensurePrivateDirectory(stateDirectory());
+    ensurePrivateDirectory(exportDir);
     const fs::path exportPath = exportDir / (entry.storageId + exportExtensionForEntry(entry));
 
-    std::ofstream out(exportPath, std::ios::binary | std::ios::trunc);
-    if (!out.is_open()) {
-      throw std::runtime_error("failed to open exported clipboard image for writing");
-    }
-    out.write(reinterpret_cast<const char*>(entry.data.data()), static_cast<std::streamsize>(entry.data.size()));
-    out.flush();
-    if (!out.good()) {
+    if (!writeTextFileAtomic(exportPath, binaryView(entry.data), FileUtils::privateFileMode())) {
       throw std::runtime_error("failed to write exported clipboard image");
     }
 
@@ -1130,6 +1182,8 @@ void ClipboardService::loadPersistedHistory() {
   m_history.clear();
   m_historyBytes = 0;
 
+  secureClipboardStorage(stateDirectory());
+
   const fs::path path(manifestPath());
   if (!fs::exists(path)) {
     return;
@@ -1190,7 +1244,8 @@ bool ClipboardService::persistHistory() {
   namespace fs = std::filesystem;
 
   try {
-    fs::create_directories(entriesDirectory());
+    ensurePrivateDirectory(stateDirectory());
+    ensurePrivateDirectory(entriesDirectory());
 
     nlohmann::json entries = nlohmann::json::array();
     std::unordered_set<std::string> activePayloadPaths;
@@ -1206,15 +1261,7 @@ bool ClipboardService::persistHistory() {
 
       activePayloadPaths.insert(entry.payloadPath);
       if (entry.payloadLoaded && !entry.data.empty()) {
-        std::ofstream payload(entry.payloadPath, std::ios::binary | std::ios::trunc);
-        if (!payload.is_open()) {
-          throw std::runtime_error("failed to open clipboard payload for writing");
-        }
-        payload.write(
-            reinterpret_cast<const char*>(entry.data.data()), static_cast<std::streamsize>(entry.data.size())
-        );
-        payload.flush();
-        if (!payload.good()) {
+        if (!writeTextFileAtomic(entry.payloadPath, binaryView(entry.data), FileUtils::privateFileMode())) {
           throw std::runtime_error("failed to write clipboard payload");
         }
       }
@@ -1234,21 +1281,10 @@ bool ClipboardService::persistHistory() {
     }
 
     const fs::path manifest(manifestPath());
-    fs::create_directories(manifest.parent_path());
-    const fs::path& tmp = manifest;
-    const fs::path tmpPath = tmp.string() + ".tmp";
-    {
-      std::ofstream out(tmpPath);
-      if (!out.is_open()) {
-        throw std::runtime_error("failed to open clipboard manifest for writing");
-      }
-      out << nlohmann::json{{"entries", entries}}.dump(2);
-      out.flush();
-      if (!out.good()) {
-        throw std::runtime_error("failed to write clipboard manifest");
-      }
+    const std::string manifestContent = nlohmann::json{{"entries", entries}}.dump(2);
+    if (!writeTextFileAtomic(manifest, manifestContent, FileUtils::privateFileMode())) {
+      throw std::runtime_error("failed to write clipboard manifest");
     }
-    fs::rename(tmpPath, manifest);
 
     const fs::path entriesDir(entriesDirectory());
     if (fs::exists(entriesDir)) {

@@ -26,7 +26,7 @@ CustomButtonWidget::CustomButtonWidget(Options options)
       m_tooltip(std::move(options.tooltip)), m_command(std::move(options.command)),
       m_rightCommand(std::move(options.rightCommand)), m_middleCommand(std::move(options.middleCommand)),
       m_scrollUpCommand(std::move(options.scrollUpCommand)), m_scrollDownCommand(std::move(options.scrollDownCommand)),
-      m_customImage(std::move(options.customImage)) {}
+      m_enableScroll(options.enableScroll), m_customImage(std::move(options.customImage)) {}
 
 void CustomButtonWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -43,7 +43,7 @@ void CustomButtonWidget::create() {
   }
   area->setAcceptedButtons(acceptedButtons);
 
-  const bool hasScrollCommand = !m_scrollUpCommand.empty() || !m_scrollDownCommand.empty();
+  const bool hasScrollCommand = m_enableScroll && (!m_scrollUpCommand.empty() || !m_scrollDownCommand.empty());
   if (acceptedButtons != 0 || hasScrollCommand) {
     area->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
   }
@@ -66,7 +66,7 @@ void CustomButtonWidget::create() {
   }
 
   area->setOnAxisHandler([this](const InputArea::PointerData& data) {
-    if (data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL) {
+    if (!m_enableScroll || data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL) {
       return false;
     }
 
@@ -119,7 +119,9 @@ void CustomButtonWidget::create() {
   setRoot(std::move(area));
 }
 
-bool CustomButtonWidget::reservesMiddleClick() const noexcept { return !m_middleCommand.empty(); }
+bool CustomButtonWidget::reservesMiddleClick(float /*sceneX*/, float /*sceneY*/) const noexcept {
+  return !m_middleCommand.empty();
+}
 
 void CustomButtonWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   if (m_area == nullptr || m_label == nullptr) {

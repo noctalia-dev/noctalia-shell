@@ -11,6 +11,7 @@
 #include "config/config_service.h"
 #include "core/files/file_watcher.h"
 #include "core/timer_manager.h"
+#include "dbus/network/external_ip_service.h"
 #include "dbus/notification/notification_poll_source.h"
 #include "hooks/battery_hook_state.h"
 #include "hooks/hook_manager.h"
@@ -32,6 +33,7 @@
 #include "scripting/plugin_service_host.h"
 #include "shell/wallpaper/visualizer_service.h"
 #include "scripting/script_api_context.h"
+#include "security/secret_store.h"
 #include "shell/backdrop/backdrop.h"
 #include "shell/bar/bar.h"
 #include "shell/desktop/desktop_widgets_controller.h"
@@ -42,6 +44,7 @@
 #include "shell/notification/notification_toast.h"
 #include "shell/osd/audio_osd.h"
 #include "shell/osd/brightness_osd.h"
+#include "shell/osd/keyboard_backlight_osd.h"
 #include "shell/osd/keyboard_layout_osd.h"
 #include "shell/osd/lock_keys_osd.h"
 #include "shell/osd/media_osd.h"
@@ -105,6 +108,7 @@ class BluetoothAgent;
 class BluetoothService;
 class BrightnessPollSource;
 class BrightnessService;
+class KeyboardBacklightService;
 class DebugService;
 class EasyEffectsService;
 class INetworkService;
@@ -185,8 +189,8 @@ private:
   void reloadDmenuProviders();
   // (Re)register plugin-backed panels from the enabled plugin set.
   void reloadPluginPanels();
-  // Pull every git source flagged auto_update. Run once at startup and on a 6h
-  // repeating timer so long-lived sessions pick up new plugin versions.
+  // When [plugins].auto_update is on, pull every git source. Run once at startup and on
+  // a 6h repeating timer so long-lived sessions pick up new plugin versions.
   void runPluginAutoUpdate();
   void startTrayService();
   void syncNotificationDaemon();
@@ -214,6 +218,7 @@ private:
   WaylandConnection m_wayland;
   WorkspaceAlertService m_workspaceAlertService;
   CompositorPlatform m_compositorPlatform{m_wayland};
+  security::SecretStore m_secretStore;
   ClipboardService m_clipboardService;
   TextInputService m_textInputService;
   VirtualKeyboardService m_virtualKeyboardService;
@@ -250,6 +255,7 @@ private:
   std::unique_ptr<PowerProfilesService> m_powerProfilesService;
   std::unique_ptr<INetworkService> m_networkService;
   std::unique_ptr<NetworkSecretAgent> m_networkSecretAgent;
+  ExternalIpService m_externalIpService{&m_httpClient, &m_configService};
   std::unique_ptr<IwdSecretAgent> m_iwdSecretAgent;
   std::unique_ptr<BluetoothService> m_bluetoothService;
   std::unique_ptr<BluetoothAgent> m_bluetoothAgent;
@@ -265,6 +271,7 @@ private:
   std::optional<bool> m_prevBluetoothPoweredForEvents;
   std::optional<std::string> m_prevPowerProfileActiveForEvents;
   std::unique_ptr<BrightnessService> m_brightnessService;
+  std::unique_ptr<KeyboardBacklightService> m_keyboardBacklightService;
   std::unique_ptr<TrayService> m_trayService;
   std::unique_ptr<NotificationDBusHost> m_notificationDbus;
   std::unique_ptr<sdbus::IProxy> m_notificationBusNameWatchProxy;
@@ -303,6 +310,7 @@ private:
   NotificationToast m_notificationToast;
   AudioOsd m_audioOsd;
   BrightnessOsd m_brightnessOsd;
+  KeyboardBacklightOsd m_keyboardBacklightOsd;
   MediaOsd m_mediaOsd;
   LockKeysOsd m_lockKeysOsd;
   KeyboardLayoutOsd m_keyboardLayoutOsd;
@@ -355,6 +363,7 @@ private:
   Timer m_greeterSyncTimeoutTimer;
   Timer m_greeterAutoSyncTimer;
   Timer m_clipboardAutoPasteTimer;
+  Timer m_launcherAutoPasteTimer;
   Timer m_pluginAutoUpdateTimer;
   Timer m_graphicsRecoveryTimer;
   std::uint64_t m_greeterSyncGeneration = 0;

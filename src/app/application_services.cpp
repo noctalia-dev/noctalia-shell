@@ -86,6 +86,7 @@
 #include "system/brightness_service.h"
 #include "system/distro_info.h"
 #include "system/easyeffects_service.h"
+#include "system/keyboard_backlight_service.h"
 #include "system/system_monitor_service.h"
 #include "ui/app_icon_colorization.h"
 #include "ui/controls/input.h"
@@ -295,6 +296,11 @@ void Application::syncPolkitAgent() {
       }
       return;
     }
+    // Open once the session asks for a response so preferredHeight includes the
+    // password field. BeginAuthentication alone still has responseRequired=false.
+    if (!m_polkitAgent->isResponseRequired() && !m_panelManager.isOpenPanel("polkit")) {
+      return;
+    }
     if (!m_panelManager.isOpenPanel("polkit")) {
       wl_output* output = m_compositorPlatform.preferredInteractiveOutput(std::chrono::milliseconds(1200));
       m_panelManager.openPanel("polkit", PanelOpenRequest{.output = output});
@@ -339,6 +345,10 @@ void Application::syncClipboardService() {
 }
 
 void Application::initServices() {
+  if (!security::initializeSecurityPrimitives()) {
+    kLog.error("libsodium initialization failed; encrypted persistence is unavailable");
+  }
+  m_secretStore.retryAvailabilityCheck();
   initStyleThemeAndWayland();
   initWaylandCallbacks();
   initAuxServicesAndHooks();
@@ -362,6 +372,9 @@ void Application::initStyleThemeAndWayland() {
         std::isfinite(lastCornerRadiusScale) && std::abs(corner - lastCornerRadiusScale) > 1.0e-4f;
     Style::setCornerRadiusScale(corner);
     Style::setButtonBordersEnabled(m_configService.config().shell.buttonBorders);
+    Style::setInputBordersEnabled(m_configService.config().shell.inputBorders);
+    Style::setPopupBordersEnabled(m_configService.config().shell.popupBorders);
+    Style::setPopupShadowsEnabled(m_configService.config().shell.popupShadows);
     lastCornerRadiusScale = corner;
     if (cornerChanged) {
       m_notificationToast.requestLayout();
@@ -482,18 +495,16 @@ void Application::initStyleThemeAndWayland() {
     syncScriptApiWallpaperDirectory();
     const std::optional<std::string> previousMode = lastResolvedThemeMode;
     lastResolvedThemeMode = resolvedMode;
-    m_templateApplyService.setAfterApplyCallback([this, resolvedMode, previousMode, configuredMode]() {
-      m_hookManager.fire(HookKind::ColorsChanged);
-      if (previousMode.has_value() && *previousMode != resolvedMode) {
-        m_hookManager.fire(
-            HookKind::ThemeModeChanged,
-            {{"NOCTALIA_THEME_MODE", resolvedMode},
-             {"NOCTALIA_THEME_MODE_PREVIOUS", *previousMode},
-             {"NOCTALIA_THEME_MODE_CONFIGURED", configuredMode}}
-        );
-      }
-    });
+    m_templateApplyService.setAfterApplyCallback([this]() { m_hookManager.fire(HookKind::ColorsChanged); });
     m_templateApplyService.apply(generated, mode);
+    if (previousMode.has_value() && *previousMode != resolvedMode) {
+      m_hookManager.fire(
+          HookKind::ThemeModeChanged,
+          {{"NOCTALIA_THEME_MODE", resolvedMode},
+           {"NOCTALIA_THEME_MODE_PREVIOUS", *previousMode},
+           {"NOCTALIA_THEME_MODE_CONFIGURED", configuredMode}}
+      );
+    }
   });
   m_themeService.apply();
   syncScriptApiWallpaperDirectory();
@@ -816,6 +827,9 @@ void Application::initSystemBusServices() {
       try {
         m_logindService = std::make_unique<LogindService>(*m_systemBus);
         m_logindService->setPrepareForSleepCallback([this](bool sleeping) {
+          // Idle grace overlay must not survive suspend; hide on both edges as a fallback when
+          // fade-complete cleanup races with process freeze.
+          m_idleGraceOverlay.hide();
           if (sleeping) {
             return;
           }
@@ -915,10 +929,21 @@ void Application::initSystemBusServices() {
     }
 
     try {
+      m_keyboardBacklightService = std::make_unique<KeyboardBacklightService>(*m_systemBus);
+      m_keyboardBacklightService->setChangeCallback([this]() {
+        m_keyboardBacklightOsd.onBrightnessChanged(*m_keyboardBacklightService);
+      });
+    } catch (const std::exception& e) {
+      kLog.warn("keyboard backlight disabled: {}", e.what());
+      m_keyboardBacklightService.reset();
+    }
+
+    try {
       m_networkService = std::make_unique<NetworkManagerService>(*m_systemBus);
       m_networkService->setChangeCallback(
           [this, shouldRefreshControlCenter](const NetworkState& state, NetworkChangeOrigin origin) {
             onNetworkStateChangedForEvents(state, origin);
+            m_externalIpService.onNetworkChanged();
             m_bar.refresh();
             if (shouldRefreshControlCenter()) {
               m_panelManager.refresh();
@@ -936,6 +961,7 @@ void Application::initSystemBusServices() {
         m_networkService->setChangeCallback(
             [this, shouldRefreshControlCenter](const NetworkState& state, NetworkChangeOrigin origin) {
               onNetworkStateChangedForEvents(state, origin);
+              m_externalIpService.onNetworkChanged();
               m_bar.refresh();
               if (shouldRefreshControlCenter()) {
                 m_panelManager.refresh();
@@ -953,6 +979,7 @@ void Application::initSystemBusServices() {
           m_networkService->setChangeCallback(
               [this, shouldRefreshControlCenter](const NetworkState& state, NetworkChangeOrigin origin) {
                 onNetworkStateChangedForEvents(state, origin);
+                m_externalIpService.onNetworkChanged();
                 m_bar.refresh();
                 if (shouldRefreshControlCenter()) {
                   m_panelManager.refresh();
@@ -969,6 +996,18 @@ void Application::initSystemBusServices() {
         }
       }
     }
+
+    if (m_networkService != nullptr) {
+      m_externalIpService.setNetworkService(m_networkService.get());
+      m_externalIpService.setChangeCallback([this, shouldRefreshControlCenter]() {
+        m_bar.refresh();
+        if (shouldRefreshControlCenter()) {
+          m_panelManager.refresh();
+        }
+      });
+      m_externalIpService.onNetworkChanged();
+    }
+    m_configService.addReloadCallback([this]() { m_externalIpService.onConfigReload(); });
 
     if (m_networkService != nullptr && m_networkService->supportsSecretAgent()) {
       try {

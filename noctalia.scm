@@ -7,7 +7,7 @@
 ;;; (channel
 ;;;   (name 'noctalia)
 ;;;   (url "https://github.com/noctalia-dev/noctalia")
-;;;   (branch "v5"))
+;;;   (branch "main"))
 ;;; --8<---------------cut here---------------end--------------->8---
 ;;;
 ;;; It provides this (noctalia) module with the noctalia-git package.
@@ -22,7 +22,6 @@
   #:use-module (guix git-download)
   ;; Guix build systems
   #:use-module (guix build-system meson)
-  #:use-module (guix build-system gnu)
   ;; Guix packages
   #:use-module (gnu packages cpp)
   #:use-module (gnu packages curl)
@@ -43,29 +42,6 @@
   #:use-module (gnu packages stb)
   #:use-module (gnu packages xdisorg)
   #:use-module (gnu packages xml))
-
-;; guix distributes stb headers under include/stb_x.h, but noctalia
-;; expects them in include/stb/stb_x.h
-(define* (wrap-stb-header stb-package name #:key deprecated?)
-  (package
-   (inherit stb-package)
-   (arguments
-    (list
-     #:modules '((guix build utils))
-     #:builder
-     #~(begin
-         (use-modules (guix build utils))
-         (let ((headers-dir #$(file-append (this-package-input "stb")
-                                           (if deprecated? "/deprecated" "")))
-               (lib (string-join (string-split #$name #\-) "_"))
-               (out #$output))
-           (install-file (string-append headers-dir "/" lib ".h")
-                         (string-append out "/include/stb/"))
-           #t))))))
-(define stb-image-resize2-wrapped
-  (wrap-stb-header stb-image-resize2 "stb-image-resize2"))
-(define stb-image-write-wrapped
-  (wrap-stb-header stb-image-write "stb-image-write"))
 
 (define wayland-protocols-1.48
   (package
@@ -107,7 +83,10 @@
                    ;; /bin/sh doesn't exist in the build environment.
                    (substitute* "tests/process_test.cpp"
                      (("/bin/(sh)" _ cmd)
-                      (which cmd))))))))
+                      (which cmd)))
+                   ;; Adjust import paths for STB headers packaged in Guix.
+                   (substitute* (find-files "." "\\.cpp$|^meson\\.build$")
+                     (("\\bstb/stb_") "stb_")))))))
     (native-inputs
      (list pkg-config))
     (inputs
@@ -133,8 +112,8 @@
            pipewire
            polkit
            sdbus-c++
-           stb-image-resize2-wrapped
-           stb-image-write-wrapped
+           stb-image-resize2
+           stb-image-write
            tomlplusplus
            wayland
            wayland-protocols-1.48

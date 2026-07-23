@@ -10,7 +10,7 @@ class PowerProfilesService;
 
 class PowerProfileWidget : public Widget {
 public:
-  explicit PowerProfileWidget(PowerProfilesService* powerProfiles);
+  explicit PowerProfileWidget(PowerProfilesService* powerProfiles, bool enableScroll = true);
 
   void create() override;
 
@@ -21,6 +21,7 @@ private:
   void cycleProfile(int direction);
 
   PowerProfilesService* m_powerProfiles = nullptr;
+  bool m_enableScroll = true;
   InputArea* m_area = nullptr;
   Glyph* m_glyph = nullptr;
   std::string m_lastProfile;

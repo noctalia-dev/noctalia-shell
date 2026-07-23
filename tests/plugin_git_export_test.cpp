@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <print>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -13,7 +14,7 @@ namespace {
 
   bool expect(bool condition, const char* message) {
     if (!condition) {
-      std::fprintf(stderr, "plugin_git_export_test: %s\n", message);
+      std::println(stderr, "plugin_git_export_test: {}", message);
     }
     return condition;
   }
@@ -39,11 +40,11 @@ namespace {
   bool runGit(const std::vector<std::string>& args) {
     auto result = process::runSync(args);
     if (!result) {
-      std::fprintf(stderr, "plugin_git_export_test: command failed:");
+      std::print(stderr, "plugin_git_export_test: command failed:");
       for (const auto& arg : args) {
-        std::fprintf(stderr, " %s", arg.c_str());
+        std::print(stderr, " {}", arg);
       }
-      std::fprintf(stderr, "\n%s\n", result.err.c_str());
+      std::println(stderr, "\n{}", result.err);
     }
     return result;
   }
@@ -63,8 +64,7 @@ int main() {
   bool ok = true;
   std::filesystem::create_directories(source);
   ok = runGit({"git", "-C", source.string(), "init", "-q"}) && ok;
-  ok = writeText(source / "clock/plugin.toml", "id = \"noctalia/clock\"\nversion = \"1\"\nmin_noctalia = \"0\"\n")
-      && ok;
+  ok = writeText(source / "clock/plugin.toml", "id = \"noctalia/clock\"\nversion = \"1\"\nplugin_api = 3\n") && ok;
   ok = writeText(source / "clock/main.luau", "barWidget.setText(\"ok\")\n") && ok;
   ok = runGit({"git", "-C", source.string(), "add", "clock/plugin.toml", "clock/main.luau"}) && ok;
   ok = runGit(

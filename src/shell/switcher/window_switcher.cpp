@@ -182,16 +182,14 @@ namespace {
   }
 
   void activateWindowSwitcherEntry(CompositorPlatform& platform, const WindowSwitcherEntry& entry) {
-    if (compositors::isHyprland() && !entry.windowId.empty()) {
-      if (!compositors::hyprland::normalizeWindowId(entry.windowId).empty()) {
-        platform.focusCompositorWindow(entry.windowId);
-        return;
-      }
-    }
+    // Niri: foreign-toplevel activate does not reliably focus/scroll the column.
     if (compositors::isNiri() && !entry.windowId.empty()) {
       platform.focusCompositorWindow(entry.windowId);
       return;
     }
+    // Prefer wlr-foreign-toplevel activate (same path as the taskbar). On Hyprland this
+    // raises floating windows and respects cursor:no_warps / scrolling follow_focus;
+    // dispatch focuswindow alone does not.
     if (entry.closeHandle != 0) {
       auto* handle = reinterpret_cast<zwlr_foreign_toplevel_handle_v1*>(entry.closeHandle);
       if (platform.containsWlrToplevelHandle(handle)) {
@@ -445,7 +443,7 @@ namespace {
     void setOnClose(std::function<void(std::size_t)> callback) { m_onClose = std::move(callback); }
     void setOnInvalidate(std::function<void()> callback) { m_onInvalidate = std::move(callback); }
 
-    [[nodiscard]] std::size_t itemCount() const override { return m_entries == nullptr ? 0u : m_entries->size(); }
+    [[nodiscard]] std::size_t itemCount() const override { return m_entries == nullptr ? 0U : m_entries->size(); }
 
     [[nodiscard]] std::unique_ptr<Node> createTile() override {
       std::unique_ptr<WindowSwitcherTile> tile = std::make_unique<WindowSwitcherTile>(m_scale, m_cache);
@@ -705,7 +703,13 @@ void WindowSwitcher::activateSelected() {
   if (m_platform == nullptr || m_windows.empty() || m_selectedIndex >= m_windows.size()) {
     return;
   }
-  activateWindowSwitcherEntry(*m_platform, m_windows[m_selectedIndex]);
+  // Hyprland ignores zwlr_foreign_toplevel_handle_v1.activate while an exclusive
+  // keyboard layer-shell surface is mapped (hyprwm/Hyprland#4829). Snapshot the
+  // selection, tear the overlay down, then activate on the next loop tick.
+  const WindowSwitcherEntry entry = m_windows[m_selectedIndex];
+  CompositorPlatform* platform = m_platform;
+  hide();
+  DeferredCall::callLater([platform, entry]() { activateWindowSwitcherEntry(*platform, entry); });
 }
 
 void WindowSwitcher::closeWindowAt(std::size_t index) {
@@ -903,13 +907,24 @@ bool WindowSwitcher::onPointerEvent(const PointerEvent& event) {
     }
     return false;
   case PointerEvent::Type::Button: {
+    const bool pressed = event.pressed;
     if (onTarget) {
       target->pointerInside = true;
     }
     if (!onTarget && !target->pointerInside) {
+      if (pressed) {
+        hide();
+        return true;
+      }
       return false;
     }
-    const bool pressed = (event.state == 1);
+    if (pressed
+        && onTarget
+        && (target->inputDispatcher.hoveredArea() == nullptr
+            || target->inputDispatcher.hoveredArea() == target->input)) {
+      hide();
+      return true;
+    }
     return target->inputDispatcher.pointerButton(
         static_cast<float>(event.sx), static_cast<float>(event.sy), event.button, pressed
     );

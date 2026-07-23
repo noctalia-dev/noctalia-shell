@@ -75,6 +75,11 @@ namespace {
     return std::max(1, static_cast<int>(std::round(static_cast<float>(cfg.iconSize) * peakScale)));
   }
 
+  [[nodiscard]] float launcherIconBaseY(const DockConfig& cfg, float iconSize) {
+    return cfg.launcherCustomImage.empty() ? kCellPad + (iconSize - iconSize * kLauncherGlyphSizeRatio) * 0.5f
+                                           : kCellPad;
+  }
+
   void applyHoverIconVisual(Node* iconNode, DockEdge edge, float baseX, float baseY, float iconSize, float scale) {
     if (iconNode == nullptr) {
       return;
@@ -267,23 +272,23 @@ namespace {
     return 1.0f + (maxMultiplier - 1.0f) * falloff;
   }
 
-  [[nodiscard]] TooltipPlacement dockTooltipPlacement(DockEdge edge) {
+  [[nodiscard]] std::string_view dockEdgeKey(DockEdge edge) {
     switch (edge) {
     case DockEdge::Top:
-      return TooltipPlacement::Below;
+      return "top";
     case DockEdge::Bottom:
-      return TooltipPlacement::Above;
+      return "bottom";
     case DockEdge::Left:
-      return TooltipPlacement::Right;
+      return "left";
     case DockEdge::Right:
-      return TooltipPlacement::Left;
+      return "right";
     }
-    return TooltipPlacement::Above;
+    return "bottom";
   }
 
   void configureDockTooltip(InputArea& area, const DockConfig& cfg, std::string text) {
     area.setTooltip(std::move(text));
-    area.setTooltipPlacement(dockTooltipPlacement(cfg.position));
+    area.setTooltipPlacement(tooltipPlacementAwayFromEdge(dockEdgeKey(cfg.position)));
     area.setTooltipAnchorInsets(
         TooltipAnchorInsets{
             .top = kCellPad,
@@ -399,8 +404,6 @@ namespace shell::dock {
     const auto iSize = static_cast<float>(cfg.iconSize);
     const float cellMain = iSize + 2.0f * kCellPad;
     const float cellCross = iSize + 2.0f * kCellPad;
-    const float glyphSize = iSize * kLauncherGlyphSizeRatio;
-    const float glyphOffsetY = kCellPad + (iSize - glyphSize) * 0.5f;
     const int iconDecodeTarget = dockIconDecodeTargetSize(cfg);
 
     auto areaNode = std::make_unique<InputArea>();
@@ -414,30 +417,30 @@ namespace shell::dock {
       RenderContext* renderContextPtr = &renderContext;
       auto launcherImage = ui::image({
           .fit = ImageFit::Contain,
-          .width = glyphSize,
-          .height = glyphSize,
-          .configure = [&cfg, glyphOffsetY, renderContextPtr, iconDecodeTarget](Image& image) {
+          .width = iSize,
+          .height = iSize,
+          .configure = [&cfg, iSize, renderContextPtr, iconDecodeTarget](Image& image) {
             image.setSourceFile(*renderContextPtr, cfg.launcherCustomImage, iconDecodeTarget, true);
             image.setForegroundTint(
                 cfg.launcherCustomImageColorize ? std::optional<ColorSpec>{colorSpecFromRole(ColorRole::OnSurface)}
                                                 : std::nullopt
             );
-            image.setPosition(kCellPad, glyphOffsetY);
+            image.setPosition(kCellPad, launcherIconBaseY(cfg, iSize));
           },
       });
       instance.launcherIconNode = static_cast<Image*>(launcherImage.get());
       areaNode->addChild(std::move(launcherImage));
     } else {
       auto launcherGlyph = ui::glyph({
-          .glyphSize = glyphSize,
+          .glyphSize = iSize * kLauncherGlyphSizeRatio,
           .color = colorSpecFromRole(ColorRole::OnSurface),
           .width = iSize,
           .height = iSize,
-          .configure = [&cfg, glyphOffsetY](Glyph& glyph) {
+          .configure = [&cfg, iSize](Glyph& glyph) {
             if (!glyph.setGlyph(dockLauncherIconGlyph(cfg))) {
               glyph.setGlyph("grid-dots");
             }
-            glyph.setPosition(kCellPad, glyphOffsetY);
+            glyph.setPosition(kCellPad, launcherIconBaseY(cfg, iSize));
           },
       });
       instance.launcherIconNode = static_cast<Glyph*>(launcherGlyph.get());
@@ -746,12 +749,10 @@ namespace shell::dock {
     }
 
     if (cfg.magnification && instance.launcherIconNode != nullptr) {
-      const float glyphSize = iSize * kLauncherGlyphSizeRatio;
-      const float launcherIconBaseY = kCellPad + (iSize - glyphSize) * 0.5f;
       const float launcherScale = cfg.inactiveScale;
       instance.launcherVisualScale = launcherScale;
       applyHoverItemVisual(
-          instance.launcherIconNode, nullptr, edge, kCellPad, launcherIconBaseY, iSize, 0.0f, launcherScale
+          instance.launcherIconNode, nullptr, edge, kCellPad, launcherIconBaseY(cfg, iSize), iSize, 0.0f, launcherScale
       );
     }
 
@@ -887,9 +888,7 @@ namespace shell::dock {
     if (!cfg.magnification && instance.launcherIconNode != nullptr) {
       const float iconScale = cfg.inactiveScale;
       const auto iSize = static_cast<float>(cfg.iconSize);
-      const float glyphSize = iSize * kLauncherGlyphSizeRatio;
-      const float glyphOffsetY = kCellPad + (iSize - glyphSize) * 0.5f;
-      instance.launcherIconNode->setPosition(kCellPad, glyphOffsetY);
+      instance.launcherIconNode->setPosition(kCellPad, launcherIconBaseY(cfg, iSize));
       if (instance.launcherVisualScale < 0.0f) {
         instance.launcherVisualScale = iconScale;
         instance.launcherIconNode->setScale(iconScale);
@@ -905,6 +904,14 @@ namespace shell::dock {
       );
       if (instance.launcherArea != nullptr) {
         instance.launcherArea->setZIndex(0);
+      }
+    }
+
+    // Magnification owns active/inactive scale via updateHoverZoom; kick it on focus updates.
+    if (cfg.magnification && instance.surface != nullptr) {
+      if (updateHoverZoom(instance, deps, snapshot, kHoverZoomReferenceFrameMs)) {
+        instance.surface->requestFrameTick();
+        instance.surface->requestRedraw();
       }
     }
   }
@@ -967,7 +974,6 @@ namespace shell::dock {
     const bool vertical = shell::dock::isVerticalEdge(edge);
     const auto iSize = static_cast<float>(cfg.iconSize);
     const float cellMain = iSize + 2.0f * kCellPad;
-    const float launcherIconBaseY = kCellPad + (iSize - iSize * kLauncherGlyphSizeRatio) * 0.5f;
     const float itemPitch = cellMain + static_cast<float>(cfg.itemSpacing);
     const float badgeSize = std::max(kBadgeMinSize, iSize * kBadgeSizeRatio);
     const float baseLauncherScale = cfg.inactiveScale;
@@ -1007,7 +1013,7 @@ namespace shell::dock {
               .baseScale = baseLauncherScale,
               .restCenterMain = itemRestCenterMain(instance.launcherRestMainPos, cellMain),
               .iconBaseX = kCellPad,
-              .iconBaseY = launcherIconBaseY,
+              .iconBaseY = launcherIconBaseY(cfg, iSize),
           }
       );
     }
@@ -1044,7 +1050,7 @@ namespace shell::dock {
               .baseScale = baseLauncherScale,
               .restCenterMain = itemRestCenterMain(instance.launcherRestMainPos, cellMain),
               .iconBaseX = kCellPad,
-              .iconBaseY = launcherIconBaseY,
+              .iconBaseY = launcherIconBaseY(cfg, iSize),
           }
       );
     }

@@ -281,24 +281,31 @@ void IdleManager::graceFadeComplete() {
   auto behaviors = std::move(m_graceBehaviors);
   m_graceBehaviors.clear();
   m_graceFallbackTimer.stop();
-  m_graceFallbackTimer.stop();
-  bool dispatchedLockAction = false;
+
+  // End grace (and tear down the overlay) before idle actions. Suspend can freeze the process
+  // before a deferred hide runs, leaving the opaque layer surface stuck after resume.
+  bool willDispatchLockAction = false;
+  for (auto* behavior : behaviors) {
+    if (behavior == nullptr || behavior->phase != BehaviorPhase::Fading) {
+      continue;
+    }
+    const IdleActionKind idleKind = resolveIdleBehaviorActions(behavior->config).idleAction.kind;
+    if (idleKind == IdleActionKind::Lock || idleKind == IdleActionKind::LockAndSuspend) {
+      willDispatchLockAction = true;
+    }
+  }
+  m_activeGraceWillLock = false;
+  if (m_onGraceEnd) {
+    m_onGraceEnd(false, willDispatchLockAction);
+  }
+
   for (auto* behavior : behaviors) {
     if (behavior == nullptr || behavior->phase != BehaviorPhase::Fading) {
       continue;
     }
     behavior->phase = BehaviorPhase::Idled;
     kLog.info("idle behavior '{}' triggered after pre-action fade", behavior->config.name);
-    const IdleActionKind idleKind = resolveIdleBehaviorActions(behavior->config).idleAction.kind;
-    const bool isLockAction = idleKind == IdleActionKind::Lock || idleKind == IdleActionKind::LockAndSuspend;
-    const bool ok = runBehavior(*behavior);
-    if (isLockAction && ok) {
-      dispatchedLockAction = true;
-    }
-  }
-  m_activeGraceWillLock = false;
-  if (m_onGraceEnd) {
-    m_onGraceEnd(false, dispatchedLockAction);
+    (void)runBehavior(*behavior);
   }
 }
 

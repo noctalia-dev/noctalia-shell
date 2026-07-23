@@ -75,6 +75,8 @@ namespace settings {
   struct WidgetSettingVisibilityCondition {
     std::string key;
     std::vector<std::string> values;
+    // When true, matches a non-empty string or string list (values are ignored).
+    bool nonEmpty = false;
   };
 
   struct WidgetSettingVisibility {
@@ -87,11 +89,14 @@ namespace settings {
     WidgetSettingVisibility(std::initializer_list<WidgetSettingVisibilityCondition> alternatives) : any(alternatives) {}
   };
 
-  // Presentation overlay for one widget setting. The validity half (key, value
-  // type, default, range, allowed enum values) lives in `schema` — the single
-  // source the config layer validates against; everything else here is UI only.
-  struct WidgetSettingSpec {
-    noctalia::config::schema::WidgetSettingField schema; // validity: key/type/default/range/enumValues
+  enum class WidgetSettingOptionSource : std::uint8_t {
+    Static,
+    BatteryDevices,
+  };
+
+  // UI-only overlay for a widget setting. It can be attached to a typed widget
+  // field without making presentation part of that field's value/schema contract.
+  struct WidgetSettingPresentation {
     WidgetControlKind control = WidgetControlKind::String;
     std::string labelKey;
     std::string descriptionKey;
@@ -102,7 +107,10 @@ namespace settings {
     // settings.entities.widget.settings.groups.<group>. Shared across widgets: "widget", "presentation",
     // "runtime". Anything meaningful to a single widget is prefixed with its type, e.g. "taskbar.grouping".
     std::string group = "widget";
-    std::vector<WidgetSettingSelectOption> options; // value+label; values mirror schema.enumValues
+    // Statically declared select options. A non-static option source appends
+    // runtime options, with these values taking precedence on duplicates.
+    std::vector<WidgetSettingSelectOption> options;
+    WidgetSettingOptionSource optionSource = WidgetSettingOptionSource::Static;
     bool visibleInInspector = true;
     bool advanced = false;
     bool segmented = false;              // applies when control == Select
@@ -113,6 +121,11 @@ namespace settings {
     std::vector<std::string> extensions; // applies when control == File
     std::optional<WidgetSettingVisibility> visibleWhen;
     bool horizontalBarOnly = false; // hide on left/right bars (e.g. media album-art-only)
+  };
+
+  // Complete setting description.
+  struct WidgetSettingSpec : WidgetSettingPresentation {
+    noctalia::config::schema::WidgetSettingField schema;
   };
 
   // The schema (validation) value type behind a UI control kind.
@@ -170,6 +183,12 @@ namespace settings {
   [[nodiscard]] bool widgetSettingOverrideIsEffective(
       std::string_view widgetName, std::string_view settingKey, const Config& withOverride,
       const Config& withoutOverride
+  );
+  // Effectiveness of a [plugin_settings."author/plugin"] override: absent values
+  // resolve to the manifest-declared default, so an override equal to the plugin
+  // default is not "effective".
+  [[nodiscard]] bool pluginSettingOverrideIsEffective(
+      std::string_view pluginId, std::string_view settingKey, const Config& withOverride, const Config& withoutOverride
   );
 
 } // namespace settings

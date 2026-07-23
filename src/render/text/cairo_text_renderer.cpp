@@ -61,7 +61,7 @@ namespace {
       const float s = std::clamp(v, 0.0f, 1.0f);
       return static_cast<std::uint32_t>(s * 255.0f + 0.5f);
     };
-    return (clamp8(c.r) << 24) | (clamp8(c.g) << 16) | (clamp8(c.b) << 8) | 0xFFu;
+    return (clamp8(c.r) << 24) | (clamp8(c.g) << 16) | (clamp8(c.b) << 8) | 0xFFU;
   }
 
   // Swap BGRA<->RGBA in place on a premultiplied ARGB32 Cairo surface buffer.
@@ -959,7 +959,7 @@ CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(
   key.ellipsize = ellipsize;
   key.fontWeight = fontWeight;
   key.useMarkup = useMarkup;
-  key.colorRgba = tinted ? 0u : packColorRgb(color);
+  key.colorRgba = tinted ? 0U : packColorRgb(color);
 
   auto it = m_cache.find(key);
   if (it != m_cache.end()) {

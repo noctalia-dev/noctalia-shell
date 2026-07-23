@@ -19,6 +19,7 @@
 #include "core/toml.h"
 #include "scripting/plugin_id.h"
 
+#include <optional>
 #include <print>
 #include <set>
 #include <sstream>
@@ -305,6 +306,7 @@ location = "https://example.invalid/bad"
     c.osd.orientation = "vertical";
     c.osd.scale = 1.4f;
     c.osd.backgroundOpacity = 0.42f;
+    c.osd.border = false;
     c.osd.offsetX = 33;
     c.osd.offsetY = 11;
     c.osd.monitors = {"DP-1", "HDMI-A-1"};
@@ -329,31 +331,35 @@ location = "https://example.invalid/bad"
     c.location.latitude = 52.52;
     c.location.longitude = 13.405;
     c.notification = NotificationConfig{
-        false,
-        false,
-        false,
-        "bottom_left",
-        "overlay",
-        1.3f,
-        0.5f,
-        12,
-        6,
-        {"DP-2"},
-        false,
-        {NotificationFilterConfig{
-            .name = "discord",
-            .enabled = true,
-            .match = "discord",
-            .showToast = false,
-            .saveHistory = false,
-            .playSound = false,
-            .allowPermanent = false,
-            .allowedUrgencies = {"normal", "critical"},
-        }},
+        .enableDaemon = false,
+        .showAppName = false,
+        .showActions = false,
+        .position = "bottom_left",
+        .layer = "overlay",
+        .scale = 1.3f,
+        .backgroundOpacity = 0.5f,
+        .border = false,
+        .offsetX = 12,
+        .offsetY = 6,
+        .monitors = {"DP-2"},
+        .collapseOnDismiss = false,
+        .filters =
+            {NotificationFilterConfig{
+                .name = "discord",
+                .enabled = true,
+                .match = "discord",
+                .showToast = false,
+                .saveHistory = false,
+                .playSound = false,
+                .allowPermanent = false,
+                .allowedUrgencies = {"normal", "critical"},
+            }},
     };
     c.dock.enabled = true;
     c.dock.position = DockEdge::Left;
     c.dock.iconSize = 40;
+    c.dock.border = colorSpecFromRole(ColorRole::Primary);
+    c.dock.borderWidth = 1.5f;
     c.dock.radius = 20;
     c.dock.radiusTopLeft = 10;
     c.dock.radiusTopRight = 12;
@@ -376,9 +382,20 @@ location = "https://example.invalid/bad"
     c.controlCenter.shortcuts = {{"wifi"}, {"bluetooth"}};
     c.calendar.enabled = true;
     c.calendar.refreshMinutes = 30;
+    c.calendar.eventDateFormat = "%Y-%m-%d";
+    c.calendar.eventTimeFormat = "%I:%M %p";
     c.calendar.accounts = {
         {"acc1", "google", "Work", "#ff0000", "", "", "", {}},
-        {"acc2", "caldav", "Home", "", "custom", "https://dav.example.com/remote.php/dav/", "user", {"personal"}},
+        {"acc2",
+         "caldav",
+         "Home",
+         "",
+         "custom",
+         "https://dav.example.com/remote.php/dav/",
+         "user",
+         {"personal"},
+         CalendarCredentialSource::File,
+         "/run/agenix/noctalia-caldav"},
     };
     // Explicit chords so write→read round-trips (empty would emit defaults instead).
     c.keybinds.validate = {*parseKeyChordSpec("Return")};
@@ -480,6 +497,7 @@ location = "https://example.invalid/bad"
             {{"c1", "#aabbcc"}},
             "pre",
             "post",
+            "kde-color-scheme",
             3,
         },
     };
@@ -491,14 +509,14 @@ location = "https://example.invalid/bad"
     c.hotCorners.bottomRight = {.action = "command", .command = "notify-send corner"};
 
     // pluginSettings is not part of pluginsSchema ([plugin_settings] is its own root
-    // key), so the section round-trip covers sources + enabled only.
+    // key), so the section round-trip covers sources + enabled + auto_update only.
     c.plugins.sources = {
         {.kind = PluginSourceKind::Git,
          .name = "official",
-         .location = "https://github.com/noctalia-dev/official-plugins",
-         .autoUpdate = true},
+         .location = "https://github.com/noctalia-dev/official-plugins"},
     };
     c.plugins.enabled = {"noctalia/notes"};
+    c.plugins.autoUpdate = false; // non-default (default is true) so the round-trip exercises it
 
     c.bars = {makeProbeBar()};
     return c;
@@ -546,6 +564,63 @@ location = "https://example.invalid/bad"
       if (s.clipboardHistoryMaxEntries != 10000) {
         fail("shell.clipboard_history_max_entries clamp: expected 10000");
       }
+    }
+  }
+
+  void checkCalendarCredentialSourceValidation() {
+    const auto parse = [](std::string_view accountConfig) {
+      const toml::table table = toml::parse(accountConfig);
+      CalendarConfig calendar;
+      Diagnostics diagnostics;
+      readInto(table, calendar, calendarSchema(), "calendar", diagnostics);
+      return diagnostics;
+    };
+
+    const Diagnostics valid = parse(R"(
+[account.agenix]
+type = "caldav"
+provider = "custom"
+server_url = "https://dav.example.com/"
+username = "user"
+credential_source = "file"
+password_file = "/run/agenix/noctalia-caldav"
+)");
+    if (valid.hasErrors()) {
+      fail("calendar: valid file credential source was rejected");
+    }
+
+    const Diagnostics missingFile = parse(R"(
+[account.agenix]
+type = "caldav"
+provider = "icloud"
+username = "user"
+credential_source = "file"
+)");
+    if (!missingFile.hasErrors()) {
+      fail("calendar: file credential source accepted a missing password_file");
+    }
+
+    const Diagnostics conflictingFile = parse(R"(
+[account.keyring]
+type = "caldav"
+provider = "icloud"
+username = "user"
+credential_source = "secret-service"
+password_file = "/run/agenix/noctalia-caldav"
+)");
+    if (!conflictingFile.hasErrors()) {
+      fail("calendar: secret-service credential source accepted password_file");
+    }
+
+    const Diagnostics unknownSource = parse(R"(
+[account.invalid]
+type = "caldav"
+provider = "icloud"
+username = "user"
+credential_source = "automatic"
+)");
+    if (!unknownSource.hasErrors()) {
+      fail("calendar: unknown credential source was not an error");
     }
   }
 
@@ -757,6 +832,19 @@ widget_spacing = 8
   const Config probe = makeProbe();
   const toml::table serialized = config_export::serialize(probe);
 
+  {
+    Config pluginMapProbe;
+    pluginMapProbe.plugins.pluginSettings["me/display-output"]["output_glyphs"] =
+        WidgetSettingStringMap{{"eDP-1", "laptop"}, {"DP-1", "monitor"}};
+    const toml::table pluginMapSerialized = config_export::serialize(pluginMapProbe);
+    const auto* outputGlyphs = pluginMapSerialized["plugin_settings"]["me/display-output"]["output_glyphs"].as_table();
+    if (outputGlyphs == nullptr
+        || (*outputGlyphs)["eDP-1"].value<std::string>() != std::optional<std::string>{"laptop"}
+        || (*outputGlyphs)["DP-1"].value<std::string>() != std::optional<std::string>{"monitor"}) {
+      fail("plugin string-map setting did not serialize as a TOML table");
+    }
+  }
+
   // Bar: write parity against the captured golden, plus read-inverse via the
   // schemas (reconstructing the bar exactly as config_service does).
   {
@@ -838,6 +926,7 @@ widget_spacing = 8
 
   checkPluginIdValidation();
   checkPluginSourceNameValidation();
+  checkCalendarCredentialSourceValidation();
   checkClamps();
   checkCustomColorFallback();
   checkTemplateConfigCustomColorsExport();

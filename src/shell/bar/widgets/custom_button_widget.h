@@ -21,13 +21,14 @@ public:
     std::string middleCommand;
     std::string scrollUpCommand;
     std::string scrollDownCommand;
+    bool enableScroll = true;
     WidgetCustomImage customImage;
   };
 
   explicit CustomButtonWidget(Options options);
 
   void create() override;
-  [[nodiscard]] bool reservesMiddleClick() const noexcept override;
+  [[nodiscard]] bool reservesMiddleClick(float sceneX, float sceneY) const noexcept override;
 
 private:
   void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
@@ -41,6 +42,7 @@ private:
   std::string m_middleCommand;
   std::string m_scrollUpCommand;
   std::string m_scrollDownCommand;
+  bool m_enableScroll = true;
   WidgetCustomImage m_customImage;
   InputArea* m_area = nullptr;
   Glyph* m_glyph = nullptr;

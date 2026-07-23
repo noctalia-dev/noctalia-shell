@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -19,9 +20,9 @@ namespace scripting {
     std::string icon;
     std::string description;
     std::string license = "MIT";
-    std::string minNoctalia;
+    std::uint32_t pluginApiVersion = 0;
     bool deprecated = false;
-    bool compatible = true; // version::atLeast(appVersion, minNoctalia)
+    bool compatible = false;
   };
 
   struct CatalogResult {
@@ -30,13 +31,23 @@ namespace scripting {
     std::vector<CatalogEntry> entries;
   };
 
-  // Discover the plugins a source offers. git sources clone-if-needed into a repo
-  // cache (blobless, no-checkout) and read `catalog.toml` via `git show`; path
-  // sources read it straight from disk, falling back to scanning `*/plugin.toml`.
-  // Blocking git/IO — call off the UI thread. Compatibility is computed against
-  // the running version so the list can badge incompatible plugins before any
-  // detail fetch.
-  [[nodiscard]] CatalogResult discoverCatalog(const PluginSourceConfig& source);
+  // How discoverCatalog may obtain a git source's catalog. Path sources are always
+  // read straight from disk, so the mode only affects git sources.
+  enum class CatalogAccess : std::uint8_t {
+    // Clone a missing repo and lazy-fetch catalog blobs. Network-bound: worker
+    // threads only.
+    Network,
+    // Local git data only: never clone, never lazy-fetch. A missing repo or blob is a
+    // failed result, not a network round-trip, so this is safe on the main thread.
+    LocalOnly,
+  };
+
+  // Discover the plugins a source offers. git sources read `catalog.toml` from a repo
+  // cache (blobless, no-checkout) via `git show`, obeying `access`; path sources read
+  // it straight from disk, falling back to scanning `*/plugin.toml`. Compatibility is
+  // computed against the supported plugin API range so the list can badge incompatible
+  // plugins before any detail fetch.
+  [[nodiscard]] CatalogResult discoverCatalog(const PluginSourceConfig& source, CatalogAccess access);
 
   // Parse a `catalog.toml` body. Exposed for testing + the git-source path.
   [[nodiscard]] std::vector<CatalogEntry> parseCatalogToml(const std::string& body);

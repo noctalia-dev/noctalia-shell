@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
+#include "core/input/key_symbols.h"
 #include "render/render_context.h"
 #include "render/scene/node.h"
 #include "shell/settings/settings_content_common.h"
@@ -82,6 +83,7 @@ namespace settings {
     m_fillParentHeight = request.fillParentHeight;
     m_scrollableBody = request.scrollableBody;
     m_onCloseRequested = std::move(request.onCloseRequested);
+    m_preDispatchKeyboard = std::move(request.preDispatchKeyboard);
     m_sheetTitle = std::move(request.sheetTitle);
     m_removeAction = std::move(request.removeAction);
     m_createHeaderAction = std::move(request.createHeaderAction);
@@ -138,6 +140,8 @@ namespace settings {
       if (!isOpen() || m_contentNode == nullptr) {
         return;
       }
+      // Keep keyboard focus on the same control across rebuilds (e.g. Segmented Left/Right).
+      inputDispatcher().stashTabFocus();
       inputDispatcher().setFocus(nullptr);
       while (!m_contentNode->children().empty()) {
         m_contentNode->removeChild(m_contentNode->children().front().get());
@@ -145,6 +149,7 @@ namespace settings {
       m_root = nullptr;
       populateContent(m_contentNode, width(), height());
       requestLayout();
+      inputDispatcher().restoreStashedTabFocus();
     });
   }
 
@@ -161,7 +166,7 @@ namespace settings {
       if (m_selectPopup->onPointerEvent(event)) {
         return true;
       }
-      if (event.type == PointerEvent::Type::Button && event.state == 1) {
+      if (event.type == PointerEvent::Type::Button && event.pressed) {
         m_selectPopup->closeSelectDropdown();
         return true;
       }
@@ -174,7 +179,21 @@ namespace settings {
       m_selectPopup->onKeyboardEvent(event);
       return;
     }
+    // Escape is handled in DialogPopupHost before preDispatch; mirror the close-button
+    // onCloseRequested hook so detail views can step back instead of dismissing the sheet.
+    if (event.pressed && !event.preedit && KeySymbol::isEscape(event.sym)) {
+      if (m_onCloseRequested && m_onCloseRequested()) {
+        return;
+      }
+    }
     DialogPopupHost::onKeyboardEvent(event);
+  }
+
+  bool SettingsSheetPopup::preDispatchKeyboard(const KeyboardEvent& event) {
+    if (!m_preDispatchKeyboard) {
+      return false;
+    }
+    return m_preDispatchKeyboard(event);
   }
 
   wl_surface* SettingsSheetPopup::wlSurface() const noexcept { return DialogPopupHost::wlSurface(); }
@@ -186,6 +205,8 @@ namespace settings {
   bool SettingsSheetPopup::isSelectDropdownOpen() const noexcept {
     return m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen();
   }
+
+  InputArea* SettingsSheetPopup::focusedArea() noexcept { return inputDispatcher().focusedArea(); }
 
   void SettingsSheetPopup::populateContent(Node* contentParent, std::uint32_t /*width*/, std::uint32_t /*height*/) {
     const float popupPadding = Style::spaceSm * m_scale;
@@ -352,7 +373,7 @@ namespace settings {
 
     float panelW = m_minWidth * m_scale;
     if (m_parentWidth > 0) {
-      const auto probe = popup_chrome::computeGeometry(panelW, panelW, shadow);
+      const auto probe = popup_chrome::computeGeometry(panelW, panelW, shadow, Style::popupShadowsEnabled());
       const float chromeW = static_cast<float>(probe.surfaceWidth) - panelW;
       const float fitPanelW = std::max(1.0f, static_cast<float>(m_parentWidth) - (kParentMargin * m_scale) - chromeW);
       const float maxPanelW = std::min(fitPanelW, m_maxWidth * m_scale);
@@ -389,7 +410,7 @@ namespace settings {
       rootH = std::max(rootH, fillH);
     }
     const float panelH = std::ceil(rootH + pad * 2.0f);
-    const auto geo = popup_chrome::computeGeometry(panelW, panelH, shadow);
+    const auto geo = popup_chrome::computeGeometry(panelW, panelH, shadow, Style::popupShadowsEnabled());
     const float maxOuterHeight =
         m_parentHeight > 0 ? std::max(1.0f, static_cast<float>(m_parentHeight) - (kParentMargin * m_scale)) : 1.0e6f;
     const std::uint32_t nextHeight =

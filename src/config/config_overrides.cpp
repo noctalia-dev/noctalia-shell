@@ -100,7 +100,10 @@ namespace {
   // PluginsConfig equality that compares the open-ended pluginSettings map with int/double coercion
   // (widgetSettingsEqual) instead of the defaulted operator== — same reason as widgets.
   bool pluginsConfigEqual(const PluginsConfig& a, const PluginsConfig& b) {
-    if (a.sources != b.sources || a.enabled != b.enabled || a.pluginSettings.size() != b.pluginSettings.size()) {
+    if (a.sources != b.sources
+        || a.enabled != b.enabled
+        || a.autoUpdate != b.autoUpdate
+        || a.pluginSettings.size() != b.pluginSettings.size()) {
       return false;
     }
     for (const auto& [id, aMap] : a.pluginSettings) {
@@ -399,6 +402,19 @@ namespace {
               array.push_back(item);
             }
             table.insert_or_assign(key, std::move(array));
+          } else if constexpr (std::is_same_v<T, WidgetSettingStringMap>) {
+            toml::table mapTable;
+            std::vector<std::string> mapKeys;
+            mapKeys.reserve(concrete.size());
+            for (const auto& [mapKey, mapValue] : concrete) {
+              (void)mapValue;
+              mapKeys.push_back(mapKey);
+            }
+            std::ranges::sort(mapKeys);
+            for (const auto& mapKey : mapKeys) {
+              mapTable.insert_or_assign(mapKey, concrete.at(mapKey));
+            }
+            table.insert_or_assign(key, std::move(mapTable));
           } else {
             table.insert_or_assign(key, concrete);
           }
@@ -777,9 +793,6 @@ void ConfigService::addPluginSource(const PluginSourceConfig& source) {
     entry.insert_or_assign("name", src.name);
     entry.insert_or_assign("kind", std::string(enumToKey(kPluginSourceKinds, src.kind)));
     entry.insert_or_assign("location", src.location);
-    if (src.autoUpdate) {
-      entry.insert_or_assign("auto_update", true);
-    }
     if (!src.enabled) {
       entry.insert_or_assign("enabled", false);
     }
@@ -958,6 +971,30 @@ void ConfigService::setDockEnabled(bool enabled) {
   }
 
   dockTbl->insert_or_assign("enabled", enabled);
+
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return;
+  }
+
+  m_ownOverridesWritePending = true;
+
+  loadAll();
+  fireReloadCallbacks();
+}
+
+void ConfigService::setPluginsAutoUpdate(bool enabled) {
+  if (m_overridesPath.empty()) {
+    return;
+  }
+
+  auto* pluginsTbl = ensureTable(m_overridesTable, "plugins");
+  const auto existing = (*pluginsTbl)["auto_update"].value<bool>();
+  if (existing.has_value() && *existing == enabled && m_config.plugins.autoUpdate == enabled) {
+    return;
+  }
+
+  pluginsTbl->insert_or_assign("auto_update", enabled);
 
   if (!writeOverridesToFile()) {
     kLog.warn("failed to write {}", m_overridesPath);
@@ -1260,27 +1297,7 @@ bool ConfigService::overridePathEffectiveInTable(
   }
 
   if (isPluginSettingOverridePath(path)) {
-    const auto pluginSettingValue = [](const Config& cfg, const std::string& pluginId,
-                                       const std::string& key) -> std::optional<WidgetSettingValue> {
-      const auto it = cfg.plugins.pluginSettings.find(pluginId);
-      if (it == cfg.plugins.pluginSettings.end()) {
-        return std::nullopt;
-      }
-      const auto kIt = it->second.find(key);
-      if (kIt == it->second.end()) {
-        return std::nullopt;
-      }
-      return kIt->second;
-    };
-    const auto withVal = pluginSettingValue(*parsedWith, path[1], path[2]);
-    const auto withoutVal = pluginSettingValue(*withoutOverride, path[1], path[2]);
-    if (!withVal.has_value() && !withoutVal.has_value()) {
-      return false;
-    }
-    if (!withVal.has_value() || !withoutVal.has_value()) {
-      return true;
-    }
-    return !widgetSettingEqual(*withVal, *withoutVal);
+    return settings::pluginSettingOverrideIsEffective(path[1], path[2], *parsedWith, *withoutOverride);
   }
 
   return !configEqual(*parsedWith, *withoutOverride);
