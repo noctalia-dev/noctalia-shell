@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
+          token: ${{ secrets.CI_BOT_TOKEN }}
 
       - name: Configure git identity
         run: |
@@ -46,7 +46,7 @@ jobs:
       - name: Open or update pull request
         if: steps.build.outputs.changed == 'true'
         env:
-          TOKEN: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
+          TOKEN: ${{ secrets.CI_BOT_TOKEN }}
           API: ${{ github.server_url }}/api/v1/repos/${{ github.repository }}
         run: |
           set -euo pipefail
