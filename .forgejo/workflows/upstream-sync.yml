@@ -7,7 +7,7 @@ on:
 
 jobs:
   sync:
-    runs-on: docker           # MUST match a label your Forgejo runner registered with
+    runs-on: nix              # matches this instance's runner label (tagged "nix")
     steps:
       - name: Checkout fork (full history)
         uses: actions/checkout@v4
