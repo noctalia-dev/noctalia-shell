@@ -1,0 +1,64 @@
+name: Weekly upstream sync
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'      # Mondays 06:00 UTC (weekly)
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: docker           # MUST match a label your Forgejo runner registered with
+    steps:
+      - name: Checkout fork (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
+
+      - name: Configure git identity
+        run: |
+          git config user.name  "upstream-sync[bot]"
+          git config user.email "upstream-sync@users.noreply.forgejo"
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream https://github.com/noctalia-dev/noctalia.git
+          git fetch --no-tags --depth=1 upstream main
+
+      - name: Build sync branch (upstream tree + fork-local CI)
+        id: build
+        run: |
+          set -euo pipefail
+          git switch -C upstream-sync
+          # Replace working tree/index with upstream's tree...
+          git read-tree -u --reset upstream/main
+          # ...but keep the fork's own CI so this job survives future syncs:
+          git checkout main -- .forgejo .github 2>/dev/null || true
+          git add -A
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Already in sync with upstream."; exit 0
+          fi
+          git commit -m "chore: sync with upstream ($(date -u +%Y-%m-%d))"
+          git push --force origin upstream-sync
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update pull request
+        if: steps.build.outputs.changed == 'true'
+        env:
+          TOKEN: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
+          API: ${{ github.server_url }}/api/v1/repos/${{ github.repository }}
+        run: |
+          set -euo pipefail
+          existing=$(curl -sf -H "Authorization: token $TOKEN" \
+            "$API/pulls?state=open&head=${GITHUB_REPOSITORY%%/*}:upstream-sync" | grep -o '"number"' | head -n1 || true)
+          if [ -n "$existing" ]; then
+            echo "PR already open for upstream-sync; branch updated."; exit 0
+          fi
+          curl -sf -X POST -H "Authorization: token $TOKEN" -H "Content-Type: application/json" \
+            "$API/pulls" -d '{
+              "head": "upstream-sync",
+              "base": "main",
+              "title": "chore: weekly upstream sync",
+              "body": "Automated weekly sync with upstream noctalia-dev/noctalia. Review conflicts/breaking changes before merging."
+            }'
