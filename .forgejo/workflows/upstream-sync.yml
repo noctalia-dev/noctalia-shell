@@ -1,12 +1,18 @@
 name: Weekly upstream sync
 
+# Read-only upstream watch. This job NEVER rewrites the fork's tree, force-pushes,
+# or opens a pull request. It compares upstream/main against this repo's default
+# branch and, when upstream is ahead, files a review Issue (assigned to `claude`)
+# outlining what would change / conflict when merging upstream/main downstream.
+# An agent then plans the actual merge in a downstream PR.
+
 on:
   schedule:
     - cron: '0 6 * * 1'      # Mondays 06:00 UTC (weekly)
   workflow_dispatch: {}
 
 jobs:
-  sync:
+  report:
     runs-on: nix              # matches this instance's runner label (tagged "nix")
     steps:
       - name: Checkout fork (full history)
@@ -20,45 +26,116 @@ jobs:
           git config user.name  "upstream-sync[bot]"
           git config user.email "upstream-sync@users.noreply.forgejo"
 
-      - name: Fetch upstream
-        run: |
-          git remote add upstream https://github.com/noctalia-dev/noctalia.git
-          git fetch --no-tags --depth=1 upstream main
-
-      - name: Build sync branch (upstream tree + fork-local CI)
-        id: build
+      - name: Fetch upstream (full history — needed for merge-base)
         run: |
           set -euo pipefail
-          git switch -C upstream-sync
-          # Replace working tree/index with upstream's tree...
-          git read-tree -u --reset upstream/main
-          # ...but keep the fork's own CI so this job survives future syncs:
-          git checkout main -- .forgejo .github 2>/dev/null || true
-          git add -A
-          if git diff --cached --quiet; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "Already in sync with upstream."; exit 0
-          fi
-          git commit -m "chore: sync with upstream ($(date -u +%Y-%m-%d))"
-          git push --force origin upstream-sync
-          echo "changed=true" >> "$GITHUB_OUTPUT"
+          git remote add upstream https://github.com/noctalia-dev/noctalia.git
+          git fetch --no-tags upstream main
 
-      - name: Open or update pull request
-        if: steps.build.outputs.changed == 'true'
+      - name: Analyse merge of upstream/main into the default branch
+        id: analyse
         env:
           TOKEN: ${{ secrets.CI_BOT_TOKEN }}
           API: ${{ github.server_url }}/api/v1/repos/${{ github.repository }}
         run: |
           set -euo pipefail
-          existing=$(curl -sf -H "Authorization: token $TOKEN" \
-            "$API/pulls?state=open&head=${GITHUB_REPOSITORY%%/*}:upstream-sync" | grep -o '"number"' | head -n1 || true)
-          if [ -n "$existing" ]; then
-            echo "PR already open for upstream-sync; branch updated."; exit 0
+
+          # Resolve the repo's default branch dynamically (do NOT hardcode "main").
+          DEFAULT_BRANCH="$(curl -sf -H "Authorization: token $TOKEN" "$API" \
+            | jq -r '.default_branch // empty' || true)"
+          if [ -z "$DEFAULT_BRANCH" ]; then
+            DEFAULT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
           fi
-          curl -sf -X POST -H "Authorization: token $TOKEN" -H "Content-Type: application/json" \
-            "$API/pulls" -d '{
-              "head": "upstream-sync",
-              "base": "main",
-              "title": "chore: weekly upstream sync",
-              "body": "Automated weekly sync with upstream noctalia-dev/noctalia. Review conflicts/breaking changes before merging."
-            }'
+          echo "Default branch: $DEFAULT_BRANCH"
+          echo "default_branch=$DEFAULT_BRANCH" >> "$GITHUB_OUTPUT"
+
+          # Compare the default-branch tip (HEAD after checkout) with upstream/main.
+          BASE="$(git merge-base HEAD upstream/main)"
+          AHEAD="$(git rev-list --count "$BASE"..upstream/main)"
+          echo "Upstream commits ahead of merge base: $AHEAD"
+          echo "ahead=$AHEAD" >> "$GITHUB_OUTPUT"
+
+          if [ "$AHEAD" -eq 0 ]; then
+            echo "Up to date with upstream/main — nothing to report."
+            echo "report=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "report=true" >> "$GITHUB_OUTPUT"
+
+          # Conflict detection via merge-tree (no working-tree mutation, git 2.40+).
+          CONFLICTS=""
+          if OUT="$(git merge-tree --write-tree --name-only HEAD upstream/main)"; then
+            CONFLICTS=""                       # clean merge, exit 0
+          else
+            rc=$?
+            if [ "$rc" -eq 1 ]; then
+              CONFLICTS="$(printf '%s\n' "$OUT" | tail -n +2)"   # line 1 is the tree OID
+            else
+              CONFLICTS="(could not compute conflicts — runner git may predate 'merge-tree --write-tree')"
+            fi
+          fi
+
+          # Build the Issue body.
+          {
+            echo "## Upstream sync review — \`upstream/main\` → \`$DEFAULT_BRANCH\`"
+            echo
+            echo "The weekly upstream-sync workflow found **$AHEAD** new upstream commit(s)."
+            echo "This is a read-only report; an agent should plan the actual merge in a downstream PR against \`$DEFAULT_BRANCH\`."
+            echo
+            echo "Upstream: \`noctalia-dev/noctalia@main\` · Merge base: \`$(git rev-parse --short "$BASE")\`"
+            echo
+            echo "### Files that would conflict"
+            if [ -n "$CONFLICTS" ]; then
+              echo '```'
+              printf '%s\n' "$CONFLICTS"
+              echo '```'
+            else
+              echo "_None — upstream/main merges cleanly into \`$DEFAULT_BRANCH\`._"
+            fi
+            echo
+            echo "### Changed files (merge base → upstream/main)"
+            echo '```'
+            git diff --stat "$BASE"..upstream/main | tail -n 200
+            echo '```'
+            echo
+            echo "### New upstream commits"
+            echo '```'
+            git log --no-merges --oneline "$BASE"..upstream/main | head -n 100 || true
+            echo '```'
+          } > issue-body.md
+
+          echo "Report written."
+
+      - name: File / refresh the review Issue (assigned to claude)
+        if: steps.analyse.outputs.report == 'true'
+        env:
+          TOKEN: ${{ secrets.CI_BOT_TOKEN }}
+          API: ${{ github.server_url }}/api/v1/repos/${{ github.repository }}
+          DEFAULT_BRANCH: ${{ steps.analyse.outputs.default_branch }}
+        run: |
+          set -euo pipefail
+
+          # Dedup: skip if an open [upstream-sync] review Issue already exists.
+          if curl -sf -H "Authorization: token $TOKEN" \
+              "$API/issues?state=open&type=issues&limit=50" | grep -q '\[upstream-sync\]'; then
+            echo "An open [upstream-sync] Issue already exists — not filing a duplicate."
+            exit 0
+          fi
+
+          TITLE="[upstream-sync] Review merge of upstream/main into ${DEFAULT_BRANCH} ($(date -u +%Y-%m-%d))"
+
+          # Create the Issue first (without assignee) so a bad/unknown assignee can
+          # never lose the report, then assign `claude` as a best-effort follow-up.
+          jq -n --arg title "$TITLE" --rawfile body issue-body.md \
+            '{title: $title, body: $body}' > payload.json
+
+          created="$(curl -sf -X POST -H "Authorization: token $TOKEN" \
+            -H "Content-Type: application/json" "$API/issues" -d @payload.json)"
+          NUM="$(printf '%s' "$created" | jq -r '.number')"
+          echo "Created issue #$NUM"
+
+          if ! curl -sf -X PATCH -H "Authorization: token $TOKEN" \
+              -H "Content-Type: application/json" \
+              "$API/issues/$NUM" -d '{"assignees":["claude"]}' >/dev/null; then
+            echo "::warning::Could not assign 'claude' to issue #$NUM — ensure 'claude' is a repo collaborator."
+          fi
