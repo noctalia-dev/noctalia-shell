@@ -22,9 +22,17 @@ enum class VpnStatusMode : std::uint8_t {
 
 class NetworkWidget : public Widget {
 public:
+  struct Options {
+    VpnStatusMode vpnStatusMode = VpnStatusMode::Replace;
+    bool showLabel = true;
+    bool showVpnLabel = false;
+
+    bool operator==(const Options&) const = default;
+  };
+
   NetworkWidget(
       INetworkService* network, ExternalIpService* externalIp, SystemMonitorService* monitor, wl_output* output,
-      bool showLabel, bool showVpnLabel, std::string vpnStatusMode
+      Options options
   );
 
   void create() override;
@@ -50,5 +58,4 @@ private:
   bool m_haveLastState = false;
   bool m_isVertical = false;
   bool m_lastVertical = false;
-  NetworkConnectivity m_lastRightClickTransport = NetworkConnectivity::Unknown;
 };

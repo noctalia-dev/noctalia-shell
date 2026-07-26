@@ -12,7 +12,6 @@
 #include "ui/style.h"
 
 #include <chrono>
-#include <linux/input-event-codes.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -60,51 +59,13 @@ namespace {
 
 NetworkWidget::NetworkWidget(
     INetworkService* network, ExternalIpService* externalIp, SystemMonitorService* monitor, wl_output* /*output*/,
-    bool showLabel, bool showVpnLabel, std::string vpnStatusMode
+    Options options
 )
-    : m_network(network), m_externalIp(externalIp), m_monitor(monitor), m_showLabel(showLabel),
-      m_showVpnLabel(showVpnLabel) {
-  if (vpnStatusMode == "both") {
-    m_vpnStatusMode = VpnStatusMode::Both;
-  } else if (vpnStatusMode == "hidden") {
-    m_vpnStatusMode = VpnStatusMode::Hidden;
-  } else {
-    m_vpnStatusMode = VpnStatusMode::Replace;
-  }
-}
+    : m_network(network), m_externalIp(externalIp), m_monitor(monitor), m_showLabel(options.showLabel),
+      m_showVpnLabel(options.showVpnLabel), m_vpnStatusMode(options.vpnStatusMode) {}
 
 void NetworkWidget::create() {
   auto area = std::make_unique<InputArea>();
-  area->setAcceptedButtons(InputArea::buttonMask({BTN_LEFT, BTN_RIGHT}));
-  area->setOnClick([this](const InputArea::PointerData& data) {
-    if (data.button == BTN_RIGHT) {
-      if (m_network == nullptr) {
-        return;
-      }
-      const NetworkState& s = m_network->state();
-      if (s.kind == NetworkConnectivity::Wireless && (s.connected || s.resolving)) {
-        m_lastRightClickTransport = NetworkConnectivity::Wireless;
-        m_network->setWirelessEnabled(false);
-      } else if (s.kind == NetworkConnectivity::Wired && (s.connected || s.resolving)) {
-        m_lastRightClickTransport = NetworkConnectivity::Wired;
-        m_network->disconnect();
-      } else if (m_lastRightClickTransport == NetworkConnectivity::Wireless) {
-        m_lastRightClickTransport = NetworkConnectivity::Unknown;
-        m_network->setWirelessEnabled(true);
-      } else if (m_lastRightClickTransport == NetworkConnectivity::Wired) {
-        m_lastRightClickTransport = NetworkConnectivity::Unknown;
-        m_network->activateWiredConnection();
-      } else if (!s.wirelessEnabled) {
-        m_network->setWirelessEnabled(true);
-      } else if (m_network->canActivateWiredConnection()) {
-        m_network->activateWiredConnection();
-      }
-      return;
-    }
-    if (data.button == BTN_LEFT) {
-      requestPanelToggle("control-center", "network");
-    }
-  });
   area->setTooltipProvider(
       [this]() -> TooltipContent {
         std::vector<TooltipRow> rows = buildTooltipRows();

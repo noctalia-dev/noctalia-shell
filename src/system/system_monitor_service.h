@@ -24,6 +24,10 @@ struct SystemStats {
 
   std::chrono::steady_clock::time_point sampledAt;
   double cpuUsagePercent{0.0};
+  // Per-core usage in /proc/stat order. Empty unless a consumer holds a retainCpuCores()
+  // reference; sampled on its own fixed 1s cadence. Offline cores are absent from /proc/stat,
+  // so the length can change and an entry's position is not its core id.
+  std::vector<double> cpuCoreUsagePercent;
   double ramUsagePercent{0.0};
   std::uint64_t ramUsedMb{0};
   std::uint64_t ramTotalMb{0};
@@ -64,6 +68,8 @@ public:
 
   void retainCpuTemp();
   void releaseCpuTemp();
+  void retainCpuCores();
+  void releaseCpuCores();
   void retainGpuTemp();
   void releaseGpuTemp();
   void retainGpuUsage();
@@ -92,11 +98,6 @@ private:
     std::array<float, kHistorySize> history{};
   };
 
-  struct CpuTotals {
-    std::uint64_t total{0};
-    std::uint64_t idle{0};
-  };
-
   struct GpuVramData {
     std::uint64_t usedBytes{0};
     std::uint64_t totalBytes{0};
@@ -122,7 +123,6 @@ private:
   void logDetectedSources();
   void releaseGpuReaders();
 
-  [[nodiscard]] static std::optional<CpuTotals> readCpuTotals();
   struct MemData {
     std::uint64_t totalKb{0};
     std::uint64_t usedKb{0};
@@ -155,14 +155,16 @@ private:
 
   std::atomic<bool> m_running{false};
   std::atomic<int> m_cpuTempRefs{0};
+  std::atomic<int> m_cpuCoreRefs{0};
   std::atomic<int> m_gpuTempRefs{0};
   std::atomic<int> m_gpuUsageRefs{0};
   std::atomic<int> m_gpuVramRefs{0};
   std::thread m_thread;
   std::mutex m_wakeMutex;
   std::condition_variable m_wakeCv;
-  // Bumped under m_wakeMutex so a config change interrupts the sampling loop's wait.
-  std::atomic<std::uint64_t> m_configGeneration{0};
+  // Bumped under m_wakeMutex so a config change, or a metric being retained for the first time,
+  // interrupts the sampling loop's wait instead of leaving it parked on a stale deadline.
+  std::atomic<std::uint64_t> m_wakeGeneration{0};
 
   mutable std::mutex m_configMutex;
   SystemConfig::MonitorConfig m_pollConfig;

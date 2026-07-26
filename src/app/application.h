@@ -34,6 +34,7 @@
 #include "shell/wallpaper/visualizer_service.h"
 #include "scripting/script_api_context.h"
 #include "security/secret_store.h"
+#include "security/storage_key_provider.h"
 #include "shell/backdrop/backdrop.h"
 #include "shell/bar/bar.h"
 #include "shell/desktop/desktop_widgets_controller.h"
@@ -199,6 +200,7 @@ private:
   void syncPolkitAgent();
   [[nodiscard]] bool likelySupportsInSessionPolkit() const noexcept;
   void syncClipboardService();
+  void syncStorageKeyProvider();
   void syncScreenTimeService();
   void performGreeterSync(bool quiet = false);
   void scheduleGreeterAutoSync();
@@ -219,7 +221,8 @@ private:
   WorkspaceAlertService m_workspaceAlertService;
   CompositorPlatform m_compositorPlatform{m_wayland};
   security::SecretStore m_secretStore;
-  ClipboardService m_clipboardService;
+  security::StorageKeyProvider m_storageKeyProvider{m_secretStore};
+  ClipboardService m_clipboardService{m_storageKeyProvider};
   TextInputService m_textInputService;
   VirtualKeyboardService m_virtualKeyboardService;
   ConfigService m_configService;
@@ -360,6 +363,7 @@ private:
   CalendarPollSource m_calendarPollSource{m_calendarService};
   Timer m_trayInitTimer;
   Timer m_polkitInitTimer;
+  Timer m_polkitIdleCloseTimer;
   Timer m_greeterSyncTimeoutTimer;
   Timer m_greeterAutoSyncTimer;
   Timer m_clipboardAutoPasteTimer;

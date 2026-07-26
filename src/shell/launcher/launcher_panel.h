@@ -134,6 +134,7 @@ private:
   bool m_launcherAppGrid = false;
   bool m_usingAppGrid = false;
   float m_launcherRowHeight = 0.0f;
+  std::uint64_t m_desktopEntriesVersion = 0;
   ConfigService* m_config = nullptr;
   AsyncTextureCache* m_asyncTextures = nullptr;
   std::unique_ptr<ContextMenuPopup> m_actionsMenu;

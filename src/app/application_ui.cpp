@@ -204,6 +204,7 @@ void Application::initUiRenderSurfacesAndSettings() {
       &m_compositorPlatform, m_accountsService.get()
   );
   m_settingsWindow.setPluginManager(&m_pluginManager);
+  m_settingsWindow.setIpcService(&m_ipcService);
   m_settingsWindow.setOpenDesktopWidgetEditor([this]() {
     if (m_lockscreenWidgetsController.isEditing()) {
       m_lockscreenWidgetsController.exitEdit();
@@ -381,6 +382,7 @@ void Application::initLockScreenAndSession() {
   if (m_projectMRenderer != nullptr) {
     m_lockScreen.setVisualizer(m_projectMRenderer.get());
   }
+  m_lockScreen.setLoginBoxServices(&m_sessionActionRunner, m_mprisService.get(), &m_weatherService, &m_httpClient);
   m_wallpaper.setAutomationGate([this]() { return !m_lockScreen.isActive(); });
   m_configService.addReloadCallback([this]() {
     if (m_logindService != nullptr) {
@@ -574,9 +576,24 @@ void Application::initPanelManagerAndPanels() {
   });
   m_settingsWindow.setCalendarService(&m_calendarService);
   m_calendarService.setCredentialChangeCallback([this]() { m_settingsWindow.onExternalOptionsChanged(); });
-  auto clipboardPanel = std::make_unique<ClipboardPanel>(
-      &m_clipboardService, &m_configService, &m_thumbnailService, &m_asyncTextureCache
-  );
+  m_settingsWindow.setClipboardService(&m_clipboardService);
+  m_clipboardService.setPersistenceChangeCallback([this]() { m_settingsWindow.onExternalOptionsChanged(); });
+  m_settingsWindow.setResetEncryptedStorage([this]() {
+    const bool clipboardCleared = m_clipboardService.clearEncryptedPersistenceForRecovery();
+    const bool calendarCleared = m_calendarService.clearEncryptedCacheForRecovery();
+    if (!clipboardCleared || !calendarCleared) {
+      m_settingsWindow.showTransientStatus(i18n::tr("settings.storage-recovery.error-delete"), true);
+      m_settingsWindow.onExternalOptionsChanged();
+      return;
+    }
+    m_storageKeyProvider.resetAfterEncryptedDataCleared([this](bool success) {
+      m_settingsWindow.showTransientStatus(
+          i18n::tr(success ? "settings.storage-recovery.success" : "settings.storage-recovery.error-key"), !success
+      );
+      m_settingsWindow.onExternalOptionsChanged();
+    });
+  });
+  auto clipboardPanel = std::make_unique<ClipboardPanel>(&m_clipboardService, &m_configService, &m_asyncTextureCache);
   clipboardPanel->setActivateCallback([this](const ClipboardEntry& entry) {
     const ClipboardAutoPasteMode mode = m_configService.config().shell.clipboardAutoPaste;
     if (mode == ClipboardAutoPasteMode::Off) {
@@ -887,10 +904,7 @@ void Application::initBarDockAndLayout() {
       .scriptApi = &m_scriptApi,
   });
   m_idleInhibitor.setAnchorSurfacesProvider([this]() { return m_bar.caffeineAnchorSurfaces(); });
-  m_bar.setOpenWidgetSettingsCallback([this](std::string barName, std::string widgetName) {
-    if (m_panelManager.isOpen()) {
-      m_panelManager.closePanel();
-    }
+  m_panelManager.setOpenWidgetSettingsCallback([this](std::string barName, std::string widgetName) {
     m_settingsWindow.openToBarWidget(std::move(barName), std::move(widgetName));
   });
   m_panelManager.setAttachedPanelGeometryCallback(

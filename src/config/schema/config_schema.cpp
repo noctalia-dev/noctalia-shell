@@ -477,6 +477,9 @@ namespace noctalia::config::schema {
     const Schema<ControlCenterConfig::CalendarTabConfig>& calendarTabSchema() {
       static const Schema<ControlCenterConfig::CalendarTabConfig> s = {
           field(&ControlCenterConfig::CalendarTabConfig::showEventsCard, "show_events_card"),
+          field(&ControlCenterConfig::CalendarTabConfig::showWeekNumbers, "show_week_numbers"),
+          field(&ControlCenterConfig::CalendarTabConfig::eventDateFormat, "event_date_format"),
+          field(&ControlCenterConfig::CalendarTabConfig::eventTimeFormat, "event_time_format"),
       };
       return s;
     }
@@ -1465,6 +1468,7 @@ namespace noctalia::config::schema {
         field(&ShellConfig::timeFormat, "time_format"),
         field(&ShellConfig::dateFormat, "date_format"),
         field(&ShellConfig::offlineMode, "offline_mode"),
+        stringIfNonEmptyField(&ShellConfig::panelAnchorBar, "panel_anchor_bar"),
         field(&ShellConfig::externalIpEnabled, "external_ip_enabled"),
         field(&ShellConfig::telemetryEnabled, "telemetry_enabled"),
         field(&ShellConfig::setupWizardEnabled, "setup_wizard_enabled"),
@@ -1472,7 +1476,6 @@ namespace noctalia::config::schema {
         field(&ShellConfig::polkitAgent, "polkit_agent"),
         enumField(&ShellConfig::passwordMaskStyle, "password_style", kPasswordMaskStyles),
         field(&ShellConfig::settingsShowAdvanced, "settings_show_advanced"),
-        field(&ShellConfig::middleClickOpensWidgetSettings, "middle_click_opens_widget_settings"),
         field(&ShellConfig::showLocation, "show_location"),
         field(&ShellConfig::appIconColorize, "app_icon_colorize"),
         colorSpecField(&ShellConfig::appIconColor, "app_icon_color", /*alwaysEmit=*/false),
@@ -1580,13 +1583,49 @@ namespace noctalia::config::schema {
     static const Schema<CalendarConfig> s = {
         field(&CalendarConfig::enabled, "enabled"),
         field(&CalendarConfig::refreshMinutes, "refresh_minutes", kRefreshMinutesRange),
-        field(&CalendarConfig::eventDateFormat, "event_date_format"),
-        field(&CalendarConfig::eventTimeFormat, "event_time_format"),
         namedMap<CalendarConfig, CalendarConfig::Account>(
             &CalendarConfig::accounts, "account", calendarAccountSchema(),
             [](CalendarConfig::Account& a, std::string_view id) { a.id = std::string(id); },
             [](const CalendarConfig::Account& a) { return a.id; }, true
         ),
+    };
+    return s;
+  }
+
+  const Schema<StorageConfig>& storageSchema() {
+    static const Schema<StorageConfig> s = {
+        custom<StorageConfig>(
+            "key_source",
+            [](const toml::table& table, StorageConfig& out, std::string_view parentPath, Diagnostics& diag) {
+              const auto value = table["key_source"].value<std::string>();
+              if (!value.has_value()) {
+                return;
+              }
+              const std::string source = StringUtils::trim(*value);
+              if (source == "secret-service") {
+                out.keySource = StorageKeySource::SecretService;
+              } else if (source == "file") {
+                out.keySource = StorageKeySource::File;
+              } else {
+                diag.error(joinPath(parentPath, "key_source"), R"(key_source must be "secret-service" or "file")");
+              }
+            },
+            [](toml::table& table, const StorageConfig& in) {
+              table.insert_or_assign("key_source", in.keySource == StorageKeySource::File ? "file" : "secret-service");
+            }
+        ),
+        pathStringField(&StorageConfig::keyFile, "key_file"),
+        finalize<StorageConfig>([](StorageConfig& out, std::string_view parentPath, Diagnostics& diag) {
+          if (out.keySource == StorageKeySource::File) {
+            if (out.keyFile.empty()) {
+              diag.error(joinPath(parentPath, "key_file"), R"(storage with key_source = "file" requires key_file)");
+            } else if (!std::filesystem::path(out.keyFile).is_absolute()) {
+              diag.error(joinPath(parentPath, "key_file"), "key_file must resolve to an absolute path");
+            }
+          } else if (!out.keyFile.empty()) {
+            diag.error(joinPath(parentPath, "key_file"), R"(key_file requires key_source = "file")");
+          }
+        }),
     };
     return s;
   }
@@ -1774,6 +1813,20 @@ namespace noctalia::config::schema {
         field(&DockConfig::showRunning, "show_running"),
         field(&DockConfig::autoHide, "auto_hide"),
         field(&DockConfig::smartAutoHide, "smart_auto_hide"),
+        // layer accepts top|overlay; anything else warns and leaves the default.
+        custom<DockConfig>(
+            "layer",
+            [](const toml::table& tbl, DockConfig& out, std::string_view parentPath, Diagnostics& diag) {
+              if (auto v = tbl["layer"].value<std::string>()) {
+                if (*v == "top" || *v == "overlay") {
+                  out.layer = *v;
+                } else {
+                  diag.warn(joinPath(parentPath, "layer"), "expected top or overlay, got \"" + *v + "\"");
+                }
+              }
+            },
+            [](toml::table& tbl, const DockConfig& in) { tbl.insert_or_assign("layer", in.layer); }
+        ),
         field(&DockConfig::reserveSpace, "reserve_space"),
         field(&DockConfig::activeScale, "active_scale", kDockActiveScaleRange),
         field(&DockConfig::inactiveScale, "inactive_scale", kDockInactiveScaleRange),
@@ -2057,22 +2110,14 @@ namespace noctalia::config::schema {
 
   const Schema<BarDeadZoneConfig>& barDeadZoneSchema() {
     static const Schema<BarDeadZoneConfig> s = {
-        field(&BarDeadZoneConfig::command, "command"),
-        field(&BarDeadZoneConfig::rightCommand, "right_command"),
-        field(&BarDeadZoneConfig::middleCommand, "middle_command"),
-        field(&BarDeadZoneConfig::scrollUpCommand, "scroll_up_command"),
-        field(&BarDeadZoneConfig::scrollDownCommand, "scroll_down_command"),
+        field(&BarDeadZoneConfig::actions, "actions"),
     };
     return s;
   }
 
   const Schema<BarDeadZoneOverride>& barDeadZoneOverrideSchema() {
     static const Schema<BarDeadZoneOverride> s = {
-        optionalTrimmedStringField(&BarDeadZoneOverride::command, "command"),
-        optionalTrimmedStringField(&BarDeadZoneOverride::rightCommand, "right_command"),
-        optionalTrimmedStringField(&BarDeadZoneOverride::middleCommand, "middle_command"),
-        optionalTrimmedStringField(&BarDeadZoneOverride::scrollUpCommand, "scroll_up_command"),
-        optionalTrimmedStringField(&BarDeadZoneOverride::scrollDownCommand, "scroll_down_command"),
+        field(&BarDeadZoneOverride::actions, "actions"),
     };
     return s;
   }
@@ -2125,6 +2170,7 @@ namespace noctalia::config::schema {
         capsuleBorderField(&BarConfig::widgetCapsuleBorder, &BarConfig::widgetCapsuleBorderSpecified, "capsule_border"),
         field(&BarConfig::hoverHighlight, "hover_highlight"),
         subTable(&BarConfig::deadZone, "dead_zone", barDeadZoneSchema()),
+        field(&BarConfig::actions, "actions"),
     };
     return s;
   }

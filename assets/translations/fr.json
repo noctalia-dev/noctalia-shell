@@ -260,7 +260,7 @@
       "password-prompt": "Saisir le mot de passe",
       "password-prompt-for": "Saisir le mot de passe pour {ssid}",
       "unavailable-detail": "Installer et activer NetworkManager pour gérer les réseaux depuis cette interface.",
-      "unavailable-title": "NetworkManager indisponible",
+      "unavailable-title": "Service réseau indisponible",
       "vpns": "VPNs",
       "wi-fi": "Wi-Fi",
       "wifi": "Wi-Fi",
@@ -1132,7 +1132,7 @@
         "screen-time": "Temps d’écran",
         "screenshot": "Capture d'écran",
         "security": "Sécurité",
-        "session-panel": "Session",
+        "session-panel": "Panneau de session",
         "shape": "Forme",
         "system": "Système",
         "theme": "Thème",
@@ -1373,7 +1373,7 @@
         "delete-confirm-desc": "Ce plugin va etre désinstallé et supprimé du disque.",
         "delete-confirm-title": "Supprimer \"{name}\"?",
         "deprecated": "Déprécié",
-        "empty": "Aucun plugin trouvé. Ajoutez une source ou vérifiez votre connexion.",
+        "empty": "Aucun plugin activé.",
         "incompatible-plugin-api": "API du plugin incompatible",
         "loading": "Chargement des plugins…",
         "refreshing": "Actualisation des plugins…",
@@ -1532,7 +1532,7 @@
       },
       "bar": {
         "auto-hide": {
-          "description": "Masque automatiquement la barre lorsqu’elle n’est pas utilisée"
+          "description": "'Désactivé' garde la barre visible ; 'Activé' le masque jusqu'à ce que vous déplaciez le pointeur vers le bord de l'écran ; 'Intelligent' affiche la barre sur un espace de travail vide et la masque lorsque les fenêtres sont ouvertes"
         },
         "background-opacity": {
           "description": "Opacité de fond de la barre"
@@ -1602,26 +1602,6 @@
         },
         "corner-top-right": {
           "description": "Rayon du coin supérieur droit de la barre"
-        },
-        "dead-zone-command": {
-          "description": "Commande shell à exécuter lors d'un clic gauche sur la marge de la barre, en dehors des widgets",
-          "label": "Clic gauche"
-        },
-        "dead-zone-middle-command": {
-          "description": "Commande shell à exécuter lors d'un clic du milieu sur la marge de la barre, en dehors des widgets",
-          "label": "Clic du milieu"
-        },
-        "dead-zone-right-command": {
-          "description": "Commande shell à exécuter lors d'un clic droit ; laissez vide pour ouvrir le Centre de contrôle",
-          "label": "Clic droit"
-        },
-        "dead-zone-scroll-down-command": {
-          "description": "Commande shell à exécuter lors d'un défilement vers le bas",
-          "label": "Défilement vers le bas"
-        },
-        "dead-zone-scroll-up-command": {
-          "description": "Commande shell à exécuter lors d'un défilement vers le haut",
-          "label": "Défilement vers le haut"
         },
         "edge-margin": {
           "description": "Distance par rapport au bord d’écran le plus proche ; des valeurs positives éloignent la barre du bord"
@@ -1762,7 +1742,7 @@
           "label": "Écran actif uniquement"
         },
         "auto-hide": {
-          "description": "Masque automatiquement le dock lorsqu’il n’est pas utilisé"
+          "description": "'Désactivé' garde le dock visible ; 'Activé' le masque jusqu'à ce que vous déplaciez le pointeur vers le bord de l'écran ; 'Intelligent' affiche le dock sur un espace de travail vide et le masque lorsque les fenêtres sont ouvertes"
         },
         "background-opacity": {
           "description": "Opacité de fond du dock"
@@ -2163,11 +2143,11 @@
         },
         "open-near-click-clipboard": {
           "description": "Positionne le panneau du presse-papiers près du point de clic sur la barre au lieu de le centrer sur celle-ci",
-          "label": "Ouvrir près du clic"
+          "label": "Le long de la barre"
         },
         "open-near-click-control-center": {
           "description": "Positionne le centre de contrôle près du point de clic sur la barre au lieu de le centrer sur celle-ci",
-          "label": "Ouvrir près du clic"
+          "label": "Le long de la barre"
         },
         "open-near-click-launcher": {
           "description": "Positionne le lanceur près du point de clic sur la barre au lieu de le centrer sur celle-ci",
@@ -2233,7 +2213,7 @@
           "description": "Projette l’ombre globale des surfaces depuis les panneaux"
         },
         "transparency-mode": {
-          "description": "Style d'effet de verre du panel, incluant l'opacité du panel flottant/centré et des cards",
+          "description": "Style d'effet de verre du panel, incluant l'opacité du panel flottant et des cards",
           "label": "Transparence"
         }
       },
@@ -2296,7 +2276,7 @@
           "placeholder": "Ville, Pays"
         },
         "location-auto-locate": {
-          "description": "Détecte la localisation à partir de l’adresse IP",
+          "description": "Détecte vote position automatiquement à partir de votre adresse IP via noctalia.dev",
           "label": "Localisation automatique (IP)"
         },
         "longitude": {
@@ -2391,7 +2371,7 @@
           "placeholder": "/chemin/vers/le/son.wav"
         },
         "weather": {
-          "description": "Active les services météo",
+          "description": "Active le service météo via open-meteo.com",
           "label": "Météo"
         },
         "weather-effects": {
@@ -2513,10 +2493,6 @@
           "description": "Commande personnalisée utilisée par le lanceur d'applications. Elle remplace $CMD par la commande d'origine.",
           "label": "Commande personnalisée du lanceur d'applications ",
           "placeholder": "$CMD"
-        },
-        "middle-click-opens-widget-settings": {
-          "description": "Ouvre les paramètres d’un widget de barre à l’aide d’un clic du milieu",
-          "label": "Ouverture des paramètres du widget par clic du milieu"
         },
         "niri-overview-type-to-launch": {
           "description": "Ouvre le lanceur lors de la saisie dans la vue d’ensemble de niri; utilise une petite surface de focus clavier tant que la vue d’ensemble est ouverte",
@@ -2875,8 +2851,6 @@
         "output": "Sortie",
         "ram-percent": "RAM (%)",
         "ram-used": "RAM utilisée",
-        "screenshot-primary-fullscreen": "Plein écran",
-        "screenshot-primary-region": "Zone",
         "shared": "Partagé",
         "short": "Partagé",
         "swap-percent": "Swap (%)",
@@ -2959,9 +2933,6 @@
         "color-2": {
           "label": "Seconde couleur"
         },
-        "command": {
-          "label": "Commande clique gauche"
-        },
         "custom-image": {
           "description": "Chemin vers une image personnalisée. Laissez vide pour utiliser l'icon glyph",
           "dialog-title": "Sélectionnez l'image personnalisée ",
@@ -2970,9 +2941,6 @@
         "custom-image-colorize": {
           "description": "Teinte l'image personnalisée avec le paramètre Icon Color du widget",
           "label": "Coloriser l'image personnalisée"
-        },
-        "cycle-command": {
-          "label": "Cycle de commande"
         },
         "display": {
           "description": "Mode d'affichage pour ce widget",
@@ -3031,14 +2999,8 @@
           "description": "Autoriser le survol du pointeur, les clics, les défilements et les info-bulles pour ce widget",
           "label": "Interactif"
         },
-        "middle-command": {
-          "label": "Commande clique du milieu"
-        },
         "network-speed-compact": {
           "description": "Utiliser le suffixe de l’unité, soit 1.2M au lieu de 1.2 MB/s "
-        },
-        "right-command": {
-          "label": "Commande du clique droit"
         },
         "scale": {
           "description": "Met ce widget à l'échelle par rapport à l'échelle du contenu de la barre",

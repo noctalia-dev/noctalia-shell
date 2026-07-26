@@ -1,6 +1,7 @@
 #include "system/system_monitor_service.h"
 
 #include "core/log.h"
+#include "system/cpu_stat.h"
 #include "system/cpu_temp_sensor.h"
 #include "system/format_units.h"
 #include "system/intel_gpu.h"
@@ -110,6 +111,10 @@ namespace {
   [[nodiscard]] bool hasUsableVram(const GpuVramReading& reading) {
     return reading.totalBytes > 0 && reading.usedBytes <= reading.totalBytes;
   }
+
+  // Per-core CPU sampling cadence. Fixed rather than configurable: it is opt-in via
+  // retainCpuCores(), and its only consumers want per-second resolution.
+  constexpr std::chrono::steady_clock::duration kCpuCoreInterval = std::chrono::seconds(1);
 
   // 0 disables a metric; any other value is clamped to the supported poll range.
   [[nodiscard]] float clampPollSeconds(float seconds) noexcept {
@@ -228,17 +233,25 @@ namespace {
     return score;
   }
 
+  bool isInactiveRuntimeStatus(const std::string& status) {
+    const std::string normalized = StringUtils::toLower(status);
+    return normalized == "suspended" || normalized == "suspending";
+  }
+
+  // A runtime-suspended GPU has no reading to give, and a sysfs attribute that goes through the
+  // driver resumes it. power/runtime_status is served by the PM core, so asking never wakes it.
+  // Devices without runtime PM report "unsupported" and are read normally.
+  bool isDeviceRuntimeSuspended(const std::filesystem::path& devicePath) {
+    const auto status = FileUtils::readSmallTextFile(devicePath / "power" / "runtime_status");
+    return status.has_value() && isInactiveRuntimeStatus(*status);
+  }
+
   bool isGpuHwmonAwake(const std::filesystem::path& hwmonPath) {
-    namespace fs = std::filesystem;
     const auto deviceLink = hwmonPath / "device";
-    if (!fs::exists(deviceLink)) {
+    if (!std::filesystem::exists(deviceLink)) {
       return true;
     }
-    const auto status = FileUtils::readSmallTextFile(deviceLink / "power" / "runtime_status");
-    if (!status.has_value()) {
-      return true;
-    }
-    return *status == "active";
+    return !isDeviceRuntimeSuspended(deviceLink);
   }
 
   bool isDrmCardName(const std::string& name) {
@@ -291,6 +304,12 @@ namespace {
 
       const fs::path driverLink = fs::read_symlink(devicePath / "driver", ec);
       if (ec || driverLink.filename().string() != "amdgpu") {
+        continue;
+      }
+
+      // Skipping a suspended card leaves multi-GPU systems reading the one that is awake, which is
+      // the one doing the rendering.
+      if (isDeviceRuntimeSuspended(devicePath)) {
         continue;
       }
 
@@ -467,11 +486,6 @@ namespace {
     }
 
     return probe;
-  }
-
-  bool isInactiveRuntimeStatus(const std::string& status) {
-    const std::string normalized = StringUtils::toLower(status);
-    return normalized == "suspended" || normalized == "suspending";
   }
 
   constexpr int kNvmlSuccess = 0;
@@ -999,7 +1013,7 @@ void SystemMonitorService::applyConfig(const SystemConfig::MonitorConfig& config
     // The generation must be published under the wake mutex, or the increment can land after the
     // sampling thread evaluated its predicate but before it blocks, losing the wakeup.
     std::scoped_lock wakeLock{m_wakeMutex};
-    m_configGeneration.fetch_add(1, std::memory_order_relaxed);
+    m_wakeGeneration.fetch_add(1, std::memory_order_relaxed);
   }
   m_wakeCv.notify_all();
   setEnabled(sanitized.enabled);
@@ -1038,6 +1052,29 @@ double SystemMonitorService::netTxBytesPerSec(std::string_view interfaceName) co
 void SystemMonitorService::retainCpuTemp() { m_cpuTempRefs.fetch_add(1, std::memory_order_relaxed); }
 
 void SystemMonitorService::releaseCpuTemp() { m_cpuTempRefs.fetch_sub(1, std::memory_order_relaxed); }
+
+void SystemMonitorService::retainCpuCores() {
+  if (m_cpuCoreRefs.fetch_add(1, std::memory_order_relaxed) != 0) {
+    return;
+  }
+  // First reference: interrupt the sampler, which may be parked on a long deadline (disk is 10s)
+  // or, with every metric disabled, indefinitely. Bumping the generation under the wake mutex is
+  // what makes the wait's predicate observe this; notifying alone would only be re-evaluated
+  // against an unchanged predicate and sleep straight through to the old deadline.
+  {
+    std::scoped_lock wakeLock{m_wakeMutex};
+    m_wakeGeneration.fetch_add(1, std::memory_order_relaxed);
+  }
+  m_wakeCv.notify_all();
+}
+
+void SystemMonitorService::releaseCpuCores() {
+  // The samples are deliberately left in place. Recreating a widget releases the old reference
+  // before the new one retains, so the count dips to zero for a few ms on every bar reload;
+  // clearing here would blank the data and force each consumer to redraw from nothing. The
+  // sampler reseeds on the next retain, so nothing is averaged across the pause.
+  m_cpuCoreRefs.fetch_sub(1, std::memory_order_relaxed);
+}
 
 void SystemMonitorService::retainGpuTemp() { m_gpuTempRefs.fetch_add(1, std::memory_order_relaxed); }
 
@@ -1168,7 +1205,7 @@ void SystemMonitorService::stop() {
 
 void SystemMonitorService::logDetectedSources() {
   const SystemConfig::MonitorConfig pollCfg = pollConfig();
-  const auto cpu = readCpuTotals();
+  const auto cpu = noctalia::system::cpu_stat::readTotals();
   const auto mem = readMemoryKb();
   const auto net = readNetBytes();
   const auto load = readLoadAvg();
@@ -1199,8 +1236,13 @@ void SystemMonitorService::logDetectedSources() {
 void SystemMonitorService::samplingLoop() {
   using Clock = std::chrono::steady_clock;
 
-  auto prevCpu = readCpuTotals();
+  namespace cpu_stat = noctalia::system::cpu_stat;
+
+  auto prevCpu = cpu_stat::readTotals();
+  std::optional<std::vector<cpu_stat::Totals>> prevCpuCores;
+  bool cpuCoresWasEnabled = false;
   auto nextCpu = Clock::now();
+  auto nextCpuCores = Clock::now();
   auto nextGpu = Clock::now();
   auto nextMemory = Clock::now();
   auto nextNetwork = Clock::now();
@@ -1208,7 +1250,7 @@ void SystemMonitorService::samplingLoop() {
   auto nextHistory = Clock::now();
 
   while (m_running.load()) {
-    const std::uint64_t configGeneration = m_configGeneration.load();
+    const std::uint64_t wakeGeneration = m_wakeGeneration.load();
     const SystemConfig::MonitorConfig pollCfg = pollConfig();
     const float historyPollSeconds = effectiveHistoryPollSeconds(pollCfg);
 
@@ -1219,10 +1261,30 @@ void SystemMonitorService::samplingLoop() {
     const bool networkEnabled = pollCfg.networkPollSeconds > 0.0f;
     const bool diskEnabled = pollCfg.diskPollSeconds > 0.0f;
     const bool historyEnabled = historyPollSeconds > 0.0f;
+    // Per-core is opt-in via retainCpuCores() and runs on a fixed 1s cadence, deliberately
+    // independent of cpu_poll_seconds (default 2s): consumers want per-second resolution, and
+    // pinning it here leaves aggregate CPU behaviour untouched whatever the user configures.
+    const bool cpuCoresEnabled = m_cpuCoreRefs.load(std::memory_order_relaxed) > 0;
+    // Resuming after a pause: the previous sample predates the gap, so a delta against it would
+    // cover the whole pause rather than one second. Drop it and seed afresh.
+    if (cpuCoresEnabled && !cpuCoresWasEnabled) {
+      prevCpuCores.reset();
+    }
+    cpuCoresWasEnabled = cpuCoresEnabled;
+
+    const bool pollGpuTemp = m_gpuTempRefs.load(std::memory_order_relaxed) > 0;
+    const bool pollGpuUsage = m_gpuUsageRefs.load(std::memory_order_relaxed) > 0;
+    const bool pollGpuVram = m_gpuVramRefs.load(std::memory_order_relaxed) > 0;
+    const bool gpuRetained = pollGpuTemp || pollGpuUsage || pollGpuVram;
 
     if (!gpuEnabled) {
       releaseGpuReaders();
       m_gpuSourcesLogged = false;
+    } else if (!gpuRetained) {
+      // An initialized NVML or ROCm SMI session is a live handle on the GPU, which on hybrid
+      // graphics can hold a discrete card awake on its own. Drop the readers once nothing displays
+      // a GPU stat; the next consumer re-creates them.
+      releaseGpuReaders();
     }
 
     const auto cpuInterval = pollDuration(pollCfg.cpuPollSeconds);
@@ -1236,13 +1298,11 @@ void SystemMonitorService::samplingLoop() {
     bool statsTouched = false;
 
     if (cpuEnabled && now >= nextCpu) {
-      const auto currentCpu = readCpuTotals();
+      const auto currentCpu = cpu_stat::readTotals();
       if (prevCpu.has_value() && currentCpu.has_value()) {
-        const std::uint64_t totalDelta = currentCpu->total - prevCpu->total;
-        const std::uint64_t idleDelta = currentCpu->idle - prevCpu->idle;
-        if (totalDelta > 0) {
+        if (const auto usage = cpu_stat::usageBetween(*prevCpu, *currentCpu); usage.has_value()) {
           std::scoped_lock lock{m_statsMutex};
-          m_latest.cpuUsagePercent = 100.0 * (1.0 - static_cast<double>(idleDelta) / static_cast<double>(totalDelta));
+          m_latest.cpuUsagePercent = *usage;
         }
       }
       if (currentCpu.has_value()) {
@@ -1270,6 +1330,37 @@ void SystemMonitorService::samplingLoop() {
 
       nextCpu = now + cpuInterval;
       statsTouched = true;
+    }
+
+    if (cpuCoresEnabled && now >= nextCpuCores) {
+      auto currentCores = cpu_stat::readCoreTotals();
+      if (currentCores.has_value()) {
+        // A core count change (hotplug / offlining) makes the previous sample unusable: reseed
+        // and emit nothing this tick rather than indexing across mismatched vectors.
+        if (prevCpuCores.has_value() && prevCpuCores->size() == currentCores->size()) {
+          std::vector<double> usage;
+          usage.reserve(currentCores->size());
+          for (std::size_t i = 0; i < currentCores->size(); ++i) {
+            const auto core = cpu_stat::usageBetween((*prevCpuCores)[i], (*currentCores)[i]);
+            if (!core.has_value()) {
+              // A stalled or reset counter makes the whole vector suspect, so keep the previous
+              // values for this tick rather than publishing a core as 0%, which reads as idle.
+              usage.clear();
+              break;
+            }
+            usage.push_back(*core);
+          }
+          if (!usage.empty()) {
+            std::scoped_lock lock{m_statsMutex};
+            m_latest.cpuCoreUsagePercent = std::move(usage);
+          }
+        }
+        prevCpuCores = std::move(currentCores);
+      }
+      nextCpuCores = now + kCpuCoreInterval;
+      // Deliberately does not set statsTouched. sampledAt drives the sysmon widgets' graph
+      // scheduling and scroll animation, which are scaled to the history interval; bumping it on
+      // this off-cadence tick would restart their scroll mid-sweep once a second.
     }
 
     if (memoryEnabled && now >= nextMemory) {
@@ -1321,11 +1412,7 @@ void SystemMonitorService::samplingLoop() {
     }
 
     if (gpuEnabled && now >= nextGpu) {
-      const bool pollGpuTemp = m_gpuTempRefs.load(std::memory_order_relaxed) > 0;
-      const bool pollGpuUsage = m_gpuUsageRefs.load(std::memory_order_relaxed) > 0;
-      const bool pollGpuVram = m_gpuVramRefs.load(std::memory_order_relaxed) > 0;
-
-      if (pollGpuTemp || pollGpuUsage || pollGpuVram) {
+      if (gpuRetained) {
         const NvidiaDisplayDeviceState nvidiaDisplayState = detectNvidiaPciDisplayDeviceState();
         // The first probe doubles as source detection: it reports what each retained stat resolved to.
         const bool logSources = !m_gpuSourcesLogged;
@@ -1427,6 +1514,10 @@ void SystemMonitorService::samplingLoop() {
       std::scoped_lock lock{m_statsMutex};
       const auto writeIndex = static_cast<std::size_t>(m_historyHead);
       m_history[writeIndex] = m_latest;
+      // Per-core usage is live-only: the graphs plot the aggregate, and history() consumers would
+      // otherwise see a series populated only while someone holds a per-core reference. clear()
+      // keeps the slot's capacity, so the ring does not churn allocations.
+      m_history[writeIndex].cpuCoreUsagePercent.clear();
       for (auto& [path, disk] : m_diskHistories) {
         if (disk.refs <= 0) {
           continue;
@@ -1447,6 +1538,7 @@ void SystemMonitorService::samplingLoop() {
       }
     };
     considerWake(cpuEnabled, nextCpu);
+    considerWake(cpuCoresEnabled, nextCpuCores);
     considerWake(gpuEnabled, nextGpu);
     considerWake(memoryEnabled, nextMemory);
     considerWake(networkEnabled, nextNetwork);
@@ -1454,8 +1546,8 @@ void SystemMonitorService::samplingLoop() {
     considerWake(historyEnabled, nextHistory);
 
     std::unique_lock wakeLock{m_wakeMutex};
-    m_wakeCv.wait_until(wakeLock, nextWake, [this, configGeneration]() {
-      return !m_running.load() || m_configGeneration.load() != configGeneration;
+    m_wakeCv.wait_until(wakeLock, nextWake, [this, wakeGeneration]() {
+      return !m_running.load() || m_wakeGeneration.load() != wakeGeneration;
     });
   }
 }
@@ -1464,39 +1556,6 @@ void SystemMonitorService::releaseGpuReaders() {
   m_nvidiaNvmlReader.reset();
   m_amdRsmiReader.reset();
   m_intelGpuReader.reset();
-}
-
-std::optional<SystemMonitorService::CpuTotals> SystemMonitorService::readCpuTotals() {
-  std::ifstream file{"/proc/stat"};
-  if (!file.is_open()) {
-    return std::nullopt;
-  }
-
-  std::string line;
-  if (!std::getline(file, line)) {
-    return std::nullopt;
-  }
-
-  std::istringstream iss{line};
-  std::string cpuLabel;
-  std::uint64_t user = 0;
-  std::uint64_t nice = 0;
-  std::uint64_t system = 0;
-  std::uint64_t idle = 0;
-  std::uint64_t iowait = 0;
-  std::uint64_t irq = 0;
-  std::uint64_t softirq = 0;
-  std::uint64_t steal = 0;
-
-  iss >> cpuLabel >> user >> nice >> system >> idle >> iowait >> irq >> softirq >> steal;
-  if (cpuLabel != "cpu") {
-    return std::nullopt;
-  }
-
-  CpuTotals totals{};
-  totals.idle = idle + iowait;
-  totals.total = user + nice + system + idle + iowait + irq + softirq + steal;
-  return totals;
 }
 
 std::optional<SystemMonitorService::MemData> SystemMonitorService::readMemoryKb() {

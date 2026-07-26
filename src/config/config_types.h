@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <set>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -46,11 +47,7 @@ inline constexpr std::string_view kCapsuleGroupTokenPrefix = "group:";
 [[nodiscard]] std::string makeCapsuleGroupToken(std::string_view groupId);
 
 struct BarDeadZoneOverride {
-  std::optional<std::string> command;
-  std::optional<std::string> rightCommand;
-  std::optional<std::string> middleCommand;
-  std::optional<std::string> scrollUpCommand;
-  std::optional<std::string> scrollDownCommand;
+  std::optional<std::unordered_map<std::string, std::string>> actions;
 
   bool operator==(const BarDeadZoneOverride&) const = default;
 };
@@ -110,16 +107,17 @@ struct BarMonitorOverride {
 };
 
 struct BarDeadZoneConfig {
-  std::string command;
-  std::string rightCommand;
-  std::string middleCommand;
-  std::string scrollUpCommand;
-  std::string scrollDownCommand;
+  // Gesture -> action bindings for the parts of the bar no widget covers. Same grammar as widget
+  // actions; see widget_action.h.
+  std::unordered_map<std::string, std::string> actions;
 
   bool operator==(const BarDeadZoneConfig&) const = default;
 };
 
 struct BarConfig {
+  // Gesture -> action bindings applied to every widget on this bar, overriding widget-type
+  // defaults and overridden in turn by `[widget.<name>.actions]`. See widget_action.h.
+  std::unordered_map<std::string, std::string> actions;
   std::string name = "default";
   std::string position = "top";
   bool enabled = true;
@@ -399,6 +397,20 @@ struct WidgetConfig {
 
 // Builds the capsule spec a group's member widgets render with (style taken from the group).
 [[nodiscard]] WidgetBarCapsuleSpec capsuleSpecFromGroup(const BarConfig& bar, const BarCapsuleGroupStyle& group);
+
+// Group ids the scope's lanes reference. A monitor override with no capsule_group of its own reads
+// the bar's array, so its lanes belong to the bar scope's reference set.
+[[nodiscard]] std::set<std::string> capsuleGroupRefsForBarScope(const BarConfig& bar);
+[[nodiscard]] std::set<std::string>
+capsuleGroupRefsForMonitorScope(const BarConfig& bar, const BarMonitorOverride& monitorOverride);
+
+// Rebuilds an overriding capsule_group array against the config-file array, in file order: an
+// overridden group keeps its edited style, a file group the lanes reference again comes back, and a
+// GUI-created group survives only while a lane still references it (nothing can reach it otherwise).
+[[nodiscard]] std::vector<BarCapsuleGroupStyle> reconcileCapsuleGroups(
+    const std::vector<BarCapsuleGroupStyle>& current, const std::vector<BarCapsuleGroupStyle>& base,
+    const std::set<std::string>& referenced
+);
 [[nodiscard]] float
 resolveWidgetContentScale(float barScale, const WidgetConfig* widget, std::string_view context = "widget.scale");
 
@@ -592,6 +604,7 @@ struct DockConfig {
   bool showRunning = true;             // also show running apps not in pinned list
   bool autoHide = false;               // slide out when not hovered (overlay mode)
   bool smartAutoHide = false;          // hide while the active workspace has windows; show when it is empty
+  std::string layer = "top";           // top | overlay
 
   [[nodiscard]] constexpr bool isAutoHideEnabled() const noexcept { return autoHide || smartAutoHide; }
   bool reserveSpace = true;         // reserve compositor exclusive zone; applies with or without auto_hide
@@ -733,6 +746,11 @@ constexpr EnumOption<ClipboardAutoPasteMode> kClipboardAutoPasteModes[] = {
     {ClipboardAutoPasteMode::CtrlV, "ctrl_v", "settings.options.clipboard.auto-paste.ctrl-v"},
     {ClipboardAutoPasteMode::CtrlShiftV, "ctrl_shift_v", "settings.options.clipboard.auto-paste.ctrl-shift-v"},
     {ClipboardAutoPasteMode::ShiftInsert, "shift_insert", "settings.options.clipboard.auto-paste.shift-insert"},
+};
+
+enum class StorageKeySource : std::uint8_t {
+  SecretService = 0,
+  File = 1,
 };
 
 enum class PasswordMaskStyle : std::uint8_t {
@@ -1003,6 +1021,9 @@ struct ShellConfig {
   std::string timeFormat = "{:%H:%M}";
   std::string dateFormat = "%A, %x";
   bool offlineMode = false;
+  /// Bar name panels attach to when opened without a source bar (IPC, shortcuts, dock).
+  /// Empty keeps per-source resolution (widget click bar, else first enabled bar).
+  std::string panelAnchorBar;
   /// Resolve and show the connection's external (WAN) IP in the Control Center network tab.
   bool externalIpEnabled = false;
   bool telemetryEnabled = false;
@@ -1013,7 +1034,6 @@ struct ShellConfig {
   AnimationConfig animation;
   std::string avatarPath;
   bool settingsShowAdvanced = true;
-  bool middleClickOpensWidgetSettings = true;
   bool showLocation = true;
   bool appIconColorize = false;
   std::optional<ColorSpec> appIconColor;
@@ -1053,6 +1073,13 @@ struct WeatherConfig {
   bool operator==(const WeatherConfig&) const = default;
 };
 
+struct StorageConfig {
+  StorageKeySource keySource = StorageKeySource::SecretService;
+  std::string keyFile;
+
+  bool operator==(const StorageConfig&) const = default;
+};
+
 enum class CalendarCredentialSource : std::uint8_t {
   SecretService = 0,
   File = 1,
@@ -1078,8 +1105,6 @@ struct CalendarConfig {
 
   bool enabled = false;
   std::int32_t refreshMinutes = 15;
-  std::string eventDateFormat = "%A %e %B";
-  std::string eventTimeFormat = "%H:%M";
   std::vector<Account> accounts;
 
   bool operator==(const CalendarConfig&) const = default;
@@ -1437,6 +1462,9 @@ struct ControlCenterConfig {
 
   struct CalendarTabConfig {
     bool showEventsCard = true;
+    bool showWeekNumbers = false;
+    std::string eventDateFormat = "%A %e %B";
+    std::string eventTimeFormat = "%H:%M";
     bool operator==(const CalendarTabConfig&) const = default;
   };
 
@@ -1528,6 +1556,7 @@ struct Config {
   DockConfig dock;
   DesktopWidgetsConfig desktopWidgets;
   HotCornersConfig hotCorners;
+  StorageConfig storage;
   ShellConfig shell;
   OsdConfig osd;
   NotificationConfig notification;
@@ -1577,6 +1606,7 @@ struct ConfigChangeSet {
   bool controlCenter = true;
   bool plugins = true;
   bool hotCorners = true;
+  bool storage = true;
   bool accessibility = true;
 
   [[nodiscard]] bool any() const noexcept {
@@ -1606,6 +1636,7 @@ struct ConfigChangeSet {
         || controlCenter
         || plugins
         || hotCorners
+        || storage
         || accessibility;
   }
 };
