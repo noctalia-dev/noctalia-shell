@@ -238,14 +238,6 @@ std::unique_ptr<Flex> HomeTab::create() {
             },
         })
     );
-
-    userCard->addChild(
-        ui::box({
-            .out = &m_wallpaperGradient,
-            .participatesInLayout = false,
-            .configure = [](Box& box) { box.setZIndex(-1); },
-        })
-    );
   }
 
   const float avatarSize = homeAvatarSize(scale);
@@ -962,37 +954,56 @@ void HomeTab::layoutWallpaperBackground(Renderer& renderer) {
     return;
   }
 
+  // The wallpaper sits one border width inside the card so a hover or focus stroke has a gap of
+  // its own to fill; the card fill is cleared behind it, so that gap reads as panel background.
   const float bw = Style::borderWidth;
   const float cw = std::max(0.0f, m_userCard->width() - bw * 2.0f);
   const float ch = std::max(0.0f, m_userCard->height() - bw * 2.0f);
-  m_wallpaperBg->setPosition(bw, bw);
-  m_wallpaperBg->setSize(cw, ch);
-  if (m_wallpaperPlaceholder != nullptr) {
-    m_wallpaperPlaceholder->setPosition(bw, bw);
-    m_wallpaperPlaceholder->setSize(cw, ch);
-  }
+  const float radius = std::max(0.0f, Style::scaledRadiusXl(contentScale()) - bw);
 
-  if (m_wallpaperGradient != nullptr) {
-    const float radius = std::max(0.0f, Style::scaledRadiusXl(contentScale()) - bw);
-    m_wallpaperGradient->setPosition(bw, bw);
-    m_wallpaperGradient->setFrameSize(cw, ch);
-    const Color surface = colorForRole(ColorRole::Surface);
-    const Color translucentSurface = rgba(surface.r, surface.g, surface.b, surface.a * 0.9f);
-    const Color transparentSurface = rgba(surface.r, surface.g, surface.b, 0.0f);
-    m_wallpaperGradient->setStyle(
-        RoundedRectStyle{
-            .fill = surface,
-            .fillMode = FillMode::LinearGradient,
-            .gradientDirection = GradientDirection::Horizontal,
-            .gradientStops =
-                {GradientStop{0.0f, translucentSurface}, GradientStop{0.25f, translucentSurface},
-                 GradientStop{0.9f, transparentSurface}, GradientStop{1.0f, transparentSurface}},
-            .radius = radius,
-        }
-    );
+  const Color surface = colorForRole(ColorRole::Surface);
+  const Color translucentSurface = rgba(surface.r, surface.g, surface.b, surface.a * 0.9f);
+  const Color transparentSurface = rgba(surface.r, surface.g, surface.b, 0.0f);
+  const ImageScrim scrim{
+      .direction = GradientDirection::Horizontal,
+      .stops =
+          {GradientStop{0.0f, translucentSurface}, GradientStop{0.25f, translucentSurface},
+           GradientStop{0.9f, transparentSurface}, GradientStop{1.0f, transparentSurface}},
+      .enabled = true,
+  };
+
+  for (Image* layer : {m_wallpaperPlaceholder, m_wallpaperBg}) {
+    if (layer == nullptr) {
+      continue;
+    }
+    layer->setPosition(bw, bw);
+    layer->setSize(cw, ch);
+    layer->setRadius(radius);
+    layer->setScrim(scrim);
   }
 
   syncWallpaperBackground(renderer);
+}
+
+void HomeTab::syncUserCardFill() {
+  if (m_userCard == nullptr) {
+    return;
+  }
+  // Only a fully opaque layer counts: keeping the fill through a crossfade avoids a flash of
+  // panel background under a half-faded wallpaper.
+  const bool wallpaperCovers = m_placeholderReady || m_crispOpaque;
+  if (wallpaperCovers) {
+    m_userCard->clearFill();
+    return;
+  }
+  m_userCard->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, panelCardOpacity()));
+}
+
+void HomeTab::syncWallpaperLayerVisibility() {
+  if (m_wallpaperPlaceholder != nullptr) {
+    m_wallpaperPlaceholder->setVisible(m_placeholderReady && !m_crispOpaque);
+  }
+  syncUserCardFill();
 }
 
 void HomeTab::ensureWallpaperThumbnail(const std::string& path, int targetPx) {
@@ -1025,7 +1036,8 @@ void HomeTab::syncWallpaperBackground(Renderer& renderer) {
   ensureWallpaperThumbnail(path, targetPx);
 
   if (path.empty()) {
-    m_wallpaperPlaceholder->setVisible(false);
+    m_placeholderReady = false;
+    m_crispOpaque = false;
     m_wallpaperBg->setVisible(false);
     cancelCrispFade();
     m_wallpaperBg->setOpacity(0.0f);
@@ -1033,17 +1045,16 @@ void HomeTab::syncWallpaperBackground(Renderer& renderer) {
     m_crispWorkingSize = 0;
     m_crispShown = false;
     m_crispNeedsFade = false;
+    syncWallpaperLayerVisibility();
     return;
   }
 
   // Instant placeholder: show the resident full-screen wallpaper texture (already
   // in VRAM, mipmapped) so the correct wallpaper appears with no decode wait.
   const TextureHandle resident = m_wallpaper != nullptr ? m_wallpaper->currentTexture() : TextureHandle{};
-  if (resident.valid()) {
+  m_placeholderReady = resident.valid();
+  if (m_placeholderReady) {
     m_wallpaperPlaceholder->setExternalTexture(renderer, resident);
-    m_wallpaperPlaceholder->setVisible(true);
-  } else {
-    m_wallpaperPlaceholder->setVisible(false);
   }
 
   // Reset the crisp layer when the wallpaper identity or target size changes; the
@@ -1053,12 +1064,14 @@ void HomeTab::syncWallpaperBackground(Renderer& renderer) {
     m_crispWorkingSize = targetPx;
     m_crispShown = false;
     m_crispNeedsFade = false;
+    m_crispOpaque = false;
     cancelCrispFade();
     m_wallpaperBg->setOpacity(0.0f);
     m_wallpaperBg->setVisible(false);
   }
 
   if (m_thumbnails == nullptr || targetPx <= 0 || m_crispShown) {
+    syncWallpaperLayerVisibility();
     return;
   }
 
@@ -1067,6 +1080,7 @@ void HomeTab::syncWallpaperBackground(Renderer& renderer) {
   if (!crisp.valid()) {
     // Still decoding: keep the placeholder; fade the crisp layer in once it lands.
     m_crispNeedsFade = true;
+    syncWallpaperLayerVisibility();
     return;
   }
 
@@ -1079,7 +1093,9 @@ void HomeTab::syncWallpaperBackground(Renderer& renderer) {
     // Ready on the first look (cached) — snap in without a crossfade.
     cancelCrispFade();
     m_wallpaperBg->setOpacity(1.0f);
+    m_crispOpaque = true;
   }
+  syncWallpaperLayerVisibility();
 }
 
 void HomeTab::startCrispFade() {
@@ -1089,13 +1105,22 @@ void HomeTab::startCrispFade() {
   AnimationManager* animations = m_wallpaperBg->animationManager();
   if (animations == nullptr) {
     m_wallpaperBg->setOpacity(1.0f);
+    m_crispOpaque = true;
+    syncWallpaperLayerVisibility();
     return;
   }
   cancelCrispFade();
   Image* crisp = m_wallpaperBg;
   m_wallpaperCrispAnimId = animations->animate(
       0.0f, 1.0f, static_cast<float>(Style::animNormal), Easing::EaseOutCubic,
-      [crisp](float v) { crisp->setOpacity(v); }, [this]() { m_wallpaperCrispAnimId = 0; }, crisp
+      [crisp](float v) { crisp->setOpacity(v); },
+      [this]() {
+        m_wallpaperCrispAnimId = 0;
+        m_crispOpaque = true;
+        syncWallpaperLayerVisibility();
+        PanelManager::instance().requestRedraw();
+      },
+      crisp
   );
 }
 
@@ -1192,9 +1217,10 @@ void HomeTab::onClose() {
   m_crispWorkingSize = 0;
   m_crispShown = false;
   m_crispNeedsFade = false;
+  m_crispOpaque = false;
+  m_placeholderReady = false;
   m_wallpaperPlaceholder = nullptr;
   m_wallpaperBg = nullptr;
-  m_wallpaperGradient = nullptr;
   m_mediaTrack = nullptr;
   m_mediaArtist = nullptr;
   m_mediaStatus = nullptr;

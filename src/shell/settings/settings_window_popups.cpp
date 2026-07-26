@@ -483,9 +483,13 @@ void SettingsWindow::openSearchPickerPopup(settings::SearchPickerOpenRequest req
     m_widgetAddPopup->close();
   }
 
-  m_searchPickerPopup->setOnSelect([this, settingPath = request.settingPath,
-                                    selectedValue = request.selectedValue](const std::string& value) {
+  m_searchPickerPopup->setOnSelect([this, settingPath = request.settingPath, selectedValue = request.selectedValue,
+                                    onSelect = request.onSelect](const std::string& value) {
     if (value == selectedValue) {
+      return;
+    }
+    if (onSelect) {
+      onSelect(value);
       return;
     }
     if (value.empty()) {
@@ -2043,7 +2047,7 @@ void SettingsWindow::openPluginStore() {
       }
 
       auto storeContent = std::make_shared<settings::PluginStoreContent>(
-          std::move(catalog), std::move(onDiskIds),
+          std::move(catalog), m_config, std::move(onDiskIds),
           settings::PluginStoreCallbacks{
               .setEnabled =
                   [this, catalogLookup](std::string id, bool enable) {

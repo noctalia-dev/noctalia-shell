@@ -103,6 +103,8 @@ public:
   virtual void reset() {}
 
   [[nodiscard]] virtual std::vector<LauncherResult> query(std::string_view text) const = 0;
+  // Query after this provider's prefix was explicitly matched.
+  [[nodiscard]] virtual std::vector<LauncherResult> queryPrefixed(std::string_view text) const { return query(text); }
 
   virtual bool activate(const LauncherResult& result) = 0;
 

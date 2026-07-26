@@ -5,12 +5,15 @@
 #include "calendar/google_client.h"
 #include "calendar/google_oauth.h"
 #include "config/config_types.h"
+#include "security/storage_key_provider.h"
 
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <map>
+#include <optional>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -24,12 +27,22 @@ namespace security {
 // Background service that syncs configured online calendars (CalDAV directly, Google via the
 // api.noctalia.dev OAuth broker) and exposes a merged, read-only event snapshot. Modeled on
 // WeatherService: timer-driven via pollTimeoutMs()/tick(), durable credentials come from the
-// account's explicit source, and a disk cache provides last-known-good data across restarts and
-// network failures.
+// account's explicit source, and an encrypted disk cache provides last-known-good data across
+// restarts and network failures.
 class CalendarService {
 public:
   using ChangeCallback = std::function<void()>;
   enum class ConnectState : std::uint8_t { Idle, Pending, Success, Failed };
+  enum class CachePersistenceState : std::uint8_t {
+    Opening,
+    Ready,
+    Unavailable,
+    Cancelled,
+    DeniedOrLocked,
+    MissingKey,
+    RecoveryRequired,
+    BackendError,
+  };
   enum class CredentialOperationResult : std::uint8_t {
     Success,
     MissingCredential,
@@ -46,7 +59,7 @@ public:
 
   CalendarService(
       ConfigService& configService, HttpClient& httpClient, security::SecretStore& secretStore,
-      NotificationManager* notifications = nullptr
+      security::StorageKeyProvider& storageKeyProvider, NotificationManager* notifications = nullptr
   );
 
   void initialize();
@@ -68,12 +81,18 @@ public:
   );
   void deleteAccount(const std::string& accountId, ConfigMutation removeConfig, CredentialOperationCallback callback);
   void retryCredentialMigration();
+  void syncCachePersistence();
+  void retryCachePersistence();
+  [[nodiscard]] bool clearEncryptedCacheForRecovery();
   // Schedule an immediate sync (used after saving CalDAV credentials).
   void requestRefresh();
   [[nodiscard]] ConnectState connectState() const noexcept { return m_connect.state; }
   [[nodiscard]] const std::string& connectingAccountId() const noexcept { return m_connect.accountId; }
   [[nodiscard]] calendar::CredentialState credentialState() const noexcept { return m_credentials.state(); }
   [[nodiscard]] bool credentialMigrationPending() const noexcept { return m_credentials.migrationPending(); }
+  [[nodiscard]] CachePersistenceState cachePersistenceState() const noexcept { return m_cachePersistenceState; }
+  [[nodiscard]] bool cacheMigrationPending() const noexcept { return m_cacheMigrationPending; }
+  [[nodiscard]] bool hasEncryptedCache() const;
 
 private:
   struct ConnectFlow {
@@ -111,9 +130,12 @@ private:
   void clearGoogleSession(const std::string& accountId);
   [[nodiscard]] static CredentialOperationResult operationResult(security::SecretStoreStatus status);
 
-  void loadCache();
-  void saveCache() const;
+  [[nodiscard]] bool loadCache();
+  [[nodiscard]] bool parseCache(std::span<const std::uint8_t> contents);
+  void saveCache();
   [[nodiscard]] static std::filesystem::path cacheFilePath();
+  [[nodiscard]] static std::filesystem::path legacyCacheFilePath();
+  void setCachePersistenceState(CachePersistenceState state, bool migrationPending);
 
   ConfigService& m_configService;
   HttpClient& m_httpClient;
@@ -125,6 +147,8 @@ private:
   calendar::GoogleOAuthBroker m_oauth;
   calendar::GoogleClient m_google;
   calendar::CalendarCredentialStore m_credentials;
+  security::StorageKeyProvider& m_storageKeyProvider;
+  std::optional<security::SecureKey> m_cacheKey;
 
   struct GoogleSession {
     std::string accessToken;
@@ -137,6 +161,10 @@ private:
   std::chrono::steady_clock::time_point m_nextRefreshAt;
   bool m_refreshing = false;
   bool m_credentialsInitialized = false;
+  bool m_initialized = false;
+  bool m_cacheWritable = false;
+  CachePersistenceState m_cachePersistenceState = CachePersistenceState::Opening;
+  bool m_cacheMigrationPending = false;
   std::size_t m_pendingAccounts = 0;
   ConnectFlow m_connect;
 };

@@ -235,6 +235,7 @@ bool Application::likelySupportsInSessionPolkit() const noexcept {
 }
 
 void Application::syncPolkitAgent() {
+  m_polkitIdleCloseTimer.stop();
   if (m_systemBus == nullptr) {
     m_polkitPollSource.reset();
     m_polkitAgent.reset();
@@ -291,11 +292,19 @@ void Application::syncPolkitAgent() {
       return;
     }
     if (!m_polkitAgent->hasPendingRequest()) {
+      // Defer close so a follow-up BeginAuthentication in the same burst
+      // (pkexec → systemd-enable, etc.) can reuse the panel instead of racing
+      // teardown.
       if (m_panelManager.isOpenPanel("polkit")) {
-        m_panelManager.close();
+        m_polkitIdleCloseTimer.start(std::chrono::milliseconds(150), [this]() {
+          if (m_polkitAgent != nullptr && !m_polkitAgent->hasPendingRequest() && m_panelManager.isOpenPanel("polkit")) {
+            m_panelManager.close();
+          }
+        });
       }
       return;
     }
+    m_polkitIdleCloseTimer.stop();
     // Open once the session asks for a response so preferredHeight includes the
     // password field. BeginAuthentication alone still has responseRequired=false.
     if (!m_polkitAgent->isResponseRequired() && !m_panelManager.isOpenPanel("polkit")) {
@@ -344,10 +353,30 @@ void Application::syncClipboardService() {
   }
 }
 
+void Application::syncStorageKeyProvider() {
+  const StorageConfig& storage = m_configService.config().storage;
+  const bool encryptedDataExists =
+      m_clipboardService.hasEncryptedPersistence() || m_calendarService.hasEncryptedCache();
+  m_storageKeyProvider.configure(storage.keySource, storage.keyFile, encryptedDataExists);
+}
+
 void Application::initServices() {
   if (!security::initializeSecurityPrimitives()) {
     kLog.error("libsodium initialization failed; encrypted persistence is unavailable");
   }
+  m_storageKeyProvider.setChangeCallback([this]() {
+    m_clipboardService.syncPersistence();
+    m_calendarService.syncCachePersistence();
+  });
+  syncStorageKeyProvider();
+  m_configService.addReloadCallback(
+      [this]() {
+        if (m_configService.lastChange().storage) {
+          syncStorageKeyProvider();
+        }
+      },
+      "storage-key"
+  );
   m_secretStore.retryAvailabilityCheck();
   initStyleThemeAndWayland();
   initWaylandCallbacks();
@@ -778,6 +807,7 @@ void Application::initAuxServicesAndHooks() {
 
   try {
     m_systemMonitor = std::make_unique<SystemMonitorService>(m_configService.config().system.monitor);
+    m_scriptApi.setSystemMonitor(m_systemMonitor.get());
     if (m_systemMonitor->isRunning()) {
       kLog.info("system monitor service active");
     } else {
@@ -807,6 +837,7 @@ void Application::initAuxServicesAndHooks() {
     });
   } catch (const std::exception& e) {
     kLog.warn("system monitor service disabled: {}", e.what());
+    m_scriptApi.setSystemMonitor(nullptr);
     m_systemMonitor.reset();
   }
 }
@@ -1219,6 +1250,9 @@ void Application::initSessionBusServices() {
         m_bar.refresh();
         m_desktopWidgetsController.requestUpdate();
         m_mediaOsd.onMprisChanged(*m_mprisService);
+        if (m_lockScreen.isActive()) {
+          m_lockScreen.requestUpdate();
+        }
         if (shouldRefreshControlCenter()) {
           m_panelManager.refresh();
         }
@@ -1231,10 +1265,12 @@ void Application::initSessionBusServices() {
       // call time, which is the path that fires once both services exist.
       // initUi() also calls m_visualizerService->initialize(..., m_mprisService.get())
       // so the service can read the current player on construction.
+      m_lockScreen.setLoginBoxServices(&m_sessionActionRunner, m_mprisService.get(), &m_weatherService, &m_httpClient);
       kLog.info("mpris discovery active");
     } catch (const std::exception& e) {
       kLog.warn("mpris disabled: {}", e.what());
       m_mprisService.reset();
+      m_lockScreen.setLoginBoxServices(&m_sessionActionRunner, nullptr, &m_weatherService, &m_httpClient);
       m_notificationManager.addInternal(
           "Noctalia", i18n::tr("notifications.internal.mpris-disabled"), e.what(), Urgency::Low
       );
@@ -1291,6 +1327,9 @@ void Application::initSessionBusServices() {
   m_weatherService.addChangeCallback([this, shouldRefreshControlCenter]() {
     m_bar.refresh();
     m_desktopWidgetsController.requestLayout();
+    if (m_lockScreen.isActive()) {
+      m_lockScreen.requestUpdate();
+    }
     if (shouldRefreshControlCenter()) {
       m_panelManager.refresh();
     }

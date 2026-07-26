@@ -75,6 +75,14 @@ namespace settings {
         .pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
         .pendingDeleteWidgetSettingPath = ctx.pendingDeleteWidgetSettingPath,
         .renamingWidgetName = ctx.renamingWidgetName,
+        .makeGestureActionRow =
+            [&factory](const GestureActionSetting& setting, const std::string& title, std::vector<std::string> path) {
+              return factory.makeGestureActionRow(setting, title, std::move(path));
+            },
+        .pendingGestureKey = ctx.pendingGestureKey,
+        .pendingGestureVerb = ctx.pendingGestureVerb,
+        .actionsExpandedFor = ctx.actionsExpandedFor,
+        .actionCatalog = ctx.actionCatalog,
         .requestRebuild = ctx.requestRebuild,
         .resetContentScroll = ctx.resetContentScroll,
         .setScrollTarget = ctx.setScrollTarget,
@@ -1253,7 +1261,7 @@ namespace settings {
                 return ui::button({
                     .text = control.label,
                     .fontSize = Style::fontSizeBody * scale,
-                    .variant = ButtonVariant::Default,
+                    .variant = control.destructive ? ButtonVariant::Destructive : ButtonVariant::Default,
                     .minHeight = Style::controlHeight * scale,
                     .paddingV = Style::spaceSm * scale,
                     .paddingH = Style::spaceMd * scale,
@@ -1266,7 +1274,7 @@ namespace settings {
                   .glyph = control.glyph,
                   .fontSize = Style::fontSizeBody * scale,
                   .glyphSize = Style::fontSizeBody * scale,
-                  .variant = ButtonVariant::Default,
+                  .variant = control.destructive ? ButtonVariant::Destructive : ButtonVariant::Default,
                   .minHeight = Style::controlHeight * scale,
                   .paddingV = Style::spaceSm * scale,
                   .paddingH = Style::spaceMd * scale,
@@ -1275,6 +1283,8 @@ namespace settings {
               });
             } else if constexpr (std::is_same_v<T, ColorSpecPickerSetting>) {
               return makeColorSpecPicker(control, entry.path);
+            } else if constexpr (std::is_same_v<T, GestureActionSetting>) {
+              return factory.makeGestureActionRow(control, entry.title, entry.path);
             }
           },
           entry.control

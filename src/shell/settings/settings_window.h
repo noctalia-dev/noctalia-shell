@@ -31,6 +31,8 @@ class Box;
 class Button;
 class AccountsService;
 class CalendarService;
+class ClipboardService;
+class IpcService;
 class ConfigService;
 class CompositorPlatform;
 class DependencyService;
@@ -89,10 +91,14 @@ public:
   void setSyncGreeterAppearance(std::function<void()> callback) { m_syncGreeterAppearance = std::move(callback); }
   void setResetLauncherUsage(std::function<void()> callback) { m_resetLauncherUsage = std::move(callback); }
   void setResetScreenTime(std::function<void()> callback) { m_resetScreenTime = std::move(callback); }
+  void setResetEncryptedStorage(std::function<void()> callback) { m_resetEncryptedStorage = std::move(callback); }
   void setSaveWallpaperPaletteAsCustom(std::function<void()> callback) {
     m_saveWallpaperPaletteAsCustom = std::move(callback);
   }
   void setCalendarService(CalendarService* service) { m_calendarService = service; }
+  // Source for the bar widget gesture action picker.
+  void setIpcService(IpcService* service) { m_ipcService = service; }
+  void setClipboardService(ClipboardService* service) { m_clipboardService = service; }
 
   void onSecondTick();
   void onIdleLiveStatusChanged();
@@ -118,6 +124,8 @@ private:
       const std::vector<std::string>& availableBars
   );
   [[nodiscard]] std::vector<settings::SelectOption> batteryDeviceOptions() const;
+  // Bindable IPC commands, for the bar widget gesture action picker.
+  [[nodiscard]] std::vector<settings::GestureActionOption> gestureActionCatalog() const;
   [[nodiscard]] settings::SettingsContentContext makeContentContext(
       const Config& cfg, const BarConfig* selectedBar, const BarMonitorOverride* selectedMonitorOverride
   );
@@ -205,6 +213,8 @@ private:
   UPowerService* m_upower = nullptr;
   AccountsService* m_accounts = nullptr;
   CalendarService* m_calendarService = nullptr;
+  ClipboardService* m_clipboardService = nullptr;
+  IpcService* m_ipcService = nullptr;
   Label* m_idleLiveStatusLabel = nullptr;
   std::vector<Label*> m_sessionActionSummaryLabels;
   std::shared_ptr<std::vector<SessionPanelActionConfig>> m_sessionActionsEditState;
@@ -265,6 +275,13 @@ private:
   std::string m_pendingDeleteWidgetName;
   std::string m_pendingDeleteWidgetSettingPath;
   std::string m_renamingWidgetName;
+  // Gesture whose action row has a chosen command that still needs its argument typed.
+  std::string m_pendingGestureKey;
+  std::string m_pendingGestureVerb;
+  // The widget whose actions group is unfolded, empty when none. Keyed by widget rather than a
+  // plain flag so the group survives the rebuild an edit triggers, but starts folded on every
+  // other widget.
+  std::string m_actionsExpandedFor;
   std::string m_creatingBarName;
   std::string m_renamingBarName;
   std::string m_pendingDeleteBarName;
@@ -285,11 +302,13 @@ private:
   bool m_showAdvanced = false;
   bool m_showOverriddenOnly = false;
   bool m_statusIsError = false;
+  bool m_pendingEncryptedStorageReset = false;
   std::function<void()> m_openDesktopWidgetEditor;
   std::function<void()> m_openLockscreenWidgetEditor;
   std::function<void()> m_openWallpaperPanel;
   std::function<void()> m_syncGreeterAppearance;
   std::function<void()> m_resetLauncherUsage;
   std::function<void()> m_resetScreenTime;
+  std::function<void()> m_resetEncryptedStorage;
   std::function<void()> m_saveWallpaperPaletteAsCustom;
 };

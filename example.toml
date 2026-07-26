@@ -14,6 +14,7 @@ font_family           = "sans-serif"
 time_format           = "{:%H:%M}"  # default shell UI time format
 date_format           = "%A, %x"    # default shell UI date format
 offline_mode          = false        # block all outgoing HTTP when true
+# panel_anchor_bar   = "main"        # bar panels attach to without a source bar; omit = first enabled bar
 telemetry_enabled     = false        # send an anonymous startup ping
 niri_overview_type_to_launch_enabled = false # opt in to type-to-launch from niri overview
 polkit_agent          = false
@@ -74,8 +75,8 @@ auto_paste = "auto"                       # off | auto | ctrl_v | ctrl_shift_v |
 # For each provider: prefix = trigger word (empty falls back to its built-in default; triggers on
 # provider_prefix + trigger, e.g. "/emo"). global = true also surfaces it in unprefixed search.
 [shell.launcher.providers.calculator]
-prefix = ""                             # calculator has no default trigger, so it stays in global search
-global = true                           # set false to only show calculator results behind a custom prefix
+prefix = "calc"
+global = true                           # also show calculator results in unprefixed search
 
 [shell.launcher.providers.emoji]
 prefix = "emo"
@@ -242,6 +243,12 @@ disk_poll_seconds = 10.0            # disk usage and swap usage; graph widgets u
 [calendar]
 enabled                     = false
 refresh_minutes             = 15
+
+# Calendar tab of the control center.
+
+[control_center.calendar]
+show_events_card            = true
+show_week_numbers           = false         # ISO 8601 week numbers in the month grid
 event_date_format           = "%A %e %B"    # date format used for events
 event_time_format           = "%H:%M"       # time format used for events
 
@@ -391,6 +398,7 @@ show_running        = true
 auto_hide           = false
 # smart_auto_hide   = false       # show when the active workspace is empty; hide when it has windows
 reserve_space       = true
+layer               = "top"         # top | overlay
 active_scale        = 1.0
 inactive_scale      = 0.85
 magnification       = true

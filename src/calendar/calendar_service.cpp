@@ -13,7 +13,6 @@
 
 #include <algorithm>
 #include <cstdlib>
-#include <fstream>
 #include <iterator>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -31,6 +30,7 @@ namespace {
   // Wide enough for month navigation in the control-center calendar (~1 year each way).
   constexpr auto kWindowBefore = std::chrono::hours{24 * 365};
   constexpr auto kWindowAfter = std::chrono::hours{24 * 365};
+  constexpr std::size_t kMaxCacheBytes = 32U * 1024U * 1024U;
 
   std::int64_t toUnix(std::chrono::system_clock::time_point tp) {
     return std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
@@ -87,10 +87,10 @@ namespace {
 
 CalendarService::CalendarService(
     ConfigService& configService, HttpClient& httpClient, security::SecretStore& secretStore,
-    NotificationManager* notifications
+    security::StorageKeyProvider& storageKeyProvider, NotificationManager* notifications
 )
     : m_configService(configService), m_httpClient(httpClient), m_notifications(notifications), m_oauth(httpClient),
-      m_google(httpClient), m_credentials(secretStore) {}
+      m_google(httpClient), m_credentials(secretStore), m_storageKeyProvider(storageKeyProvider) {}
 
 void CalendarService::initialize() {
   m_activeConfig = m_configService.config().calendar;
@@ -101,8 +101,78 @@ void CalendarService::initialize() {
       m_credentialChangeCallback();
     }
   });
-  loadCache();
+  m_initialized = true;
+  syncCachePersistence();
   initializeCredentials();
+}
+
+void CalendarService::syncCachePersistence() {
+  if (!m_initialized) {
+    return;
+  }
+
+  m_cacheKey.reset();
+  m_cacheWritable = false;
+  setCachePersistenceState(CachePersistenceState::Opening, m_cacheMigrationPending);
+  if (m_storageKeyProvider.state() == security::StorageKeyState::Ready) {
+    auto key = m_storageKeyProvider.deriveKey(security::StorageKeyPurpose::CalendarEvents);
+    if (!key.has_value()) {
+      setCachePersistenceState(CachePersistenceState::BackendError, m_cacheMigrationPending);
+      return;
+    }
+    m_cacheKey = std::move(*key);
+    if (!loadCache()) {
+      if (m_cachePersistenceState == CachePersistenceState::Opening) {
+        setCachePersistenceState(CachePersistenceState::BackendError, m_cacheMigrationPending);
+      }
+    }
+    return;
+  }
+
+  CachePersistenceState state = CachePersistenceState::BackendError;
+  switch (m_storageKeyProvider.state()) {
+  case security::StorageKeyState::Opening:
+    state = CachePersistenceState::Opening;
+    break;
+  case security::StorageKeyState::Unavailable:
+    state = CachePersistenceState::Unavailable;
+    break;
+  case security::StorageKeyState::Cancelled:
+    state = CachePersistenceState::Cancelled;
+    break;
+  case security::StorageKeyState::DeniedOrLocked:
+    state = CachePersistenceState::DeniedOrLocked;
+    break;
+  case security::StorageKeyState::MissingKey:
+    state = CachePersistenceState::MissingKey;
+    break;
+  case security::StorageKeyState::Ready:
+  case security::StorageKeyState::BackendError:
+    break;
+  }
+  setCachePersistenceState(state, m_cacheMigrationPending);
+}
+
+void CalendarService::retryCachePersistence() { m_storageKeyProvider.retry(); }
+
+bool CalendarService::clearEncryptedCacheForRecovery() {
+  m_cacheKey.reset();
+  m_cacheWritable = false;
+  std::error_code ec;
+  std::filesystem::remove(cacheFilePath(), ec);
+  if (ec) {
+    kLog.warn("failed to remove encrypted calendar cache during recovery");
+    setCachePersistenceState(CachePersistenceState::BackendError, m_cacheMigrationPending);
+    return false;
+  }
+  setCachePersistenceState(CachePersistenceState::Opening, m_cacheMigrationPending);
+  return true;
+}
+
+bool CalendarService::hasEncryptedCache() const {
+  std::error_code ec;
+  const bool exists = std::filesystem::exists(cacheFilePath(), ec);
+  return !ec && exists;
 }
 
 calendar::CredentialMigration CalendarService::credentialMigration() {
@@ -837,20 +907,92 @@ std::filesystem::path CalendarService::cacheFilePath() {
   } else {
     base = "/tmp";
   }
-  return base / "noctalia" / "calendar" / "events.json";
+  return base / "noctalia" / "calendar" / "events.enc";
 }
 
-void CalendarService::loadCache() {
-  const std::filesystem::path path = cacheFilePath();
-  if (!calendar::cache::secureExisting(path)) {
-    kLog.warn("failed to secure calendar cache {}", path.string());
+std::filesystem::path CalendarService::legacyCacheFilePath() {
+  std::filesystem::path path = cacheFilePath();
+  path.replace_filename("events.json");
+  return path;
+}
+
+bool CalendarService::loadCache() {
+  if (!m_cacheKey.has_value()) {
+    return false;
   }
-  std::ifstream in(path);
-  if (!in.is_open()) {
-    return;
+
+  if (!calendar::cache::secureExisting(cacheFilePath())) {
+    kLog.warn("failed to secure encrypted calendar cache");
+    return false;
   }
+  const auto encrypted = calendar::cache::readEncrypted(cacheFilePath(), *m_cacheKey, kMaxCacheBytes);
+  if (encrypted.status == security::EncryptedReadStatus::Success) {
+    if (!parseCache(encrypted.plaintext)) {
+      setCachePersistenceState(CachePersistenceState::RecoveryRequired, m_cacheMigrationPending);
+      return false;
+    }
+    const std::filesystem::path legacyPath = legacyCacheFilePath();
+    std::error_code ec;
+    const bool legacyExists = std::filesystem::exists(legacyPath, ec);
+    if (ec) {
+      return false;
+    }
+    if (legacyExists && (!std::filesystem::remove(legacyPath, ec) || ec)) {
+      setCachePersistenceState(CachePersistenceState::Opening, true);
+      kLog.warn("failed to remove plaintext calendar cache after authenticated encrypted reload");
+      return false;
+    }
+    m_cacheWritable = true;
+    setCachePersistenceState(CachePersistenceState::Ready, false);
+    return true;
+  }
+  if (encrypted.status != security::EncryptedReadStatus::NotFound) {
+    kLog.warn("failed to authenticate or read encrypted calendar cache");
+    if (encrypted.status != security::EncryptedReadStatus::IoError) {
+      setCachePersistenceState(CachePersistenceState::RecoveryRequired, m_cacheMigrationPending);
+    }
+    return false;
+  }
+
+  const std::filesystem::path legacyPath = legacyCacheFilePath();
+  if (!calendar::cache::secureExisting(legacyPath)) {
+    kLog.warn("failed to secure plaintext calendar cache before migration");
+    return false;
+  }
+  const auto legacy = calendar::cache::readLegacy(legacyPath, kMaxCacheBytes);
+  if (legacy.status == calendar::cache::LegacyReadStatus::NotFound) {
+    m_cacheWritable = true;
+    setCachePersistenceState(CachePersistenceState::Ready, false);
+    return true;
+  }
+  setCachePersistenceState(CachePersistenceState::Opening, true);
+  if (legacy.status != calendar::cache::LegacyReadStatus::Success || !parseCache(legacy.contents)) {
+    kLog.warn("failed to read plaintext calendar cache for encryption");
+    return false;
+  }
+
+  const std::string_view contents(reinterpret_cast<const char*>(legacy.contents.data()), legacy.contents.size());
+  if (!calendar::cache::writeEncrypted(cacheFilePath(), contents, *m_cacheKey)) {
+    kLog.warn("failed to encrypt plaintext calendar cache");
+    return false;
+  }
+  m_storageKeyProvider.noteEncryptedDataExists();
+
+  std::error_code ec;
+  if (!std::filesystem::remove(legacyPath, ec) || ec) {
+    kLog.warn("failed to remove plaintext calendar cache after encryption");
+    return false;
+  }
+  m_cacheWritable = true;
+  setCachePersistenceState(CachePersistenceState::Ready, false);
+  return true;
+}
+
+bool CalendarService::parseCache(std::span<const std::uint8_t> contents) {
   try {
-    const auto j = nlohmann::json::parse(in);
+    const std::string_view json(reinterpret_cast<const char*>(contents.data()), contents.size());
+    const auto j = nlohmann::json::parse(json);
+    std::map<std::string, std::vector<CalendarEvent>> parsed;
     for (const auto& item : j.at("events")) {
       CalendarEvent event;
       event.id = item.value("id", std::string{});
@@ -862,19 +1004,23 @@ void CalendarService::loadCache() {
       event.end = fromUnix(item.value("end", std::int64_t{0}));
       event.allDay = item.value("all_day", false);
       const std::string account = item.value("account", std::string{});
-      m_eventsByAccount[account].push_back(std::move(event));
+      parsed[account].push_back(std::move(event));
     }
+    m_eventsByAccount = std::move(parsed);
     if (!m_eventsByAccount.empty()) {
       rebuildSnapshot();
     }
+    return true;
   } catch (const std::exception& e) {
     kLog.warn("failed to load calendar cache: {}", e.what());
-    m_eventsByAccount.clear();
+    return false;
   }
 }
 
-void CalendarService::saveCache() const {
-  const std::filesystem::path path = cacheFilePath();
+void CalendarService::saveCache() {
+  if (!m_cacheWritable || !m_cacheKey.has_value() || m_cachePersistenceState != CachePersistenceState::Ready) {
+    return;
+  }
 
   nlohmann::json events = nlohmann::json::array();
   for (const auto& [accountId, accountEvents] : m_eventsByAccount) {
@@ -893,7 +1039,23 @@ void CalendarService::saveCache() const {
     }
   }
 
-  if (!calendar::cache::write(path, nlohmann::json{{"events", std::move(events)}}.dump())) {
-    kLog.warn("failed to write calendar cache {}", path.string());
+  const std::string contents = nlohmann::json{{"events", std::move(events)}}.dump();
+  if (!calendar::cache::writeEncrypted(cacheFilePath(), contents, *m_cacheKey)) {
+    kLog.warn("failed to write encrypted calendar cache");
+    m_cacheWritable = false;
+    setCachePersistenceState(CachePersistenceState::BackendError, m_cacheMigrationPending);
+  } else {
+    m_storageKeyProvider.noteEncryptedDataExists();
+  }
+}
+
+void CalendarService::setCachePersistenceState(CachePersistenceState state, bool migrationPending) {
+  if (m_cachePersistenceState == state && m_cacheMigrationPending == migrationPending) {
+    return;
+  }
+  m_cachePersistenceState = state;
+  m_cacheMigrationPending = migrationPending;
+  if (m_credentialChangeCallback) {
+    m_credentialChangeCallback();
   }
 }
