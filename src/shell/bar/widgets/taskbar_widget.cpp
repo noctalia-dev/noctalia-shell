@@ -504,7 +504,7 @@ void TaskbarWidget::applyPinnedMerge(std::vector<TaskModel>& tasks) {
 }
 
 void TaskbarWidget::create() {
-  auto container = std::make_unique<InputArea>();
+  auto container = ui::inputArea({});
 
   auto root = ui::row({
       .out = &m_root,
@@ -705,7 +705,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
 
   auto createTaskTile = [&](const TaskModel& task, std::vector<TaskModel> cycleCandidates = {},
                             std::string cycleKey = {}, std::size_t badgeCount = 1) {
-    auto area = std::make_unique<InputArea>();
+    auto area = ui::inputArea({});
     area->setFrameSize(tileWidthWithTitle, tileSize);
     float tileOpacity = task.active ? m_activeOpacity : m_inactiveOpacity;
     // Pinned-but-not-running tiles are launchers, dim them so they don't read as open apps.
@@ -1006,7 +1006,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
           std::ranges::any_of(tasks, [](const TaskModel* task) { return task != nullptr && task->active; });
       const float summaryOpacity = anyActive ? m_activeOpacity : m_inactiveOpacity;
 
-      auto area = std::make_unique<InputArea>();
+      auto area = ui::inputArea({});
       area->setOpacity(summaryOpacity);
       area->setAcceptedButtons(InputArea::buttonMask(BTN_LEFT));
       auto wsCopy = ws.workspace;
@@ -1281,7 +1281,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
 
       if (emptyWorkspace) {
         if (!inlineBadge || !m_showWorkspaceLabel) {
-          auto switcher = std::make_unique<InputArea>();
+          auto switcher = ui::inputArea({});
           switcher->setFrameSize(tileSize, tileSize);
           switcher->setAcceptedButtons(InputArea::buttonMask(BTN_LEFT));
           auto wsCopy = ws.workspace;

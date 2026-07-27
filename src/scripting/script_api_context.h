@@ -108,6 +108,18 @@ namespace scripting {
       }
     }
 
+    // Opens the settings window at a plugin's settings. Wired to PanelManager in Application;
+    // main thread only.
+    void setOpenPluginSettingsHook(std::function<void(const std::string&)> hook) {
+      m_openPluginSettingsHook = std::move(hook);
+    }
+
+    void invokeOpenPluginSettings(const std::string& pluginId) const {
+      if (m_openPluginSettingsHook) {
+        m_openPluginSettingsHook(pluginId);
+      }
+    }
+
   private:
     std::atomic<SystemMonitorService*> m_systemMonitor{nullptr};
     std::atomic<bool> m_darkMode{true};
@@ -118,6 +130,7 @@ namespace scripting {
     std::function<void(const std::string&, bool)> m_wallpaperEnabledHook;
     std::function<void(const std::string&, const std::string&)> m_wallpaperHook;
     std::function<void(const std::string&)> m_togglePanelHook;
+    std::function<void(const std::string&)> m_openPluginSettingsHook;
   };
 
 } // namespace scripting

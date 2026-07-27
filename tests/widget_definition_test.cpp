@@ -12,6 +12,7 @@
 #include "shell/bar/widgets/custom_button_widget_definition.h"
 #include "shell/bar/widgets/launcher_widget_definition.h"
 #include "shell/bar/widgets/lock_keys_widget_definition.h"
+#include "shell/bar/widgets/media_widget_definition.h"
 #include "shell/bar/widgets/network_widget_definition.h"
 #include "shell/bar/widgets/notification_widget_definition.h"
 #include "shell/bar/widgets/privacy_widget_definition.h"
@@ -20,6 +21,7 @@
 #include "shell/bar/widgets/settings_widget_definition.h"
 #include "shell/bar/widgets/spacer_widget_definition.h"
 #include "shell/bar/widgets/text_widget_definition.h"
+#include "shell/bar/widgets/tray_widget_definition.h"
 #include "shell/bar/widgets/wallpaper_widget_definition.h"
 #include "shell/bar/widgets/weather_widget_definition.h"
 #include "system/battery_warning_monitor.h"
@@ -89,8 +91,10 @@ namespace {
       for (const auto& field : schema) {
         config.settings[field.key] = field.defaultValue;
       }
-      if (definition.resolve(&config, type, context...) != definition.resolve(nullptr, type, context...)) {
-        fail(type, "resolving the schema defaults does not match the Options defaults");
+      if (!definition.fieldValuesEqual(
+              definition.resolve(&config, type, context...), definition.resolve(nullptr, type, context...)
+          )) {
+        fail(type, "resolving the schema defaults does not match the declared field defaults");
       }
     } catch (const std::exception& e) {
       fail(type, e.what());
@@ -113,6 +117,7 @@ int main() {
   checkDefinition("custom_button", customButtonWidgetDefinition);
   checkDefinition("launcher", launcherWidgetDefinition);
   checkDefinition("lock_keys", lockKeysWidgetDefinition);
+  checkDefinition("media", mediaWidgetDefinition);
   checkDefinition("network", networkWidgetDefinition);
   checkDefinition("notifications", notificationWidgetDefinition);
   checkDefinition("privacy", privacyWidgetDefinition);
@@ -121,6 +126,7 @@ int main() {
   checkDefinition("settings", settingsWidgetDefinition);
   checkDefinition("spacer", spacerWidgetDefinition);
   checkDefinition("text", textWidgetDefinition);
+  checkDefinition("tray", trayWidgetDefinition, TrayWidgetDefinitionContext{});
   checkDefinition("wallpaper", wallpaperWidgetDefinition);
   checkDefinition("weather", weatherWidgetDefinition);
 

@@ -838,7 +838,7 @@ std::vector<settings::GestureActionOption> SettingsWindow::gestureActionCatalog(
     if (handler.command == noctalia::bar::kExecVerb || handler.command == noctalia::bar::kNoneVerb) {
       continue;
     }
-    if (!handler.bindable) {
+    if (handler.actionEditorVisibility == IpcService::ActionEditorVisibility::Hidden) {
       continue;
     }
     options.push_back(
@@ -1423,6 +1423,15 @@ void SettingsWindow::refreshSettingsRegistry(const Config& cfg) {
   m_settingsRegistry = settings::buildSettingsRegistry(cfg, nullptr, nullptr, env);
   logSettingsProfile("refreshRegistry registry", phaseProfileWatch);
   phaseProfileWatch.reset();
+
+  for (auto& entry : m_settingsRegistry) {
+    if (entry.section != settings::SettingsSection::Templates || entry.group != "community") {
+      continue;
+    }
+    if (auto* button = std::get_if<settings::ButtonSetting>(&entry.control)) {
+      button->action = [this]() { openCommunityTemplateStore(); };
+    }
+  }
 
   if (m_calendarService != nullptr
       && (m_calendarService->credentialMigrationPending()
@@ -2030,7 +2039,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   m_filterRow = nullptr;
   m_panelBackground = nullptr;
   m_contentContainer = nullptr;
-  m_sceneRoot = std::make_unique<Node>();
+  m_sceneRoot = ui::node({});
   m_sceneRoot->setSize(w, h);
   m_sceneRoot->setAnimationManager(&m_animations);
   if (m_surface != nullptr && m_renderContext != nullptr && m_wayland != nullptr) {

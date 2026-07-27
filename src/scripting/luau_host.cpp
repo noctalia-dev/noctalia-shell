@@ -17,6 +17,7 @@
 #include "scripting/ui_handler_table.h"
 #include "system/app_identity.h"
 #include "system/desktop_entry.h"
+#include "system/disk_mounts.h"
 #include "system/icon_resolver.h"
 #include "system/system_monitor_service.h"
 #include "system/terminal_launch.h"
@@ -375,14 +376,16 @@ namespace {
 
   // systemStats() -> a snapshot of the host's system monitor, or nil when it is unavailable.
   //
-  //   { cpu = { usagePercent = 23.4, tempC = 47.0? },
+  //   { sampledAtMs?, cpu = { usagePercent = 23.4, tempC = 47.0? },
   //     ram = { usagePercent, usedMb, totalMb }, swap = { usedMb, totalMb },
   //     gpu = { tempC?, usagePercent?, vramUsedBytes?, vramTotalBytes? },
-  //     net = { rxBytesPerSec, txBytesPerSec }, loadAvg = { 1.2, 0.9, 0.7 } }
+  //     net = { rxBytesPerSec, txBytesPerSec,
+  //             interfaces = { [name] = { rxBytesPerSec, txBytesPerSec } } },
+  //     loadAvg = { 1.2, 0.9, 0.7 } }
   //
-  // Percentages are 0-100. Absent sensors are nil rather than 0, so a plugin can tell "no GPU
-  // probe" from "GPU idle". Reading this costs nothing beyond a locked copy: it never enables a
-  // metric the host was not already sampling. Per-core CPU is opt-in, via cpuCores().
+  // Percentages are 0-100. Absent sensors are nil rather than 0. The first call opts the host
+  // into the optional CPU/GPU probes represented by this snapshot. Per-core and disk sampling
+  // remain opt-in through cpuCores() and diskStats().
   int luau_systemStats(lua_State* L) {
     auto* monitor = runningMonitorForState(L);
     if (monitor == nullptr) {
@@ -390,9 +393,15 @@ namespace {
       return 1;
     }
 
+    hostForState(L)->ensureSystemStatsRetained();
     const SystemStats stats = monitor->latest();
 
-    lua_createtable(L, 0, 6);
+    lua_createtable(L, 0, 7);
+    if (stats.sampledAtWall != std::chrono::system_clock::time_point{}) {
+      const double sampledAtMs =
+          std::chrono::duration<double, std::milli>(stats.sampledAtWall.time_since_epoch()).count();
+      setTableNumber(L, "sampledAtMs", sampledAtMs);
+    }
 
     lua_createtable(L, 0, 2);
     setTableNumber(L, "usagePercent", stats.cpuUsagePercent);
@@ -420,9 +429,17 @@ namespace {
     setTableOptionalNumber(L, "vramTotalBytes", stats.gpuVramTotalBytes);
     lua_setfield(L, -2, "gpu");
 
-    lua_createtable(L, 0, 2);
+    lua_createtable(L, 0, 3);
     setTableNumber(L, "rxBytesPerSec", stats.netRxBytesPerSec);
     setTableNumber(L, "txBytesPerSec", stats.netTxBytesPerSec);
+    lua_createtable(L, 0, static_cast<int>(stats.netThroughputByInterface.size()));
+    for (const auto& [interfaceName, throughput] : stats.netThroughputByInterface) {
+      lua_createtable(L, 0, 2);
+      setTableNumber(L, "rxBytesPerSec", throughput.rxBytesPerSec);
+      setTableNumber(L, "txBytesPerSec", throughput.txBytesPerSec);
+      lua_setfield(L, -2, interfaceName.c_str());
+    }
+    lua_setfield(L, -2, "interfaces");
     lua_setfield(L, -2, "net");
 
     lua_createtable(L, 3, 0);
@@ -467,6 +484,55 @@ namespace {
       lua_pushnumber(L, core);
       lua_rawseti(L, -2, coreIndex++);
     }
+    return 1;
+  }
+
+  // diskMounts() -> physical block-device-backed filesystems, deduped by source and sorted by
+  // mount path. Pseudo filesystems, loop/squashfs mounts, and boot mounts are excluded.
+  int luau_diskMounts(lua_State* L) {
+    const auto mounts = physicalDiskMounts();
+    lua_createtable(L, static_cast<int>(mounts.size()), 0);
+    int mountIndex = 1;
+    for (const auto& mount : mounts) {
+      lua_createtable(L, 0, 3);
+      setTableString(L, "path", mount.path);
+      setTableString(L, "source", mount.source);
+      setTableString(L, "filesystem", mount.filesystem);
+      lua_rawseti(L, -2, mountIndex++);
+    }
+    return 1;
+  }
+
+  // diskStats(path) -> the latest statvfs snapshot for an absolute path, or nil when the monitor
+  // is unavailable or the path cannot be sampled. Each distinct valid path is retained until the
+  // plugin is unloaded; ~ is expanded before the path is normalized.
+  int luau_diskStats(lua_State* L) {
+    size_t pathLen = 0;
+    const char* rawPath = luaL_checklstring(L, 1, &pathLen);
+    std::filesystem::path path = FileUtils::expandUserPath(std::string(rawPath, pathLen));
+    if (path.empty() || !path.is_absolute()) {
+      luaL_argerror(L, 1, "expected an absolute path or ~/...");
+    }
+    const std::string normalizedPath = path.lexically_normal().string();
+
+    auto* host = hostForState(L);
+    auto* monitor = runningMonitorForState(L);
+    if (host == nullptr || monitor == nullptr || !host->ensureDiskPathRetained(normalizedPath)) {
+      lua_pushnil(L);
+      return 1;
+    }
+
+    const auto stats = monitor->diskStats(normalizedPath);
+    if (!stats.has_value()) {
+      lua_pushnil(L);
+      return 1;
+    }
+
+    lua_createtable(L, 0, 4);
+    setTableNumber(L, "usagePercent", stats->usagePercent);
+    setTableNumber(L, "totalBytes", static_cast<double>(stats->totalBytes));
+    setTableNumber(L, "freeBytes", static_cast<double>(stats->freeBytes));
+    setTableNumber(L, "availableBytes", static_cast<double>(stats->availableBytes));
     return 1;
   }
 
@@ -551,6 +617,15 @@ namespace {
     const char* panelId = luaL_checklstring(L, 1, &len);
     if (auto* host = hostForState(L)) {
       host->scriptTogglePanel(std::string(panelId, len));
+    }
+    return 0;
+  }
+
+  // openSettings() — open the settings window at this plugin's own settings. The plugin id comes
+  // from the host, so a plugin can only ever open its own page.
+  int luau_openSettings(lua_State* L) {
+    if (auto* host = hostForState(L)) {
+      host->scriptOpenSettings();
     }
     return 0;
   }
@@ -1432,11 +1507,14 @@ namespace {
       {"outputs", luau_outputs},
       {"systemStats", luau_systemStats},
       {"cpuCores", luau_cpuCores},
+      {"diskMounts", luau_diskMounts},
+      {"diskStats", luau_diskStats},
       {"nowMs", luau_nowMs},
       {"appIconPath", luau_appIconPath},
       {"setWallpaperEnabled", luau_setWallpaperEnabled},
       {"setWallpaper", luau_setWallpaper},
       {"togglePanel", luau_togglePanel},
+      {"openSettings", luau_openSettings},
       {"isDarkMode", luau_isDarkMode},
       {"wallpaperDirectory", luau_wallpaperDirectory},
       {"notify", luau_notify},
@@ -1533,6 +1611,21 @@ LuauHost::LuauHost(scripting::ScriptApiContext& api, CompositorPlatform* platfor
   lua_pop(m_L, 1);
 }
 
+void LuauHost::ensureSystemStatsRetained() {
+  if (m_systemStatsRetained) {
+    return;
+  }
+  auto* monitor = m_api.systemMonitor();
+  if (monitor == nullptr) {
+    return;
+  }
+  monitor->retainCpuTemp();
+  monitor->retainGpuTemp();
+  monitor->retainGpuUsage();
+  monitor->retainGpuVram();
+  m_systemStatsRetained = true;
+}
+
 void LuauHost::ensureCpuCoresRetained() {
   if (m_cpuCoresRetained) {
     return;
@@ -1545,11 +1638,45 @@ void LuauHost::ensureCpuCoresRetained() {
   m_cpuCoresRetained = true;
 }
 
+bool LuauHost::ensureDiskPathRetained(const std::string& path) {
+  if (m_diskPathsRetained.contains(path)) {
+    return true;
+  }
+  auto* monitor = m_api.systemMonitor();
+  if (monitor == nullptr) {
+    return false;
+  }
+  monitor->retainDiskPath(path);
+  if (!monitor->diskStats(path).has_value()) {
+    monitor->releaseDiskPath(path);
+    return false;
+  }
+  m_diskPathsRetained.insert(path);
+  return true;
+}
+
 LuauHost::~LuauHost() {
   // Terminate any long-lived stream subprocesses and HTTP streams before tearing
   // down the state.
   stopAllStreams();
   stopAllHttpStreams();
+  if (m_systemStatsRetained) {
+    if (auto* monitor = m_api.systemMonitor(); monitor != nullptr) {
+      monitor->releaseCpuTemp();
+      monitor->releaseGpuTemp();
+      monitor->releaseGpuUsage();
+      monitor->releaseGpuVram();
+    }
+    m_systemStatsRetained = false;
+  }
+  if (!m_diskPathsRetained.empty()) {
+    if (auto* monitor = m_api.systemMonitor(); monitor != nullptr) {
+      for (const auto& path : m_diskPathsRetained) {
+        monitor->releaseDiskPath(path);
+      }
+    }
+    m_diskPathsRetained.clear();
+  }
   if (m_cpuCoresRetained) {
     // Null once Application has torn the service down, which it does before the plugin hosts that
     // outlive it are destroyed.
@@ -2222,6 +2349,14 @@ void LuauHost::scriptTogglePanel(std::string panelId) {
   if (m_scriptContext != nullptr) {
     m_scriptContext->sideEffects.push_back(
         {.kind = scripting::ScriptSideEffectKind::TogglePanel, .title = std::move(panelId), .body = {}}
+    );
+  }
+}
+
+void LuauHost::scriptOpenSettings() {
+  if (m_scriptContext != nullptr) {
+    m_scriptContext->sideEffects.push_back(
+        {.kind = scripting::ScriptSideEffectKind::OpenPluginSettings, .title = m_pluginId, .body = {}}
     );
   }
 }

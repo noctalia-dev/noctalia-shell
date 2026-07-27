@@ -122,10 +122,11 @@ public:
   bool callHttpStreamCloseCallback(int streamKey, bool ok, int status, std::chrono::milliseconds budget);
   [[nodiscard]] bool hasHttpStream(int streamKey) const;
 
-  // noctalia.cpuCores - opt this host into per-core CPU sampling on first use. Sampling is
-  // refcounted in SystemMonitorService and released in ~LuauHost, so a plugin that never asks for
-  // per-core data costs nothing and a reloaded one does not leak a reference.
+  // System-monitor probes requested by this host are refcounted and released in ~LuauHost.
+  // Per-core and disk sampling remain opt-in through their dedicated calls.
+  void ensureSystemStatsRetained();
   void ensureCpuCoresRetained();
+  [[nodiscard]] bool ensureDiskPathRetained(const std::string& path);
 
   // Load the plugin's own translations/<lang>.json (over en.json) into a flat dotted-key
   // catalog. Call after setPluginDir().
@@ -178,6 +179,8 @@ public:
   void scriptSetWallpaper(std::string connector, std::string path);
   // Toggle a host panel by id ("author/plugin:panel"). Queued, applied on the main thread.
   void scriptTogglePanel(std::string panelId);
+  // Open the settings window at this plugin's own settings. Queued, applied on the main thread.
+  void scriptOpenSettings();
   [[nodiscard]] bool scriptCopyToClipboard(std::string text, std::string mimeType);
   [[nodiscard]] std::optional<std::string> scriptFocusedOutputName() const;
 
@@ -248,6 +251,8 @@ private:
   std::chrono::nanoseconds m_callCpuDeadline{};
   std::string m_currentCallName;
   bool m_cpuCoresRetained = false; // this host holds a SystemMonitorService per-core reference
+  bool m_systemStatsRetained = false;
+  std::unordered_set<std::string> m_diskPathsRetained;
   bool m_budgetActive = false;
   bool m_lastCallTimedOut = false;
   bool m_muteErrors = false;

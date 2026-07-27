@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "config/config_types.h"
+#include "core/files/directory_scanner.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "i18n/i18n.h"
 #include "render/scene/node.h"
@@ -9,6 +10,7 @@
 #include "shell/bar/widget_gesture_defaults.h"
 #include "shell/settings/color_spec_picker.h"
 #include "shell/settings/font_weight_catalog.h"
+#include "shell/settings/path_browse.h"
 #include "shell/settings/settings_content.h"
 #include "shell/settings/widget_settings_registry.h"
 #include "ui/builders.h"
@@ -30,7 +32,6 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <system_error>
 #include <unordered_map>
 #include <utility>
 #include <variant>
@@ -178,38 +179,6 @@ namespace settings {
       });
       section->addChild(std::move(collapsible));
       return section;
-    }
-
-    enum class PathBrowseKind : std::uint8_t {
-      File,
-      Folder,
-    };
-
-    void applyPathDialogStartValue(FileDialogOptions& options, const std::string& currentValue, PathBrowseKind kind) {
-      if (currentValue.empty()) {
-        return;
-      }
-
-      const std::filesystem::path current(currentValue);
-      std::error_code ec;
-      if (kind == PathBrowseKind::Folder
-          && std::filesystem::exists(current, ec)
-          && std::filesystem::is_directory(current, ec)) {
-        options.startDirectory = current;
-        return;
-      }
-      if (kind == PathBrowseKind::File
-          && std::filesystem::exists(current, ec)
-          && std::filesystem::is_regular_file(current, ec)) {
-        options.startDirectory = current.parent_path();
-        options.defaultFilename = current.filename().string();
-        return;
-      }
-      if (current.has_parent_path()
-          && std::filesystem::exists(current.parent_path(), ec)
-          && std::filesystem::is_directory(current.parent_path(), ec)) {
-        options.startDirectory = current.parent_path();
-      }
     }
 
     std::unique_ptr<Node> makePathBrowseControl(
@@ -1704,7 +1673,7 @@ namespace settings {
             options.mode = FileDialogMode::Open;
             options.defaultViewMode = FileDialogViewMode::Grid;
             options.title = i18n::tr("settings.widgets.settings.custom-image.dialog-title");
-            options.extensions = {".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp", ".gif"};
+            options.extensions = DirectoryScanner::imageExtensionFilter(true);
             options.startDirectory = "/usr/share/icons";
             ctx.makeRow(
                 *panel, entry,

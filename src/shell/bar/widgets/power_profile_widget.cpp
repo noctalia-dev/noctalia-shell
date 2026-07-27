@@ -12,7 +12,7 @@
 PowerProfileWidget::PowerProfileWidget(PowerProfilesService* powerProfiles) : m_powerProfiles(powerProfiles) {}
 
 void PowerProfileWidget::create() {
-  auto area = std::make_unique<InputArea>();
+  auto area = ui::inputArea({});
   m_area = area.get();
 
   area->addChild(

@@ -69,7 +69,7 @@ void INetworkService::registerIpc(IpcService& ipc, WirelessFeedbackCallback wire
       "", "Toggle Wi-Fi"
   );
 
-  ipc.registerQueryHandler(
+  ipc.registerHandler(
       "wifi-status",
       [this](const std::string& args) -> std::string {
         if (auto err = rejectArgs("wifi-status", args); err.has_value()) {
@@ -80,7 +80,8 @@ void INetworkService::registerIpc(IpcService& ipc, WirelessFeedbackCallback wire
         }
         return state().wirelessEnabled ? "on\n" : "off\n";
       },
-      "", "Print Wi-Fi state"
+      "", "Print Wi-Fi state",
+      IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
   );
 
   ipc.registerHandler(

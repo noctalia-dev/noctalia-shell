@@ -187,7 +187,7 @@
     "bluetooth": {
       "accept": "Прийняти",
       "address": "Адреса",
-      "auto-reconnect": "Автоперепідключення",
+      "auto-reconnect": "Автоматично з'єднуватися",
       "bluetooth": "Bluetooth",
       "enter-code": "Введіть код",
       "no-devices": "Пристроїв не знайдено. Почніть сканування, щоб знайти пристрої Bluetooth поблизу.",
@@ -255,7 +255,7 @@
     },
     "network": {
       "connect": "Підключити",
-      "current-connection": "Поточне підключення",
+      "current-connection": "Поточне з'єднання",
       "external-ip": "WAN: {ip}",
       "no-networks": "Немає мереж в зоні дії",
       "not-connected": "Не підключено",
@@ -273,8 +273,8 @@
     },
     "notifications": {
       "clear-all": "Очистити список сповіщень",
-      "dnd-off": "Режим «Без сповіщень» вимкнуто",
-      "dnd-on": "Режим «Без сповіщень» увімкнуто",
+      "dnd-off": "Вимкнення режиму «Без сповіщень»",
+      "dnd-on": "Увімкнення режиму «Без сповіщень»",
       "empty-body": "Останні сповіщення з'являться тут.",
       "empty-title": "Немає сповіщень",
       "filter": {
@@ -316,7 +316,7 @@
     "shortcuts": {
       "audio": "Аудіо",
       "bluetooth": "Bluetooth",
-      "caffeine": "Кофеїн",
+      "caffeine": "Не\\nприсипляти",
       "clipboard": "Буфер обміну",
       "dark-mode": {
         "auto": "Автоматичний режим",
@@ -675,14 +675,14 @@
       "battery-low-title": "Низький заряд батареї",
       "calendar": "Календар",
       "calendar-google-connect-browser-failed": "Не вдалося запустити браузер для авторизації Google. Перевірте свій типовий браузер або налаштування xdg-open.",
-      "calendar-google-connect-expired": "Термін дії авторизації Google закінчився до завершення входу. Почни підключення знову.",
+      "calendar-google-connect-expired": "Термін дії авторизації Google вичерпався до виконання входу. Спробуйте з'єднатися знову.",
       "calendar-google-connect-failed-title": "З'єднання з Google Календарем не вдалося",
       "calendar-google-connect-missing-account": "Жоден налаштований обліковий запис Google Календаря не відповідає \"{account}\".",
       "calendar-google-connect-rate-limited": "Авторизація Google тимчасово обмежена за частотою запитів. Зачекайте трохи, потім спробуйте ще раз.",
       "calendar-google-connect-result-failed": "Не вдалося завершити авторизацію Google. Спробуйте підключитися знову.",
       "calendar-google-connect-start-failed": "Не вдалося розпочати авторизацію Google. Перевірте своє мережеве з'єднання та спробуйте ще раз.",
       "calendar-google-connect-start-http": "Не вдалося запустити авторизацію Google. Брокер OAuth повернув HTTP {status}.",
-      "calendar-google-connect-timeout": "Час очікування авторизації Google вичерпано. Почніть підключення знову, коли будете готові увійти.",
+      "calendar-google-connect-timeout": "Час очікування авторизації Google вичерпано. Спробуйте з'єднатися знову, коли будете готові ввійти.",
       "config-migration-title": "Потрібно оновити конфігурацію",
       "dbus-disabled": "Сповіщення DBus вимкнено",
       "desktop-widgets-editor": "Редактор віджетів",
@@ -712,8 +712,8 @@
       "on": "Bluetooth Увімкнено"
     },
     "caffeine": {
-      "off": "Кофеїн вимкнено",
-      "on": "Активність увімкнено"
+      "off": "Присипляння ввімкнено",
+      "on": "Присипляння вимкнено"
     },
     "dnd": {
       "off": "DND Вимкнено",
@@ -784,7 +784,7 @@
       "lock": "Заблокувати",
       "lock-and-suspend": "Блокування та призупинення",
       "logout": "Вийти",
-      "reboot": "Перезавантажити",
+      "reboot": "Перезапустити",
       "shutdown": "Вимкнути",
       "suspend": "Призупинити"
     },
@@ -1019,7 +1019,7 @@
         "kind": {
           "custom": "Користувацькі",
           "lock": "Заблокувати",
-          "lock-and-suspend": "Заблокувати та призупинити",
+          "lock-and-suspend": "Заблокувати й приспати",
           "screen-off": "Екран вимкнено",
           "suspend": "Призупинити"
         },
@@ -2234,12 +2234,12 @@
           "label": "Яскравість"
         },
         "osd-kinds-caffeine": {
-          "description": "Показувати OSD спливаюче вікно, коли змінюється стан Caffeine (блокувальника бездіяльності)",
-          "label": "Не\\nприсипляти"
+          "description": "Показувати спливне вікно, коли змінюється стан присипляння.",
+          "label": "Присипляння"
         },
         "osd-kinds-dnd": {
-          "description": "Показувати OSD спливаюче вікно при перемиканні Do Not Disturb",
-          "label": "Не турбувати"
+          "description": "Показувати OSD спливаюче вікно при перемиканні режиму «Без сповіщень»",
+          "label": "Без сповіщень"
         },
         "osd-kinds-keyboard-layout": {
           "description": "Показувати спливаюче OSD, коли змінюється розкладка клавіатури",
@@ -2701,7 +2701,7 @@
           "label": "Колір виділення"
         },
         "hot-reload": {
-          "description": "Перезавантажити скриптовий віджет, коли змінюється його джерело",
+          "description": "Перезавантажувати віджети, що виконують сценарії, одразу після зміни коду.",
           "label": "Hot Reload"
         },
         "icon-size": {
@@ -2886,7 +2886,7 @@
         "battery": "Батарея",
         "bluetooth": "Bluetooth",
         "brightness": "Яскравість",
-        "caffeine": "Кофеїн",
+        "caffeine": "Присипляння",
         "clipboard": "Буфер обміну",
         "clock": "Годинник",
         "control-center": "Центр керування",

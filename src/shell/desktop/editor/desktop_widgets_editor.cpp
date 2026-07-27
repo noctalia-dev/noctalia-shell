@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
+#include "core/files/directory_scanner.h"
 #include "core/input/key_modifiers.h"
 #include "core/input/key_symbols.h"
 #include "core/input/keybind_matcher.h"
@@ -644,7 +645,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   surface.lassoBox = nullptr;
   surface.toolbar = nullptr;
 
-  auto root = std::make_unique<InputArea>();
+  auto root = ui::inputArea({});
   root->setEnabled(false);
   root->setAnimationManager(&surface.animations);
   if (m_renderContext != nullptr && m_wayland != nullptr) {
@@ -685,7 +686,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   dim->setZIndex(0);
   root->addChild(std::move(dim));
 
-  auto backgroundArea = std::make_unique<InputArea>();
+  auto backgroundArea = ui::inputArea({});
   backgroundArea->setPosition(0.0f, 0.0f);
   backgroundArea->setFrameSize(root->width(), root->height());
   backgroundArea->setZIndex(1);
@@ -831,7 +832,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
     view.intrinsicWidth = std::max(1.0f, widget->intrinsicWidth());
     view.intrinsicHeight = std::max(1.0f, widget->intrinsicHeight());
 
-    auto bodyArea = std::make_unique<InputArea>();
+    auto bodyArea = ui::inputArea({});
     view.bodyArea = bodyArea.get();
     view.transformNode = view.bodyArea;
     view.transformNode->setFrameSize(view.intrinsicWidth, view.intrinsicHeight);
@@ -887,7 +888,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
     SecondarySelectionVisual visual;
     visual.widgetId = selectedId;
 
-    auto borderTransform = std::make_unique<Node>();
+    auto borderTransform = ui::node({});
     borderTransform->setZIndex(102);
     borderTransform->setHitTestVisible(false);
     visual.transform = borderTransform.get();
@@ -919,7 +920,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   if (selectedIt != surface.views.end()) {
     selectedIt->second.bodyArea->setZIndex(101);
 
-    auto selectionFrameTransform = std::make_unique<Node>();
+    auto selectionFrameTransform = ui::node({});
     selectionFrameTransform->setZIndex(100);
     surface.selectionFrameTransform = selectionFrameTransform.get();
 
@@ -941,7 +942,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
       surface.rotationRing = ring.get();
       surface.selectionFrameTransform->addChild(std::move(ring));
 
-      auto rotateArea = std::make_unique<InputArea>();
+      auto rotateArea = ui::inputArea({});
       rotateArea->setZIndex(1);
       rotateArea->setOnPress([this, id = m_selectedWidgetId](const InputArea::PointerData& data) {
         if (data.button != BTN_LEFT) {
@@ -964,7 +965,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
 
     root->addChild(std::move(selectionFrameTransform));
 
-    auto selectionBorderTransform = std::make_unique<Node>();
+    auto selectionBorderTransform = ui::node({});
     selectionBorderTransform->setZIndex(102);
     selectionBorderTransform->setHitTestVisible(false);
     surface.selectionBorderTransform = selectionBorderTransform.get();
@@ -1007,7 +1008,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
       surface.scaleHandles[i] = scaleHandle.get();
       root->addChild(std::move(scaleHandle));
 
-      auto scaleArea = std::make_unique<InputArea>();
+      auto scaleArea = ui::inputArea({});
       scaleArea->setZIndex(105);
       scaleArea->setOnPress([this, id = m_selectedWidgetId, corner](const InputArea::PointerData& data) {
         if (data.button != BTN_LEFT) {
@@ -1033,7 +1034,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
     updateSelectionVisuals(surface);
   }
 
-  auto toolbarHandleArea = std::make_unique<InputArea>();
+  auto toolbarHandleArea = ui::inputArea({});
   toolbarHandleArea->setParticipatesInLayout(false);
   toolbarHandleArea->setZIndex(1);
   toolbarHandleArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_MOVE);
@@ -1555,7 +1556,7 @@ void DesktopWidgetsEditor::addWidget(const std::string& outputName, const std::s
     FileDialogOptions options;
     options.mode = FileDialogMode::Open;
     options.title = i18n::tr("desktop-widgets.editor.dialogs.select-sticker-image");
-    options.extensions = {".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif"};
+    options.extensions = DirectoryScanner::imageExtensionFilter(true);
     if (!FileDialog::open(std::move(options), [this, widgetId](std::optional<std::filesystem::path> result) {
           deferEditorMutation([this, widgetId, result = std::move(result)]() {
             auto* state = findWidgetState(widgetId);
@@ -2272,9 +2273,15 @@ void DesktopWidgetsEditor::updateDrag() {
           surface != nullptr && surface->surface != nullptr) {
         screenWidth = static_cast<float>(surface->surface->width());
       }
+      const lockscreen_login_box::LoginBoxStyle style = lockscreen_login_box::resolveStyle(state->settings);
       lockscreen_login_box::clampPanelSize(
-          screenWidth, boxW, boxH, lockscreen_login_box::resolveLayout(state->settings),
-          lockscreen_login_box::resolveStyle(state->settings).showSessionButtons
+          screenWidth, boxW, boxH, style.layout, style.showSessionButtons,
+          lockscreen_login_box::styleShowsInfoExtras(style), lockscreen_login_box::styleReservesStatus(style)
+      );
+      // Login box height follows chrome; scale is width-oriented.
+      boxH = lockscreen_login_box::defaultPanelHeight(
+          style.layout, style.showSessionButtons, lockscreen_login_box::styleShowsInfoExtras(style),
+          lockscreen_login_box::styleReservesStatus(style)
       );
     }
 

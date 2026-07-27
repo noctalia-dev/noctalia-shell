@@ -8,26 +8,39 @@
 #include <string_view>
 #include <vector>
 
+enum class IpcHelpVisibility {
+  Public,
+  Hidden,
+};
+
+enum class IpcActionEditorVisibility {
+  Shown,
+  Hidden,
+};
+
+struct IpcHandlerOptions {
+  IpcHelpVisibility helpVisibility = IpcHelpVisibility::Public;
+  IpcActionEditorVisibility actionEditorVisibility = IpcActionEditorVisibility::Shown;
+};
+
 class IpcService {
 public:
   using Handler = std::function<std::string(const std::string& args)>;
+  using HelpVisibility = IpcHelpVisibility;
+  using ActionEditorVisibility = IpcActionEditorVisibility;
+  using HandlerOptions = IpcHandlerOptions;
 
-  enum class HandlerVisibility {
-    Public,
-    Hidden,
-  };
-
-  // A registered command, for callers that need to present or validate the command set
-  // (--help, the bar widget action picker). The views borrow from the registry, so they are
-  // invalidated by the next registerHandler() call.
+  // A registered command, for callers that need to present or validate the command set. The views
+  // borrow from the registry, so they are invalidated by the next registerHandler() call.
   struct HandlerInfo {
     std::string_view command;
     // Argument spec without the verb, e.g. "<id> [context]". Empty when the command takes none.
     std::string_view args;
     std::string_view description;
-    // Whether to offer this command where a UI picks an action to run. False for state queries,
-    // whose output a click would discard. Config is not restricted by this.
-    bool bindable = true;
+    HelpVisibility helpVisibility = HelpVisibility::Public;
+    // Whether to offer this command in the action editor. Hidden commands remain available to IPC
+    // and hand-written config.
+    ActionEditorVisibility actionEditorVisibility = ActionEditorVisibility::Shown;
     // Whether the command moves one position along an ordered set. Bound to a scroll gesture,
     // one of those runs once per flick: the several notches an eager wheel movement emits are
     // one intent, not a request to skip that many entries.
@@ -85,7 +98,7 @@ public:
     return m_invocationContext;
   }
 
-  // Registered commands, sorted by name. Hidden handlers are omitted.
+  // Registered commands, sorted by name.
   [[nodiscard]] std::vector<HandlerInfo> handlers() const;
   [[nodiscard]] bool hasHandler(std::string_view command) const noexcept;
 
@@ -93,24 +106,18 @@ public:
   // the first space as `args`. Must return a string ending with '\n'.
   // `argsSpec` describes the arguments only, without repeating the verb, e.g. "<id> [context]".
   // `description` is a short human-readable explanation shown in --help.
-  // Hidden handlers remain executable but are omitted from --help.
+  // Handler options independently control help and action-editor visibility.
   void registerHandler(
       const std::string& command, Handler handler, std::string argsSpec = {}, std::string description = {},
-      HandlerVisibility visibility = HandlerVisibility::Public
-  );
-
-  // A command that only reports state. Registered and listed in --help exactly like any other, but
-  // reported as unbindable so action pickers leave it out: running it from a click would throw the
-  // answer away. Hand-written config can still bind it.
-  void registerQueryHandler(
-      const std::string& command, Handler handler, std::string argsSpec = {}, std::string description = {}
+      HandlerOptions options = {}
   );
 
   // A command that steps one position along an ordered set (workspaces, tracks, power profiles).
   // Registered like any other; bound to a scroll gesture it runs once per flick instead of once
   // per notch, so an eager wheel movement moves one position rather than several.
   void registerCycleHandler(
-      const std::string& command, Handler handler, std::string argsSpec = {}, std::string description = {}
+      const std::string& command, Handler handler, std::string argsSpec = {}, std::string description = {},
+      HandlerOptions options = {}
   );
 
   // True when `command` was registered with registerCycleHandler().
@@ -121,8 +128,8 @@ private:
     Handler fn;
     std::string argsSpec;
     std::string description;
-    HandlerVisibility visibility = HandlerVisibility::Public;
-    bool bindable = true;
+    HelpVisibility helpVisibility = HelpVisibility::Public;
+    ActionEditorVisibility actionEditorVisibility = ActionEditorVisibility::Shown;
     bool cycles = false;
   };
 

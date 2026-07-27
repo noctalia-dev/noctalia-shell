@@ -1210,6 +1210,7 @@
         "flags-label": "Cuando coincida",
         "match-label": "Aplicación",
         "match-placeholder": "Nombre de la aplicación, entrada de escritorio o categoría…",
+        "override-duration": "Sobreescribir duracion",
         "play-sound": "Reproducir sonido",
         "save-history": "Guardar en el historial",
         "show-toast": "Mostrar notificación emergente",
@@ -1451,7 +1452,6 @@
         "results-count": "{count} plugins",
         "search-placeholder": "Buscar plugins...",
         "source-all": "Todos",
-        "sources": "Fuentes",
         "title": "Tienda de plugins"
       }
     },
@@ -3482,6 +3482,7 @@
     "window": {
       "export-config": "Exportar configuración...",
       "export-config-saved": "Exportación de configuración guardada.",
+      "filter-overridden": "Sobreescrito",
       "native-title": "Ajustes de Noctalia",
       "no-results": "Ajustes no encontrados.",
       "no-results-hint": "Prueba con otro nombre de configuración o clave de config.",

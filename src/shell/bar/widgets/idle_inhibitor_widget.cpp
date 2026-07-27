@@ -17,7 +17,7 @@ namespace {
 IdleInhibitorWidget::IdleInhibitorWidget(IdleInhibitor* inhibitor) : m_inhibitor(inhibitor) {}
 
 void IdleInhibitorWidget::create() {
-  auto area = std::make_unique<InputArea>();
+  auto area = ui::inputArea({});
   m_area = area.get();
 
   area->addChild(

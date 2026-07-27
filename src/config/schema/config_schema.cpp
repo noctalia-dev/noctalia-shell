@@ -252,6 +252,7 @@ namespace noctalia::config::schema {
         field(&NotificationConfig::offsetY, "offset_y"),
         field(&NotificationConfig::monitors, "monitors"),
         field(&NotificationConfig::collapseOnDismiss, "collapse_on_dismiss"),
+        field(&NotificationConfig::historyRetentionHours, "history_retention_hours", Range<std::int64_t>{0, 8760}),
         custom<NotificationConfig>(
             "blacklist",
             [](const toml::table& tbl, NotificationConfig& out, std::string_view, Diagnostics&) {
@@ -1451,6 +1452,7 @@ namespace noctalia::config::schema {
         field(&ShellConfig::inputBorders, "input_borders"),
         field(&ShellConfig::popupBorders, "popup_borders"),
         field(&ShellConfig::popupShadows, "popup_shadows"),
+        field(&ShellConfig::cardBorders, "card_borders"),
         // font_family is trimmed; empty falls back to sans-serif.
         custom<ShellConfig>(
             "font_family",
@@ -1482,6 +1484,7 @@ namespace noctalia::config::schema {
         field(&ShellConfig::launchAppsAsSystemdServices, "launch_apps_as_systemd_services"),
         field(&ShellConfig::launchAppsCustomCommand, "launch_apps_custom_command"),
         field(&ShellConfig::clipboardEnabled, "clipboard_enabled"),
+        field(&ShellConfig::clipboardKeepFromClosedApps, "clipboard_keep_from_closed_apps"),
         field(
             &ShellConfig::clipboardHistoryMaxEntries, "clipboard_history_max_entries", kClipboardHistoryMaxEntriesRange
         ),

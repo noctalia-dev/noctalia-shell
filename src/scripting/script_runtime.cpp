@@ -153,6 +153,9 @@ namespace scripting {
             api.invokeTogglePanel(effect.title);
           }
           break;
+        case ScriptSideEffectKind::OpenPluginSettings:
+          api.invokeOpenPluginSettings(effect.title);
+          break;
         }
       }
     }

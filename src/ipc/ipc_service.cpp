@@ -104,30 +104,27 @@ bool IpcService::start() {
 }
 
 void IpcService::registerHandler(
-    const std::string& command, Handler handler, std::string argsSpec, std::string description,
-    HandlerVisibility visibility
+    const std::string& command, Handler handler, std::string argsSpec, std::string description, HandlerOptions options
 ) {
   // Remove existing entry for this command if re-registering
   std::erase_if(m_handlers, [&command](const auto& e) { return e.first == command; });
-  m_handlers.push_back(
-      {command, {std::move(handler), std::move(argsSpec), std::move(description), visibility, true, false}}
-  );
-}
-
-void IpcService::registerQueryHandler(
-    const std::string& command, Handler handler, std::string argsSpec, std::string description
-) {
-  registerHandler(command, std::move(handler), std::move(argsSpec), std::move(description));
-  const auto it = std::ranges::find_if(m_handlers, [&command](const auto& e) { return e.first == command; });
-  if (it != m_handlers.end()) {
-    it->second.bindable = false;
-  }
+  m_handlers.push_back({
+      command,
+      {
+          std::move(handler),
+          std::move(argsSpec),
+          std::move(description),
+          options.helpVisibility,
+          options.actionEditorVisibility,
+          false,
+      },
+  });
 }
 
 void IpcService::registerCycleHandler(
-    const std::string& command, Handler handler, std::string argsSpec, std::string description
+    const std::string& command, Handler handler, std::string argsSpec, std::string description, HandlerOptions options
 ) {
-  registerHandler(command, std::move(handler), std::move(argsSpec), std::move(description));
+  registerHandler(command, std::move(handler), std::move(argsSpec), std::move(description), options);
   const auto it = std::ranges::find_if(m_handlers, [&command](const auto& e) { return e.first == command; });
   if (it != m_handlers.end()) {
     it->second.cycles = true;
@@ -143,15 +140,13 @@ std::vector<IpcService::HandlerInfo> IpcService::handlers() const {
   std::vector<HandlerInfo> infos;
   infos.reserve(m_handlers.size());
   for (const auto& [command, entry] : m_handlers) {
-    if (entry.visibility == HandlerVisibility::Hidden) {
-      continue;
-    }
     infos.push_back(
         HandlerInfo{
             .command = command,
             .args = entry.argsSpec,
             .description = entry.description,
-            .bindable = entry.bindable,
+            .helpVisibility = entry.helpVisibility,
+            .actionEditorVisibility = entry.actionEditorVisibility,
             .cycles = entry.cycles,
         }
     );
@@ -287,7 +282,8 @@ std::string IpcService::HandlerInfo::signature() const {
 }
 
 std::string IpcService::buildHelp() const {
-  const auto infos = handlers();
+  auto infos = handlers();
+  std::erase_if(infos, [](const HandlerInfo& info) { return info.helpVisibility == HelpVisibility::Hidden; });
 
   std::vector<std::string> signatures;
   signatures.reserve(infos.size());

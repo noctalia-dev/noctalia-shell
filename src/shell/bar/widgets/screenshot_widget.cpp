@@ -132,7 +132,7 @@ bool ScreenshotWidget::onPointerEvent(const PointerEvent& event) {
 }
 
 void ScreenshotWidget::create() {
-  auto area = std::make_unique<InputArea>();
+  auto area = ui::inputArea({});
   m_hitArea = area.get();
   // Left is a declared gesture action; right stays here because the capture menu is a popup
   // anchored to this widget.

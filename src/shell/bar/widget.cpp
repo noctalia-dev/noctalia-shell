@@ -7,10 +7,10 @@
 #include "render/scene/node.h"
 #include "shell/bar/widget_action_dispatcher.h"
 #include "shell/bar/widget_gesture_defaults.h"
+#include "ui/builders.h"
 #include "ui/palette.h"
 
 #include <algorithm>
-#include <array>
 #include <format>
 
 namespace {
@@ -108,7 +108,7 @@ void Widget::setRoot(std::unique_ptr<Node> root) {
   m_innerBaseButtons = m_innerArea != nullptr ? m_innerArea->acceptedButtons() : 0;
   m_innerBaseScrollDirections = m_innerArea != nullptr ? m_innerArea->acceptedScrollDirections() : 0;
 
-  auto gestureArea = std::make_unique<InputArea>();
+  auto gestureArea = ui::inputArea({});
   m_gestureArea = gestureArea.get();
   // Nothing is bound until resolveGestureBindings() runs, and an area with no accepted buttons
   // never wins the dispatcher's ancestor walk.
@@ -180,6 +180,15 @@ void Widget::resolveGestureBindings(
     const noctalia::bar::WidgetActionDispatcher* dispatcher
 ) {
   m_actionDispatcher = dispatcher;
+  m_scrollRepeatMode = noctalia::bar::ScrollRepeatMode::Auto;
+  if (widgetConfig != nullptr) {
+    const std::string configuredMode = widgetConfig->getString("scroll_repeat", "auto");
+    if (const auto mode = noctalia::bar::parseScrollRepeatMode(configuredMode); mode.has_value()) {
+      m_scrollRepeatMode = *mode;
+    } else {
+      kLog.error("widget.{}.scroll_repeat: unknown mode \"{}\"", m_configName, configuredMode);
+    }
+  }
 
   const std::string widgetContext = std::format("widget.{}", m_configName);
   // Named, not inlined: the span in Inputs borrows from it.
@@ -271,18 +280,17 @@ void Widget::installGestureHandlers() {
       return m_gestureBindings.find(noctalia::bar::Gesture::ScrollUp) != nullptr
           || m_gestureBindings.find(noctalia::bar::Gesture::ScrollDown) != nullptr;
     }
-    if (!data.scrollStepStartsGesture() && bindingCycles(*gesture)) {
-      // A verb that steps along a list moves one position per flick, so the rest of the burst is
-      // swallowed rather than skipping several entries. Ramp verbs take every notch.
+    if (!data.scrollStepStartsGesture() && !bindingRepeatsEveryScrollStep(*gesture)) {
       return true;
     }
     return dispatchGesture(*gesture);
   });
 }
 
-bool Widget::bindingCycles(noctalia::bar::Gesture gesture) const {
+bool Widget::bindingRepeatsEveryScrollStep(noctalia::bar::Gesture gesture) const {
   const auto* action = m_gestureBindings.find(gesture);
-  return action != nullptr && m_actionDispatcher != nullptr && m_actionDispatcher->cycles(*action);
+  const bool actionCycles = action != nullptr && m_actionDispatcher != nullptr && m_actionDispatcher->cycles(*action);
+  return noctalia::bar::scrollRepeatsEveryStep(m_scrollRepeatMode, actionCycles);
 }
 
 bool Widget::dispatchGesture(noctalia::bar::Gesture gesture) {

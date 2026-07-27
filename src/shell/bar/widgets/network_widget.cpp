@@ -65,7 +65,7 @@ NetworkWidget::NetworkWidget(
       m_showVpnLabel(options.showVpnLabel), m_vpnStatusMode(options.vpnStatusMode) {}
 
 void NetworkWidget::create() {
-  auto area = std::make_unique<InputArea>();
+  auto area = ui::inputArea({});
   area->setTooltipProvider(
       [this]() -> TooltipContent {
         std::vector<TooltipRow> rows = buildTooltipRows();

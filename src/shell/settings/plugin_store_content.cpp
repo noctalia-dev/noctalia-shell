@@ -1,7 +1,6 @@
 #include "shell/settings/plugin_store_content.h"
 
 #include "config/config_service.h"
-#include "core/input/key_modifiers.h"
 #include "core/input/key_symbols.h"
 #include "core/input/keybind_matcher.h"
 #include "i18n/i18n.h"
@@ -18,8 +17,6 @@
 #include "ui/controls/markdown_view.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/segmented.h"
-#include "ui/controls/separator.h"
-#include "ui/controls/spinner.h"
 #include "ui/controls/virtual_grid_view.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -567,24 +564,26 @@ namespace settings {
     adapterPtr->setTextureCache(textureCache);
     m_adapter = std::move(adapter);
 
-    auto grid = std::make_unique<VirtualGridView>();
-    grid->setMinCellWidth(200.0f * scale);
-    grid->setCellHeight(215.0f * scale);
-    grid->setSquareCells(false);
-    grid->setColumnGap(Style::spaceSm * scale);
-    grid->setRowGap(Style::spaceSm * scale);
-    grid->setFillWidth(true);
+    auto grid = ui::virtualGridView({
+        .out = &m_grid,
+        .minCellWidth = 200.0f * scale,
+        .cellHeight = 215.0f * scale,
+        .squareCells = false,
+        .columnGap = Style::spaceSm * scale,
+        .rowGap = Style::spaceSm * scale,
+        .adapter = adapterPtr,
+        .flexGrow = 1.0f,
+        .onSelectionChanged =
+            [this](std::optional<std::size_t> index) {
+              m_selectedPluginId = index.has_value() && *index < m_filteredIndices.size()
+                  ? std::optional{m_catalog[m_filteredIndices[*index]].entry.id}
+                  : std::nullopt;
+            },
+        .configure = [](VirtualGridView& view) { view.setFillWidth(true); },
+    });
     // The sheet hosts the store without an outer ScrollView, so the grid's own scroll fills the
     // available height and scrolls the catalog. No minimum height: a floor would overflow the
     // sheet bottom (and clip nothing) when the dialog is shorter than the floor.
-    grid->setFlexGrow(1.0f);
-    grid->setAdapter(adapterPtr);
-    m_grid = grid.get();
-    m_grid->setOnSelectionChanged([this](std::optional<std::size_t> index) {
-      m_selectedPluginId = index.has_value() && *index < m_filteredIndices.size()
-          ? std::optional{m_catalog[m_filteredIndices[*index]].entry.id}
-          : std::nullopt;
-    });
     if (const auto index = indexOfPluginId(m_selectedPluginId.value_or("")); index.has_value()) {
       m_grid->setSelectedIndex(index);
     }

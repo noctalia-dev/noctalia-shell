@@ -516,9 +516,11 @@
         "show-keyboard-layout": "Layout do Teclado",
         "show-label": "Exibir Rótulo",
         "show-login-button": "Botão de Login",
+        "show-media": "Mídia",
         "show-password-hint": "Dica de Senha",
         "show-session-buttons": "Botões de Sessão",
         "show-vpn-label": "Mostra Rótulo VPN",
+        "show-weather": "Clima",
         "show-when-idle": "Mostrar Quando Ocioso",
         "stat": "Estatísticas",
         "stat-cpu-temp": "Temperatura da CPU",
@@ -678,7 +680,7 @@
     "caps-lock-on": "Caps Lock está ativo",
     "password-cleared": "Senha apagada",
     "password-placeholder": "Senha",
-    "ready": "Digite sua senha e aperte Enter.",
+    "ready": "Digite sua senha e pressione Enter.",
     "unlocked": "Desbloqueado",
     "waiting": "Aguardando confirmação de bloqueio…"
   },
@@ -952,7 +954,7 @@
         "group": {
           "action": "Grupo",
           "border": "Borda",
-          "border-description": "Função da cor do contorno da cápsula; deixe em Padrão para nenhum contorno.",
+          "border-description": "Cor do contorno da cápsula; deixe em Padrão para nenhum contorno.",
           "clear": "Apagar",
           "drawer-columns": "Número de ícones do tray por linha no painel do drawer.",
           "drawer-columns-description": "Número de widgets por linha no painel gaveta",
@@ -1476,8 +1478,13 @@
         "open-source": "Abrir repositório fonte de plugin",
         "results-count": "{count} plugins",
         "search-placeholder": "Pesquisar plugins...",
-        "source-all": "Todos",
-        "sources": "Fontes",
+        "sort-added-at-asc": "Ordenar por data (mais antigos primeiro)",
+        "sort-added-at-desc": "Ordenar por data (mais recentes primeiro)",
+        "sort-name-asc": "Ordenar por nome (A-Z)",
+        "sort-name-desc": "Ordenar por nome (Z-A)",
+        "sort-updated-at-asc": "Ordenar por data de atualização (mais antigos primeiro)",
+        "sort-updated-at-desc": "Ordenar por data de atualização (mais recentes primeiro)",
+        "source-all": "Todas fontes",
         "title": "Loja de Plugins"
       }
     },
@@ -1510,8 +1517,12 @@
           "label": "Paleta Integrada"
         },
         "button-borders": {
-          "description": "Desenhe contornos ao redor dos botões em toda a interface",
+          "description": "Desenhar contornos ao redor dos botões em toda a interface",
           "label": "Bordas nos Botões"
+        },
+        "card-borders": {
+          "description": "Desenhar contornos ao redor dos cards de seção dentro dos painéis e da janela de configurações",
+          "label": "Bordas nos Cards"
         },
         "community-palette": {
           "description": "Escolha uma paleta de cores do catálogo da comunidade",
@@ -1543,7 +1554,7 @@
           "description": "Direção em que a sombra é projetada nas superfícies"
         },
         "input-borders": {
-          "description": "Desenhar linhas em torno de campos de texto e outros campos pelo shell",
+          "description": "Desenhar contornos ao redor de campos de texto e outros campos pelo shell",
           "label": "Bordas nos Campos"
         },
         "language": {
@@ -1555,7 +1566,7 @@
           "label": "Fonte da Paleta"
         },
         "popup-borders": {
-          "description": "Desenhar linhas em torno de pop-ups e menus suspensos",
+          "description": "Desenhar contornos ao redor de pop-ups e menus suspensos",
           "label": "Bordas nos Pop-ups"
         },
         "popup-shadows": {
@@ -1608,7 +1619,7 @@
           "label": "Largura da Borda"
         },
         "capsule-border": {
-          "description": "Função de cor de contorno padrão da cápsula; cores hexadecimais fixas também são suportadas",
+          "description": "Cor de contorno padrão da cápsula; cores hexadecimais fixas também são suportadas",
           "label": "Borda da Cápsula"
         },
         "capsule-fill": {
@@ -2173,7 +2184,7 @@
       },
       "panels": {
         "borders": {
-          "description": "Desenhe um contorno nos painéis e nos cartões de seção dentro dos painéis",
+          "description": "Desenhe um contorno nos painéis flutuantes",
           "label": "Bordas"
         },
         "control-center-sidebar": {
@@ -2666,6 +2677,10 @@
           "description": "Comando a ser executado a partir de entradas da área de transferência de imagens; use {path} para o caminho do arquivo, {stdin} para marcar a posição da entrada padrão (stdin) ou omita {path} para redirecionar automaticamente a saída",
           "label": "Comando de Ação de Imagem",
           "placeholder": "gimp {path} ou satty -f -"
+        },
+        "clipboard-keep-from-closed-apps": {
+          "description": "Mantém o último item copiado para ser colado após o fechamento do aplicativo de onde foi copiado",
+          "label": "Manter Área de Tranferência de Aplicativos Fechados"
         },
         "clipboard-storage": {
           "button": "Tentar Novamente",
@@ -3182,7 +3197,7 @@
           "label": "Cápsula"
         },
         "capsule-border": {
-          "description": "Função de cor para o contorno da cápsula; cores hexadecimais fixas também são suportadas",
+          "description": "Cor para o contorno da cápsula; cores hexadecimais fixas também são suportadas",
           "label": "Borda da Cápsula"
         },
         "capsule-fill": {

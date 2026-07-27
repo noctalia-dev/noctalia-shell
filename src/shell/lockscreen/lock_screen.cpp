@@ -492,7 +492,7 @@ void LockScreen::handleLocked(void* data, ext_session_lock_v1* /*lock*/) {
   }
   self->m_lockPending = false;
   self->m_locked = true;
-  // Idle status is empty; the surface renders the (togglable) password hint itself.
+  // Idle status is empty; the surface renders the password hint itself.
   self->m_status.clear();
   self->m_statusIsError = false;
   for (auto& instance : self->m_instances) {

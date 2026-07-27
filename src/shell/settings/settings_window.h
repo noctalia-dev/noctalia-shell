@@ -64,6 +64,9 @@ public:
 
   void open(std::string context = "");
   void openToBarWidget(std::string barName, std::string widgetName);
+  // Opens the window on the plugins section with the plugin's settings editor.
+  // Returns false when the plugin is unknown, disabled, or exposes no settings.
+  [[nodiscard]] bool openToPlugin(std::string pluginId);
   void close();
   [[nodiscard]] bool isOpen() const noexcept { return m_surface != nullptr && m_surface->isRunning(); }
   [[nodiscard]] wl_surface* wlSurface() const noexcept {
@@ -142,7 +145,7 @@ private:
   requestContentRebuild(bool refreshRegistry = false, bool refreshFilterRow = false, bool rebuildEditorSheet = false);
   void markPluginListDirty();
   void refreshPluginListIfNeeded();
-  void maybeOpenPendingWidgetInspector();
+  void maybeOpenPendingEditor();
   void applyPendingContentScrollTarget(float margin);
   void scrollFocusedAreaIntoView(class InputArea* area);
   void scrollSidebarNodeIntoView(const Node* node);
@@ -169,6 +172,7 @@ private:
   void openPluginSourceCreateEditor(std::optional<PluginSourceConfig> existing = std::nullopt);
   void openPluginSettingsEditor(std::string pluginId);
   void openPluginStore();
+  void openCommunityTemplateStore();
   void openBarWidgetEditorSheet(
       std::string title, std::function<void(Flex&)> populate, std::function<void()> removeAction = nullptr
   );
@@ -262,10 +266,11 @@ private:
   Node* m_pendingContentScrollTarget = nullptr;
   std::string m_searchQuery;
   Timer m_searchDebounceTimer;
-  // Set by openToBarWidget (e.g. middle-click on a bar widget); consumed once the window holds
-  // keyboard focus so the sheet's grab popup gets a serial the compositor accepts.
+  // Set by openToBarWidget (e.g. middle-click on a bar widget) / openToPlugin; consumed once the
+  // window holds keyboard focus so the sheet's grab popup gets a serial the compositor accepts.
   std::string m_pendingOpenWidgetInspectorName;
-  int m_pendingOpenWidgetInspectorFrames = 0;
+  std::string m_pendingOpenPluginSettingsId;
+  int m_pendingEditorOpenFrames = 0;
   // When the editor sheet is opened programmatically (bar middle-click) there is no grab-valid serial,
   // so open it without an xdg_popup grab. Consumed by openBarWidgetEditorSheet.
   bool m_pendingEditorSheetNoGrab = false;

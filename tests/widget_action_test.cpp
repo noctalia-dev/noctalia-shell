@@ -56,6 +56,21 @@ namespace {
     assert(!gestureForScroll(WL_POINTER_AXIS_VERTICAL_SCROLL, 0.0f).has_value());
   }
 
+  void testScrollRepeatModes() {
+    assert(parseScrollRepeatMode("auto") == ScrollRepeatMode::Auto);
+    assert(parseScrollRepeatMode("gesture") == ScrollRepeatMode::Gesture);
+    assert(parseScrollRepeatMode("steps") == ScrollRepeatMode::Steps);
+    assert(!parseScrollRepeatMode("cycle").has_value());
+    assert(!parseScrollRepeatMode("").has_value());
+
+    assert(scrollRepeatsEveryStep(ScrollRepeatMode::Auto, false));
+    assert(!scrollRepeatsEveryStep(ScrollRepeatMode::Auto, true));
+    assert(!scrollRepeatsEveryStep(ScrollRepeatMode::Gesture, false));
+    assert(!scrollRepeatsEveryStep(ScrollRepeatMode::Gesture, true));
+    assert(scrollRepeatsEveryStep(ScrollRepeatMode::Steps, false));
+    assert(scrollRepeatsEveryStep(ScrollRepeatMode::Steps, true));
+  }
+
   void testActionGrammar() {
     const auto ipc = parseWidgetAction("media toggle");
     assert(ipc.has_value());
@@ -251,6 +266,7 @@ namespace {
 int main() {
   testGestureKeys();
   testButtonAndScrollMapping();
+  testScrollRepeatModes();
   testActionGrammar();
   testPanelVerbs();
   testLayeredResolution();

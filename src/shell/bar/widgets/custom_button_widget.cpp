@@ -19,7 +19,7 @@ CustomButtonWidget::CustomButtonWidget(Options options)
       m_customImage(widget_custom_image::fromConfig(options.customImage, options.customImageColorize)) {}
 
 void CustomButtonWidget::create() {
-  auto area = std::make_unique<InputArea>();
+  auto area = ui::inputArea({});
 
   if (!m_tooltip.empty()) {
     area->setTooltip(m_tooltip);

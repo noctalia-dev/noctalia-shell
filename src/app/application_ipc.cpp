@@ -121,7 +121,7 @@ void Application::initIpc() {
   m_dmenuIpc.setPanelManager(&m_panelManager);
   m_dmenuIpc.start();
 
-  m_ipcService.registerQueryHandler(
+  m_ipcService.registerHandler(
       "status",
       [this](const std::string&) -> std::string {
         const bool panelOpen = m_panelManager.isOpen();
@@ -137,7 +137,8 @@ void Application::initIpc() {
         json += "\n}\n";
         return json;
       },
-      "", "Print current state as JSON"
+      "", "Print current state as JSON",
+      IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
   );
 
   m_ipcService.registerHandler(
@@ -157,13 +158,15 @@ void Application::initIpc() {
         kLog.info("log level set to {}", logLevelName(*level));
         return "ok\n";
       },
-      "<debug|info|warn|error>", "Set the console log level"
+      "<debug|info|warn|error>", "Set the console log level",
+      IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
   );
 
-  m_ipcService.registerQueryHandler(
+  m_ipcService.registerHandler(
       "log-level-status",
       [](const std::string&) -> std::string { return std::string(logLevelName(currentLogLevel())) + "\n"; }, "",
-      "Print the current console log level"
+      "Print the current console log level",
+      IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
   );
 
   auto applyNotificationDnd = [this](bool enabled) {
@@ -213,10 +216,11 @@ void Application::initIpc() {
       "", "Toggle notification Do Not Disturb state"
   );
 
-  m_ipcService.registerQueryHandler(
+  m_ipcService.registerHandler(
       "notification-dnd-status",
       [this](const std::string&) -> std::string { return m_notificationManager.doNotDisturb() ? "on\n" : "off\n"; }, "",
-      "Print notification Do Not Disturb state"
+      "Print notification Do Not Disturb state",
+      IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
   );
 
   m_ipcService.registerHandler(
@@ -575,7 +579,7 @@ void Application::initIpc() {
       },
       "", "Clear all workspace alerts"
   );
-  m_ipcService.registerQueryHandler(
+  m_ipcService.registerHandler(
       "workspace-alert-status",
       [workspaceAlertStatus](const std::string& args) -> std::string {
         if (!noctalia::ipc::splitWords(args).empty()) {
@@ -583,7 +587,8 @@ void Application::initIpc() {
         }
         return workspaceAlertStatus();
       },
-      "", "Print workspace alerts"
+      "", "Print workspace alerts",
+      IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
   );
 
   registerSessionIpc(m_ipcService, m_sessionActionRunner, m_lockScreen, m_configService);
@@ -803,7 +808,8 @@ void Application::initIpc() {
         return "error: unknown plugins subcommand '" + cmd + "'\n";
       },
       "<list|enable|disable|update|source> ...",
-      "Manage plugins and sources (list/enable/disable/update, source list/add/remove)"
+      "Manage plugins and sources (list/enable/disable/update, source list/add/remove)",
+      IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
   );
   m_bar.registerIpc(m_ipcService);
   m_desktopWidgetsController.registerIpc(m_ipcService);

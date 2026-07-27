@@ -60,6 +60,31 @@ namespace noctalia::bar {
     return it->gesture;
   }
 
+  std::optional<ScrollRepeatMode> parseScrollRepeatMode(std::string_view value) noexcept {
+    if (value == "auto") {
+      return ScrollRepeatMode::Auto;
+    }
+    if (value == "gesture") {
+      return ScrollRepeatMode::Gesture;
+    }
+    if (value == "steps") {
+      return ScrollRepeatMode::Steps;
+    }
+    return std::nullopt;
+  }
+
+  bool scrollRepeatsEveryStep(ScrollRepeatMode mode, bool actionCycles) noexcept {
+    switch (mode) {
+    case ScrollRepeatMode::Auto:
+      return !actionCycles;
+    case ScrollRepeatMode::Gesture:
+      return false;
+    case ScrollRepeatMode::Steps:
+      return true;
+    }
+    return false;
+  }
+
   std::optional<Gesture> gestureForButton(std::uint32_t button) noexcept {
     switch (button) {
     case BTN_LEFT:

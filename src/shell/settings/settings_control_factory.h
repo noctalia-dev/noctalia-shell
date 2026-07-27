@@ -64,6 +64,8 @@ namespace settings {
         const std::string& value, const std::string& placeholder, std::vector<std::string> path, float width = 0.0f
     );
 
+    [[nodiscard]] std::unique_ptr<Node> makePathBrowse(const TextSetting& setting, std::vector<std::string> path);
+
     [[nodiscard]] std::unique_ptr<Input>
     makeOptionalNumber(const OptionalNumberSetting& setting, std::vector<std::string> path);
 

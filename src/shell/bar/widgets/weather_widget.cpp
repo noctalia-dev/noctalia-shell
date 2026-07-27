@@ -18,7 +18,7 @@ WeatherWidget::WeatherWidget(WeatherService* weather, wl_output* /*output*/, Opt
       m_showTemperature(options.showTemperature) {}
 
 void WeatherWidget::create() {
-  auto area = std::make_unique<InputArea>();
+  auto area = ui::inputArea({});
   m_area = area.get();
 
   area->addChild(

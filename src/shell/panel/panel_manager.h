@@ -62,10 +62,16 @@ public:
   // Optional: invoked from shell UI (e.g. control center) to spawn the standalone settings toplevel.
   void setOpenSettingsWindowCallback(std::function<void(std::string)> callback);
   void setOpenWidgetSettingsCallback(std::function<void(std::string barName, std::string widgetName)> callback);
+  // Returns false when the plugin is unknown, disabled, or exposes no settings.
+  void setOpenPluginSettingsCallback(std::function<bool(std::string pluginId)> callback);
   void setCloseSettingsWindowCallback(std::function<void()> callback);
   void setToggleSettingsWindowCallback(std::function<void(std::string)> callback);
   void setCloseDesktopWidgetsEditorCallback(std::function<void()> callback);
   void openSettingsWindow(std::string context = "");
+  // Closes any open panel, then opens the settings window at the plugin's settings.
+  // False when the settings window is unavailable, or the plugin is unknown, disabled, or
+  // exposes no settings.
+  [[nodiscard]] bool openPluginSettings(const std::string& pluginId);
   void closeSettingsWindow();
   void toggleSettingsWindow(std::string context = "");
   void setAttachedPanelGeometryCallback(
@@ -183,6 +189,7 @@ private:
   RenderContext* m_renderContext = nullptr;
   std::function<void(std::string)> m_openSettingsWindow;
   std::function<void(std::string, std::string)> m_openWidgetSettings;
+  std::function<bool(std::string)> m_openPluginSettings;
   std::function<void()> m_closeSettingsWindow;
   std::function<void(std::string)> m_toggleSettingsWindow;
   std::function<void()> m_closeDesktopWidgetsEditor;

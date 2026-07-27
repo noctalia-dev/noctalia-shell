@@ -516,8 +516,11 @@
         "show-keyboard-layout": "Layout tastiera",
         "show-label": "Mostra etichette",
         "show-login-button": "Pulsante di login",
+        "show-media": "Media",
         "show-password-hint": "Suggerimento password",
+        "show-session-buttons": "Pulsanti di sessione",
         "show-vpn-label": "Mostra etichetta VPN",
+        "show-weather": "Meteo",
         "show-when-idle": "Mostra quando inattivo",
         "stat": "Statistica",
         "stat-cpu-temp": "Temp CPU",
@@ -1023,6 +1026,7 @@
         "settings": {
           "empty": "Nessuna impostazione corrisponde ai filtri correnti.",
           "groups": {
+            "actions": "Azioni",
             "grouping": "Raggruppamento",
             "presentation": "Visualizzazione",
             "runtime": "Runtime",
@@ -1415,6 +1419,8 @@
         "delete-confirm-title": "Cancellare \"{name}\"?",
         "deprecated": "deprecato",
         "empty": "Nessun plugin abilitato.",
+        "held-back": "versione precedente",
+        "held-back-hint": "v{version} necessita plugin API {required}; questo Noctalia supporta fino a {current}. Aggiorna Noctalia per sfruttarlo.",
         "incompatible-plugin-api": "API plugin incompatibile",
         "loading": "Caricamento plugin...",
         "refreshing": "Aggiornamento plugin...",
@@ -1462,15 +1468,23 @@
         "categories": "Categorie",
         "category-all": "Tutti",
         "empty": "Nessun plugin trovato",
+        "held-back": "Versione precedente",
+        "held-back-hint": "Installa v{version} per plugin API {resolved}. Il più recente v{latest} necessita plugin API {latestRequired}; questo Noctalia supporta fino a {current}.",
         "incompatible": "Incompatibile",
+        "incompatible-hint": "Richiede plugin API {richiesto}; questo Noctalia supporta {oldest}–{current}.",
         "loading": "Caricamento catalogo...",
         "no-readme": "Nessuna descrizione disponibile.",
         "open-page": "Apri la pagina plugin su noctalia.dev",
         "open-source": "Apri il repository dei sorgenti dei plugin",
         "results-count": "{count} plugin",
         "search-placeholder": "Ricerca plugin...",
-        "source-all": "Tutti",
-        "sources": "Sorgenti",
+        "sort-added-at-asc": "Ordina per data di aggiunta (prima il più vecchio)",
+        "sort-added-at-desc": "Ordina per data di aggiunta (prima il più recente)",
+        "sort-name-asc": "Ordina per nome (A-Z)",
+        "sort-name-desc": "Ordina per nome (Z-A)",
+        "sort-updated-at-asc": "Ordina per data di aggiornamento (prima il più vecchio)",
+        "sort-updated-at-desc": "Ordina per data di aggiornamento (prima il più recente)",
+        "source-all": "Tutte le sorgenti",
         "title": "Plugin Store"
       }
     },
@@ -1505,6 +1519,10 @@
         "button-borders": {
           "description": "Disegna i contorni attorno ai pulsanti in tutta la shell",
           "label": "Bordi dei pulsanti"
+        },
+        "card-borders": {
+          "description": "Disegna i contorni attorno alle schede delle sezioni all'interno dei pannelli e nella finestra delle impostazioni",
+          "label": "Bordi della scheda"
         },
         "community-palette": {
           "description": "Scegli una palette dal catalogo community",
@@ -1661,6 +1679,9 @@
         },
         "corner-top-right": {
           "description": "Raggio angolo in alto a destra della barra"
+        },
+        "dead-zone-action": {
+          "description": "L'azione viene eseguita sulle parti della barra che nessun widget copre; lasciare vuoto per impostazione predefinita"
         },
         "edge-margin": {
           "description": "Spazio tra la barra e il bordo dello schermo su cui si trova; imposta a 0 px per posizinarlo a filo con quel bordo"
@@ -1885,6 +1906,10 @@
         "launcher-position": {
           "description": "Mostra un pulsante launcher all'inizio o alla fine della dock",
           "label": "Pulsante launcher"
+        },
+        "layer": {
+          "description": "Utilizza Overlay per mostrare il dock sopra le app a schermo intero",
+          "label": "Layer Wayland"
         },
         "magnification": {
           "description": "Ingrandisce le icone dock vicino al puntatore, in stile macOS",
@@ -2159,7 +2184,7 @@
       },
       "panels": {
         "borders": {
-          "description": "Disegna un contorno sui pannelli e sulle schede sezione dentro i pannelli",
+          "description": "Disegna un contorno sui pannelli mobili",
           "label": "Bordi"
         },
         "control-center-sidebar": {
@@ -2292,7 +2317,7 @@
           "label": "Lungo la barra"
         },
         "panel-anchor-bar": {
-          "description": "Quali pannelli della barra si collegano quando vengono aperti da un collegamento o dal dock. Lascia vuoto per seguire il widget che li ha aperti",
+          "description": "I pannelli della barra si attaccano quando vengono aperti. Lascia vuoto per seguire il widget, il collegamento o il dock che li ha aperti",
           "label": "Barra di ancoraggio"
         },
         "placement-clipboard": {
@@ -2420,6 +2445,10 @@
           "description-recovery": "Non è stato possibile accedere alla cache eventi del calendario o la stessa è danneggiata. Riprovare dopo aver ripristinato la chiave corretta o reimpostato l'archivio privato.",
           "description-unavailable": "Nessun provider di Secret Service è disponibile. Gli eventi del calendario rimangono disponibili solo per questa sessione.",
           "label": "Storage degli eventi del calendario"
+        },
+        "calendar-week-numbers": {
+          "description": "Mostra i numeri delle settimane ISO 8601 accanto alla griglia del calendario",
+          "label": "Numeri della settimana"
         },
         "custom-schedule": {
           "description": "Utilizza gli orari di alba/tramonto manuali invece di calcolare in base alle coordinate",
@@ -2648,6 +2677,10 @@
           "description": "Comando da eseguire dalle voci immagine negli appunti; usa {path} per il percorso file, {stdin} per segnare la posizione stdin, oppure ometti {path} per inviare automaticamente in pipe",
           "label": "Comando azione immagine",
           "placeholder": "gimp {path} o satty -f -"
+        },
+        "clipboard-keep-from-closed-apps": {
+          "description": "Mantieni disponibile l'ultimo elemento copiato per incollarlo dopo la chiusura dell'applicazione da cui lo hai copiato",
+          "label": "Mantieni gli appunti dalle app chiuse"
         },
         "clipboard-storage": {
           "button": "Riprova",
@@ -3025,6 +3058,24 @@
       "success": "L'archiviazione privata è stata reimpostata correttamente."
     },
     "widgets": {
+      "actions": {
+        "command-placeholder": "Comando della shell",
+        "default": "Default",
+        "disabled": "Disabilitato",
+        "run-command": "Esegui un comando...",
+        "unset": "Non impostato"
+      },
+      "gestures": {
+        "back": "Pulsante Indietro",
+        "forward": "Pulsante Avanti",
+        "left": "Click sinistro",
+        "middle": "Click centrale",
+        "right": "Click destro",
+        "scroll-down": "Scorri verso il basso",
+        "scroll-left": "Scorri verso sinistra",
+        "scroll-right": "Scorri verso destra",
+        "scroll-up": "Scorri verso l'alto"
+      },
       "instances": {
         "cpu": "CPU",
         "date": "Data",
@@ -3049,6 +3100,7 @@
         "auto": "Auto",
         "before": "Prima",
         "both": "Entrambi",
+        "compact": "Compatto",
         "count": "Conteggio",
         "cpu-temp": "Temperatura CPU",
         "cpu-usage": "Uso CPU",
@@ -3099,6 +3151,10 @@
         "workspace-label-inside": "Dentro pillola"
       },
       "settings": {
+        "actions": {
+          "description": "Cosa fa ogni gesto del mouse su questo widget. Scegli un comando, esegui un comando di shell o disabilitalo.",
+          "label": "Azioni gestuali"
+        },
         "active-color": {
           "description": "Colore utilizzato per gli indicatori di privacy attiva; sono supportati anche codici colore in formato esadecimale",
           "label": "Colore attivo"
@@ -3803,6 +3859,7 @@
       "sort-date-desc": "Ordina per data (prima i più recenti)",
       "sort-name-asc": "Ordina per nome (A-Z)",
       "sort-name-desc": "Ordina per nome (Z-A)",
+      "sort-random": "Ordina in modo casuale (shuffle)",
       "title": "Sfondo"
     }
   },
