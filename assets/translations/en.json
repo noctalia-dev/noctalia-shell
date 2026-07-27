@@ -516,9 +516,10 @@
         "show-keyboard-layout": "Keyboard Layout",
         "show-label": "Show Label",
         "show-login-button": "Login Button",
-        "show-password-hint": "Password Hint",
+        "show-media": "Media",
         "show-session-buttons": "Session Buttons",
         "show-vpn-label": "Show VPN Label",
+        "show-weather": "Weather",
         "show-when-idle": "Show When Idle",
         "stat": "Stat",
         "stat-cpu-temp": "CPU Temp",
@@ -1025,6 +1026,7 @@
           "empty": "No settings match the current filters.",
           "groups": {
             "actions": "Actions",
+            "behavior": "Behavior",
             "grouping": "Grouping",
             "presentation": "Presentation",
             "runtime": "Runtime",
@@ -1139,6 +1141,7 @@
         "general": "General",
         "greeter": "Greeter",
         "grouping": "Grouping",
+        "history": "History",
         "home": "Home",
         "hot-corners": "Hot Corners",
         "idle": "Idle",
@@ -1398,7 +1401,7 @@
       "browse-store": "Browse Plugins",
       "panels": {
         "open-near-click": {
-          "description": "Position the panel near the bar widget that opened it; openings without a bar trigger are centered",
+          "description": "Position the panel near the bar widget that opened it when attached or floating with position auto",
           "label": "Along Bar"
         },
         "placement": {
@@ -1517,6 +1520,10 @@
         "button-borders": {
           "description": "Draw outlines around buttons throughout the shell",
           "label": "Button Borders"
+        },
+        "card-borders": {
+          "description": "Draw outlines around section cards inside panels and the settings window",
+          "label": "Card Borders"
         },
         "community-palette": {
           "description": "Choose a palette from the community catalog",
@@ -2139,6 +2146,10 @@
           "description": "Per-sender rules for toasts, history, and sounds; first matching enabled filter wins",
           "label": "Notification Filters"
         },
+        "history-retention-hours": {
+          "description": "Automatically remove notification history entries older than this many hours (0 to keep forever)",
+          "label": "Keep history for"
+        },
         "layer": {
           "description": "Use Overlay to show notification toasts above fullscreen apps",
           "label": "Wayland Layer"
@@ -2178,7 +2189,7 @@
       },
       "panels": {
         "borders": {
-          "description": "Draw an outline on panels and section cards inside panels",
+          "description": "Draw an outline on floating panels",
           "label": "Borders"
         },
         "control-center-sidebar": {
@@ -2291,23 +2302,23 @@
           "label": "List Item Background"
         },
         "open-near-click-clipboard": {
-          "description": "Position the clipboard panel near the bar widget that opened it; openings without a bar trigger are centered",
+          "description": "Position the clipboard panel near the bar widget that opened it when attached or floating with position auto",
           "label": "Along Bar"
         },
         "open-near-click-control-center": {
-          "description": "Position Control Center near the bar widget that opened it; openings without a bar trigger are centered",
+          "description": "Position Control Center near the bar widget that opened it when attached or floating with position auto",
           "label": "Along Bar"
         },
         "open-near-click-launcher": {
-          "description": "Position the launcher near the bar widget that opened it; openings without a bar trigger are centered",
+          "description": "Position the launcher near the bar widget that opened it when attached or floating with position auto",
           "label": "Along Bar"
         },
         "open-near-click-session": {
-          "description": "Position the session panel near the bar widget that opened it; openings without a bar trigger are centered",
+          "description": "Position the session panel near the bar widget that opened it when attached or floating with position auto",
           "label": "Along Bar"
         },
         "open-near-click-wallpaper": {
-          "description": "Position the wallpaper picker near the bar widget that opened it; openings without a bar trigger are centered",
+          "description": "Position the wallpaper picker near the bar widget that opened it when attached or floating with position auto",
           "label": "Along Bar"
         },
         "panel-anchor-bar": {
@@ -2672,6 +2683,10 @@
           "label": "Image Action Command",
           "placeholder": "gimp {path} or satty -f -"
         },
+        "clipboard-keep-from-closed-apps": {
+          "description": "Keep the last copied item available to paste after the application you copied it from closes",
+          "label": "Keep Clipboard From Closed Apps"
+        },
         "clipboard-storage": {
           "button": "Retry",
           "description-cancelled": "The Secret Service prompt was cancelled. Clipboard history remains available for this session only.",
@@ -2920,7 +2935,7 @@
           "label": "Built-In Templates"
         },
         "community-ids": {
-          "description": "Toggle cached community templates to render on each theme change",
+          "description": "Browse and enable community templates applied on each theme change",
           "empty": "No community templates are available yet. Enable community templates and refresh the catalog first.",
           "label": "Community Templates"
         },
@@ -3047,6 +3062,24 @@
       "label": "Recover Private Storage",
       "success": "Private storage was reset successfully."
     },
+    "templates": {
+      "store": {
+        "browse": "Browse Templates",
+        "categories": "Categories",
+        "category-all": "All",
+        "empty": "No templates match your filters",
+        "enabled-count": "{count} enabled",
+        "filter-all": "All",
+        "filter-enabled": "Enabled",
+        "results-count": "{count} templates",
+        "search-placeholder": "Search templates…",
+        "sort-category-asc": "Sort by category (A-Z)",
+        "sort-category-desc": "Sort by category (Z-A)",
+        "sort-name-asc": "Sort by name (A-Z)",
+        "sort-name-desc": "Sort by name (Z-A)",
+        "title": "Community Templates"
+      }
+    },
     "widgets": {
       "actions": {
         "command-placeholder": "Shell command",
@@ -3130,6 +3163,8 @@
         "rate": "Rate",
         "regular": "Regular",
         "replace": "Replace",
+        "scroll-gesture": "Once per gesture",
+        "scroll-steps": "Every step",
         "shared": "Shared",
         "short": "Short",
         "swap-percent": "Swap Percent",
@@ -3242,7 +3277,7 @@
           "label": "Custom Labels"
         },
         "detached-panel": {
-          "description": "Open the drawer as a floating panel with its own background instead of merging with the bar",
+          "description": "Open the drawer as a floating panel instead of anchoring it to the bar edge",
           "label": "Detached Panel"
         },
         "device": {
@@ -3529,6 +3564,10 @@
         "script": {
           "description": "Path to the lua script",
           "label": "Script"
+        },
+        "scroll-repeat": {
+          "description": "Choose whether scroll actions follow command semantics, run once per gesture, or repeat for every scroll step",
+          "label": "Scroll Repeat"
         },
         "show-active-indicator": {
           "description": "Show a small dot below the active window icon in the taskbar",

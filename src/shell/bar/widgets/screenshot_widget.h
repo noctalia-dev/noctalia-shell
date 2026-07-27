@@ -29,8 +29,6 @@ public:
     std::string glyph = "screenshot";
     std::string customImage;
     bool customImageColorize = false;
-
-    bool operator==(const Options&) const = default;
   };
 
   ScreenshotWidget(

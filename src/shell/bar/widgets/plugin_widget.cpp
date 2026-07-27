@@ -150,7 +150,7 @@ std::filesystem::path PluginWidget::resolvePluginPath(std::string_view path) con
 }
 
 void PluginWidget::create() {
-  auto area = std::make_unique<InputArea>();
+  auto area = ui::inputArea({});
   area->setAcceptedButtons(InputArea::buttonMask({BTN_LEFT, BTN_RIGHT, BTN_MIDDLE}));
   area->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
   area->setOnClick([this](const InputArea::PointerData& data) {

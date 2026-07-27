@@ -718,6 +718,8 @@ struct NotificationConfig {
   int offsetY = 8;                 // absolute vertical margin from the screen edge
   std::vector<std::string> monitors;
   bool collapseOnDismiss = true;
+  int historyRetentionHours = 0;
+
   std::vector<NotificationFilterConfig> filters;
 
   bool operator==(const NotificationConfig&) const = default;
@@ -923,7 +925,7 @@ struct ShellConfig {
 
   struct PanelConfig {
     PanelTransparencyMode transparencyMode = PanelTransparencyMode::Solid;
-    bool borders = true;             // panel shell outline and in-panel section cards
+    bool borders = true;             // outline on floating panel surfaces
     bool shadow = true;              // cast the global [shell.shadow] from panel surfaces
     bool listItemBackground = false; // filled rounded background behind launcher/clipboard list items
     PanelPlacement launcherPlacement = PanelPlacement::Floating;
@@ -933,7 +935,7 @@ struct ShellConfig {
     PanelPlacement sessionPlacement = PanelPlacement::Attached;
     PanelPlacement polkitPlacement = PanelPlacement::Floating;
     // Floating screen position per panel (one of kPanelPositions). "auto" = bar-relative.
-    // Launcher/clipboard default to "center" (the historical centered placement).
+    // Launcher/clipboard default to "center" (the historical center-screen behavior).
     std::string launcherPosition = "center";
     std::string clipboardPosition = "center";
     std::string controlCenterPosition = "auto";
@@ -1016,6 +1018,7 @@ struct ShellConfig {
   bool inputBorders = true;
   bool popupBorders = true;
   bool popupShadows = true;
+  bool cardBorders = true;
   std::string fontFamily = "sans-serif";
   std::string lang; // empty = auto-detect from $LC_ALL/$LC_MESSAGES/$LANG
   std::string timeFormat = "{:%H:%M}";
@@ -1041,6 +1044,9 @@ struct ShellConfig {
   std::string launchAppsCustomCommand;
   /// When false, disables Wayland clipboard integration (history panel, data-control binding, Input paste/copy hooks).
   bool clipboardEnabled = true;
+  /// When true, the shell takes over the selection once the application that copied it exits, so the last copied item
+  /// stays pasteable. Independent of history retention: this keeps the live clipboard, not the stored history.
+  bool clipboardKeepFromClosedApps = true;
   /// Maximum unpinned clipboard history entries retained (pinned entries are exempt).
   int clipboardHistoryMaxEntries = static_cast<int>(noctalia::config::kClipboardHistoryDefaultEntries);
   /// When true, clearing clipboard history or deleting unpinned entries from the panel asks for confirmation first.

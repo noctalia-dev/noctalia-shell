@@ -234,7 +234,7 @@ void InputArea::dispatchCancel() {
 
 bool InputArea::dispatchAxis(
     float localX, float localY, std::uint32_t axis, std::uint32_t axisSource, double axisValue,
-    std::int32_t axisDiscrete, std::int32_t axisValue120, float axisLines
+    std::int32_t axisDiscrete, std::int32_t axisValue120, float axisLines, std::uint32_t axisGestureSerial
 ) {
   if (!m_onAxis) {
     return false;
@@ -273,6 +273,12 @@ bool InputArea::dispatchAxis(
   float axisSteps = 0.0f;
   bool startsGesture = false;
   if (axis < m_scrollStepAccum.size()) {
+    if (m_axisGestureSerial[axis] != axisGestureSerial) {
+      m_scrollStepAccum[axis] = 0.0f;
+      m_lastScrollStepSign[axis] = 0.0f;
+      m_lastScrollStepTime[axis] = {};
+      m_axisGestureSerial[axis] = axisGestureSerial;
+    }
     float& accum = m_scrollStepAccum[axis];
     const float detentDelta = axisLines != 0.0f ? axisLines : static_cast<float>(axisValue) / kScrollUnitsPerStep;
     if ((detentDelta > 0.0f && accum < 0.0f) || (detentDelta < 0.0f && accum > 0.0f)) {

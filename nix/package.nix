@@ -22,6 +22,7 @@
   pam,
   curl,
   libwebp,
+  libjxl,
   glib,
   polkit,
   librsvg,
@@ -124,6 +125,7 @@ stdenv.mkDerivation {
     pam
     curl
     libwebp
+    libjxl
     glib
     polkit
     librsvg

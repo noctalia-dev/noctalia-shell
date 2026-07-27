@@ -44,7 +44,7 @@ jobs:
             libxkbcommon glib2 \
             libsecret libsodium \
             sdbus-cpp libpipewire wireplumber polkit \
-            pam curl libwebp librsvg \
+            pam curl libwebp libjxl librsvg \
             libqalculate libxml2 \
             md4c tomlplusplus \
             nlohmann-json stb \

@@ -546,7 +546,7 @@ void ClipboardPanel::create() {
       .flexGrow = 1.0f,
   });
 
-  auto focusArea = std::make_unique<InputArea>();
+  auto focusArea = ui::inputArea({});
   focusArea->setFocusable(true);
   focusArea->setTabStop(false);
   focusArea->setVisible(false);
@@ -773,8 +773,8 @@ void ClipboardPanel::create() {
       .out = &m_previewScrollView,
       .scrollbarVisible = true,
       .flexGrow = 1.0f,
-      .configure = [scale, opacity = panelCardOpacity(), borders = panelBordersEnabled()](ScrollView& scrollView) {
-        scrollView.setCardStyle(scale, opacity, borders);
+      .configure = [scale, opacity = panelCardOpacity()](ScrollView& scrollView) {
+        scrollView.setCardStyle(scale, opacity);
       },
   });
   m_previewContent = previewScroll->content();
@@ -972,7 +972,7 @@ bool ClipboardPanel::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers,
 
 void ClipboardPanel::onPanelCardOpacityChanged(float opacity) {
   if (m_previewScrollView != nullptr) {
-    m_previewScrollView->setCardStyle(contentScale(), opacity, panelBordersEnabled());
+    m_previewScrollView->setCardStyle(contentScale(), opacity);
   }
   if (m_filterInput != nullptr) {
     m_filterInput->setSurfaceOpacity(opacity);

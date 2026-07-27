@@ -54,7 +54,7 @@
         "scroll-short": "S"
       },
       "media": {
-        "nothing-playing": "无播放内容",
+        "nothing-playing": "暂无播放内容",
         "playing": "正在播放"
       },
       "network": {
@@ -231,7 +231,7 @@
       "media": {
         "idle": "空闲",
         "no-active-player": "无活动播放器",
-        "nothing-playing": "无播放内容",
+        "nothing-playing": "暂无播放内容",
         "paused": "已暂停",
         "playback-unavailable": "无法播放",
         "playing": "正在播放",
@@ -250,7 +250,7 @@
     },
     "media": {
       "active-player": "活动播放器",
-      "nothing-playing": "无播放内容",
+      "nothing-playing": "暂无播放内容",
       "now-playing": "正在播放",
       "start-playback": "在 MPRIS 应用中开始播放"
     },
@@ -516,8 +516,11 @@
         "show-keyboard-layout": "键盘布局",
         "show-label": "显示标签",
         "show-login-button": "登录按钮",
+        "show-media": "媒体",
         "show-password-hint": "密码提示",
+        "show-session-buttons": "会话按钮",
         "show-vpn-label": "显示 VPN 标签",
+        "show-weather": "天气",
         "show-when-idle": "空闲时显示",
         "stat": "统计项",
         "stat-cpu-temp": "CPU 温度",
@@ -570,7 +573,7 @@
       }
     },
     "media": {
-      "nothing-playing": "无播放内容"
+      "nothing-playing": "暂无播放内容"
     },
     "volume": {
       "mic": "麦克风",
@@ -792,7 +795,7 @@
     },
     "enable-failed": {
       "body-error": "{plugin}：{error}",
-      "body-incompatible": "{plugin} 要求插件 API 版本为 {version}；当前 Noctalia 支持的 API 版本为 {oldest}–{current}。",
+      "body-incompatible": "{plugin} 面向插件 API  {version}；当前 Noctalia 仅支持 API  {oldest}–{current}。",
       "body-timeout": "{plugin} 安装耗时过长。",
       "title": "插件启用失败"
     }
@@ -1023,6 +1026,7 @@
         "settings": {
           "empty": "没有符合当前筛选条件的设置。",
           "groups": {
+            "actions": "操作",
             "grouping": "组合",
             "presentation": "外观",
             "runtime": "运行时",
@@ -1415,6 +1419,8 @@
         "delete-confirm-title": "删除“{name}”？",
         "deprecated": "已弃用",
         "empty": "未启用任何插件。",
+        "held-back": "较旧版本",
+        "held-back-hint": "v{version} 需要插件 API {required}；当前 Noctalia 最高仅支持 API {current}。请升级 Noctalia 以获取该版本。",
         "incompatible-plugin-api": "插件 API 不兼容",
         "loading": "正在加载插件…",
         "refreshing": "正在刷新插件…",
@@ -1462,15 +1468,23 @@
         "categories": "类别",
         "category-all": "全部",
         "empty": "未找到插件",
+        "held-back": "较旧版本",
+        "held-back-hint": "当前兼容版本为 v{version}（插件 API {resolved}）。最新版本 v{latest} 需要插件 API {latestRequired}；当前 Noctalia 最高仅支持 API {current}。",
         "incompatible": "不兼容",
+        "incompatible-hint": "需要插件 API {required}；当前 Noctalia 仅支持 API {oldest}–{current}。",
         "loading": "正在加载目录…",
         "no-readme": "没有可用的描述。",
         "open-page": "在 noctalia.dev 上打开插件页面",
         "open-source": "打开插件源码仓库",
         "results-count": "共 {count} 个插件",
         "search-placeholder": "搜索插件…",
+        "sort-added-at-asc": "按添加日期排序（最旧优先）",
+        "sort-added-at-desc": "按添加日期排序（最新优先）",
+        "sort-name-asc": "按名称排序（A-Z）",
+        "sort-name-desc": "按名称排序（Z-A）",
+        "sort-updated-at-asc": "按更新日期排序（最旧优先）",
+        "sort-updated-at-desc": "按更新日期排序（最新优先）",
         "source-all": "全部",
-        "sources": "源",
         "title": "插件商店"
       }
     },
@@ -1505,6 +1519,10 @@
         "button-borders": {
           "description": "为 Shell 的所有按钮绘制轮廓",
           "label": "按钮边框"
+        },
+        "card-borders": {
+          "description": "为面板和设置窗口中的分区卡片绘制轮廓",
+          "label": "卡片边框"
         },
         "community-palette": {
           "description": "从社区目录中选择配色方案",
@@ -1661,6 +1679,9 @@
         },
         "corner-top-right": {
           "description": "状态栏右上角的圆角半径"
+        },
+        "dead-zone-action": {
+          "description": "在状态栏未被小组件覆盖的区域触发的操作；留空时使用默认行为"
         },
         "edge-margin": {
           "description": "状态栏与其所在屏幕边缘的间距；设为 0 时紧贴屏幕边缘"
@@ -2163,7 +2184,7 @@
       },
       "panels": {
         "borders": {
-          "description": "为面板及其中的分区卡片绘制轮廓",
+          "description": "为悬浮面板绘制轮廓",
           "label": "边框"
         },
         "control-center-sidebar": {
@@ -2296,7 +2317,7 @@
           "label": "沿状态栏打开"
         },
         "panel-anchor-bar": {
-          "description": "指定通过快捷键或 Dock 打开面板时依附的状态栏。留空时跟随打开面板的小组件",
+          "description": "面板打开时依附的状态栏；留空时跟随打开面板的小组件、快捷键或 Dock",
           "label": "锚定状态栏"
         },
         "placement-clipboard": {
@@ -2424,6 +2445,10 @@
           "description-recovery": "日历事件缓存验证失败或已损坏。请恢复正确的密钥后重试，或重置私密存储。",
           "description-unavailable": "没有可用的 Secret Service 提供程序。日历事件仅在本次会话中可用。",
           "label": "日历事件存储"
+        },
+        "calendar-week-numbers": {
+          "description": "在日历网格旁显示 ISO 8601 周数",
+          "label": "周数"
         },
         "custom-schedule": {
           "description": "使用自定义的日出/日落时间，而不是根据位置坐标计算",
@@ -2652,6 +2677,10 @@
           "description": "用于处理剪贴板图片条目的命令。使用 {path} 表示文件路径，{stdin} 标记 stdin 位置；若省略 {path}，图片数据将自动通过管道传递给命令",
           "label": "图片操作命令",
           "placeholder": "gimp {path} 或 satty -f -"
+        },
+        "clipboard-keep-from-closed-apps": {
+          "description": "从应用复制内容后，即使该应用关闭，仍可粘贴最后复制的内容",
+          "label": "应用关闭后保留剪贴板"
         },
         "clipboard-storage": {
           "button": "重试",
@@ -3029,6 +3058,24 @@
       "success": "私密存储重置成功。"
     },
     "widgets": {
+      "actions": {
+        "command-placeholder": "Shell 命令",
+        "default": "默认",
+        "disabled": "禁用",
+        "run-command": "运行命令…",
+        "unset": "未设置"
+      },
+      "gestures": {
+        "back": "后退键",
+        "forward": "前进键",
+        "left": "左键点击",
+        "middle": "中键点击",
+        "right": "右键点击",
+        "scroll-down": "向下滚动",
+        "scroll-left": "向左滚动",
+        "scroll-right": "向右滚动",
+        "scroll-up": "向上滚动"
+      },
       "instances": {
         "cpu": "CPU",
         "date": "日期",
@@ -3053,6 +3100,7 @@
         "auto": "自动",
         "before": "前置",
         "both": "同时显示",
+        "compact": "紧凑",
         "count": "数量",
         "cpu-temp": "CPU 温度",
         "cpu-usage": "CPU 使用率",
@@ -3103,6 +3151,10 @@
         "workspace-label-inside": "胶囊内部"
       },
       "settings": {
+        "actions": {
+          "description": "小组件上各项鼠标操作的功能。可选择预设命令、运行 Shell 命令或将其禁用。",
+          "label": "鼠标操作"
+        },
         "active-color": {
           "description": "隐私指示器活动时的颜色；支持固定的十六进制颜色值",
           "label": "活动颜色"
@@ -3319,7 +3371,7 @@
         },
         "hide-when-no-media": {
           "description": "没有可用的 MPRIS 播放器时隐藏媒体小组件",
-          "label": "无播放内容时隐藏"
+          "label": "无媒体时隐藏"
         },
         "hide-when-no-unread": {
           "description": "没有未读通知时隐藏通知小组件",

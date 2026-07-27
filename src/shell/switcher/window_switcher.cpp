@@ -1065,10 +1065,10 @@ void WindowSwitcher::buildScene(Instance& instance, std::uint32_t width, std::ui
   const auto h = static_cast<float>(height);
   const float scale = instance.uiLayoutScale;
 
-  instance.sceneRoot = std::make_unique<Node>();
+  instance.sceneRoot = ui::node({});
   instance.sceneRoot->setSize(w, h);
 
-  auto input = std::make_unique<InputArea>();
+  auto input = ui::inputArea({});
   input->setFrameSize(w, h);
   input->setFocusable(true);
   input->setAcceptedButtons(InputArea::buttonMask(BTN_LEFT));

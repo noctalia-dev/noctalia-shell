@@ -49,7 +49,7 @@ BluetoothWidget::BluetoothWidget(BluetoothService* bluetooth, wl_output* /*outpu
       m_hideWhenNoConnectedDevice(options.hideWhenNoConnectedDevice) {}
 
 void BluetoothWidget::create() {
-  auto area = std::make_unique<InputArea>();
+  auto area = ui::inputArea({});
 
   area->addChild(
       ui::glyph({

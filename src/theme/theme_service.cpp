@@ -666,14 +666,15 @@ namespace noctalia::theme {
         },
         "", "Toggle theme mode between dark and light"
     );
-    ipc.registerQueryHandler(
+    ipc.registerHandler(
         "theme-mode-get",
         [this](const std::string&) -> std::string {
           std::string out(resolvedMode());
           out.push_back('\n');
           return out;
         },
-        "", "Print the current resolved theme mode"
+        "", "Print the current resolved theme mode",
+        IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
     );
     ipc.registerHandler(
         "theme-mode-set",
@@ -688,10 +689,11 @@ namespace noctalia::theme {
         },
         "<dark|light|auto>", "Set theme mode and persist to settings.toml"
     );
-    ipc.registerQueryHandler(
+    ipc.registerHandler(
         "color-scheme-get",
         [this](const std::string&) -> std::string { return formatColorSchemeLine(m_config.config().theme); }, "",
-        "Print active color scheme: <source> <name> (source is builtin, wallpaper, community, or custom)"
+        "Print active color scheme: <source> <name> (source is builtin, wallpaper, community, or custom)",
+        IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
     );
     ipc.registerHandler(
         "color-scheme-set",

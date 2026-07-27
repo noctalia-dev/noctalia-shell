@@ -299,7 +299,7 @@ KeyboardLayoutWidget::KeyboardLayoutWidget(
       m_glyphName(std::move(glyph)), m_customImage(std::move(customImage)) {}
 
 void KeyboardLayoutWidget::create() {
-  auto area = std::make_unique<InputArea>();
+  auto area = ui::inputArea({});
 
   if (m_customImage.enabled()) {
     area->addChild(ui::image({.out = &m_image, .fit = ImageFit::Contain}));
@@ -476,8 +476,8 @@ void KeyboardLayoutWidget::sync(Renderer& renderer) {
     m_refreshTimer.stop();
   }
   std::string layoutLabel = resolveLayoutLabel(layoutName, m_displayMode, m_customLabels);
-  if (m_isVertical && layoutLabel.size() > 3) {
-    layoutLabel = layoutLabel.substr(0, 3);
+  if (m_isVertical) {
+    layoutLabel = StringUtils::truncateUtf8CodePoints(layoutLabel, 3);
   }
 
   if (layoutName == m_lastLayoutName && layoutLabel == m_lastLabel && m_isVertical == m_lastVertical) {

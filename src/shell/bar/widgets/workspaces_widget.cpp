@@ -112,7 +112,7 @@ bool WorkspacesWidget::isWorkspaceHidden(const Workspace& workspace) const noexc
 }
 
 void WorkspacesWidget::create() {
-  auto container = std::make_unique<InputArea>();
+  auto container = ui::inputArea({});
   m_container = container.get();
   setRoot(std::move(container));
 
@@ -512,7 +512,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     const auto& ws = entry.workspace;
     const auto& slot = slots[i];
 
-    auto area = std::make_unique<InputArea>();
+    auto area = ui::inputArea({});
     area->setClipChildren(true);
     const float w = entry.exiting && entry.snapshot != nullptr ? entry.snapshot->width
         : ws.active                                            ? slot.activeWidth

@@ -7,6 +7,7 @@
 #include "render/scene/node.h"
 #include "scripting/plugin_runtime_context.h"
 #include "shell/panel/panel_manager.h"
+#include "ui/builders.h"
 #include "ui/controls/flex.h"
 
 #include <algorithm>
@@ -137,23 +138,26 @@ void PluginPanel::create() {
   m_reconciler.reset();
   m_reconciler.setDragDropOverlayRoot(nullptr);
 
-  auto flex = std::make_unique<Flex>();
-  flex->setDirection(FlexDirection::Vertical);
-  flex->setAlign(FlexAlign::Stretch);
-  m_flex = flex.get();
-
-  auto content = std::make_unique<Flex>();
-  content->setDirection(FlexDirection::Vertical);
-  content->setAlign(FlexAlign::Stretch);
-  content->setFlexGrow(1.0f);
-  m_contentFlex = static_cast<Flex*>(flex->addChild(std::move(content)));
-
-  auto overlay = std::make_unique<Node>();
-  overlay->setParticipatesInLayout(false);
-  overlay->setHitTestVisible(false);
-  overlay->setZIndex(std::numeric_limits<std::int32_t>::max());
-  m_dragOverlay = flex->addChild(std::move(overlay));
-  flex->setAnimationManager(m_animations);
+  auto flex = ui::column(
+      {
+          .out = &m_flex,
+          .align = FlexAlign::Stretch,
+          .configure = [this](Flex& root) { root.setAnimationManager(m_animations); },
+      },
+      ui::column({
+          .out = &m_contentFlex,
+          .align = FlexAlign::Stretch,
+          .flexGrow = 1.0f,
+      }),
+      ui::node({
+          .out = &m_dragOverlay,
+          .participatesInLayout = false,
+          .configure = [](Node& overlay) {
+            overlay.setHitTestVisible(false);
+            overlay.setZIndex(std::numeric_limits<std::int32_t>::max());
+          },
+      })
+  );
 
   setRoot(std::move(flex));
   m_treeDirty = true;

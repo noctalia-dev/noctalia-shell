@@ -223,7 +223,7 @@ SysmonWidget::~SysmonWidget() {
 }
 
 void SysmonWidget::create() {
-  auto container = std::make_unique<InputArea>();
+  auto container = ui::inputArea({});
   std::unique_ptr<Node> glyphNode;
   if (m_customImage.enabled()) {
     glyphNode = ui::image({.out = &m_image, .fit = ImageFit::Contain});

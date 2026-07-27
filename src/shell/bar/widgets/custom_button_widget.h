@@ -18,8 +18,6 @@ public:
     bool customImageColorize = false;
     std::string label;
     std::string tooltip;
-
-    bool operator==(const Options&) const = default;
   };
 
   explicit CustomButtonWidget(Options options);

@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <linux/input-event-codes.h>
 #include <memory>
+#include <print>
 #include <thread>
 #include <wayland-client-protocol.h>
 
@@ -12,7 +13,7 @@ namespace {
 
   bool expect(bool condition, const char* message) {
     if (!condition) {
-      std::fprintf(stderr, "input_area_test: %s\n", message);
+      std::println(stderr, "input_area_test: {}", message);
       return false;
     }
     return true;
@@ -20,10 +21,11 @@ namespace {
 
   // One vertical axis frame from a wheel the compositor counted notches for; `lines` is the
   // detent count it reported, which a scroll-factor can inflate past 1.
-  void wheelFrame(InputArea& area, float lines) {
+  void wheelFrame(InputArea& area, float lines, std::uint32_t gestureSerial = 0) {
     const auto value120 = static_cast<std::int32_t>(lines * 120.0f);
     static_cast<void>(area.dispatchAxis(
-        1.0f, 1.0f, WL_POINTER_AXIS_VERTICAL_SCROLL, WL_POINTER_AXIS_SOURCE_WHEEL, lines * 15.0f, 0, value120, lines
+        1.0f, 1.0f, WL_POINTER_AXIS_VERTICAL_SCROLL, WL_POINTER_AXIS_SOURCE_WHEEL, lines * 15.0f, 0, value120, lines,
+        gestureSerial
     ));
   }
 
@@ -260,6 +262,27 @@ int main() {
     std::this_thread::sleep_for(std::chrono::milliseconds(120));
     wheelFrame(area, -1.0f);
     ok = expect(steps == -1.0f, "a quiet stream starts the next gesture") && ok;
+  }
+
+  {
+    // axis_stop advances the stream serial, so another same-direction gesture starts immediately
+    // without waiting for the silence timeout.
+    InputArea area;
+    area.setSize(20.0f, 20.0f);
+    int gestureStarts = 0;
+    area.setOnAxisHandler([&gestureStarts](const InputArea::PointerData& data) {
+      if (data.scrollStepStartsGesture()) {
+        ++gestureStarts;
+      }
+      return true;
+    });
+
+    wheelFrame(area, 1.0f, 7);
+    wheelFrame(area, 1.0f, 7);
+    ok = expect(gestureStarts == 1, "one axis stream starts one gesture") && ok;
+
+    wheelFrame(area, 1.0f, 8);
+    ok = expect(gestureStarts == 2, "axis stop serial starts the next gesture immediately") && ok;
   }
 
   return ok ? 0 : 1;

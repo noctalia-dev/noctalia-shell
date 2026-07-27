@@ -11,8 +11,6 @@ class BrightnessWidget : public Widget {
 public:
   struct Options {
     bool showLabel = true;
-
-    bool operator==(const Options&) const = default;
   };
 
   BrightnessWidget(BrightnessService* brightness, wl_output* output, Options options);

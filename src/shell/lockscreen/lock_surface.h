@@ -153,7 +153,7 @@ private:
   Label* m_weatherTemp = nullptr;
   Label* m_weatherMeta = nullptr;
   Flex* m_forecastRow = nullptr;
-  std::array<ForecastColumn, 3> m_forecastColumns{};
+  std::array<ForecastColumn, 5> m_forecastColumns{};
   Flex* m_statusPanel = nullptr;
   Label* m_statusLabel = nullptr;
   Flex* m_loginContentRow = nullptr;

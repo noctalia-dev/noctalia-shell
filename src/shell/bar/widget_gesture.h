@@ -24,6 +24,12 @@ namespace noctalia::bar {
     ScrollRight,
   };
 
+  enum class ScrollRepeatMode : std::uint8_t {
+    Auto,
+    Gesture,
+    Steps,
+  };
+
   inline constexpr std::size_t kGestureCount = 9;
 
   class GestureMask {
@@ -53,6 +59,8 @@ namespace noctalia::bar {
   [[nodiscard]] std::string_view gestureConfigKey(Gesture gesture) noexcept;
   [[nodiscard]] std::string_view gestureLabelKey(Gesture gesture) noexcept;
   [[nodiscard]] std::optional<Gesture> parseGestureKey(std::string_view key) noexcept;
+  [[nodiscard]] std::optional<ScrollRepeatMode> parseScrollRepeatMode(std::string_view value) noexcept;
+  [[nodiscard]] bool scrollRepeatsEveryStep(ScrollRepeatMode mode, bool actionCycles) noexcept;
 
   // Thumb buttons: mice report them as either BTN_SIDE/BTN_EXTRA or BTN_BACK/BTN_FORWARD, so both
   // pairs resolve to Back/Forward. Returns nullopt for buttons with no gesture.

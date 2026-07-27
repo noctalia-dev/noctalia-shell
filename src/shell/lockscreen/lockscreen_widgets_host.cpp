@@ -9,6 +9,7 @@
 #include "shell/lockscreen/lock_surface.h"
 #include "shell/lockscreen/lockscreen_login_box.h"
 #include "time/time_format.h"
+#include "ui/builders.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
@@ -271,7 +272,7 @@ void LockscreenWidgetsHost::attachToSurface(WidgetInstance& instance) {
     return;
   }
 
-  auto transformNode = std::make_unique<Node>();
+  auto transformNode = ui::node({});
   transformNode->setAnimationManager(&instance.animations);
   instance.transformNode = layer->addChild(std::move(transformNode));
   instance.transformNode->addChild(instance.widget->releaseRoot());
@@ -400,5 +401,18 @@ void LockscreenWidgetsHost::prepareFrame(LockSurface& surface, bool needsUpdate,
     desktop_widgets::widgetNodeScale(instance->state, flipScaleX, flipScaleY);
     instance->transformNode->setScale(flipScaleX, flipScaleY);
   }
+
+  // Mirror the desktop host: widgets like sysmon drive updates from frame ticks.
+  const bool needsFrameTick = std::ranges::any_of(m_instances, [&surface](const auto& instance) {
+    return instance != nullptr
+        && instance->surface == &surface
+        && instance->widget != nullptr
+        && instance->widget->needsFrameTick();
+  });
+  if (needsFrameTick) {
+    surface.requestFrameTick();
+  }
+
+  // Reset the render context after all widget updates (livepaper EGL path).
   m_renderContext->makeCurrentNoSurface();
 }

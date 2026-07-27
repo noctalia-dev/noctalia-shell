@@ -3,6 +3,7 @@
 #include "config/config_types.h"
 #include "config/schema/config_schema.h"
 #include "config/schema/ranges.h"
+#include "core/files/directory_scanner.h"
 #include "core/log.h"
 #include "core/process/process.h"
 #include "i18n/i18n.h"
@@ -587,6 +588,11 @@ namespace settings {
         ToggleSetting{cfg.shell.popupBorders}, "popup menu dropdown outline border flat minimal"
     ));
     entries.push_back(makeEntry(
+        SettingsSection::Appearance, "borders", tr("settings.schema.appearance.card-borders.label"),
+        tr("settings.schema.appearance.card-borders.description"), {"shell", "card_borders"},
+        ToggleSetting{cfg.shell.cardBorders}, "card section outline border flat minimal"
+    ));
+    entries.push_back(makeEntry(
         SettingsSection::Appearance, "effects", tr("settings.schema.shared.shadow-direction.label"),
         tr("settings.schema.appearance.global-shadow-direction.description"), {"shell", "shadow", "direction"},
         enumSelect(kShadowDirections, cfg.shell.shadow.direction), "shadow direction"
@@ -840,15 +846,17 @@ namespace settings {
         ToggleSetting{cfg.theme.templates.enableCommunityTemplates}, "theme templates community"
     ));
     {
+      const std::size_t enabledCount = cfg.theme.templates.communityIds.size();
       auto e = makeEntry(
           SettingsSection::Templates, "community", tr("settings.schema.templates.community-ids.label"),
-          tr("settings.schema.templates.community-ids.description"), {"theme", "templates", "community_ids"},
-          TemplateGridSetting{
-              .options = env.communityTemplates,
-              .selectedValues = cfg.theme.templates.communityIds,
-              .emptyText = tr("settings.schema.templates.community-ids.empty"),
+          enabledCount == 0 ? tr("settings.schema.templates.community-ids.description")
+                            : tr("settings.templates.store.enabled-count", "count", std::to_string(enabledCount)),
+          {},
+          ButtonSetting{
+              .label = tr("settings.templates.store.browse"),
+              .glyph = "apps",
           },
-          "theme templates community apps discord fuzzel vscode walker"
+          "theme templates community apps discord fuzzel vscode walker store browse"
       );
       e.visibleWhen = communityTemplatesOn;
       entries.push_back(std::move(e));
@@ -935,7 +943,7 @@ namespace settings {
               .value = cfg.dock.launcherCustomImage,
               .placeholder = tr("settings.schema.dock.launcher-custom-image.placeholder"),
               .browseMode = TextSettingBrowseMode::OpenFile,
-              .browseFileExtensions = {".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp", ".gif"},
+              .browseFileExtensions = DirectoryScanner::imageExtensionFilter(true),
               .browseFallbackDirectory = "/usr/share/icons",
           },
           "launcher apps image picture logo"
@@ -1101,7 +1109,7 @@ namespace settings {
     entries.push_back(makeEntry(
         SettingsSection::Panels, "effects", tr("settings.schema.panels.borders.label"),
         tr("settings.schema.panels.borders.description"), {"shell", "panel", "borders"},
-        ToggleSetting{cfg.shell.panel.borders}, "outline border card"
+        ToggleSetting{cfg.shell.panel.borders}, "outline border shell edge"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Panels, "effects", tr("settings.schema.shared.shadow.label"),
@@ -1586,7 +1594,7 @@ namespace settings {
               .value = cfg.lockscreen.wallpaper,
               .placeholder = tr("settings.schema.lockscreen.wallpaper.placeholder"),
               .browseMode = TextSettingBrowseMode::OpenFile,
-              .browseFileExtensions = {".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp", ".gif"},
+              .browseFileExtensions = DirectoryScanner::imageExtensionFilter(true),
               .browseFallbackDirectory = wallpaper::resolveGlobalWallpaperDirectory(
                   cfg.wallpaper, wallpaper::effectiveThemeMode(cfg.theme.mode, cfg.theme.mode == ThemeMode::Light)
               ),
@@ -1673,7 +1681,7 @@ namespace settings {
             .value = env.shellAvatarPath,
             .placeholder = tr("settings.schema.shell.avatar-path.placeholder"),
             .browseMode = TextSettingBrowseMode::OpenFile,
-            .browseFileExtensions = {".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp", ".gif"}
+            .browseFileExtensions = DirectoryScanner::imageExtensionFilter(true)
         },
         "image picture"
     ));
@@ -1722,6 +1730,15 @@ namespace settings {
         SettingsSection::Shell, "clipboard", tr("settings.schema.shell.clipboard-enabled.label"),
         tr("settings.schema.shell.clipboard-enabled.description"), {"shell", "clipboard_enabled"},
         ToggleSetting{cfg.shell.clipboardEnabled}, "clipboard history paste copy"
+    ));
+    // Deliberately not gated on clipboardOn: this keeps the live selection
+    // alive, which is part of the transport that stays active when history
+    // retention is turned off.
+    entries.push_back(makeEntry(
+        SettingsSection::Shell, "clipboard", tr("settings.schema.shell.clipboard-keep-from-closed-apps.label"),
+        tr("settings.schema.shell.clipboard-keep-from-closed-apps.description"),
+        {"shell", "clipboard_keep_from_closed_apps"}, ToggleSetting{cfg.shell.clipboardKeepFromClosedApps},
+        "clipboard paste close quit exit persist"
     ));
     {
       auto e = makeEntry(
@@ -2840,6 +2857,19 @@ namespace settings {
         "monitor output display screen"
     ));
     entries.push_back(makeEntry(
+        SettingsSection::Notifications, "history", tr("settings.schema.notifications.history-retention-hours.label"),
+        tr("settings.schema.notifications.history-retention-hours.description"),
+        {"notification", "history_retention_hours"},
+        StepperSetting{
+            .value = cfg.notification.historyRetentionHours,
+            .minValue = 0,
+            .maxValue = 8760,
+            .step = 1,
+            .valueSuffix = "h",
+        },
+        "history retention hours clear"
+    ));
+    entries.push_back(makeEntry(
         SettingsSection::Notifications, "filtering", tr("settings.schema.notifications.filters.label"),
         tr("settings.schema.notifications.filters.description"), {"notification", "filter"},
         NotificationFiltersSetting{.items = cfg.notification.filters},
@@ -3457,15 +3487,20 @@ namespace settings {
           gesturePath.emplace_back(key);
 
           const auto& overrideActions = ovr.deadZone.actions;
-          const auto overridden = overrideActions.has_value() ? overrideActions->find(key) : overrideActions->end();
+          std::string configured;
+          if (overrideActions.has_value()) {
+            const auto overridden = overrideActions->find(key);
+            if (overridden != overrideActions->end()) {
+              configured = overridden->second;
+            }
+          }
           const auto inherited = bar.deadZone.actions.find(key);
           entries.push_back(makeEntry(
               section, "dead-zone", tr(std::string(noctalia::bar::gestureLabelKey(gesture))),
               tr("settings.schema.bar.dead-zone-action.description"), std::move(gesturePath),
               GestureActionSetting{
                   .gestureKey = key,
-                  .configured = overrideActions.has_value() && overridden != overrideActions->end() ? overridden->second
-                                                                                                    : std::string{},
+                  .configured = std::move(configured),
                   .defaultAction =
                       inherited != bar.deadZone.actions.end() ? inherited->second : deadZoneDefault(gesture),
               },

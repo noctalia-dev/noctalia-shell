@@ -152,7 +152,7 @@ void PolkitPanel::create() {
       .padding = Style::spaceLg * scale,
   });
 
-  auto focusArea = std::make_unique<InputArea>();
+  auto focusArea = ui::inputArea({});
   focusArea->setFocusable(true);
   focusArea->setVisible(false);
   m_focusArea = static_cast<InputArea*>(root->addChild(std::move(focusArea)));

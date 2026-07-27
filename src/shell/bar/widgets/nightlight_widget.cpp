@@ -22,7 +22,7 @@ namespace {
 NightLightWidget::NightLightWidget(GammaService* nightLight) : m_nightLight(nightLight) {}
 
 void NightLightWidget::create() {
-  auto area = std::make_unique<InputArea>();
+  auto area = ui::inputArea({});
   m_area = area.get();
 
   area->addChild(

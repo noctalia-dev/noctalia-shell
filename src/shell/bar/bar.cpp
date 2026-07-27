@@ -408,8 +408,8 @@ namespace {
       return false;
     }
 
-    // Routed through a scene-less InputArea purely for its detent accumulator, so a touchpad flick
-    // fires once per detent here exactly as it does over a widget.
+    // Routed through a scene-less InputArea for detent accumulation. Cycle actions fire once per
+    // gesture; other actions fire for every step, matching a widget's `scroll_repeat = "auto"`.
     instance.deadZoneAxisSink.setOnAxisHandler([&](const InputArea::PointerData& data) {
       const auto gesture = noctalia::bar::gestureForScroll(data.axis, data.scrollSteps());
       if (!gesture.has_value()) {
@@ -422,7 +422,8 @@ namespace {
       return dispatchBarDeadZoneGesture(instance, *gesture, sx, sy, platform, dispatcher);
     });
     return instance.deadZoneAxisSink.dispatchAxis(
-        sx, sy, event.axis, event.axisSource, event.axisValue, event.axisDiscrete, event.axisValue120, event.axisLines
+        sx, sy, event.axis, event.axisSource, event.axisValue, event.axisDiscrete, event.axisValue120, event.axisLines,
+        event.axisGestureSerial
     );
   }
 
@@ -2208,10 +2209,15 @@ void Bar::populateWidgets(BarInstance& instance) {
     widget->setConfigName(name);
     if (wcPtr != nullptr) {
       widget->setAnchor(wcPtr->getBool("anchor", false));
-      widget->setNonInteractive(!wcPtr->getBool("interactive", true));
+      const std::string_view widgetType = !wcPtr->type.empty() ? wcPtr->type : std::string_view(name);
+      // Spacers are layout gaps by default; enable Interactive to use them as hot zones.
+      const bool interactiveDefault = widgetType != "spacer";
+      widget->setNonInteractive(!wcPtr->getBool("interactive", interactiveDefault));
       if (!wcPtr->getBool("enabled", true)) {
         return;
       }
+    } else if (name == "spacer") {
+      widget->setNonInteractive(true);
     }
     widget->setActionContext(
         IpcInvocationContext{
@@ -2413,7 +2419,7 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
 
     auto addSingleCapsule = [&](Widget& widget) {
       const auto& cap = widget.barCapsuleSpec();
-      auto shell = std::make_unique<Node>();
+      auto shell = ui::node({});
       Node* shellPtr = shell.get();
       shellPtr->setClipChildren(true);
       const float scale = widget.contentScale();
@@ -2504,7 +2510,7 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
         continue;
       }
 
-      auto shell = std::make_unique<Node>();
+      auto shell = ui::node({});
       Node* shellPtr = shell.get();
       shellPtr->setClipChildren(true);
       const float scale = widget->contentScale();
@@ -2878,11 +2884,11 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   const float barAreaH = barVisual.height;
 
   if (instance.sceneRoot == nullptr) {
-    instance.sceneRoot = std::make_unique<Node>();
+    instance.sceneRoot = ui::node({});
     instance.sceneRoot->setAnimationManager(&instance.animations);
     instance.sceneRoot->setSize(w, h);
 
-    auto slide = std::make_unique<Node>();
+    auto slide = ui::node({});
     slide->setParticipatesInLayout(false);
     instance.slideRoot = instance.sceneRoot->addChild(std::move(slide));
 
@@ -2897,13 +2903,13 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
           })
       ));
 
-      auto leftClip = std::make_unique<Node>();
+      auto leftClip = ui::node({});
       leftClip->setClipChildren(true);
       leftClip->setZIndex(-1);
       instance.shadowLeftClip = instance.slideRoot->addChild(std::move(leftClip));
       instance.shadowLeft = static_cast<Box*>(instance.shadowLeftClip->addChild(ui::box()));
 
-      auto rightClip = std::make_unique<Node>();
+      auto rightClip = ui::node({});
       rightClip->setClipChildren(true);
       rightClip->setZIndex(-1);
       instance.shadowRightClip = instance.slideRoot->addChild(std::move(rightClip));
@@ -2911,17 +2917,17 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     }
     // Note: shadow is inserted before bar sections so it renders below them (z=-1 is set below).
 
-    auto hoverUnderlay = std::make_unique<Node>();
+    auto hoverUnderlay = ui::node({});
     hoverUnderlay->setHitTestVisible(false);
     hoverUnderlay->setSize(static_cast<float>(w), static_cast<float>(h));
     instance.hoverUnderlay = instance.slideRoot->addChild(std::move(hoverUnderlay));
 
-    auto contentClip = std::make_unique<Node>();
+    auto contentClip = ui::node({});
     contentClip->setClipChildren(true);
     instance.contentClip = instance.slideRoot->addChild(std::move(contentClip));
 
     auto makeSlot = [&instance]() {
-      auto slot = std::make_unique<Node>();
+      auto slot = ui::node({});
       slot->setClipChildren(true);
       return instance.contentClip->addChild(std::move(slot));
     };
@@ -3265,7 +3271,8 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
     const auto sx = static_cast<float>(event.sx);
     const auto sy = static_cast<float>(event.sy);
     const bool axisConsumed = m_hoveredInstance->inputDispatcher.pointerAxis(
-        sx, sy, event.axis, event.axisSource, event.axisValue, event.axisDiscrete, event.axisValue120, event.axisLines
+        sx, sy, event.axis, event.axisSource, event.axisValue, event.axisDiscrete, event.axisValue120, event.axisLines,
+        event.axisGestureSerial
     );
     if (!axisConsumed) {
       handleBarDeadZoneAxis(*m_hoveredInstance, sx, sy, event, m_platform, m_actionDispatcher);

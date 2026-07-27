@@ -118,6 +118,30 @@ namespace lockscreen_login_box {
     return resolveLayout(readString(settings, kLayoutKey, kLayoutRegular));
   }
 
+  InfoExtrasVisibility
+  resolveInfoExtrasVisibility(bool regular, const LoginBoxStyle& style, bool mediaReady, bool weatherReady) {
+    if (!regular) {
+      return {};
+    }
+    const bool mediaConfigured = style.showMedia;
+    const bool weatherConfigured = style.showWeather;
+    // Hide an unavailable side when the other can fill the row. If both are configured
+    // off, the info strip stays empty and is collapsed by the layout.
+    const bool showWeather = weatherConfigured && (weatherReady || !mediaConfigured);
+    const bool showMedia = mediaConfigured && (mediaReady || !showWeather);
+    return InfoExtrasVisibility{.showMedia = showMedia, .showWeather = showWeather};
+  }
+
+  float infoExtraBudget(float contentWidth, bool showSelf, bool showOther) {
+    if (!showSelf) {
+      return 0.0f;
+    }
+    if (!showOther) {
+      return contentWidth;
+    }
+    return std::max(0.0f, (contentWidth - Style::spaceMd) * 0.5f);
+  }
+
   float minPanelWidth(LayoutMode layout) {
     return layout == LayoutMode::Regular ? kRegularMinPanelWidth : kCompactMinPanelWidth;
   }
@@ -133,20 +157,24 @@ namespace lockscreen_login_box {
 
   float regularSessionContentHeight() { return Style::controlHeight; }
 
-  RegularRowHeights regularRowHeights(float panelHeight, bool showSessionButtons, bool showStatus) {
-    const float infoFloor = regularInfoContentHeight();
+  RegularRowHeights
+  regularRowHeights(float panelHeight, bool showSessionButtons, bool showStatus, bool showInfoExtras) {
+    const float infoFloor = showInfoExtras ? regularInfoContentHeight() : 0.0f;
     const float statusFloor = showStatus ? regularStatusContentHeight() : 0.0f;
     const float passwordFloor = Style::controlHeight;
     const float sessionFloor = showSessionButtons ? regularSessionContentHeight() : 0.0f;
 
-    int rows = 2; // info + password
+    int rows = 1; // password
+    if (showInfoExtras) {
+      ++rows;
+    }
     if (showStatus) {
       ++rows;
     }
     if (showSessionButtons) {
       ++rows;
     }
-    const float pad = Style::spaceSm * 2.0f;
+    const float pad = Style::spaceLg * 2.0f;
     const float gaps = Style::spaceSm * static_cast<float>(std::max(0, rows - 1));
     const float available = std::max(0.0f, panelHeight - pad - gaps);
     const float floors = infoFloor + statusFloor + passwordFloor + sessionFloor;
@@ -161,21 +189,35 @@ namespace lockscreen_login_box {
     };
   }
 
-  float minPanelHeight(LayoutMode layout, bool showSessionButtons) {
+  bool styleShowsInfoExtras(const LoginBoxStyle& style) noexcept { return style.showMedia || style.showWeather; }
+
+  bool styleReservesStatus(const LoginBoxStyle&, bool) noexcept {
+    // Idle password hint always fills the status strip (auth/caps override the text).
+    return true;
+  }
+
+  float minPanelHeight(LayoutMode layout, bool showSessionButtons, bool showInfoExtras, bool showStatus) {
+    const float pad = Style::spaceLg * 2.0f;
     if (layout != LayoutMode::Regular) {
-      return kCompactMinPanelHeight;
+      // Compact always reserves the status strip: idle hint/caps and auth messages share it.
+      return pad + regularStatusContentHeight() + Style::spaceSm + Style::controlHeight;
     }
-    // paddingV + info + status (hint/caps) + password [+ session] + gaps
-    const float pad = Style::spaceSm * 2.0f;
-    const int gapCount = showSessionButtons ? 3 : 2;
-    float height = pad
-        + regularInfoContentHeight()
-        + regularStatusContentHeight()
-        + Style::controlHeight
-        + Style::spaceSm * static_cast<float>(gapCount);
+
+    int gapCount = 0;
+    float height = pad + Style::controlHeight;
+    if (showInfoExtras) {
+      height += regularInfoContentHeight();
+      ++gapCount;
+    }
+    if (showStatus) {
+      height += regularStatusContentHeight();
+      ++gapCount;
+    }
     if (showSessionButtons) {
       height += regularSessionContentHeight();
+      ++gapCount;
     }
+    height += Style::spaceSm * static_cast<float>(gapCount);
     return height;
   }
 
@@ -188,11 +230,11 @@ namespace lockscreen_login_box {
     return std::min(screenWidth - Style::spaceLg * 2.0f, widthCap);
   }
 
-  float defaultPanelHeight(LayoutMode layout, bool showSessionButtons) {
+  float defaultPanelHeight(LayoutMode layout, bool showSessionButtons, bool showInfoExtras, bool showStatus) {
     if (layout != LayoutMode::Regular) {
-      return 70.0f;
+      return minPanelHeight(layout, showSessionButtons, showInfoExtras, showStatus);
     }
-    return minPanelHeight(layout, showSessionButtons) + Style::spaceMd;
+    return minPanelHeight(layout, showSessionButtons, showInfoExtras, showStatus) + Style::spaceMd;
   }
 
   float resolvePanelWidth(float screenWidth, float boxWidth, LayoutMode layout) {
@@ -203,31 +245,38 @@ namespace lockscreen_login_box {
     return defaultPanelWidth(screenWidth, layout);
   }
 
-  float resolvePanelHeight(float boxHeight, LayoutMode layout, bool showSessionButtons) {
+  float resolvePanelHeight(
+      float boxHeight, LayoutMode layout, bool showSessionButtons, bool showInfoExtras, bool showStatus
+  ) {
+    const float minHeight = minPanelHeight(layout, showSessionButtons, showInfoExtras, showStatus);
     if (boxHeight > 0.0f) {
-      return std::clamp(boxHeight, minPanelHeight(layout, showSessionButtons), maxPanelHeight(layout));
+      return std::clamp(boxHeight, minHeight, maxPanelHeight(layout));
     }
-    return defaultPanelHeight(layout, showSessionButtons);
+    return defaultPanelHeight(layout, showSessionButtons, showInfoExtras, showStatus);
   }
 
-  void
-  defaultPanelSize(float screenWidth, float& boxWidth, float& boxHeight, LayoutMode layout, bool showSessionButtons) {
+  void defaultPanelSize(
+      float screenWidth, float& boxWidth, float& boxHeight, LayoutMode layout, bool showSessionButtons,
+      bool showInfoExtras, bool showStatus
+  ) {
     boxWidth = defaultPanelWidth(screenWidth, layout);
-    boxHeight = defaultPanelHeight(layout, showSessionButtons);
+    boxHeight = defaultPanelHeight(layout, showSessionButtons, showInfoExtras, showStatus);
   }
 
-  void
-  clampPanelSize(float screenWidth, float& boxWidth, float& boxHeight, LayoutMode layout, bool showSessionButtons) {
+  void clampPanelSize(
+      float screenWidth, float& boxWidth, float& boxHeight, LayoutMode layout, bool showSessionButtons,
+      bool showInfoExtras, bool showStatus
+  ) {
     boxWidth = resolvePanelWidth(screenWidth, boxWidth, layout);
-    boxHeight = resolvePanelHeight(boxHeight, layout, showSessionButtons);
+    boxHeight = resolvePanelHeight(boxHeight, layout, showSessionButtons, showInfoExtras, showStatus);
   }
 
   PanelContentLayout panelContentLayout(float panelWidth, float panelHeight, bool showLoginButton) {
     PanelContentLayout layout;
     layout.contentLeft = Style::spaceLg;
     // Center the input row vertically so the free space above and below the input is equal.
-    layout.controlHeight = std::min(Style::controlHeight, panelHeight - Style::spaceSm * 2.0f);
-    layout.contentTop = std::max(Style::spaceSm, (panelHeight - layout.controlHeight) * 0.5f);
+    layout.controlHeight = std::min(Style::controlHeight, panelHeight - Style::spaceLg * 2.0f);
+    layout.contentTop = std::max(Style::spaceLg, (panelHeight - layout.controlHeight) * 0.5f);
     // Match the left inset so the padding left of the first control equals the padding right of the last.
     const float rightInset = Style::spaceLg;
     const float contentWidth = panelWidth - Style::spaceLg - rightInset;
@@ -240,10 +289,11 @@ namespace lockscreen_login_box {
   }
 
   void defaultPanelCenter(
-      float screenWidth, float screenHeight, float& cx, float& cy, LayoutMode layout, bool showSessionButtons
+      float screenWidth, float screenHeight, float& cx, float& cy, LayoutMode layout, bool showSessionButtons,
+      bool showInfoExtras, bool showStatus
   ) {
     float width = defaultPanelWidth(screenWidth, layout);
-    float height = defaultPanelHeight(layout, showSessionButtons);
+    float height = defaultPanelHeight(layout, showSessionButtons, showInfoExtras, showStatus);
     const float panelX = std::round((screenWidth - width) * 0.5f);
     const float panelY = std::max(Style::spaceLg, screenHeight - height - 84.0f);
     cx = panelX + width * 0.5f;
@@ -252,10 +302,11 @@ namespace lockscreen_login_box {
 
   void panelOriginFromCenter(
       float cx, float cy, float screenWidth, float boxWidth, float boxHeight, LayoutMode layout, float& panelX,
-      float& panelY, float& panelWidthOut, float& panelHeightOut, bool showSessionButtons
+      float& panelY, float& panelWidthOut, float& panelHeightOut, bool showSessionButtons, bool showInfoExtras,
+      bool showStatus
   ) {
     panelWidthOut = resolvePanelWidth(screenWidth, boxWidth, layout);
-    panelHeightOut = resolvePanelHeight(boxHeight, layout, showSessionButtons);
+    panelHeightOut = resolvePanelHeight(boxHeight, layout, showSessionButtons, showInfoExtras, showStatus);
     panelX = cx - panelWidthOut * 0.5f;
     panelY = cy - panelHeightOut * 0.5f;
   }
@@ -285,10 +336,11 @@ namespace lockscreen_login_box {
     style.inputRadius = std::clamp(readFloat(settings, kInputRadiusKey, style.inputRadius), 0.0f, 32.0f);
     style.centerPasswordText = readBool(settings, kCenterPasswordTextKey, style.centerPasswordText);
     style.showLoginButton = readBool(settings, kShowLoginButtonKey, style.showLoginButton);
-    style.showPasswordHint = readBool(settings, kShowPasswordHintKey, style.showPasswordHint);
     style.showCapsLock = readBool(settings, kShowCapsLockKey, style.showCapsLock);
     style.showKeyboardLayout = readBool(settings, kShowKeyboardLayoutKey, style.showKeyboardLayout);
     style.showSessionButtons = readBool(settings, kShowSessionButtonsKey, style.showSessionButtons);
+    style.showMedia = readBool(settings, kShowMediaKey, style.showMedia);
+    style.showWeather = readBool(settings, kShowWeatherKey, style.showWeather);
     return style;
   }
 
@@ -298,8 +350,9 @@ namespace lockscreen_login_box {
     if (scope == desktop_settings::DesktopWidgetSettingsScope::Widget) {
       settings.insert_or_assign(std::string(kLayoutKey), std::string(kLayoutRegular));
       settings.insert_or_assign(std::string(kShowSessionButtonsKey), true);
+      settings.insert_or_assign(std::string(kShowMediaKey), true);
+      settings.insert_or_assign(std::string(kShowWeatherKey), true);
       settings.insert_or_assign(std::string(kShowLoginButtonKey), true);
-      settings.insert_or_assign(std::string(kShowPasswordHintKey), true);
       settings.insert_or_assign(std::string(kShowCapsLockKey), true);
       settings.insert_or_assign(std::string(kShowKeyboardLayoutKey), true);
       settings.insert_or_assign(std::string(kInputOpacityKey), 1.0);
@@ -330,14 +383,16 @@ namespace lockscreen_login_box {
     if (!settings.contains(std::string(kShowSessionButtonsKey))) {
       settings.insert_or_assign(std::string(kShowSessionButtonsKey), true);
     }
-    settings.erase("show_media");
-    settings.erase("show_weather");
+    if (!settings.contains(std::string(kShowMediaKey))) {
+      settings.insert_or_assign(std::string(kShowMediaKey), true);
+    }
+    if (!settings.contains(std::string(kShowWeatherKey))) {
+      settings.insert_or_assign(std::string(kShowWeatherKey), true);
+    }
     if (!settings.contains(std::string(kShowLoginButtonKey))) {
       settings.insert_or_assign(std::string(kShowLoginButtonKey), true);
     }
-    if (!settings.contains(std::string(kShowPasswordHintKey))) {
-      settings.insert_or_assign(std::string(kShowPasswordHintKey), true);
-    }
+    settings.erase("show_password_hint");
     if (!settings.contains(std::string(kShowCapsLockKey))) {
       settings.insert_or_assign(std::string(kShowCapsLockKey), true);
     }
@@ -375,10 +430,18 @@ namespace lockscreen_login_box {
       normalizeSettings(widget.settings);
       const LoginBoxStyle style = resolveStyle(widget.settings);
       const float screenWidth = screenWidthForOutput(wayland, widget.outputName);
+      const bool showInfo = styleShowsInfoExtras(style);
+      const bool showStatus = styleReservesStatus(style);
       if (widget.boxWidth <= 0.0f || widget.boxHeight <= 0.0f) {
-        defaultPanelSize(screenWidth, widget.boxWidth, widget.boxHeight, style.layout, style.showSessionButtons);
+        defaultPanelSize(
+            screenWidth, widget.boxWidth, widget.boxHeight, style.layout, style.showSessionButtons, showInfo, showStatus
+        );
       } else {
-        clampPanelSize(screenWidth, widget.boxWidth, widget.boxHeight, style.layout, style.showSessionButtons);
+        // Keep width from the user; snap height to current chrome so stale tall boxes shrink.
+        widget.boxHeight = defaultPanelHeight(style.layout, style.showSessionButtons, showInfo, showStatus);
+        clampPanelSize(
+            screenWidth, widget.boxWidth, widget.boxHeight, style.layout, style.showSessionButtons, showInfo, showStatus
+        );
       }
       desktop_widgets::clampStateToOutput(wayland, widget, widget.boxWidth, widget.boxHeight);
     }
@@ -402,11 +465,15 @@ namespace lockscreen_login_box {
       applyDefaultSettings(widget.settings, desktop_settings::DesktopWidgetSettingsScope::Widget);
       applyDefaultSettings(widget.settings, desktop_settings::DesktopWidgetSettingsScope::Background);
       const LoginBoxStyle style = resolveStyle(widget.settings);
+      const bool showInfo = styleShowsInfoExtras(style);
+      const bool showStatus = styleReservesStatus(style);
       defaultPanelCenter(
           screenWidth, desktop_widgets::outputLogicalHeight(output), widget.cx, widget.cy, style.layout,
-          style.showSessionButtons
+          style.showSessionButtons, showInfo, showStatus
       );
-      defaultPanelSize(screenWidth, widget.boxWidth, widget.boxHeight, style.layout, style.showSessionButtons);
+      defaultPanelSize(
+          screenWidth, widget.boxWidth, widget.boxHeight, style.layout, style.showSessionButtons, showInfo, showStatus
+      );
       widgets.insert(widgets.begin(), std::move(widget));
       outputsWithLoginBox.insert(outputKey);
     }

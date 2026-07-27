@@ -178,7 +178,7 @@ public:
   void dispatchCancel();
   [[nodiscard]] bool dispatchAxis(
       float localX, float localY, std::uint32_t axis, std::uint32_t axisSource, double axisValue,
-      std::int32_t axisDiscrete, std::int32_t axisValue120, float axisLines
+      std::int32_t axisDiscrete, std::int32_t axisValue120, float axisLines, std::uint32_t axisGestureSerial = 0
   );
   void dispatchKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed, bool preedit = false);
   void dispatchFocusGain();
@@ -221,6 +221,7 @@ private:
   // gesture). Both gates below arm on a reversal, so flicking back is never swallowed.
   std::array<std::chrono::steady_clock::time_point, 2> m_lastScrollStepTime{};
   std::array<float, 2> m_lastScrollStepSign{};
+  std::array<std::uint32_t, 2> m_axisGestureSerial{};
   // When the last axis event landed; a gap ends the gesture, so leftover fraction from one
   // gesture can't bank into the next.
   std::chrono::steady_clock::time_point m_lastAxisTime;

@@ -7,6 +7,7 @@
 #include "shell/bar/widget_action.h"
 #include "shell/bar/widget_gesture.h"
 #include "shell/settings/color_spec_picker.h"
+#include "shell/settings/path_browse.h"
 #include "shell/settings/settings_content_common.h"
 #include "ui/builders.h"
 #include "ui/controls/button.h"
@@ -18,6 +19,7 @@
 #include "ui/controls/slider.h"
 #include "ui/controls/stepper.h"
 #include "ui/controls/toggle.h"
+#include "ui/dialogs/file_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
@@ -25,6 +27,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
 #include <format>
 #include <functional>
 #include <memory>
@@ -321,15 +324,19 @@ namespace settings {
           .enabled = enabled,
           .scale = scale,
           .onChange = [configService = ctx.configService, setOverride = ctx.setOverride,
-                       clearOverride = ctx.clearOverride, path, clearWhenValue](bool value) {
+                       clearOverride = ctx.clearOverride, requestRebuild = ctx.requestRebuild, path,
+                       clearWhenValue](bool value) {
             if (clearWhenValue.has_value()
                 && value == *clearWhenValue
                 && configService != nullptr
                 && configService->hasOverride(path)) {
               clearOverride(path);
-              return;
+            } else {
+              setOverride(path, value);
             }
-            setOverride(path, value);
+            if (requestRebuild) {
+              requestRebuild();
+            }
           },
       });
     }
@@ -860,6 +867,62 @@ namespace settings {
       setOverride(path, text);
     });
     return input;
+  }
+
+  std::unique_ptr<Node>
+  SettingsControlFactory::makePathBrowse(const TextSetting& setting, std::vector<std::string> path) {
+    auto input = makeText(setting.value, setting.placeholder, path, setting.width > 0.0f ? setting.width : 280.0f);
+    Input* inputPtr = input.get();
+    const bool selectFolder = setting.browseMode == TextSettingBrowseMode::SelectFolder;
+    const float scale = m_scale;
+    auto& ctx = m_ctx;
+
+    return ui::row(
+        {.align = FlexAlign::Center, .gap = Style::spaceSm * scale}, std::move(input),
+        ui::button({
+            .glyph = selectFolder ? "folder" : "file-text",
+            .glyphSize = Style::fontSizeBody * scale,
+            .variant = ButtonVariant::Default,
+            .minWidth = Style::controlHeight * scale,
+            .minHeight = Style::controlHeight * scale,
+            .paddingV = Style::spaceXs * scale,
+            .paddingH = Style::spaceSm * scale,
+            .radius = Style::scaledRadiusMd(scale),
+            .onClick = [setOverride = ctx.setOverride, requestRebuild = ctx.requestRebuild, path = std::move(path),
+                        inputPtr, selectFolder, extensions = setting.browseFileExtensions,
+                        fallbackDirectory = setting.browseFallbackDirectory]() {
+              FileDialogOptions options;
+              options.mode = selectFolder ? FileDialogMode::SelectFolder : FileDialogMode::Open;
+              options.defaultViewMode = FileDialogViewMode::List;
+              options.title = selectFolder ? i18n::tr("settings.controls.path-browse.folder-title")
+                                           : i18n::tr("settings.controls.path-browse.file-title");
+              if (!selectFolder) {
+                options.extensions = extensions;
+              }
+
+              const std::string currentValue = inputPtr->value();
+              if (!currentValue.empty()) {
+                applyPathDialogStartValue(
+                    options, currentValue, selectFolder ? PathBrowseKind::Folder : PathBrowseKind::File
+                );
+              } else {
+                applyPathDialogStartValue(options, fallbackDirectory, PathBrowseKind::Folder);
+              }
+
+              (void)FileDialog::open(
+                  std::move(options), [setOverride, requestRebuild, path](std::optional<std::filesystem::path> picked) {
+                    if (!picked.has_value()) {
+                      return;
+                    }
+                    setOverride(path, picked->string());
+                    if (requestRebuild) {
+                      requestRebuild();
+                    }
+                  }
+              );
+            },
+        })
+    );
   }
 
   std::unique_ptr<Input>

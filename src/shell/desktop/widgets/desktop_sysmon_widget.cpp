@@ -127,7 +127,7 @@ DesktopSysmonWidget::~DesktopSysmonWidget() {
 }
 
 void DesktopSysmonWidget::create() {
-  auto rootNode = std::make_unique<Node>();
+  auto rootNode = ui::node({});
 
   auto glyph = ui::glyph({
       .out = &m_glyph,

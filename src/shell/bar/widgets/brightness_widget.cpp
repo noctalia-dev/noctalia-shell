@@ -27,7 +27,7 @@ BrightnessWidget::BrightnessWidget(BrightnessService* brightness, wl_output* out
     : m_brightness(brightness), m_output(output), m_showLabel(options.showLabel) {}
 
 void BrightnessWidget::create() {
-  auto area = std::make_unique<InputArea>();
+  auto area = ui::inputArea({});
 
   area->addChild(
       ui::glyph({

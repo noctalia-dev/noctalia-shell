@@ -347,6 +347,7 @@ location = "https://example.invalid/bad"
         .offsetY = 6,
         .monitors = {"DP-2"},
         .collapseOnDismiss = false,
+        .historyRetentionHours = 48,
         .filters = {NotificationFilterConfig{
             .name = "discord",
             .enabled = true,

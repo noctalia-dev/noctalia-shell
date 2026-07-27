@@ -3,6 +3,7 @@
 #include "config/config_service.h"
 #include "core/build_info.h"
 #include "core/deferred_call.h"
+#include "core/files/directory_scanner.h"
 #include "core/input/keybind_matcher.h"
 #include "core/log.h"
 #include "cursor-shape-v1-client-protocol.h"
@@ -119,8 +120,8 @@ namespace {
 
   std::string noctaliaVersionLine() { return std::format("Noctalia {}", noctalia::build_info::displayVersion()); }
 
-  void applyHomeCardStyle(Flex& card, float scale, float fillOpacity, bool showBorder) {
-    applySectionCardStyle(card, scale, fillOpacity, showBorder);
+  void applyHomeCardStyle(Flex& card, float scale, float fillOpacity) {
+    applySectionCardStyle(card, scale, fillOpacity);
     card.setGap(Style::spaceSm * scale);
   }
 
@@ -134,10 +135,10 @@ namespace {
   // The whole home cards are clickable; on hover swap the card outline to the hover colour. No fill
   // change — the user card's fill sits behind the wallpaper, so a thin hover border is the one hover
   // signal that reads consistently across all three cards.
-  void applyHomeCardHover(Flex& card, bool hovered, bool baseBorders) {
+  void applyHomeCardHover(Flex& card, bool hovered) {
     if (hovered) {
       card.setBorder(colorSpecFromRole(ColorRole::Hover), Style::borderWidth);
-    } else if (baseBorders) {
+    } else if (Style::cardBordersEnabled()) {
       card.setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth);
     } else {
       card.clearBorder();
@@ -209,9 +210,7 @@ std::unique_ptr<Flex> HomeTab::create() {
       .justify = FlexJustify::Center,
       .fillHeight = true,
       .flexGrow = 1.0f,
-      .configure = [scale, opacity = panelCardOpacity(), borders = panelBordersEnabled()](Flex& card) {
-        applyHomeCardStyle(card, scale, opacity, borders);
-      },
+      .configure = [scale, opacity = panelCardOpacity()](Flex& card) { applyHomeCardStyle(card, scale, opacity); },
   });
 
   {
@@ -250,7 +249,7 @@ std::unique_ptr<Flex> HomeTab::create() {
     options.mode = FileDialogMode::Open;
     options.defaultViewMode = FileDialogViewMode::Grid;
     options.title = i18n::tr("control-center.home.select-avatar");
-    options.extensions = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"};
+    options.extensions = DirectoryScanner::imageExtensionFilter(false);
     options.startDirectory = avatarStartDirectory(m_accounts, m_config);
 
     (void)FileDialog::open(std::move(options), [this](std::optional<std::filesystem::path> pickedPath) {
@@ -272,7 +271,7 @@ std::unique_ptr<Flex> HomeTab::create() {
     });
   };
 
-  auto avatarArea = std::make_unique<InputArea>();
+  auto avatarArea = ui::inputArea({});
   avatarArea->setSize(avatarSize, avatarSize);
   avatarArea->setHitShape(InputArea::HitShape::Circle);
   avatarArea->setFocusable(true);
@@ -387,9 +386,7 @@ std::unique_ptr<Flex> HomeTab::create() {
       .fillWidth = true,
       .fillHeight = true,
       .flexGrow = kHomeMediaCardFlexGrow,
-      .configure = [scale, opacity = panelCardOpacity(), borders = panelBordersEnabled()](Flex& card) {
-        applyHomeCardStyle(card, scale, opacity, borders);
-      },
+      .configure = [scale, opacity = panelCardOpacity()](Flex& card) { applyHomeCardStyle(card, scale, opacity); },
   });
 
   const float artSize = Style::controlHeightLg * 1.22f * scale;
@@ -461,8 +458,8 @@ std::unique_ptr<Flex> HomeTab::create() {
        .fillHeight = true,
        .flexGrow = kHomeDateTimeCardFlexGrow,
        .configure =
-           [scale, opacity = panelCardOpacity(), borders = panelBordersEnabled()](Flex& card) {
-             applyHomeCardStyle(card, scale, opacity, borders);
+           [scale, opacity = panelCardOpacity()](Flex& card) {
+             applyHomeCardStyle(card, scale, opacity);
              card.setDirection(FlexDirection::Horizontal);
              card.setAlign(FlexAlign::Center);
              card.setJustify(FlexJustify::Center);
@@ -846,7 +843,7 @@ InputArea* HomeTab::addCardOverlay(Flex& card, std::function<void()> onActivate)
 }
 
 InputArea* HomeTab::addCardOverlay(Flex& card, std::function<void()> onActivate, CardOverlayOptions options) {
-  auto area = std::make_unique<InputArea>();
+  auto area = ui::inputArea({});
   area->setParticipatesInLayout(false);
   area->setZIndex(3);
   area->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
@@ -861,12 +858,11 @@ InputArea* HomeTab::addCardOverlay(Flex& card, std::function<void()> onActivate,
   }
 
   Flex* cardPtr = &card;
-  const bool borders = panelBordersEnabled();
   InputArea* areaPtr = area.get();
   std::function<void()> activate = std::move(onActivate);
 
-  const auto setHovered = [cardPtr, borders](bool hovered) {
-    applyHomeCardHover(*cardPtr, hovered, borders);
+  const auto setHovered = [cardPtr](bool hovered) {
+    applyHomeCardHover(*cardPtr, hovered);
     PanelManager::instance().requestRedraw();
   };
 

@@ -16,6 +16,7 @@
 #include "shell/bar/widgets/custom_button_widget_definition.h"
 #include "shell/bar/widgets/launcher_widget_definition.h"
 #include "shell/bar/widgets/lock_keys_widget_definition.h"
+#include "shell/bar/widgets/media_widget_definition.h"
 #include "shell/bar/widgets/network_widget_definition.h"
 #include "shell/bar/widgets/notification_widget_definition.h"
 #include "shell/bar/widgets/privacy_widget_definition.h"
@@ -24,6 +25,7 @@
 #include "shell/bar/widgets/settings_widget_definition.h"
 #include "shell/bar/widgets/spacer_widget_definition.h"
 #include "shell/bar/widgets/text_widget_definition.h"
+#include "shell/bar/widgets/tray_widget_definition.h"
 #include "shell/bar/widgets/wallpaper_widget_definition.h"
 #include "shell/bar/widgets/weather_widget_definition.h"
 #include "shell/settings/font_family_catalog.h"
@@ -104,6 +106,7 @@ namespace settings {
         projectWidgetDefinition<customButtonWidgetDefinition>(),
         projectWidgetDefinition<launcherWidgetDefinition>(),
         projectWidgetDefinition<lockKeysWidgetDefinition>(),
+        projectWidgetDefinition<mediaWidgetDefinition>(),
         projectWidgetDefinition<networkWidgetDefinition>(),
         projectWidgetDefinition<notificationWidgetDefinition>(),
         projectWidgetDefinition<privacyWidgetDefinition>(),
@@ -112,6 +115,7 @@ namespace settings {
         projectWidgetDefinition<settingsWidgetDefinition>(),
         projectWidgetDefinition<spacerWidgetDefinition>(),
         projectWidgetDefinition<textWidgetDefinition>(),
+        projectWidgetDefinition<trayWidgetDefinition>(),
         projectWidgetDefinition<wallpaperWidgetDefinition>(),
         projectWidgetDefinition<weatherWidgetDefinition>(),
     };
@@ -669,13 +673,26 @@ namespace settings {
 
     // Gesture -> action bindings. Reaches every widget type, including those without a typed
     // definition and plugin widgets, because this list is merged into all of them.
+    // Non-interactive widgets ignore pointer input, so gesture bindings are irrelevant.
     auto actions = withGroup(stringMapSpec("actions"), "actions");
+    auto scrollRepeat = withGroup(
+        selectSpec(
+            "scroll_repeat", "auto",
+            {{"auto", "settings.widgets.options.auto"},
+             {"gesture", "settings.widgets.options.scroll-gesture"},
+             {"steps", "settings.widgets.options.scroll-steps"}}
+        ),
+        "behavior"
+    );
+    scrollRepeat.visibleWhen = WidgetSettingVisibility{"interactive", {"true"}};
+    actions.visibleWhen = WidgetSettingVisibility{"interactive", {"true"}};
 
     return {
         std::move(enabled),           std::move(anchor),          std::move(interactive),    std::move(scale),
         std::move(widgetColor),       std::move(widgetIconColor), std::move(fontFamily),     std::move(fontWeight),
         std::move(capsuleToggle),     std::move(capsuleRadius),   std::move(capsuleFill),    std::move(capsuleBorder),
-        std::move(capsuleForeground), std::move(capsulePadding),  std::move(capsuleOpacity), std::move(actions),
+        std::move(capsuleForeground), std::move(capsulePadding),  std::move(capsuleOpacity), std::move(scrollRepeat),
+        std::move(actions),
     };
   }
 
@@ -704,6 +721,14 @@ namespace settings {
     ) {
       std::vector<WidgetSettingSpec> specs;
       auto commonSpecs = commonWidgetSettingSpecs(shellFontFamily, populateFontCatalogs);
+      if (type == "spacer") {
+        for (WidgetSettingSpec& spec : commonSpecs) {
+          if (spec.schema.key == "interactive") {
+            spec.schema.defaultValue = false;
+            break;
+          }
+        }
+      }
 
       auto add = [&](WidgetSettingSpec spec) { specs.push_back(std::move(spec)); };
       const std::vector<WidgetSettingSelectOption> shortFull = {
@@ -761,11 +786,6 @@ namespace settings {
           {"count", "settings.widgets.options.count"},
           {"dots", "settings.widgets.options.dots"},
       };
-      const std::vector<WidgetSettingSelectOption> mediaTitleScroll = {
-          {"none", "settings.widgets.options.none"},
-          {"always", "settings.widgets.options.always"},
-          {"on_hover", "settings.widgets.options.on-hover"},
-      };
       const std::vector<WidgetSettingSelectOption> volumeDeviceOptions = {
           {"output", "settings.widgets.options.output"},
           {"input", "settings.widgets.options.input"},
@@ -801,50 +821,6 @@ namespace settings {
           labels.visibleWhen = WidgetSettingVisibility{"show_label", {"true"}};
           add(std::move(labels));
         }
-      } else if (type == "media") {
-        const WidgetSettingVisibility notAlbumArtOnly{"album_art_only", {"false"}};
-        const WidgetSettingVisibility notHideAlbumArt{"hide_album_art", {"false"}};
-        {
-          auto albumArtOnly = boolSpec("album_art_only", false);
-          albumArtOnly.horizontalBarOnly = true;
-          albumArtOnly.visibleWhen = notHideAlbumArt;
-          add(std::move(albumArtOnly));
-        }
-        {
-          auto hideAlbumArt = boolSpec("hide_album_art", false);
-          hideAlbumArt.horizontalBarOnly = true;
-          hideAlbumArt.visibleWhen = notAlbumArtOnly;
-          add(std::move(hideAlbumArt));
-        }
-        {
-          auto hideArtist = boolSpec("hide_artist", false);
-          hideArtist.horizontalBarOnly = true;
-          hideArtist.visibleWhen = notAlbumArtOnly;
-          add(std::move(hideArtist));
-        }
-        {
-          auto artistFirst = boolSpec("artist_first", false);
-          artistFirst.horizontalBarOnly = true;
-          artistFirst.visibleWhen = notAlbumArtOnly;
-          add(std::move(artistFirst));
-        }
-        {
-          auto minLength = intSpec("min_length", 80, 0.0, 800.0, 1.0);
-          minLength.visibleWhen = notAlbumArtOnly;
-          add(std::move(minLength));
-        }
-        {
-          auto maxLength = intSpec("max_length", 220, 40.0, 800.0, 1.0);
-          maxLength.visibleWhen = notAlbumArtOnly;
-          add(std::move(maxLength));
-        }
-        add(intSpec("art_size", 16.0, 8.0, 96.0, 1.0));
-        {
-          auto titleScroll = selectSpec("title_scroll", "none", mediaTitleScroll);
-          titleScroll.visibleWhen = notAlbumArtOnly;
-          add(std::move(titleScroll));
-        }
-        add(boolSpec("hide_when_no_media", false));
       } else if (type == "sysmon") {
         add(selectSpec("stat", "cpu_usage", sysmonStats));
         {
@@ -1049,24 +1025,6 @@ namespace settings {
               break;
             }
           }
-        }
-      } else if (type == "tray") {
-        add(stringListSpec("hidden"));
-        add(stringListSpec("pinned"));
-        add(boolSpec("match_adjacent_spacing", false));
-        add(boolSpec("drawer", false));
-        {
-          const WidgetSettingVisibility drawerOn{"drawer", {"true"}};
-          auto cols = intSpec("drawer_columns", 3, 1.0, 5.0, 1.0);
-          cols.visibleWhen = drawerOn;
-          add(std::move(cols));
-          auto drawerItemSize =
-              doubleSpec("drawer_item_size", static_cast<double>(Style::baseGlyphSize), 8.0, 64.0, 1.0);
-          drawerItemSize.visibleWhen = drawerOn;
-          add(std::move(drawerItemSize));
-          auto detachedPanel = boolSpec("detached_panel", false);
-          detachedPanel.visibleWhen = drawerOn;
-          add(std::move(detachedPanel));
         }
       } else if (type == "volume") {
         add(segmentedSpec("device", "output", volumeDeviceOptions));
@@ -1428,8 +1386,14 @@ namespace settings {
 
       auto fields = projection->schemaFields();
       const auto common = commonWidgetSettingSpecs("sans-serif", false);
-      std::ranges::transform(common, std::back_inserter(fields), [](const WidgetSettingSpec& spec) {
-        return spec.schema;
+      std::ranges::transform(common, std::back_inserter(fields), [type](const WidgetSettingSpec& spec) {
+        auto field = spec.schema;
+        // Spacers are click-through by default; keep the schema default aligned so
+        // interactive = true is treated as an effective override (not stripped as default).
+        if (type == "spacer" && field.key == "interactive") {
+          field.defaultValue = false;
+        }
+        return field;
       });
       return fields;
     }

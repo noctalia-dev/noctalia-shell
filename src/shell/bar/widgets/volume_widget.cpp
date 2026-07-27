@@ -26,7 +26,7 @@ VolumeWidget::VolumeWidget(
       m_effectsProfileGlyphs(std::move(effectsProfileGlyphs)), m_customImage(std::move(customImage)) {}
 
 void VolumeWidget::create() {
-  auto area = std::make_unique<InputArea>();
+  auto area = ui::inputArea({});
 
   if (m_customImage.enabled()) {
     area->addChild(ui::image({.out = &m_image, .fit = ImageFit::Contain}));

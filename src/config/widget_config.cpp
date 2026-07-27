@@ -128,6 +128,7 @@ namespace noctalia::config {
 
     WidgetConfig spacer;
     spacer.type = "spacer";
+    spacer.settings["interactive"] = false;
     seed("spacer", std::move(spacer));
   }
 

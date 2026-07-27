@@ -18,7 +18,7 @@ NotificationWidget::NotificationWidget(NotificationManager* manager, wl_output* 
     : m_manager(manager), m_hideWhenNoUnread(options.hideWhenNoUnread) {}
 
 void NotificationWidget::create() {
-  auto area = std::make_unique<InputArea>();
+  auto area = ui::inputArea({});
 
   area->addChild(
       ui::glyph({

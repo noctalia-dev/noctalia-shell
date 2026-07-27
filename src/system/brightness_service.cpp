@@ -1642,7 +1642,7 @@ void BrightnessService::registerIpc(IpcService& ipc, std::function<void()> onBat
       "Decrease brightness (defaults to current monitor)"
   );
 
-  ipc.registerQueryHandler(
+  ipc.registerHandler(
       "brightness-list-backlight-devices",
       [](const std::string& /*args*/) -> std::string {
         const std::string backlightDir = "/sys/class/backlight";
@@ -1661,7 +1661,8 @@ void BrightnessService::registerIpc(IpcService& ipc, std::function<void()> onBat
         ::closedir(dir);
         return result.empty() ? "error: no backlight devices available\n" : result;
       },
-      "", "List available sysfs backlight device names"
+      "", "List available sysfs backlight device names",
+      IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
   );
 }
 
