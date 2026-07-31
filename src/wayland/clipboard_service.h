@@ -189,6 +189,7 @@ private:
   bool startReceive(void* offer);
   void finishRead(bool discard);
   void adoptOrphanedSelection();
+  void flushPendingOrphanAdopt();
   [[nodiscard]] static bool payloadLooksComplete(std::string_view mimeType, std::span<const std::uint8_t> data);
   void addToHistory(ClipboardEntry entry);
   [[nodiscard]] std::size_t pinnedCount() const noexcept;
@@ -244,6 +245,7 @@ private:
   std::uint64_t m_changeSerial = 0;
   bool m_historyRetention = true;
   bool m_keepFromClosedApps = true;
+  bool m_pendingOrphanAdopt = false;
   std::size_t m_maxHistoryBytes;
   std::optional<SelectionBackup> m_selectionBackup;
   std::size_t m_maxHistoryEntries = static_cast<std::size_t>(noctalia::config::kClipboardHistoryDefaultEntries);

@@ -648,7 +648,7 @@ std::unique_ptr<Flex> NotificationsTab::create() {
   auto tab = ui::column({
       .out = &m_root,
       .align = FlexAlign::Stretch,
-      .gap = Style::spaceSm * scale,
+      .gap = Style::spaceMd * scale,
   });
 
   tab->addChild(

@@ -17,7 +17,7 @@
       presets-photosensitive-filtered,
     }:
     let
-      inherit (nixpkgs.lib) genAttrs getExe;
+      inherit (nixpkgs.lib) genAttrs getExe warn;
 
       systems = [
         "x86_64-linux"
@@ -41,7 +41,7 @@
 
       packages = forEachSystem (
         { pkgs, ... }:
-        {
+        rec {
           default = pkgs.callPackage ./nix/package.nix { };
 
           # Trimmed Milkdrop presets pack for the optional livepaper
@@ -50,7 +50,11 @@
           # output so it can be built and staged independently of a full
           # home-manager rollout (e.g. `nix build .#presets`).
           presets = presets-photosensitive-filtered.packages.${pkgs.stdenv.hostPlatform.system}.default;
-          cuda = pkgs.callPackage ./nix/package.nix { cudaSupport = true; };
+
+          # DEPRECATED: identical to `default`; kept for compat, warns on use.
+          cuda = warn
+            "noctalia: the `.#cuda` package output is deprecated and now identical to `.#default` (autoAddDriverRunpath is always applied); switch to `.#default`. This alias will be removed in the future."
+            default;
         }
       );
 

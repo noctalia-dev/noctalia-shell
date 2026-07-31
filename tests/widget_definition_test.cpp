@@ -20,6 +20,7 @@
 #include "shell/bar/widgets/session_widget_definition.h"
 #include "shell/bar/widgets/settings_widget_definition.h"
 #include "shell/bar/widgets/spacer_widget_definition.h"
+#include "shell/bar/widgets/sysmon_widget_definition.h"
 #include "shell/bar/widgets/text_widget_definition.h"
 #include "shell/bar/widgets/tray_widget_definition.h"
 #include "shell/bar/widgets/wallpaper_widget_definition.h"
@@ -125,6 +126,7 @@ int main() {
   checkDefinition("session", sessionWidgetDefinition);
   checkDefinition("settings", settingsWidgetDefinition);
   checkDefinition("spacer", spacerWidgetDefinition);
+  checkDefinition("sysmon", sysmonWidgetDefinition, SysmonWidgetDefinitionContext{});
   checkDefinition("text", textWidgetDefinition);
   checkDefinition("tray", trayWidgetDefinition, TrayWidgetDefinitionContext{});
   checkDefinition("wallpaper", wallpaperWidgetDefinition);

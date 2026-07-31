@@ -1101,6 +1101,15 @@ namespace settings {
       ));
     }
     entries.push_back(makeEntry(
+        SettingsSection::Panels, "general", tr("settings.schema.panels.floating-layer.label"),
+        tr("settings.schema.panels.floating-layer.description"), {"shell", "panel", "floating_layer"},
+        asSegmented(plainSelect(
+            {{"top", "settings.options.layer.top"}, {"overlay", "settings.options.layer.overlay"}},
+            cfg.shell.panel.floatingLayer
+        )),
+        "floating detached panel layer shell z-order input method popup fullscreen"
+    ));
+    entries.push_back(makeEntry(
         SettingsSection::Panels, "effects", tr("settings.schema.panels.transparency-mode.label"),
         tr("settings.schema.panels.transparency-mode.description"), {"shell", "panel", "transparency_mode"},
         asSegmented(enumSelect(kPanelTransparencyModes, cfg.shell.panel.transparencyMode)),
@@ -1403,6 +1412,11 @@ namespace settings {
             .items = cfg.controlCenter.shortcuts, .suggestedOptions = controlCenterShortcutOptions(cfg), .maxItems = 6
         },
         "quick settings shortcuts toggles wifi bluetooth caffeine night light dnd power media weather clipboard"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::ControlCenter, "general", tr("settings.schema.panels.home-shortcuts-show-labels.label"),
+        tr("settings.schema.panels.home-shortcuts-show-labels.description"), {"control_center", "show_shortcut_labels"},
+        ToggleSetting{cfg.controlCenter.showShortcutLabels}, "shortcuts labels text hide show titles"
     ));
     {
       MultiSelectSetting tabs;
@@ -1807,7 +1821,6 @@ namespace settings {
           },
           "screenshot capture directory folder save location"
       );
-      e.visibleWhen = [](const Config& c) { return c.shell.screenshot.saveToFile; };
       entries.push_back(std::move(e));
     }
     {
@@ -1822,7 +1835,6 @@ namespace settings {
           },
           "screenshot capture filename pattern strftime"
       );
-      e.visibleWhen = [](const Config& c) { return c.shell.screenshot.saveToFile; };
       entries.push_back(std::move(e));
     }
     entries.push_back(makeEntry(
@@ -1840,6 +1852,12 @@ namespace settings {
         SettingsSection::Shell, "screenshot", tr("settings.schema.shell.screenshot-confirm-region.label"),
         tr("settings.schema.shell.screenshot-confirm-region.description"), {"shell", "screenshot", "confirm_region"},
         ToggleSetting{cfg.shell.screenshot.confirmRegion}, "screenshot capture confirm region selection"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Shell, "screenshot", tr("settings.schema.shell.screenshot-remember-last-region.label"),
+        tr("settings.schema.shell.screenshot-remember-last-region.description"),
+        {"shell", "screenshot", "remember_last_region"}, ToggleSetting{cfg.shell.screenshot.rememberLastRegion},
+        "screenshot capture remember last region selection"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Shell, "screenshot", tr("settings.schema.shell.screenshot-show-cursor.label"),
@@ -2092,6 +2110,26 @@ namespace settings {
         tr("settings.schema.keybinds.tab-next.description"), {"keybinds", "tab_next"},
         KeybindListSetting{.items = effectiveKeybindItems(cfg.keybinds.tabNext, KeybindAction::TabNext), .maxItems = 4},
         "keybind shortcut hotkey tab focus pane"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Keybinds, "keybinds", tr("settings.schema.keybinds.copy.label"),
+        tr("settings.schema.keybinds.copy.description"), {"keybinds", "copy"},
+        KeybindListSetting{.items = effectiveKeybindItems(cfg.keybinds.copy, KeybindAction::Copy), .maxItems = 4},
+        "keybind shortcut hotkey copy clipboard"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Keybinds, "keybinds", tr("settings.schema.keybinds.save.label"),
+        tr("settings.schema.keybinds.save.description"), {"keybinds", "save"},
+        KeybindListSetting{.items = effectiveKeybindItems(cfg.keybinds.save, KeybindAction::Save), .maxItems = 4},
+        "keybind shortcut hotkey save file"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Keybinds, "keybinds", tr("settings.schema.keybinds.delete.label"),
+        tr("settings.schema.keybinds.delete.description"), {"keybinds", "delete"},
+        KeybindListSetting{
+            .items = effectiveKeybindItems(cfg.keybinds.deleteEntry, KeybindAction::Delete), .maxItems = 4
+        },
+        "keybind shortcut hotkey delete remove clear"
     ));
 
     // Niri-specific integrations
@@ -2588,7 +2626,7 @@ namespace settings {
             .value = cfg.audio.volumeChangeSound,
             .placeholder = tr("settings.schema.services.volume-change-sound.placeholder"),
             .browseMode = TextSettingBrowseMode::OpenFile,
-            .browseFileExtensions = {".wav"}
+            .browseFileExtensions = {".wav", ".flac", ".ogg", ".oga", ".opus", ".mp3", ".aiff", ".aif"}
         },
         "sound path file", true
     ));
@@ -2599,7 +2637,7 @@ namespace settings {
             .value = cfg.audio.notificationSound,
             .placeholder = tr("settings.schema.services.notification-sound.placeholder"),
             .browseMode = TextSettingBrowseMode::OpenFile,
-            .browseFileExtensions = {".wav"}
+            .browseFileExtensions = {".wav", ".flac", ".ogg", ".oga", ".opus", ".mp3", ".aiff", ".aif"}
         },
         "sound path file", true
     ));

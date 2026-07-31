@@ -24,6 +24,7 @@
 #include "shell/bar/widgets/session_widget_definition.h"
 #include "shell/bar/widgets/settings_widget_definition.h"
 #include "shell/bar/widgets/spacer_widget_definition.h"
+#include "shell/bar/widgets/sysmon_widget_definition.h"
 #include "shell/bar/widgets/text_widget_definition.h"
 #include "shell/bar/widgets/tray_widget_definition.h"
 #include "shell/bar/widgets/wallpaper_widget_definition.h"
@@ -114,6 +115,7 @@ namespace settings {
         projectWidgetDefinition<sessionWidgetDefinition>(),
         projectWidgetDefinition<settingsWidgetDefinition>(),
         projectWidgetDefinition<spacerWidgetDefinition>(),
+        projectWidgetDefinition<sysmonWidgetDefinition>(),
         projectWidgetDefinition<textWidgetDefinition>(),
         projectWidgetDefinition<trayWidgetDefinition>(),
         projectWidgetDefinition<wallpaperWidgetDefinition>(),
@@ -735,37 +737,6 @@ namespace settings {
           {"short", "settings.widgets.options.short"},
           {"full", "settings.widgets.options.full"},
       };
-      const std::vector<WidgetSettingSelectOption> sysmonStats = {
-          {"cpu_usage", "settings.widgets.options.cpu-usage"},
-          {"cpu_temp", "settings.widgets.options.cpu-temp"},
-          {"gpu_temp", "settings.widgets.options.gpu-temp"},
-          {"gpu_usage", "settings.widgets.options.gpu-usage"},
-          {"gpu_vram", "settings.widgets.options.gpu-vram"},
-          {"ram_used", "settings.widgets.options.ram-used"},
-          {"ram_pct", "settings.widgets.options.ram-percent"},
-          {"swap_pct", "settings.widgets.options.swap-percent"},
-          {"disk_used_pct", "settings.widgets.options.disk-used-percent"},
-          {"disk_used", "settings.widgets.options.disk-used"},
-          {"disk_free_pct", "settings.widgets.options.disk-free-percent"},
-          {"disk_free", "settings.widgets.options.disk-free"},
-          {"net_rx", "settings.widgets.options.net-rx"},
-          {"net_tx", "settings.widgets.options.net-tx"},
-      };
-      const std::vector<WidgetSettingSelectOption> sysmonDisplay = {
-          {"gauge", "settings.widgets.options.gauge"},
-          {"graph", "settings.widgets.options.graph"},
-          {"text", "settings.widgets.options.text"},
-          {"none", "settings.widgets.options.none"},
-      };
-      const std::vector<WidgetSettingSelectOption> networkSpeedUnits = {
-          {"auto", "settings.widgets.options.auto"},
-          {"kb", "settings.widgets.options.kilobytes"},
-          {"mb", "settings.widgets.options.megabytes"},
-      };
-      const std::vector<WidgetSettingSelectOption> glyphPositionOptions = {
-          {"before", "settings.widgets.options.before"},
-          {"after", "settings.widgets.options.after"},
-      };
       const std::vector<WidgetSettingSelectOption> workspaceDisplay = {
           {"id", "settings.widgets.options.id"},
           {"name", "settings.widgets.options.name"},
@@ -794,20 +765,20 @@ namespace settings {
         specs = projection->presentedSettingSpecs();
       } else if (type == "keyboard_layout") {
         add(boolSpec("hide_when_single_layout", false));
-        add(boolSpec("show_icon", true));
+        add(boolSpec("show_glyph", true));
         {
           auto glyph = glyphSpec("glyph", "keyboard");
-          glyph.visibleWhen = WidgetSettingVisibility{"show_icon", {"true"}};
+          glyph.visibleWhen = WidgetSettingVisibility{"show_glyph", {"true"}};
           add(std::move(glyph));
         }
         {
           auto image = stringSpec("custom_image", "");
-          image.visibleWhen = WidgetSettingVisibility{"show_icon", {"true"}};
+          image.visibleWhen = WidgetSettingVisibility{"show_glyph", {"true"}};
           add(std::move(image));
         }
         {
           auto colorize = boolSpec("custom_image_colorize", false);
-          colorize.visibleWhen = WidgetSettingVisibility{"show_icon", {"true"}};
+          colorize.visibleWhen = WidgetSettingVisibility{"show_glyph", {"true"}};
           add(std::move(colorize));
         }
         add(boolSpec("show_label", true));
@@ -820,63 +791,6 @@ namespace settings {
           auto labels = stringMapSpec("custom_labels");
           labels.visibleWhen = WidgetSettingVisibility{"show_label", {"true"}};
           add(std::move(labels));
-        }
-      } else if (type == "sysmon") {
-        add(selectSpec("stat", "cpu_usage", sysmonStats));
-        {
-          auto glyph = glyphSpec("glyph", "");
-          glyph.descriptionKey = "settings.widgets.settings.glyph.sysmon-description";
-          add(std::move(glyph));
-        }
-        add(stringSpec("custom_image", ""));
-        add(boolSpec("custom_image_colorize", false));
-        {
-          auto path = stringSpec("path", "/");
-          path.visibleWhen =
-              WidgetSettingVisibility{"stat", {"disk_used_pct", "disk_used", "disk_free_pct", "disk_free"}};
-          add(std::move(path));
-        }
-        {
-          auto interface = stringSpec("interface");
-          interface.visibleWhen = WidgetSettingVisibility{"stat", {"net_rx", "net_tx"}};
-          add(std::move(interface));
-        }
-        {
-          auto unit = selectSpec("network_speed_unit", "auto", networkSpeedUnits);
-          unit.visibleWhen = WidgetSettingVisibility{"stat", {"net_rx", "net_tx"}};
-          add(std::move(unit));
-        }
-        {
-          auto compact = boolSpec("network_speed_compact", false);
-          compact.visibleWhen = WidgetSettingVisibility{"stat", {"net_rx", "net_tx"}};
-          add(std::move(compact));
-        }
-        add(segmentedSpec("display", "gauge", sysmonDisplay));
-        add(colorSpec("highlight_color", "error"));
-        {
-          auto showLabel = boolSpec("show_label", true);
-          showLabel.visibleWhen = WidgetSettingVisibility{"display", {"gauge", "graph", "text"}};
-          add(std::move(showLabel));
-        }
-        {
-          auto minWidth = intSpec("label_min_width", 0, 0.0, 200.0, 1.0);
-          WidgetSettingVisibility minWidthSettings;
-          minWidthSettings.all = {
-              WidgetSettingVisibilityCondition{"display", {"gauge", "graph", "text"}},
-              WidgetSettingVisibilityCondition{"show_label", {"true"}},
-          };
-          minWidth.visibleWhen = minWidthSettings;
-          add(std::move(minWidth));
-        }
-        {
-          auto showUnits = boolSpec("label_show_units", true);
-          showUnits.visibleWhen = WidgetSettingVisibility{"show_label", {"true"}};
-          add(std::move(showUnits));
-        }
-        {
-          auto glyphPosition = segmentedSpec("glyph_position", "before", glyphPositionOptions);
-          glyphPosition.visibleWhen = WidgetSettingVisibility{"show_label", {"true"}};
-          add(std::move(glyphPosition));
         }
       } else if (type == "taskbar") {
         // Windows: what the taskbar lists and how each window tile looks.
@@ -1100,6 +1014,7 @@ namespace settings {
           focusedOutputOnly.descriptionKey = "settings.widgets.settings.focused-output-only.workspaces-description";
           add(std::move(focusedOutputOnly));
         }
+        add(withGroup(boolSpec("change_color_on_hover", true), "workspaces.colors"));
         add(withGroup(colorSpec("focused_color", "primary"), "workspaces.colors"));
         add(withGroup(colorSpec("occupied_color", "secondary"), "workspaces.colors"));
         add(withGroup(colorSpec("empty_color", "secondary"), "workspaces.colors"));

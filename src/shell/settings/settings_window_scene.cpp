@@ -1872,17 +1872,26 @@ void SettingsWindow::refreshSettingsRegistry(const Config& cfg) {
       if (account.type != "google" && account.type != "caldav") {
         continue;
       }
+      const bool reconnectRequired = account.type == "google"
+          && m_calendarService != nullptr
+          && m_calendarService->googleAccountNeedsReconnect(account.id);
       settings::SettingEntry btn{
           .section = settings::SettingsSection::Services,
           .group = "calendar",
           .title = account.displayName.empty() ? account.id : account.displayName,
-          .subtitle = i18n::tr("settings.schema.services.calendar-edit.description"),
+          .subtitle = i18n::tr(
+              reconnectRequired ? "settings.schema.services.calendar-edit.description-reconnect"
+                                : "settings.schema.services.calendar-edit.description"
+          ),
           .path = {},
           .control =
               settings::ButtonSetting{
-                  .label = i18n::tr("settings.schema.services.calendar-edit.button"),
+                  .label = i18n::tr(
+                      reconnectRequired ? "settings.schema.services.calendar-edit.button-reconnect"
+                                        : "settings.schema.services.calendar-edit.button"
+                  ),
                   .action = [this, id = account.id]() { openCalendarAccountEditor(id); },
-                  .glyph = "edit",
+                  .glyph = reconnectRequired ? "brand-google" : "edit",
               },
           .searchText = "calendar account edit connect authorize caldav icloud google password " + account.id,
           .visibleWhen = calendarOn,

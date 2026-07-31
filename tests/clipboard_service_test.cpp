@@ -171,6 +171,7 @@ namespace {
           ::close(gFake->writeFd);
           gFake->writeFd = -1;
         }
+        clipboard.dispatchPollEvents(fds, 0, 0);
         return;
       }
       const int ready = ::poll(fds.data(), static_cast<nfds_t>(fds.size()), 500);
@@ -180,6 +181,11 @@ namespace {
       clipboard.dispatchPollEvents(fds, 0, count);
       pumpWrites();
     }
+  }
+
+  void flushDeferredAdopt(ClipboardService& clipboard) {
+    std::vector<pollfd> fds;
+    clipboard.dispatchPollEvents(fds, 0, 0);
   }
 
   // Plays out one copy: a client offers a type, becomes the selection owner and
@@ -217,6 +223,7 @@ int main() {
     expect(fake.claims == 0, "claimed the selection while the owner was still alive");
 
     harness.clipboard.handleSelection(nullptr);
+    flushDeferredAdopt(harness.clipboard);
     expect(fake.claims == 1, "did not claim the selection after the owner exited");
     expect(
         fake.offeredMimeTypes == std::vector<std::string>{"image/png"},
@@ -230,6 +237,7 @@ int main() {
     fake.claims = 0;
     simulateCopy(harness.clipboard, &offerIds[1], "text/plain;charset=utf-8", bytesOf("hello"));
     harness.clipboard.handleSelection(nullptr);
+    flushDeferredAdopt(harness.clipboard);
     expect(fake.claims == 1, "did not adopt an orphaned text selection");
     expect(
         std::ranges::find(fake.offeredMimeTypes, "text/plain") != fake.offeredMimeTypes.end(),
@@ -243,6 +251,7 @@ int main() {
     fake.claims = 0;
     simulateCopy(harness.clipboard, &offerIds[2], "image/png", pngPayload(/*complete=*/false));
     harness.clipboard.handleSelection(nullptr);
+    flushDeferredAdopt(harness.clipboard);
     expect(fake.claims == 0, "adopted a truncated image payload");
   }
 
@@ -253,6 +262,7 @@ int main() {
     fake.claims = 0;
     simulateCopy(harness.clipboard, &offerIds[3], "image/png", pngPayload(/*complete=*/true));
     harness.clipboard.handleSelection(nullptr);
+    flushDeferredAdopt(harness.clipboard);
     expect(fake.claims == 0, "adopted a selection while the setting was disabled");
   }
 
@@ -264,6 +274,7 @@ int main() {
     simulateCopy(harness.clipboard, &offerIds[4], "text/plain;charset=utf-8", bytesOf("first"));
     simulateCopy(harness.clipboard, &offerIds[5], "text/plain;charset=utf-8", bytesOf("second"));
     harness.clipboard.handleSelection(nullptr);
+    flushDeferredAdopt(harness.clipboard);
     expect(fake.claims == 1, "did not adopt the most recent selection");
 
     const auto& history = harness.clipboard.history();
@@ -293,6 +304,7 @@ int main() {
     }
 
     harness.clipboard.handleSelection(nullptr);
+    flushDeferredAdopt(harness.clipboard);
     expect(fake.claims == 1, "did not adopt a 12 MiB image after its owner exited");
   }
 
@@ -306,7 +318,28 @@ int main() {
     expect(harness.clipboard.history().empty(), "a 5 MiB text item was stored despite the 4 MiB text limit");
 
     harness.clipboard.handleSelection(nullptr);
+    flushDeferredAdopt(harness.clipboard);
     expect(fake.claims == 1, "did not adopt an oversized text selection");
+  }
+
+  {
+    // A transient null selection during handoff must not re-offer stale backup
+    // before the replacement offer arrives in the same dispatch batch.
+    Harness harness;
+    fake.claims = 0;
+    simulateCopy(harness.clipboard, &offerIds[0], "text/plain;charset=utf-8", bytesOf("old"));
+    harness.clipboard.handleSelection(nullptr);
+    simulateCopy(harness.clipboard, &offerIds[1], "text/plain;charset=utf-8", bytesOf("new"));
+    expect(fake.claims == 0, "re-offered stale backup during selection handoff");
+
+    const auto& history = harness.clipboard.history();
+    expect(!history.empty(), "handoff did not record the new selection");
+    if (!history.empty()) {
+      expect(
+          std::string(history.front().data.begin(), history.front().data.end()) == "new",
+          "handoff history kept the previous selection"
+      );
+    }
   }
 
   {
@@ -347,6 +380,42 @@ int main() {
       );
     }
     expect(harness.clipboard.history().empty(), "text-only history ignored the byte budget");
+  }
+
+  {
+    // clearUnpinnedHistory() is the whole of what a clear offers: pinned entries are
+    // the only thing it spares, so with nothing pinned it empties the history and
+    // callers need no "clear everything" special case.
+    Harness harness;
+
+    for (int i = 0; i < 3; ++i) {
+      simulateCopy(
+          harness.clipboard, &offerIds[i], "text/plain;charset=utf-8", bytesOf(std::string("entry ") + char('a' + i))
+      );
+    }
+    expect(harness.clipboard.history().size() == 3, "three distinct copies did not produce three entries");
+
+    harness.clipboard.clearUnpinnedHistory();
+    expect(harness.clipboard.history().empty(), "clearing an unpinned history left entries behind");
+
+    for (int i = 0; i < 3; ++i) {
+      simulateCopy(
+          harness.clipboard, &offerIds[3 + i], "text/plain;charset=utf-8",
+          bytesOf(std::string("entry ") + char('x' + i))
+      );
+    }
+    // Newest first, so "entry z" sits at the front.
+    expect(harness.clipboard.setEntryPinned(2, true), "pinning the oldest entry failed");
+
+    harness.clipboard.clearUnpinnedHistory();
+    const auto& survivors = harness.clipboard.history();
+    expect(survivors.size() == 1, "clearing dropped or kept the wrong number of entries");
+    expect(
+        !survivors.empty()
+            && survivors.front().pinned
+            && std::string(survivors.front().data.begin(), survivors.front().data.end()) == "entry x",
+        "clearing did not spare the pinned entry"
+    );
   }
 
   gFake = nullptr;

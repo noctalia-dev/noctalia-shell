@@ -506,7 +506,6 @@
         "show-keyboard-layout": "Tastaturlayout",
         "show-label": "Beschriftung anzeigen",
         "show-login-button": "Login-Button",
-        "show-password-hint": "Passworthinweis",
         "show-vpn-label": "VPN-Beschriftung anzeigen",
         "show-when-idle": "Bei Inaktivität anzeigen",
         "stat": "Statistik",
@@ -1364,7 +1363,7 @@
       "browse-store": "Plugins durchsuchen",
       "panels": {
         "open-near-click": {
-          "description": "Platziere das Panel in der Nähe des Leisten-Widgets, das es geöffnet hat; ohne Trigger wird es zentriert",
+          "description": "Platziere das Panel in der Nähe des Leisten-Widgets, das es geöffnet hat, wenn es angedockt ist oder als schwebendes Panel mit automatischer Position",
           "label": "An der Leiste"
         },
         "placement": {
@@ -1437,7 +1436,7 @@
         "open-source": "Quell-Repository des Plugins öffnen",
         "results-count": "{count} Plugins",
         "search-placeholder": "Suche Plugins…",
-        "source-all": "Alle",
+        "source-all": "Alle Quellen",
         "title": "Plugin Store"
       }
     },
@@ -2126,7 +2125,7 @@
       },
       "panels": {
         "borders": {
-          "description": "Zeichne ein Umriss um Panels und Abschnittskarten innerhalb von Panels",
+          "description": "Zeichne einen Umriss um schwebende Panels",
           "label": "Rahmen"
         },
         "control-center-sidebar": {
@@ -2235,23 +2234,23 @@
           "label": "Listeneintrag-Hintergrund"
         },
         "open-near-click-clipboard": {
-          "description": "Platziere das Zwischenablage-Panel in der Nähe des Leisten-Widgets, das es geöffnet hat; andernfalls wird es zentriert",
+          "description": "Platziere das Zwischenablage-Panel in der Nähe des Leisten-Widgets, das es geöffnet hat, wenn es angedockt ist oder als schwebendes Panel mit automatischer Position",
           "label": "An der Leiste"
         },
         "open-near-click-control-center": {
-          "description": "Platziere das Kontrollzentrum in der Nähe des Leisten-Widgets, das es geöffnet hat; ohne Trigger wird es zentriert",
+          "description": "Platziere das Kontrollzentrum in der Nähe des Leisten-Widgets, das es geöffnet hat, wenn es angedockt ist oder als schwebendes Panel mit automatischer Position",
           "label": "An der Leiste"
         },
         "open-near-click-launcher": {
-          "description": "Platziere den Launcher in der Nähe des Leisten-Widgets, das es geöffnet hat; ohne Trigger wird er zentriert",
+          "description": "Platziere den Launcher in der Nähe des Leisten-Widgets, das es geöffnet hat, wenn es angedockt ist oder als schwebendes Panel mit automatischer Position",
           "label": "An der Leiste"
         },
         "open-near-click-session": {
-          "description": "Platziere das Sitzungsmenü-Panel in der Nähe des Leisten-Widgets, das es geöffnet hat; ohne Trigger wird es zentriert",
+          "description": "Platziere das Sitzungsmenü-Panel in der Nähe des Leisten-Widgets, das es geöffnet hat, wenn es angedockt ist oder als schwebendes Panel mit automatischer Position",
           "label": "An der Leiste"
         },
         "open-near-click-wallpaper": {
-          "description": "Platziere die Hintergrundbild-Auswahl in der Nähe des Leisten-Widgets, das es geöffnet hat; ohne Trigger wird sie zentriert",
+          "description": "Platziere die Hintergrundbild-Auswahl in der Nähe des Leisten-Widgets, das es geöffnet hat, wenn es angedockt ist oder als schwebendes Panel mit automatischer Position",
           "label": "An der Leiste"
         },
         "placement-clipboard": {
@@ -2437,7 +2436,7 @@
             "label": "Festplatten-Abfrageintervall"
           },
           "gpu-poll": {
-            "description": "Sekunden zwischen den Stichproben von GPU-Temperatur und VRAM (0 deaktiviert, was das Aufwecken einer dedizierten GPU vermeidet; 5 ist ein gutes Intervall bei aktivierter Erfassung)",
+            "description": "Sekunden zwischen GPU-Temperatur-, Auslastungs- und VRAM-Messungen; die GPU wird nur abgefragt, wenn etwas eine GPU-Statistik anzeigt, sodass ein inaktiver Rechner nie aufgeweckt wird (0 deaktiviert vollständig)",
             "label": "GPU-Abfrageintervall"
           },
           "label": "Systemmonitor",
@@ -2810,7 +2809,7 @@
           "label": "Integrierte Templates"
         },
         "community-ids": {
-          "description": "Aktiviere oder deaktiviere zwischengespeicherte Community-Templates, die bei jedem Theme-Wechsel gerendert werden",
+          "description": "Durchsuche und aktiviere Community-Templates, die bei jedem Theme-Wechsel angewendet werden",
           "empty": "Noch keine Community-Templates verfügbar. Aktiviere zuerst Community-Templates und aktualisiere den Katalog.",
           "label": "Community-Templates"
         },
@@ -3088,7 +3087,7 @@
           "label": "Benutzerdefinierte Beschriftungen"
         },
         "detached-panel": {
-          "description": "Öffne den Drawer als schwebendes Panel mit eigenem Hintergrund, statt ihn mit der Leiste zu verbinden",
+          "description": "Öffne den Drawer als schwebendes Panel, statt ihn am Leistenrand zu verankern",
           "label": "Losgelöstes Panel"
         },
         "device": {
@@ -3161,7 +3160,7 @@
           "label": "Nach Arbeitsbereich gruppieren"
         },
         "group-single-icon-per-app": {
-          "description": "Fasse beim Gruppieren nach Arbeitsbereich mehrere Fenster derselben App zu einem Icon mit Zähler-Badge zusammen",
+          "description": "Fasse beim Gruppieren nach Arbeitsbereich mit Icons mehrere Fenster derselben App zu einem Icon mit Zähler-Badge zusammen",
           "label": "Ein Icon pro App"
         },
         "height": {
@@ -3409,7 +3408,7 @@
           "label": "Temperatur anzeigen"
         },
         "show-vpn-label": {
-          "description": "Zeige VPN-Beschriftung statt Schnittstellen-Beschriftung neben dem Icon an",
+          "description": "Ersetzt die Netzwerkbeschriftung durch die VPN-Beschriftung im Ersetzungsmodus; fügt die VPN-Beschriftung neben dem VPN-Icon im Beide-Modus hinzu",
           "label": "VPN-Beschriftung anzeigen"
         },
         "show-when-idle": {
