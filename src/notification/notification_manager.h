@@ -159,7 +159,7 @@ private:
     std::optional<std::int32_t> overrideDuration;
   };
   [[nodiscard]] ExternalNotificationDispatch evaluateExternalDispatch(
-      Urgency urgency, std::string_view appName, const std::optional<std::string>& category,
+      NotificationOrigin origin, Urgency urgency, std::string_view appName, const std::optional<std::string>& category,
       const std::optional<std::string>& desktopEntry, std::string_view summary, std::string_view body, bool transient
   ) const;
   uint32_t suppressExternal(std::string_view appName, Urgency urgency);

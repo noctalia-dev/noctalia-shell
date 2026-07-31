@@ -54,6 +54,7 @@
 #include "shell/bar/widgets/spacer_widget.h"
 #include "shell/bar/widgets/spacer_widget_definition.h"
 #include "shell/bar/widgets/sysmon_widget.h"
+#include "shell/bar/widgets/sysmon_widget_definition.h"
 #include "shell/bar/widgets/taskbar_widget.h"
 #include "shell/bar/widgets/test_widget.h"
 #include "shell/bar/widgets/text_widget.h"
@@ -67,9 +68,7 @@
 #include "shell/bar/widgets/weather_widget.h"
 #include "shell/bar/widgets/weather_widget_definition.h"
 #include "shell/bar/widgets/workspaces_widget.h"
-#include "system/format_units.h"
 #include "ui/style.h"
-#include "util/file_utils.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
@@ -195,7 +194,7 @@ std::unique_ptr<Widget> WidgetFactory::create(
 
   if (type == "keyboard_layout") {
     const std::string display = wc != nullptr ? wc->getString("display", "short") : std::string("short");
-    const bool showIcon = wc != nullptr ? wc->getBool("show_icon", true) : true;
+    const bool showGlyph = wc != nullptr ? wc->getBool("show_glyph", true) : true;
     const bool showLabel = wc != nullptr ? wc->getBool("show_label", true) : true;
     const bool hideWhenSingleLayout = wc != nullptr ? wc->getBool("hide_when_single_layout", false) : false;
     auto customLabels =
@@ -205,7 +204,7 @@ std::unique_ptr<Widget> WidgetFactory::create(
       glyph = "keyboard";
     }
     auto widget = std::make_unique<KeyboardLayoutWidget>(
-        m_platform, KeyboardLayoutWidget::parseDisplayMode(display), showIcon, showLabel, hideWhenSingleLayout,
+        m_platform, KeyboardLayoutWidget::parseDisplayMode(display), showGlyph, showLabel, hideWhenSingleLayout,
         std::move(customLabels), std::move(glyph), customImageFor(wc)
     );
     widget->setContentScale(contentScale);
@@ -333,77 +332,10 @@ std::unique_ptr<Widget> WidgetFactory::create(
 
   if (type == "sysmon") {
     const bool verticalBar = barPosition == "left" || barPosition == "right";
-    std::string statStr = wc != nullptr ? wc->getString("stat", "cpu_usage") : std::string("cpu_usage");
-    std::string path =
-        FileUtils::expandUserPath(wc != nullptr ? wc->getString("path", "/") : std::string("/")).string();
-    SysmonStat stat = SysmonStat::CpuUsage;
-    if (statStr == "cpu_temp") {
-      stat = SysmonStat::CpuTemp;
-    } else if (statStr == "gpu_temp") {
-      stat = SysmonStat::GpuTemp;
-    } else if (statStr == "gpu_usage") {
-      stat = SysmonStat::GpuUsage;
-    } else if (statStr == "gpu_vram") {
-      stat = SysmonStat::GpuVram;
-    } else if (statStr == "ram_used") {
-      stat = SysmonStat::RamUsed;
-    } else if (statStr == "ram_pct") {
-      stat = SysmonStat::RamPct;
-    } else if (statStr == "swap_pct") {
-      stat = SysmonStat::SwapPct;
-    } else if (statStr == "disk_used_pct") {
-      stat = SysmonStat::DiskUsedPct;
-    } else if (statStr == "disk_used") {
-      stat = SysmonStat::DiskUsed;
-    } else if (statStr == "disk_free_pct") {
-      stat = SysmonStat::DiskFreePct;
-    } else if (statStr == "disk_free") {
-      stat = SysmonStat::DiskFree;
-    } else if (statStr == "net_rx") {
-      stat = SysmonStat::NetRx;
-    } else if (statStr == "net_tx") {
-      stat = SysmonStat::NetTx;
-    }
-    const std::string display = wc != nullptr ? wc->getString("display", "gauge") : std::string("gauge");
-    const std::string networkInterface = wc != nullptr ? wc->getString("interface", "") : std::string();
-    const std::string networkSpeedUnit = wc != nullptr ? wc->getString("network_speed_unit", "auto") : "auto";
-    const bool networkSpeedCompact = wc != nullptr ? wc->getBool("network_speed_compact", false) : false;
-    SysmonDisplayMode displayMode = SysmonDisplayMode::Gauge;
-    if (display == "text")
-      displayMode = SysmonDisplayMode::Text;
-    else if (display == "graph")
-      displayMode = SysmonDisplayMode::Graph;
-    else if (display == "none")
-      displayMode = SysmonDisplayMode::None;
-    const std::string glyphPositionStr = wc != nullptr ? wc->getString("glyph_position", "before") : "before";
-    SysmonGlyphPosition glyphPosition =
-        glyphPositionStr == "after" ? SysmonGlyphPosition::After : SysmonGlyphPosition::Before;
-    if (verticalBar && displayMode == SysmonDisplayMode::Graph) {
-      displayMode = SysmonDisplayMode::Gauge;
-    }
-    SysmonWidgetOptions options{
-        .stat = stat,
-        .diskPath = std::move(path),
-        .displayMode = displayMode,
-        .highlightColor = wc != nullptr
-            ? wc->getColorSpec(
-                  "highlight_color", colorSpecFromRole(ColorRole::Error), "widget." + name + ".highlight_color"
-              )
-            : colorSpecFromRole(ColorRole::Error),
-        .networkInterface = networkInterface,
-        .networkSpeedUnit = FormatUnits::decimalByteRateUnitFromString(networkSpeedUnit),
-        .networkSpeedLabelStyle =
-            networkSpeedCompact ? FormatUnits::ByteRateLabelStyle::Compact : FormatUnits::ByteRateLabelStyle::Full,
-        .showLabel = wc != nullptr ? wc->getBool("show_label", true) : true,
-        .labelMinWidth = static_cast<float>(wc != nullptr ? wc->getDouble("label_min_width", 0.0) : 0.0),
-        .glyph = wc != nullptr ? wc->getString("glyph", "") : std::string{},
-        .customImage = customImageFor(wc),
-        .showUnits = wc != nullptr ? wc->getBool("label_show_units", true) : true,
-        .glyphPosition = glyphPosition,
-    };
-    auto widget = std::make_unique<SysmonWidget>(m_sysmon, m_configService, std::move(options));
-    widget->setContentScale(contentScale);
-    return widget;
+    return createWidget<SysmonWidget>(
+        contentScale, m_sysmon, m_configService,
+        sysmonWidgetDefinition().resolve(wc, settingContext, SysmonWidgetDefinitionContext{.verticalBar = verticalBar})
+    );
   }
 
   if (type == "test") {
@@ -557,6 +489,7 @@ std::unique_ptr<Widget> WidgetFactory::create(
         .occupiedColor = occupiedColor,
         .emptyColor = emptyColor,
         .urgentColor = urgentColor,
+        .changeColorOnHover = wc != nullptr ? wc->getBool("change_color_on_hover", true) : true,
         .maxLabelChars = maxLabelChars,
         .labelsOnlyWhenOccupied = wc != nullptr ? wc->getBool("labels_only_when_occupied", false) : false,
         .hideWhenEmpty = wc != nullptr ? wc->getBool("hide_when_empty", false) : false,

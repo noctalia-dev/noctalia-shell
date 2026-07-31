@@ -174,7 +174,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   auto tab = ui::row({
       .out = &m_rootLayout,
       .align = FlexAlign::Stretch,
-      .gap = Style::spaceSm * scale,
+      .gap = Style::spaceMd * scale,
   });
 
   auto mediaColumn = ui::column({
@@ -442,7 +442,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   auto visualizerColumn = ui::column({
       .out = &m_visualizerColumn,
       .align = FlexAlign::Stretch,
-      .gap = Style::spaceSm * scale,
+      .gap = Style::spaceMd * scale,
       .clipChildren = true,
       .flexGrow = 2.0f,
       .configure = [scale, opacity = panelCardOpacity()](Flex& column) {

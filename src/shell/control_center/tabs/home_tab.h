@@ -35,6 +35,7 @@ namespace scripting {
 }
 
 struct ShortcutPad {
+  // Survives HomeTab::onClose(); button/glyph/label are nulled with the scene.
   std::unique_ptr<Shortcut> shortcut;
   Button* button = nullptr;
   Glyph* glyph = nullptr;

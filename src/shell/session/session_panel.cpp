@@ -83,18 +83,16 @@ PanelPlacement SessionPanel::panelPlacement() const noexcept {
 
 float SessionPanel::preferredWidth() const {
   const std::size_t n = visibleColumnCount();
-  const float gap = Style::spaceSm;
+  const float gap = Style::spaceMd;
   const float w = kButtonMinWidth * static_cast<float>(n)
       + gap * static_cast<float>(n > 1 ? n - 1 : 0)
       + Style::panelPadding * 2.0f;
-  // The min-width floor keeps the default single-row panel comfortably wide; an explicit
-  // grid sizes to its own columns instead of being stretched back out to it.
-  return scaled(gridEnabled() ? w : std::max(kPanelMinWidth, w));
+  return scaled(w);
 }
 
 float SessionPanel::preferredHeight() const {
   const std::size_t rows = visibleRowCount();
-  const float gap = Style::spaceSm;
+  const float gap = Style::spaceMd;
   const float h = kActionButtonMinHeight * static_cast<float>(rows)
       + gap * static_cast<float>(rows > 1 ? rows - 1 : 0)
       + Style::panelPadding * 2.0f;
@@ -135,8 +133,8 @@ void SessionPanel::create() {
 
   auto rootLayout = std::make_unique<GridView>();
   rootLayout->setColumns(columns);
-  rootLayout->setColumnGap(Style::spaceSm * scale);
-  rootLayout->setRowGap(Style::spaceSm * scale);
+  rootLayout->setColumnGap(Style::spaceMd * scale);
+  rootLayout->setRowGap(Style::spaceMd * scale);
   rootLayout->setStretchItems(true);
   rootLayout->setUniformCellSize(true);
   rootLayout->setMinCellWidth(kButtonMinWidth * scale);
@@ -197,7 +195,7 @@ Button* SessionPanel::createActionButton(const SessionPanelActionConfig& cfg, st
       .minWidth = kButtonMinWidth * scale,
       .minHeight = kActionButtonMinHeight * scale,
       .paddingV = Style::spaceMd * scale,
-      .paddingH = Style::spaceLg * scale,
+      .paddingH = Style::spaceMd * scale,
       .gap = Style::spaceSm * scale,
       .radius = Style::scaledRadiusLg(scale),
       .flexGrow = 1.0f,

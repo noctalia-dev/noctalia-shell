@@ -14,7 +14,7 @@
 #include "scripting/plugin_id.h"
 #include "shell/bar/bar_corner_shape.h"
 #include "shell/bar/bar_reserved_zone.h"
-#include "shell/clipboard/clipboard_panel.h"
+#include "shell/panel/panel.h"
 #include "shell/panel/panel_surface_style.h"
 #include "shell/screen_position.h"
 #include "shell/surface/shadow.h"
@@ -264,6 +264,23 @@ namespace {
       return pc.polkitPosition;
     }
     return "auto";
+  }
+
+  [[nodiscard]] bool usesConfiguredFloatingLayer(std::string_view panelId) {
+    return panelId == "clipboard"
+        || panelId == "control-center"
+        || panelId == "launcher"
+        || panelId == "session"
+        || panelId == "setup-wizard"
+        || panelId == "wallpaper";
+  }
+
+  [[nodiscard]] LayerShellLayer
+  resolveFloatingPanelLayer(const ConfigService* configService, std::string_view panelId, const Panel& panel) {
+    if (configService != nullptr && usesConfiguredFloatingLayer(panelId)) {
+      return layerShellLayerFromConfig(configService->config().shell.panel.floatingLayer);
+    }
+    return panel.layer();
   }
 
   [[nodiscard]] bool openNearClickEnabledForPanel(const ConfigService* configService, std::string_view panelId) {
@@ -781,8 +798,10 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
       && barConfig.thickness > 0
       && outputWidth > 0
       && outputHeight > 0;
+  const LayerShellLayer floatingPanelLayer = resolveFloatingPanelLayer(m_config, m_activePanelId, *m_activePanel);
   const LayerShellLayer panelLayer =
-      useAttachedPlacement ? layerShellLayerFromConfig(barConfig.layer) : m_activePanel->layer();
+      useAttachedPlacement ? layerShellLayerFromConfig(barConfig.layer) : floatingPanelLayer;
+  m_panelLayer = panelLayer;
 
   const bool hasFocusGrab =
       m_platform != nullptr && m_platform->focusGrabService() != nullptr && m_platform->focusGrabService()->available();
@@ -806,7 +825,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
 
   auto surfaceConfig = LayerSurfaceConfig{
       .nameSpace = "noctalia-panel",
-      .layer = m_activePanel->layer(),
+      .layer = floatingPanelLayer,
       .anchor = standaloneAnchor,
       .width = requestedSurfaceWidth,
       .height = requestedSurfaceHeight,
@@ -848,6 +867,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_layerSurface = nullptr;
     m_output = nullptr;
     m_wlSurface = nullptr;
+    m_panelLayer = LayerShellLayer::Top;
     m_activePanel = nullptr;
     m_activePanelId.clear();
     m_pendingOpenContext.clear();
@@ -1123,6 +1143,10 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_attachedPanelGeometry.reset();
     m_attachedOpenAnimationPending = false;
     kLog.warn("panel manager: attached layer-shell failed for \"{}\", falling back to standalone", panelId);
+    if (m_panelLayer != floatingPanelLayer) {
+      m_clickShield.setLayer(floatingPanelLayer);
+      m_panelLayer = floatingPanelLayer;
+    }
   }
 
   auto layerSurface = std::make_unique<LayerSurface>(m_platform->wayland(), std::move(surfaceConfig));
@@ -1412,16 +1436,6 @@ void PanelManager::togglePanel(const std::string& panelId) {
   openPanel(panelId, PanelOpenRequest{});
 }
 
-void PanelManager::clearClipboardHistory() {
-  const auto it = m_panels.find("clipboard");
-  if (it == m_panels.end()) {
-    return;
-  }
-  if (auto* clipboardPanel = dynamic_cast<ClipboardPanel*>(it->second.get())) {
-    clipboardPanel->clearHistoryFromIpc();
-  }
-}
-
 bool PanelManager::onPointerEvent(const PointerEvent& event) {
   // Persistent panels own separate surfaces; the host claims only its own.
   if (m_persistentHost.onPointerEvent(event)) {
@@ -1580,6 +1594,58 @@ void PanelManager::refresh() {
   m_surface->requestUpdate();
 }
 
+void PanelManager::relayoutActivePanelPreferredSize() {
+  if (!isOpen() || m_activePanel == nullptr || m_surface == nullptr || m_layerSurface == nullptr || m_attachedToBar) {
+    return;
+  }
+  if (m_platform == nullptr || m_config == nullptr) {
+    return;
+  }
+
+  const auto screenPadding = static_cast<std::int32_t>(Style::spaceSm);
+  const auto* wlOutput = m_output != nullptr ? m_platform->findOutputByWl(m_output) : nullptr;
+  const std::int32_t outputWidth = wlOutput != nullptr ? wlOutput->effectiveLogicalWidth() : 0;
+  const std::int32_t outputHeight = wlOutput != nullptr ? wlOutput->effectiveLogicalHeight() : 0;
+
+  auto panelWidth = static_cast<std::uint32_t>(std::max(1.0f, std::round(m_activePanel->preferredWidth())));
+  auto panelHeight = static_cast<std::uint32_t>(std::max(1.0f, std::round(m_activePanel->preferredHeight())));
+  if (outputWidth > 0) {
+    panelWidth = std::min(panelWidth, static_cast<std::uint32_t>(std::max(1, outputWidth - screenPadding * 2)));
+  }
+  if (outputHeight > 0) {
+    panelHeight = std::min(panelHeight, static_cast<std::uint32_t>(std::max(1, outputHeight - screenPadding * 2)));
+  }
+  if (panelWidth == m_panelVisualWidth && panelHeight == m_panelVisualHeight) {
+    return;
+  }
+
+  const auto detachedShadowBleed =
+      shell::panel_surface::bleed(m_activePanel->hasDecoration(), m_config->config().shell.shadow);
+  const std::uint32_t surfaceWidth =
+      shell::panel_surface::surfaceExtent(panelWidth, detachedShadowBleed.left, detachedShadowBleed.right);
+  const std::uint32_t surfaceHeight =
+      shell::panel_surface::surfaceExtent(panelHeight, detachedShadowBleed.up, detachedShadowBleed.down);
+
+  m_panelVisualWidth = panelWidth;
+  m_panelVisualHeight = panelHeight;
+
+  const std::string panelPosition = resolvePanelPosition(m_config, m_activePanelId);
+  const bool useCenterScreenLayout =
+      m_activePanel->panelPlacement() == PanelPlacement::Floating && panelPosition == "center";
+  if (useCenterScreenLayout && outputWidth > 0 && outputHeight > 0) {
+    const std::int32_t marginLeft =
+        (outputWidth - static_cast<std::int32_t>(panelWidth)) / 2 - detachedShadowBleed.left;
+    const std::int32_t marginTop = (outputHeight - static_cast<std::int32_t>(panelHeight)) / 2 - detachedShadowBleed.up;
+    m_layerSurface->setMargins(marginTop, m_layerSurface->marginRight(), m_layerSurface->marginBottom(), marginLeft);
+  }
+
+  m_layerSurface->requestSize(surfaceWidth, surfaceHeight);
+  m_surface->setInputRegion(
+      {InputRect{m_panelInsetX, m_panelInsetY, static_cast<int>(panelWidth), static_cast<int>(panelHeight)}}
+  );
+  m_surface->requestLayout();
+}
+
 void PanelManager::refreshPanel(std::string_view panelId) {
   if (m_persistentHost.hasPanel(panelId)) {
     m_persistentHost.refreshPanel(panelId);
@@ -1597,6 +1663,16 @@ void PanelManager::closePanelById(std::string_view panelId) {
   }
   if (isOpenPanel(panelId)) {
     closePanel();
+  }
+}
+
+void PanelManager::requestAnimationFrameForPanel(std::string_view panelId) {
+  if (m_persistentHost.hasPanel(panelId)) {
+    m_persistentHost.requestAnimationFrame(panelId);
+    return;
+  }
+  if (isOpenPanel(panelId)) {
+    requestRedraw();
   }
 }
 
@@ -2147,6 +2223,14 @@ void PanelManager::onConfigReloaded() {
   m_persistentHost.onConfigReloaded();
   if (!isOpen() || m_config == nullptr || m_activePanel == nullptr) {
     return;
+  }
+  if (!m_attachedToBar && m_layerSurface != nullptr) {
+    const LayerShellLayer panelLayer = resolveFloatingPanelLayer(m_config, m_activePanelId, *m_activePanel);
+    if (panelLayer != m_panelLayer) {
+      m_clickShield.setLayer(panelLayer);
+      m_layerSurface->setLayer(panelLayer);
+      m_panelLayer = panelLayer;
+    }
   }
 
   if (m_attachedToBar) {

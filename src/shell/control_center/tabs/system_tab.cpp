@@ -214,7 +214,7 @@ std::unique_ptr<Flex> SystemTab::create() {
   auto tab = ui::column({
       .out = &m_root,
       .align = FlexAlign::Stretch,
-      .gap = Style::spaceSm * sc,
+      .gap = Style::spaceMd * sc,
   });
 
   // --- Graph grid ---
@@ -222,7 +222,7 @@ std::unique_ptr<Flex> SystemTab::create() {
   {
     auto row = ui::row({
         .align = FlexAlign::Stretch,
-        .gap = Style::spaceSm * sc,
+        .gap = Style::spaceMd * sc,
         .flexGrow = 1.0f,
     });
 
@@ -271,7 +271,7 @@ std::unique_ptr<Flex> SystemTab::create() {
   {
     auto row = ui::row({
         .align = FlexAlign::Stretch,
-        .gap = Style::spaceSm * sc,
+        .gap = Style::spaceMd * sc,
         .flexGrow = 1.0f,
     });
 
@@ -328,7 +328,7 @@ std::unique_ptr<Flex> SystemTab::create() {
   {
     auto row = ui::row({
         .align = FlexAlign::Stretch,
-        .gap = Style::spaceSm * sc,
+        .gap = Style::spaceMd * sc,
     });
     static constexpr const char* kSystemGlyphs[] = {"cpu-usage",        "video",      "device-desktop",
                                                     "layers-intersect", "app-window", "clock"};

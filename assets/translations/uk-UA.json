@@ -482,6 +482,7 @@
         "input-opacity": "Непрозорість поля введення",
         "input-radius": "Радіус поля введення",
         "interface": "Інтерфейс",
+        "label": "",
         "layout": "Макет",
         "mirrored": "Віддзеркалений",
         "network-speed-compact": "Швидкість мережі (компактно)",
@@ -701,6 +702,7 @@
       "lockscreen-widgets-editor-enabled": "Редагування віджетів на екрані блокування розпочато. Розташовуйте віджети на шарі попереднього перегляду, а потім заблокуйте сеанс, щоб перевірити їх розташування.",
       "mpris-disabled": "MPRIS вимкнено",
       "polkit-agent": "Агент Polkit",
+      "screen-time-reset": "Екранний час",
       "session-bus-unavailable": "Шина сеансу недоступна",
       "wallpaper-palette-export": "Особлива палітра",
       "wallpaper-palette-export-success": "Палітру «{name}» збережено і встановлено як поточну в режимі особливої палітри."
@@ -748,6 +750,8 @@
       "title": "Додаток вимкнутий."
     },
     "enable-failed": {
+      "body-error": "{plugin}: {error}",
+      "body-timeout": "Установлення додатку «{plugin}» тривало надто довго.",
       "title": "Додаток не увімкнено."
     }
   },
@@ -782,7 +786,7 @@
     "actions": {
       "custom": "Користувацький",
       "lock": "Заблокувати",
-      "lock-and-suspend": "Блокування та призупинення",
+      "lock-and-suspend": "Заблокувати й приспати",
       "logout": "Вийти",
       "reboot": "Перезапустити",
       "shutdown": "Вимкнути",

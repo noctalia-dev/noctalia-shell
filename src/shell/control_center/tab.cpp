@@ -11,7 +11,7 @@ namespace control_center {
     card.setDirection(FlexDirection::Vertical);
     card.setAlign(FlexAlign::Stretch);
     card.setGap(Style::spaceSm * scale);
-    card.setPadding((Style::spaceSm + Style::spaceXs) * scale, Style::spaceMd * scale);
+    card.setPadding(Style::spaceMd * scale);
   }
 
   Label* addTitle(Flex& parent, const std::string& text, float scale) {

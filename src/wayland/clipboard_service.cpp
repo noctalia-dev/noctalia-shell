@@ -492,6 +492,7 @@ void ClipboardService::setKeepFromClosedApps(bool enabled) {
   m_keepFromClosedApps = enabled;
   if (!enabled) {
     m_selectionBackup.reset();
+    m_pendingOrphanAdopt = false;
   }
 }
 
@@ -551,6 +552,7 @@ bool ClipboardService::bind(void* manager, const DataControlOps* ops, wl_seat* s
 }
 
 void ClipboardService::cleanup() {
+  m_pendingOrphanAdopt = false;
   cancelActiveRead();
   cancelActiveWrites();
   clearOffers();
@@ -1101,6 +1103,8 @@ void ClipboardService::dispatchPollEvents(const std::vector<pollfd>& fds, std::s
     }
     dispatchWriteEvents(fds[i].fd, fds[i].revents);
   }
+
+  flushPendingOrphanAdopt();
 }
 
 void ClipboardService::handleDataOffer(void* offer) {
@@ -1133,12 +1137,14 @@ void ClipboardService::handleSelection(void* offer) {
   m_selectionOffer = offer;
 
   if (offer == nullptr) {
-    // The selection went away, which on Wayland means the client that owned it
-    // exited: nothing is serving those bytes any more.
-    adoptOrphanedSelection();
+    // A null selection is normal during handoff between clients. Defer adoption
+    // until the next poll tick so a replacement offer in the same dispatch batch
+    // can arrive first; only adopt if the selection is still empty then.
+    m_pendingOrphanAdopt = true;
     return;
   }
 
+  m_pendingOrphanAdopt = false;
   m_selectionBackup.reset();
   if (!startReceive(offer)) {
     kLog.debug("selection offer has no supported MIME types");
@@ -1172,6 +1178,14 @@ bool ClipboardService::payloadLooksComplete(std::string_view mimeType, std::span
   // Everything else carries no end marker worth trusting; text in particular is
   // still useful when partial.
   return true;
+}
+
+void ClipboardService::flushPendingOrphanAdopt() {
+  if (!m_pendingOrphanAdopt || m_selectionOffer != nullptr) {
+    return;
+  }
+  m_pendingOrphanAdopt = false;
+  adoptOrphanedSelection();
 }
 
 void ClipboardService::adoptOrphanedSelection() {

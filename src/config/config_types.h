@@ -333,6 +333,9 @@ enum class KeybindAction : std::uint8_t {
   Down = 5,
   TabNext = 6,
   TabPrevious = 7,
+  Delete = 8,
+  Copy = 9,
+  Save = 10,
 };
 
 [[nodiscard]] std::vector<KeyChord> defaultKeybindSet(KeybindAction action);
@@ -925,9 +928,10 @@ struct ShellConfig {
 
   struct PanelConfig {
     PanelTransparencyMode transparencyMode = PanelTransparencyMode::Solid;
-    bool borders = true;             // outline on floating panel surfaces
-    bool shadow = true;              // cast the global [shell.shadow] from panel surfaces
-    bool listItemBackground = false; // filled rounded background behind launcher/clipboard list items
+    bool borders = true;                   // outline on floating panel surfaces
+    bool shadow = true;                    // cast the global [shell.shadow] from panel surfaces
+    bool listItemBackground = false;       // filled rounded background behind launcher/clipboard list items
+    std::string floatingLayer = "overlay"; // top | overlay; attached panels follow their bar
     PanelPlacement launcherPlacement = PanelPlacement::Floating;
     PanelPlacement clipboardPlacement = PanelPlacement::Floating;
     PanelPlacement controlCenterPlacement = PanelPlacement::Attached;
@@ -996,6 +1000,7 @@ struct ShellConfig {
     bool copyToClipboard = true;
     bool freezeScreen = true;
     bool confirmRegion = false;
+    bool rememberLastRegion = false;
     bool showCursor = false;
     bool pipeToCommand = false;
     std::string pipeCommand;
@@ -1260,6 +1265,9 @@ struct KeybindsConfig {
   std::vector<KeyChord> down;
   std::vector<KeyChord> tabNext;
   std::vector<KeyChord> tabPrevious;
+  std::vector<KeyChord> deleteEntry;
+  std::vector<KeyChord> copy;
+  std::vector<KeyChord> save;
 
   bool operator==(const KeybindsConfig&) const = default;
 };
@@ -1479,6 +1487,7 @@ struct ControlCenterConfig {
   ControlCenterSidebarMode sidebarMode = ControlCenterSidebarMode::Compact;
   ControlCenterSidebarMode sidebarSectionMode = ControlCenterSidebarMode::Compact;
   std::int32_t width = kDefaultWidth; // full-sidebar logical width; compact/none modes scale down from this
+  bool showShortcutLabels = true;
   CalendarTabConfig calendarTab;
   bool operator==(const ControlCenterConfig&) const = default;
 };

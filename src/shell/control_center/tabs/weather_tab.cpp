@@ -60,7 +60,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   auto leftColumn = ui::column({
       .out = &m_leftColumn,
       .align = FlexAlign::Stretch,
-      .gap = Style::spaceSm * scale,
+      .gap = Style::spaceMd * scale,
       .flexGrow = 3.0f,
   });
 
