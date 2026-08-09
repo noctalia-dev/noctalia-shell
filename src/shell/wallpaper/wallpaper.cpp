@@ -43,18 +43,18 @@ namespace {
 
   constexpr Easing kWallpaperTransitionEasing = Easing::EaseInOutCubic;
 
-  [[nodiscard]] Color defaultWallpaperColor() { return rgba(0.0f, 0.0f, 0.0f, 1.0f); }
+  [[nodiscard]] Color defaultWallpaperColor() { return rgba(0.0F, 0.0F, 0.0F, 1.0F); }
 
   [[nodiscard]] float transitionProgressForTime(float time) {
-    return applyEasing(kWallpaperTransitionEasing, std::clamp(time, 0.0f, 1.0f));
+    return applyEasing(kWallpaperTransitionEasing, std::clamp(time, 0.0F, 1.0F));
   }
 
   void setTransitionTime(WallpaperInstance& instance, float time) {
-    instance.transitionTime = std::clamp(time, 0.0f, 1.0f);
+    instance.transitionTime = std::clamp(time, 0.0F, 1.0F);
   }
 
   [[nodiscard]] float transitionTargetTime(WallpaperTransitionDirection direction) {
-    return direction == WallpaperTransitionDirection::Forward ? 1.0f : 0.0f;
+    return direction == WallpaperTransitionDirection::Forward ? 1.0F : 0.0F;
   }
 
   [[nodiscard]] std::optional<WallpaperTransitionDirection>
@@ -77,22 +77,22 @@ namespace {
 
     switch (type) {
     case WallpaperTransition::Wipe:
-      params.direction = std::floor(randomFloat(0.0f, 4.0f));
+      params.direction = std::floor(randomFloat(0.0F, 4.0F));
       break;
     case WallpaperTransition::Disc:
-      params.centerX = randomFloat(0.2f, 0.8f);
-      params.centerY = randomFloat(0.2f, 0.8f);
+      params.centerX = randomFloat(0.2F, 0.8F);
+      params.centerY = randomFloat(0.2F, 0.8F);
       break;
     case WallpaperTransition::Stripes:
-      params.stripeCount = std::round(randomFloat(4.0f, 24.0f));
-      params.angle = randomFloat(0.0f, 360.0f);
+      params.stripeCount = std::round(randomFloat(4.0F, 24.0F));
+      params.angle = randomFloat(0.0F, 360.0F);
       break;
     case WallpaperTransition::Zoom:
       break;
     case WallpaperTransition::Honeycomb:
-      params.cellSize = randomFloat(0.02f, 0.06f);
-      params.centerX = randomFloat(0.2f, 0.8f);
-      params.centerY = randomFloat(0.2f, 0.8f);
+      params.cellSize = randomFloat(0.02F, 0.06F);
+      params.centerX = randomFloat(0.2F, 0.8F);
+      params.centerY = randomFloat(0.2F, 0.8F);
       break;
     case WallpaperTransition::Fade:
     default:
@@ -198,7 +198,7 @@ namespace {
     }
 
     const std::size_t start = std::min<std::size_t>(
-        static_cast<std::size_t>(std::floor(randomFloat(0.0f, static_cast<float>(candidates.size())))),
+        static_cast<std::size_t>(std::floor(randomFloat(0.0F, static_cast<float>(candidates.size())))),
         candidates.size() - 1
     );
     for (std::size_t i = 0; i < candidates.size(); ++i) {
@@ -261,7 +261,7 @@ namespace {
     }
 
     if (fillColor == nullptr) {
-      return rgba(0.0f, 0.0f, 0.0f, 0.0f);
+      return rgba(0.0F, 0.0F, 0.0F, 0.0F);
     }
     return resolveColorSpec(*fillColor);
   }
@@ -659,12 +659,12 @@ std::vector<WallpaperChange> Wallpaper::onStateChange() {
         inst->nextTexture = {};
         inst->currentSourceKind = WallpaperSourceKind::Image;
         inst->nextSourceKind = WallpaperSourceKind::Image;
-        inst->currentColor = rgba(0.0f, 0.0f, 0.0f, 1.0f);
-        inst->nextColor = rgba(0.0f, 0.0f, 0.0f, 1.0f);
+        inst->currentColor = rgba(0.0F, 0.0F, 0.0F, 1.0F);
+        inst->nextColor = rgba(0.0F, 0.0F, 0.0F, 1.0F);
         inst->currentPath.clear();
         inst->pendingPath.clear();
         inst->queuedPath.clear();
-        inst->transitionTime = 0.0f;
+        inst->transitionTime = 0.0F;
         inst->transitioning = false;
         inst->transitionDirection = WallpaperTransitionDirection::Forward;
         updateRendererState(*inst);
@@ -1440,9 +1440,9 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
     const auto sw = static_cast<float>(width);
     const auto sh = static_cast<float>(height);
     inst->sceneRoot->setSize(sw, sh);
-    inst->fillNode->setPosition(0.0f, 0.0f);
+    inst->fillNode->setPosition(0.0F, 0.0F);
     inst->fillNode->setSize(sw, sh);
-    inst->wallpaperNode->setPosition(0.0f, 0.0f);
+    inst->wallpaperNode->setPosition(0.0F, 0.0F);
     inst->wallpaperNode->setSize(sw, sh);
     inst->darkenNode->setPosition(0.0f, 0.0f);
     inst->darkenNode->setSize(sw, sh);
@@ -1520,7 +1520,7 @@ void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& pa
   }
 
   TextureHandle newTex;
-  Color newColor = rgba(0.0f, 0.0f, 0.0f, 1.0f);
+  Color newColor = rgba(0.0F, 0.0F, 0.0F, 1.0F);
   WallpaperSourceKind newSourceKind = WallpaperSourceKind::Image;
   if (parseColorWallpaperPath(path, newColor)) {
     newSourceKind = WallpaperSourceKind::Color;
@@ -1537,7 +1537,7 @@ void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& pa
     if (wpConfig.transitionOnStartup && !wpConfig.transitions.empty()) {
       instance.currentSourceKind = WallpaperSourceKind::Color;
       instance.currentTexture = {};
-      instance.currentColor = rgba(0.0f, 0.0f, 0.0f, 1.0f);
+      instance.currentColor = rgba(0.0F, 0.0F, 0.0F, 0.0F);
       instance.nextSourceKind = newSourceKind;
       instance.nextTexture = newTex;
       instance.nextColor = newColor;
@@ -1552,7 +1552,7 @@ void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& pa
     instance.currentPath = path;
     instance.pendingPath.clear();
     instance.queuedPath.clear();
-    instance.transitionTime = 0.0f;
+    instance.transitionTime = 0.0F;
     instance.transitionDirection = WallpaperTransitionDirection::Forward;
     updateRendererState(instance);
     instance.surface->requestRedraw();
@@ -1597,17 +1597,17 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
     return;
   }
 
-  float aspectRatio = 1.777f;
+  float aspectRatio = 1.777F;
   if (instance.surface->height() > 0) {
     aspectRatio = static_cast<float>(instance.surface->width()) / static_cast<float>(instance.surface->height());
   }
 
   const auto& transitions = wpConfig.transitions;
   const auto picked =
-      transitions[static_cast<std::size_t>(std::floor(randomFloat(0.0f, static_cast<float>(transitions.size()))))];
+      transitions[static_cast<std::size_t>(std::floor(randomFloat(0.0F, static_cast<float>(transitions.size()))))];
   instance.activeTransition = picked;
   instance.transitionParams = randomizeParams(picked, wpConfig.edgeSmoothness, aspectRatio);
-  startTransitionAnimation(instance, 0.0f, WallpaperTransitionDirection::Forward);
+  startTransitionAnimation(instance, 0.0F, WallpaperTransitionDirection::Forward);
 }
 
 void Wallpaper::startTransitionAnimation(
@@ -1618,7 +1618,7 @@ void Wallpaper::startTransitionAnimation(
   }
 
   const auto& wpConfig = m_config->config().wallpaper;
-  fromTime = std::clamp(fromTime, 0.0f, 1.0f);
+  fromTime = std::clamp(fromTime, 0.0F, 1.0F);
   const float toTime = transitionTargetTime(direction);
 
   instance.transitioning = true;
@@ -1626,7 +1626,7 @@ void Wallpaper::startTransitionAnimation(
   setTransitionTime(instance, fromTime);
 
   const float durationMs = std::abs(toTime - fromTime) * wpConfig.transitionDurationMs;
-  if (durationMs <= 0.0f) {
+  if (durationMs <= 0.0F) {
     setTransitionTime(instance, toTime);
     finishTransition(instance);
     return;
@@ -1655,7 +1655,7 @@ void Wallpaper::finishTransition(WallpaperInstance& instance) {
     discardPendingWallpaper(instance);
   }
 
-  instance.transitionTime = 0.0f;
+  instance.transitionTime = 0.0F;
   instance.transitioning = false;
   instance.transitionDirection = WallpaperTransitionDirection::Forward;
   updateRendererState(instance);

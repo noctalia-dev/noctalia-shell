@@ -4,14 +4,18 @@
 #include "calendar/caldav_discovery.h"
 #include "calendar/calendar_cache.h"
 #include "calendar/calendar_discovery_state.h"
+#include "calendar/event_link.h"
+#include "calendar/ical_parser.h"
 #include "config/config_service.h"
 #include "core/log.h"
 #include "i18n/i18n.h"
+#include "net/http_client.h"
 #include "net/url_open.h"
 #include "notification/notification_manager.h"
 #include "security/secret_store.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdlib>
 #include <iterator>
 #include <memory>
@@ -231,14 +235,25 @@ void CalendarService::retryCredentialMigration() {
   });
 }
 
-void CalendarService::addChangeCallback(ChangeCallback callback) {
-  if (callback) {
-    m_callbacks.push_back(std::move(callback));
+CalendarService::ChangeCallbackId CalendarService::addChangeCallback(ChangeCallback callback) {
+  if (!callback) {
+    return 0;
   }
+  const ChangeCallbackId id = m_nextCallbackId++;
+  m_callbacks.emplace_back(id, std::move(callback));
+  return id;
+}
+
+void CalendarService::removeChangeCallback(ChangeCallbackId callbackId) {
+  if (callbackId == 0) {
+    return;
+  }
+  std::erase_if(m_callbacks, [callbackId](const auto& entry) { return entry.first == callbackId; });
 }
 
 void CalendarService::notifyChanged() {
-  for (auto& callback : m_callbacks) {
+  for (auto& [id, callback] : m_callbacks) {
+    (void)id;
     if (callback) {
       callback();
     }
@@ -351,6 +366,8 @@ void CalendarService::startRefresh() {
       fetchCalDav(account);
     } else if (account.type == "google") {
       fetchGoogle(account);
+    } else if (account.type == "ics") {
+      fetchIcs(account);
     } else {
       kLog.warn("unknown calendar account type '{}' for id {}", account.type, account.id);
       accountDone(account.id, false, {});
@@ -525,6 +542,76 @@ void CalendarService::lookupCalDavPassword(
     break;
   }
   callback(security::SecretStoreStatus::BackendError, {});
+}
+
+void CalendarService::fetchIcs(const CalendarConfig::Account& account) {
+  std::string url = account.serverUrl;
+  if (url.empty()) {
+    kLog.warn("ics account {} is missing server_url", account.id);
+    accountDone(account.id, false, {});
+    return;
+  }
+
+  const std::string accountId = account.id;
+  const std::string displayName = account.displayName;
+  const std::string colorHex = account.color;
+
+  // Normalize webcal:// (and webcals://) so libcurl accepts it; scheme match is case-insensitive.
+  auto iEqualsPrefix = [](std::string_view s, std::string_view prefix) {
+    if (s.size() < prefix.size()) {
+      return false;
+    }
+    for (std::size_t i = 0; i < prefix.size(); ++i) {
+      if (std::tolower(static_cast<unsigned char>(s[i])) != prefix[i]) {
+        return false;
+      }
+    }
+    return true;
+  };
+  if (iEqualsPrefix(url, "webcal://")) {
+    url.replace(0, std::string_view("webcal").size(), "https");
+  } else if (iEqualsPrefix(url, "webcals://")) {
+    url.replace(0, std::string_view("webcals").size(), "https");
+  }
+
+  HttpRequest req;
+  req.url = url;
+  req.followRedirects = true;
+  req.headers.emplace_back("Accept: text/calendar, */*;q=0.5");
+
+  m_httpClient.request(req, [this, accountId, displayName, colorHex](HttpResponse resp) {
+    if (!resp.transportOk || resp.status != 200) {
+      kLog.warn("failed to fetch ics for account {}: http status {}", accountId, resp.status);
+      accountDone(accountId, false, {});
+      return;
+    }
+
+    calendar::ICalParseControl control{};
+    const auto now = std::chrono::system_clock::now();
+    auto result = calendar::parseICalEvents(resp.body, now - kWindowBefore, now + kWindowAfter, control);
+    for (auto& event : result.events) {
+      event.calendarName = displayName;
+      if (!colorHex.empty()) {
+        event.colorHex = colorHex;
+      }
+    }
+
+    switch (result.status) {
+    case calendar::ICalParseStatus::Complete:
+      accountDone(accountId, true, std::move(result.events));
+      return;
+    case calendar::ICalParseStatus::Cancelled:
+      kLog.warn("iCalendar parsing was cancelled for id {}", accountId);
+      break;
+    case calendar::ICalParseStatus::InvalidCalendar:
+      kLog.warn("The URL for {} returned an invalid ICS calendar", accountId);
+      break;
+    case calendar::ICalParseStatus::WorkBudgetExceeded:
+      kLog.warn("iCalendar recurrence expansion exceeded the work limit for id {}", accountId);
+      break;
+    }
+    accountDone(accountId, false, {});
+  });
 }
 
 void CalendarService::refreshGoogleToken(const std::string& accountId, std::function<void(bool, std::string)> cb) {
@@ -1028,6 +1115,7 @@ bool CalendarService::parseCache(std::span<const std::uint8_t> contents) {
       event.calendarName = item.value("calendar", std::string{});
       event.colorHex = item.value("color", std::string{});
       event.location = item.value("location", std::string{});
+      event.url = calendar::resolveEventLink(event.location, item.value("url", std::string{}));
       event.start = fromUnix(item.value("start", std::int64_t{0}));
       event.end = fromUnix(item.value("end", std::int64_t{0}));
       event.allDay = item.value("all_day", false);
@@ -1060,6 +1148,7 @@ void CalendarService::saveCache() {
           {"calendar", event.calendarName},
           {"color", event.colorHex},
           {"location", event.location},
+          {"url", event.url},
           {"start", toUnix(event.start)},
           {"end", toUnix(event.end)},
           {"all_day", event.allDay},
