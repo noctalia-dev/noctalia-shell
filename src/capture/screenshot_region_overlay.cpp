@@ -10,6 +10,7 @@
 #include "i18n/i18n.h"
 #include "render/animation/animation_manager.h"
 #include "render/core/color.h"
+#include "render/core/renderer.h"
 #include "render/core/texture_manager.h"
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
@@ -356,8 +357,9 @@ namespace capture {
   void ScreenshotRegionOverlay::destroySurfaces() {
     for (auto& inst : m_instances) {
       if (inst != nullptr) {
-        if (inst->backdrop != nullptr && m_renderContext != nullptr) {
-          inst->backdrop->clear(*m_renderContext);
+        if (inst->backdrop != nullptr && inst->surface != nullptr && m_renderContext != nullptr) {
+          Renderer& renderer = inst->surface->renderTarget().renderer();
+          inst->backdrop->clear(renderer);
         }
         inst->inputDispatcher.setSceneRoot(nullptr);
         inst->animations.cancelAll();
@@ -385,6 +387,7 @@ namespace capture {
       abortWithError(i18n::tr("bar.screenshot.overlay-alloc-failed"));
       return;
     }
+    Renderer& renderer = inst.surface->renderTarget().renderer();
 
     const bool needsSceneBuild = inst.sceneRoot == nullptr
         || static_cast<std::uint32_t>(std::round(inst.sceneRoot->width())) != width
@@ -512,8 +515,8 @@ namespace capture {
           .configure = [](Image& image) { image.setPosition(0.0F, 0.0F); },
       });
       if (!backdrop->setSourceRaw(
-              *m_renderContext, frozen->rgba.data(), frozen->rgba.size(), frozen->width, frozen->height,
-              frozen->width * 4, PixmapFormat::RGBA, false
+              renderer, frozen->rgba.data(), frozen->rgba.size(), frozen->width, frozen->height, frozen->width * 4,
+              PixmapFormat::RGBA, false
           )) {
         kLog.warn("failed to upload frozen screenshot backdrop");
       }
@@ -576,7 +579,7 @@ namespace capture {
       });
       Flex* pickerBarPtr = pickerBar.get();
       inst.sceneRoot->addChild(std::move(pickerBar));
-      pickerBarPtr->layout(*m_renderContext);
+      pickerBarPtr->layout(renderer);
       pickerBarPtr->setPosition((w - pickerBarPtr->width()) * 0.5F, Style::spaceMd);
     } else if (m_confirmRegion) {
       auto hintBar = buildConfirmHintBar(inst.confirmHintLabel);
@@ -852,7 +855,8 @@ namespace capture {
             && cursorGlobalY < outBottom;
         if (cursorOnOutput) {
           inst->dimensionsLabel->setText(dimensionText);
-          inst->dimensionsLabel->measure(*m_renderContext);
+          Renderer& renderer = inst->surface->renderTarget().renderer();
+          inst->dimensionsLabel->measure(renderer);
           const float badgeWidth = inst->dimensionsLabel->width() + (kDimensionPaddingX * 2.0F);
           const float badgeHeight = inst->dimensionsLabel->height() + (kDimensionPaddingY * 2.0F);
           inst->dimensionsBadge->setSize(badgeWidth, badgeHeight);
@@ -892,7 +896,8 @@ namespace capture {
         }
         const auto surfaceW = static_cast<float>(inst->surface->width());
         const auto surfaceH = static_cast<float>(inst->surface->height());
-        inst->confirmHint->layout(*m_renderContext);
+        Renderer& renderer = inst->surface->renderTarget().renderer();
+        inst->confirmHint->layout(renderer);
         const float y = std::max(Style::spaceMd, surfaceH - inst->confirmHint->height() - Style::spaceMd);
         inst->confirmHint->setPosition((surfaceW - inst->confirmHint->width()) * 0.5F, y);
       }

@@ -186,6 +186,8 @@ private:
   [[nodiscard]] std::optional<float>
   findPlacementY(float entryHeight, std::optional<uint32_t> ignoreNotificationId = std::nullopt) const;
   [[nodiscard]] uint32_t surfaceHeightForOutput(wl_output* output) const;
+  // Configured render scale of a notification output, for pre-surface sizing.
+  [[nodiscard]] float notificationScale() const;
   [[nodiscard]] std::string resolveNotificationIconPath(const PopupEntry& entry);
 
   WaylandConnection* m_wayland = nullptr;

@@ -1996,6 +1996,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   }
   SettingsProfileWatch totalProfileWatch;
   SettingsProfileWatch phaseProfileWatch;
+  Renderer& renderer = m_surface->renderTarget().renderer();
 
   const auto w = static_cast<float>(width);
   const auto h = static_cast<float>(height);
@@ -2102,7 +2103,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   phaseProfileWatch.reset();
 
   main->setSize(w, h);
-  main->layout(*m_renderContext);
+  main->layout(renderer);
   logSettingsProfile("buildScene layout", phaseProfileWatch);
   phaseProfileWatch.reset();
   applyPendingContentScrollTarget(Style::spaceMd * scale);

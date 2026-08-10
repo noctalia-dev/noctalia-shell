@@ -3037,10 +3037,10 @@ void Bar::startHideFadeOut(BarInstance& instance) {
 
 void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t height) {
   uiAssertNotRendering("Bar::buildScene");
-  if (m_renderContext == nullptr) {
+  if (m_renderContext == nullptr || instance.surface == nullptr) {
     return;
   }
-  auto* renderer = m_renderContext;
+  Renderer& renderer = instance.surface->renderTarget().renderer();
 
   const auto w = static_cast<float>(width);
   const auto h = static_cast<float>(height);
@@ -3210,7 +3210,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
 
   applyBarShadowStyle(instance, shadowConfig, w, h);
 
-  layoutBarSections(instance, *renderer, barAreaW, barAreaH, padding, isVertical);
+  layoutBarSections(instance, renderer, barAreaW, barAreaH, padding, isVertical);
 
   float contentLeft = barAreaX;
   float contentTop = barAreaY;
@@ -3242,10 +3242,10 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
 }
 
 void Bar::updateWidgets(BarInstance& instance) {
-  if (m_renderContext == nullptr) {
+  if (m_renderContext == nullptr || instance.surface == nullptr) {
     return;
   }
-  auto* renderer = m_renderContext;
+  Renderer& renderer = instance.surface->renderTarget().renderer();
 
   const auto w = static_cast<float>(instance.surface->width());
   const auto h = static_cast<float>(instance.surface->height());
@@ -3262,15 +3262,15 @@ void Bar::updateWidgets(BarInstance& instance) {
       if (widget->root() == nullptr) {
         continue;
       }
-      widget->update(*renderer);
-      widget->layout(*renderer, barAreaW, barAreaH);
+      widget->update(renderer);
+      widget->layout(renderer, barAreaW, barAreaH);
     }
   };
 
   updateSection(instance.startWidgets);
   updateSection(instance.centerWidgets);
   updateSection(instance.endWidgets);
-  layoutBarSections(instance, *renderer, barAreaW, barAreaH, padding, isVertical);
+  layoutBarSections(instance, renderer, barAreaW, barAreaH, padding, isVertical);
 }
 
 void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout) {
@@ -3279,6 +3279,7 @@ void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout
   }
 
   m_renderContext->makeCurrent(instance.surface->renderTarget());
+  Renderer& renderer = instance.surface->renderTarget().renderer();
 
   if (needsUpdate) {
     UiPhaseScope updatePhase(UiPhase::Update);
@@ -3303,15 +3304,15 @@ void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout
   {
     UiPhaseScope layoutPhase(UiPhase::Layout);
     for (auto& widget : instance.startWidgets) {
-      widget->layout(*m_renderContext, barAreaW, barAreaH);
+      widget->layout(renderer, barAreaW, barAreaH);
     }
     for (auto& widget : instance.centerWidgets) {
-      widget->layout(*m_renderContext, barAreaW, barAreaH);
+      widget->layout(renderer, barAreaW, barAreaH);
     }
     for (auto& widget : instance.endWidgets) {
-      widget->layout(*m_renderContext, barAreaW, barAreaH);
+      widget->layout(renderer, barAreaW, barAreaH);
     }
-    layoutBarSections(instance, *m_renderContext, barAreaW, barAreaH, padding, isVertical);
+    layoutBarSections(instance, renderer, barAreaW, barAreaH, padding, isVertical);
   }
 }
 
