@@ -228,23 +228,21 @@ void LockscreenWidgetsHost::createInstance(
   widget->create();
   widget->setBox(state.boxWidth, state.boxHeight);
   // The EGL surface may not exist yet if the Wayland compositor hasn't sent a
-  // configure event for this lock surface. Fall back to surfaceless so GL
-  // resource creation (texture uploads etc.) can still proceed — objects are
-  // shared across the context group regardless of surface attachment.
+  // configure event for this lock surface. When it isn't ready there is no
+  // per-surface renderer to measure against; measuring with a transient
+  // fixed-scale view would bind retained widget render state (owned Image
+  // textures, Image::m_renderer) to a stack-local that dies here, dangling for
+  // ~Image / async-texture callbacks / GPU-reset rebake. So defer measurement
+  // to prepareFrame, which runs with the surface's stable renderer once the
+  // surface configures (LockSurface requests an update on configure). Mirrors
+  // upstream's lockscreen host after the per-surface render-scale refactor.
   if (surface.renderTarget().isReady()) {
     m_renderContext->makeCurrent(surface.renderTarget());
     Renderer& renderer = surface.renderTarget().renderer();
     widget->update(renderer);
     widget->layout(renderer);
-  } else {
-    // Surfaceless fallback: no per-surface renderer exists yet, so measure with
-    // a fixed-scale view bound to the shared context (RenderContext is no longer
-    // a Renderer after the per-surface scale refactor).
-    m_renderContext->makeCurrentNoSurface();
-    ScaledRenderer measureRenderer(*m_renderContext, output.configuredScale());
-    widget->update(measureRenderer);
-    widget->layout(measureRenderer);
   }
+  // Reset to no-surface after any surface work (livepaper EGL path).
   m_renderContext->makeCurrentNoSurface();
 
   const float intrinsicWidth = std::max(1.0F, widget->intrinsicWidth());
