@@ -2302,7 +2302,7 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
   if (m_renderContext == nullptr || m_activePanel == nullptr) {
     return;
   }
-  auto* renderer = m_renderContext;
+  Renderer& renderer = m_surface->renderTarget().renderer();
   const bool hasDecoration = m_activePanel->hasDecoration();
 
   const auto w = static_cast<float>(width);
@@ -2536,11 +2536,11 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
   m_contentHeight = panelH - kPadding * 2.0F;
   {
     UiPhaseScope updatePhase(UiPhase::Update);
-    m_activePanel->update(*renderer);
+    m_activePanel->update(renderer);
   }
   {
     UiPhaseScope layoutPhase(UiPhase::Layout);
-    m_activePanel->layout(*renderer, m_contentWidth, m_contentHeight);
+    m_activePanel->layout(renderer, m_contentWidth, m_contentHeight);
   }
   if (m_contentNode != nullptr) {
     m_contentNode->setPosition(panelX + kPadding, panelY + kPadding);
@@ -2570,6 +2570,7 @@ void PanelManager::prepareFrame(bool needsUpdate, bool needsLayout) {
   }
 
   m_renderContext->makeCurrent(m_surface->renderTarget());
+  Renderer& renderer = m_surface->renderTarget().renderer();
 
   const auto width = m_surface->width();
   const auto height = m_surface->height();
@@ -2583,12 +2584,12 @@ void PanelManager::prepareFrame(bool needsUpdate, bool needsLayout) {
 
   if (!needsSceneBuild && needsUpdate) {
     UiPhaseScope updatePhase(UiPhase::Update);
-    m_activePanel->update(*m_renderContext);
+    m_activePanel->update(renderer);
   }
   if (!needsSceneBuild && needsLayout) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
     if (m_activePanel != nullptr) {
-      m_activePanel->layout(*m_renderContext, m_contentWidth, m_contentHeight);
+      m_activePanel->layout(renderer, m_contentWidth, m_contentHeight);
     }
     if (m_pointerInside) {
       m_inputDispatcher.syncPointerHover();

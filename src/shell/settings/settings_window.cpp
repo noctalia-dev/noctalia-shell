@@ -608,6 +608,7 @@ void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
 
   SettingsProfileWatch phaseProfileWatch;
   m_renderContext->makeCurrent(m_surface->renderTarget());
+  Renderer& renderer = m_surface->renderTarget().renderer();
   logSettingsProfile("prepareFrame makeCurrent", phaseProfileWatch);
 
   // Rebuild the entire scene only on first build or when something explicitly
@@ -678,7 +679,7 @@ void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
     }
     logSettingsProfile("prepareFrame rebuildContent", phaseProfileWatch);
     phaseProfileWatch.reset();
-    m_sceneRoot->layout(*m_renderContext);
+    m_sceneRoot->layout(renderer);
     logSettingsProfile("prepareFrame layout", phaseProfileWatch);
     phaseProfileWatch.reset();
     applyPendingContentScrollTarget(Style::spaceMd * uiScale());

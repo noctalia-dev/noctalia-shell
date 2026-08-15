@@ -288,7 +288,7 @@ namespace settings {
       return;
     }
 
-    Renderer& renderer = *renderContext();
+    Renderer& renderer = m_surface->renderTarget().renderer();
     const float pad = computePadding(uiScale());
     const float panelW = kPopupWidth * m_scale;
 

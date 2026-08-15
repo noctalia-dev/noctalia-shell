@@ -3,6 +3,7 @@
 #include "config/config_service.h"
 #include "core/log.h"
 #include "render/render_context.h"
+#include "render/render_target.h"
 #include "render/scene/node.h"
 #include "scripting/plugin_registry.h"
 #include "shell/desktop/desktop_widget_layout.h"
@@ -227,16 +228,21 @@ void LockscreenWidgetsHost::createInstance(
   widget->create();
   widget->setBox(state.boxWidth, state.boxHeight);
   // The EGL surface may not exist yet if the Wayland compositor hasn't sent a
-  // configure event for this lock surface. Fall back to surfaceless so GL
-  // resource creation (texture uploads etc.) can still proceed — objects are
-  // shared across the context group regardless of surface attachment.
+  // configure event for this lock surface. When it isn't ready there is no
+  // per-surface renderer to measure against; measuring with a transient
+  // fixed-scale view would bind retained widget render state (owned Image
+  // textures, Image::m_renderer) to a stack-local that dies here, dangling for
+  // ~Image / async-texture callbacks / GPU-reset rebake. So defer measurement
+  // to prepareFrame, which runs with the surface's stable renderer once the
+  // surface configures (LockSurface requests an update on configure). Mirrors
+  // upstream's lockscreen host after the per-surface render-scale refactor.
   if (surface.renderTarget().isReady()) {
     m_renderContext->makeCurrent(surface.renderTarget());
-  } else {
-    m_renderContext->makeCurrentNoSurface();
+    Renderer& renderer = surface.renderTarget().renderer();
+    widget->update(renderer);
+    widget->layout(renderer);
   }
-  widget->update(*m_renderContext);
-  widget->layout(*m_renderContext);
+  // Reset to no-surface after any surface work (livepaper EGL path).
   m_renderContext->makeCurrentNoSurface();
 
   const float intrinsicWidth = std::max(1.0F, widget->intrinsicWidth());
@@ -319,6 +325,7 @@ void LockscreenWidgetsHost::syncSurfaceFrameTick(LockSurface* surfacePtr) {
       return;
     }
     host->m_renderContext->makeCurrent(surfacePtr->renderTarget());
+    Renderer& renderer = surfacePtr->renderTarget().renderer();
 
     bool needsRedraw = false;
     for (auto& instance : host->m_instances) {
@@ -334,7 +341,7 @@ void LockscreenWidgetsHost::syncSurfaceFrameTick(LockSurface* surfacePtr) {
       if (instance->surface != surfacePtr || instance->widget == nullptr || !instance->widget->needsFrameTick()) {
         continue;
       }
-      instance->widget->onFrameTick(deltaMs, *host->m_renderContext);
+      instance->widget->onFrameTick(deltaMs, renderer);
       needsContinuousRedraw = true;
     }
 
@@ -367,6 +374,7 @@ void LockscreenWidgetsHost::prepareFrame(LockSurface& surface, bool needsUpdate,
   }
 
   m_renderContext->makeCurrent(surface.renderTarget());
+  Renderer& renderer = surface.renderTarget().renderer();
 
   const float baseUiScale = m_config != nullptr ? m_config->config().accessibility.uiScale : 1.0F;
   const auto surfaceW = static_cast<float>(surface.width());
@@ -387,10 +395,10 @@ void LockscreenWidgetsHost::prepareFrame(LockSurface& surface, bool needsUpdate,
     instance->widget->setBox(instance->state.boxWidth, instance->state.boxHeight);
 
     if (needsUpdate) {
-      instance->widget->update(*m_renderContext);
+      instance->widget->update(renderer);
     }
     if (needsLayout) {
-      instance->widget->layout(*m_renderContext);
+      instance->widget->layout(renderer);
       instance->intrinsicWidth = std::max(1.0F, instance->widget->intrinsicWidth());
       instance->intrinsicHeight = std::max(1.0F, instance->widget->intrinsicHeight());
     }

@@ -27,6 +27,9 @@ public:
 
   virtual void layout(Renderer& renderer);
   void update(Renderer& renderer);
+  // Rebinds retained Renderer pointers (widget-level and across the owned or
+  // released node tree) to a stable renderer view; see Node::rebindRenderer.
+  void rebindRenderer(Renderer& renderer);
 
   [[nodiscard]] virtual bool wantsSecondTicks() const { return false; }
   [[nodiscard]] virtual bool needsFrameTick() const { return false; }
@@ -123,6 +126,8 @@ protected:
 
   virtual void doLayout(Renderer& renderer) = 0;
   virtual void doUpdate(Renderer& renderer) { (void)renderer; }
+  // Refreshes any Renderer pointer the widget itself retains.
+  virtual void doRebindRenderer(Renderer& renderer) { (void)renderer; }
 
   // Push the widget's configured font family onto every text node it owns. Empty family means
   // inherit the shell font. The base handles the `font_family` setting and the relayout; text

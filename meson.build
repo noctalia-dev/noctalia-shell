@@ -1204,6 +1204,7 @@ if build_tests
     'tray_identifier',
     'triad_workspace_backend',
     'ui_tree_reconciler',
+    'wayland_output_scale',
     'wayland_toplevels_identity',
     'widget_action',
     'widget_definition',

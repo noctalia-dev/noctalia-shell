@@ -759,10 +759,14 @@ void WindowSwitcher::requestSceneUpdate() {
 }
 
 void WindowSwitcher::syncGridSelection() {
-  if (m_instance == nullptr || m_instance->grid == nullptr || m_instance->adapter == nullptr) {
+  if (m_instance == nullptr
+      || m_instance->grid == nullptr
+      || m_instance->adapter == nullptr
+      || m_instance->surface == nullptr) {
     return;
   }
-  m_instance->adapter->setRenderer(m_renderContext);
+  Renderer& renderer = m_instance->surface->renderTarget().renderer();
+  m_instance->adapter->setRenderer(&renderer);
   m_instance->adapter->setEntries(&m_windows);
   m_instance->grid->setSelectedIndex(m_selectedIndex);
   m_instance->grid->scrollToIndex(m_selectedIndex);
@@ -1028,6 +1032,7 @@ void WindowSwitcher::prepareFrame(Instance& instance, bool /*needsUpdate*/, bool
   }
 
   m_renderContext->makeCurrent(instance.surface->renderTarget());
+  Renderer& renderer = instance.surface->renderTarget().renderer();
 
   const auto metrics = computeSwitcherGridMetrics(
       static_cast<float>(width), static_cast<float>(height), instance.uiLayoutScale, m_windows.size()
@@ -1043,7 +1048,7 @@ void WindowSwitcher::prepareFrame(Instance& instance, bool /*needsUpdate*/, bool
   } else {
     syncGridSelection();
     if (instance.sceneRoot != nullptr && instance.sceneRoot->layoutDirty()) {
-      instance.sceneRoot->layout(*m_renderContext);
+      instance.sceneRoot->layout(renderer);
       positionGrid(instance, static_cast<float>(width), static_cast<float>(height));
     }
   }
@@ -1065,6 +1070,7 @@ void WindowSwitcher::buildScene(Instance& instance, std::uint32_t width, std::ui
   const auto h = static_cast<float>(height);
   const float scale = instance.uiLayoutScale;
 
+  Renderer& renderer = instance.surface->renderTarget().renderer();
   instance.sceneRoot = ui::node({});
   instance.sceneRoot->setSize(w, h);
 
@@ -1101,7 +1107,7 @@ void WindowSwitcher::buildScene(Instance& instance, std::uint32_t width, std::ui
   }
   instance.adapter = std::make_unique<WindowSwitcherGridAdapter>(scale, m_asyncTextures, iconTint);
   instance.adapter->setEntries(&m_windows);
-  instance.adapter->setRenderer(m_renderContext);
+  instance.adapter->setRenderer(&renderer);
   instance.adapter->setOnActivate([this](std::size_t index) {
     setSelectedIndex(index);
     activateSelected();
@@ -1161,7 +1167,7 @@ void WindowSwitcher::buildScene(Instance& instance, std::uint32_t width, std::ui
   instance.input = input.get();
   instance.sceneRoot->addChild(std::move(input));
   syncGridSelection();
-  instance.sceneRoot->layout(*m_renderContext);
+  instance.sceneRoot->layout(renderer);
   positionGrid(instance, w, h);
 
   instance.surface->setSceneRoot(instance.sceneRoot.get());

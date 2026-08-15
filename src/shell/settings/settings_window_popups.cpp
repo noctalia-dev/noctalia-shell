@@ -2207,7 +2207,7 @@ void SettingsWindow::openPluginStore() {
                           )
                       );
                     }
-                    storeContent->populateBody(body, *m_renderContext, m_asyncTextures);
+                    storeContent->populateBody(body, m_surface->renderTarget().renderer(), m_asyncTextures);
                   },
               .scale = scale,
               .minWidth = 800.0F,
@@ -2298,7 +2298,7 @@ void SettingsWindow::openCommunityTemplateStore() {
                       )
                   );
                 }
-                storeContent->populateBody(body, *m_renderContext);
+                storeContent->populateBody(body, m_surface->renderTarget().renderer());
               },
           .scale = scale,
           .minWidth = 720.0F,

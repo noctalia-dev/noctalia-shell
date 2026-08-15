@@ -7,6 +7,7 @@
 #include "core/ui_phase.h"
 #include "ipc/ipc_arg_parse.h"
 #include "ipc/ipc_service.h"
+#include "render/core/renderer.h"
 #include "render/render_context.h"
 #include "render/scene/node.h"
 #include "shell/surface/edge_inset.h"
@@ -604,9 +605,10 @@ void OsdOverlay::prepareFrame(Instance& inst, bool needsUpdate, bool needsLayout
 
 void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t height) {
   uiAssertNotRendering("OsdOverlay::buildScene");
-  if (m_renderContext == nullptr) {
+  if (m_renderContext == nullptr || inst.surface == nullptr) {
     return;
   }
+  Renderer& renderer = inst.surface->renderTarget().renderer();
 
   const auto w = static_cast<float>(width);
   const auto h = static_cast<float>(height);
@@ -685,7 +687,7 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
       .configure = [](Label& label) { label.setZIndex(1); },
   });
   // Reserve enough width for "100%" so the progress bar doesn't shrink at max values.
-  value->measure(*m_renderContext);
+  value->measure(renderer);
   inst.progressValueMinWidth = value->width();
   value->setMinWidth(vertical ? 0.0F : inst.progressValueMinWidth);
 
@@ -717,6 +719,7 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
 
 void OsdOverlay::updateInstanceContent(Instance& inst) {
   if (m_renderContext == nullptr
+      || inst.surface == nullptr
       || inst.card == nullptr
       || inst.row == nullptr
       || inst.background == nullptr
@@ -761,7 +764,8 @@ void OsdOverlay::updateInstanceContent(Instance& inst) {
   inst.value->setText(m_content.value);
   inst.progress->setRadius(osdProgressRadius(s));
   inst.progress->setProgress(m_content.progress);
-  inst.row->layout(*m_renderContext);
+  Renderer& renderer = inst.surface->renderTarget().renderer();
+  inst.row->layout(renderer);
   const float rowX = std::round((cw - inst.row->width()) * 0.5F);
   const float rowY = std::round((ch - inst.row->height()) * 0.5F);
   inst.rowBaseX = vertical ? rowX : cardPadding(s);

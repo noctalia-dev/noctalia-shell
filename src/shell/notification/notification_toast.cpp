@@ -13,6 +13,7 @@
 #include "notification/notification_manager.h"
 #include "render/core/texture_manager.h"
 #include "render/render_context.h"
+#include "render/render_target.h"
 #include "render/scene/input_area.h"
 #include "shell/surface/edge_inset.h"
 #include "ui/builders.h"
@@ -320,7 +321,7 @@ namespace {
   }
 
   float layoutNotificationActionsRow(
-      RenderContext& rc, Flex& container, std::vector<std::unique_ptr<Button>>& buttons, float scale
+      Renderer& renderer, Flex& container, std::vector<std::unique_ptr<Button>>& buttons, float scale
   ) {
     container.setDirection(FlexDirection::Vertical);
     container.setAlign(FlexAlign::Stretch);
@@ -329,16 +330,16 @@ namespace {
 
     const float maxRowWidth = notificationTextMaxWidth(scale, true);
 
-    auto rows = wrapButtonsIntoRows(rc, buttons, maxRowWidth, actionGap(scale));
+    auto rows = wrapButtonsIntoRows(renderer, buttons, maxRowWidth, actionGap(scale));
     populateRowContainer(container, std::move(rows), maxRowWidth, actionGap(scale));
 
     container.setSize(maxRowWidth, 0.0F);
-    container.layout(rc);
+    container.layout(renderer);
     return container.height() + actionRowGap(scale);
   }
 
   float measureToastCardHeight(
-      RenderContext& rc, const ConfigService* config, std::string_view appName, std::string_view summary,
+      Renderer& renderer, const ConfigService* config, std::string_view appName, std::string_view summary,
       std::string_view body, const std::vector<std::string>& actions, Urgency urgency, int displayDurationMs,
       int summaryLines, int bodyLines, float scale
   ) {
@@ -411,7 +412,7 @@ namespace {
       auto actionsRow = ui::column({
           .padding = Style::spaceXs * scale,
       });
-      layoutNotificationActionsRow(rc, *actionsRow, buttons, scale);
+      layoutNotificationActionsRow(renderer, *actionsRow, buttons, scale);
       textColumn->addChild(std::move(actionsRow));
     }
 
@@ -438,7 +439,7 @@ namespace {
 
     content->addChild(std::move(textColumn));
     card->addChild(std::move(content));
-    card->layout(rc);
+    card->layout(renderer);
     return std::ceil(std::min(maxCardHeight, card->height()));
   }
 
@@ -1579,6 +1580,19 @@ NotificationToast::RevealDirection NotificationToast::revealDirection() const {
   return revealDirectionForPosition(notificationPosition());
 }
 
+float NotificationToast::notificationScale() const {
+  if (m_wayland != nullptr) {
+    for (const auto& inst : m_instances) {
+      if (inst != nullptr && inst->output != nullptr) {
+        if (const WaylandOutput* output = m_wayland->findOutputByWl(inst->output); output != nullptr) {
+          return output->configuredScale();
+        }
+      }
+    }
+  }
+  return 1.0F;
+}
+
 void NotificationToast::refreshEntryGeometry(PopupEntry& entry) const {
   if (m_renderContext == nullptr) {
     entry.toastBodyLines = StringUtils::isBlank(entry.body) ? 0 : kToastMaxBodyLines;
@@ -1588,10 +1602,11 @@ void NotificationToast::refreshEntryGeometry(PopupEntry& entry) const {
 
   const float scale = notificationUiScale(m_config);
   entry.toastBodyLines = StringUtils::isBlank(entry.body) ? 0 : kToastMaxBodyLines;
+  ScaledRenderer measureRenderer(*m_renderContext, notificationScale());
   entry.height = std::min(
       maxToastCardHeight(scale),
       measureToastCardHeight(
-          *m_renderContext, m_config, entry.appName, entry.summary, entry.body, entry.actions, entry.urgency,
+          measureRenderer, m_config, entry.appName, entry.summary, entry.body, entry.actions, entry.urgency,
           entry.displayDurationMs, kMaxSummaryLines, entry.toastBodyLines, scale
       )
   );
@@ -2078,7 +2093,8 @@ void NotificationToast::prepareFrame(Instance& inst, bool /*needsUpdate*/, bool 
   if (!m_renderContext->makeCurrent(inst.surface->renderTarget())) {
     return;
   }
-  const float renderScale = m_renderContext->renderScale();
+  Renderer& renderer = inst.surface->renderTarget().renderer();
+  const float renderScale = renderer.renderScale();
   if (std::abs(inst.sceneRenderScale - renderScale) > 0.0001F) {
     inst.sceneRenderScale = renderScale;
     inst.rebuildRequested = true;
@@ -2102,7 +2118,7 @@ void NotificationToast::prepareFrame(Instance& inst, bool /*needsUpdate*/, bool 
     // Control layout dirt (e.g. inline-reply Input caret/text metrics) must run here;
     // redraw-only leaves placeholder styling and a stuck caret at byte 0.
     UiPhaseScope layoutPhase(UiPhase::Layout);
-    inst.sceneRoot->layout(*m_renderContext);
+    inst.sceneRoot->layout(renderer);
     inst.surface->requestRedraw();
   }
 }
@@ -2211,6 +2227,7 @@ InputArea* NotificationToast::buildCard(
     ProgressBar** outProgress, Node** outActionsRow, Node** outInlineReplyRow, Input** outInlineReplyInput
 ) {
   m_renderContext->makeCurrent(outputInstance.surface->renderTarget());
+  Renderer& renderer = outputInstance.surface->renderTarget().renderer();
   const float scale = notificationUiScale(m_config);
   const bool hasInlineReply = hasInlineReplyAction(entry.actions);
   const bool showActions = shouldShowNotificationActions(m_config);
@@ -2294,8 +2311,8 @@ InputArea* NotificationToast::buildCard(
                 .glyph = std::string(glyphName),
                 .glyphSize = iconGlyphSize,
                 .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-                .configure = [this, iconSize](Glyph& glyph) {
-                  glyph.measure(*m_renderContext);
+                .configure = [iconSize, &renderer](Glyph& glyph) {
+                  glyph.measure(renderer);
                   glyph.setPosition(
                       std::round((iconSize - glyph.width()) * 0.5F), std::round((iconSize - glyph.height()) * 0.5F)
                   );
@@ -2322,8 +2339,7 @@ InputArea* NotificationToast::buildCard(
         const PixmapFormat format = image.channels == 3 ? PixmapFormat::RGB : PixmapFormat::RGBA;
         if (validImageMetadata
             && appIcon->setSourceRaw(
-                *m_renderContext, image.data.data(), image.data.size(), image.width, image.height, image.rowStride,
-                format, true
+                renderer, image.data.data(), image.data.size(), image.width, image.height, image.rowStride, format, true
             )) {
           iconSlot->addChild(std::move(appIcon));
           iconAssigned = true;
@@ -2356,7 +2372,7 @@ InputArea* NotificationToast::buildCard(
             .height = iconSize,
             .configure = [](Image& image) { image.setPosition(0.0F, 0.0F); },
         });
-        if (appIcon->setSourceFile(*m_renderContext, iconPath, static_cast<int>(std::round(iconSize)))) {
+        if (appIcon->setSourceFile(renderer, iconPath, static_cast<int>(std::round(iconSize)))) {
           iconSlot->addChild(std::move(appIcon));
           iconAssigned = true;
         } else {
@@ -2372,8 +2388,8 @@ InputArea* NotificationToast::buildCard(
             .glyph = "bell",
             .glyphSize = iconGlyphSize,
             .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-            .configure = [this, iconSize](Glyph& glyph) {
-              glyph.measure(*m_renderContext);
+            .configure = [iconSize, &renderer](Glyph& glyph) {
+              glyph.measure(renderer);
               glyph.setPosition(
                   std::round((iconSize - glyph.width()) * 0.5F), std::round((iconSize - glyph.height()) * 0.5F)
               );
@@ -2448,7 +2464,7 @@ InputArea* NotificationToast::buildCard(
         actionsRow = ui::column({
             .padding = Style::spaceXs * scale,
         });
-        layoutNotificationActionsRow(*m_renderContext, *actionsRow, buttons, scale);
+        layoutNotificationActionsRow(renderer, *actionsRow, buttons, scale);
       }
     }
 
@@ -2586,7 +2602,7 @@ InputArea* NotificationToast::buildCard(
 
   contentRow->addChild(std::move(textColumn));
   foreground->addChild(std::move(contentRow));
-  foreground->layout(*m_renderContext);
+  foreground->layout(renderer);
 
   const float cardHeight = std::min(maxCardHeight, foreground->height());
   cardRoot->setSize(cardW, cardHeight);
@@ -2628,7 +2644,7 @@ InputArea* NotificationToast::buildCard(
               },
       })
   );
-  cardRoot->layout(*m_renderContext);
+  cardRoot->layout(renderer);
   viewport->addChild(std::move(cardRoot));
 
   return viewport.release();

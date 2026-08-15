@@ -85,6 +85,13 @@ void DesktopWidget::update(Renderer& renderer) {
   doUpdate(renderer);
 }
 
+void DesktopWidget::rebindRenderer(Renderer& renderer) {
+  doRebindRenderer(renderer);
+  if (Node* root = presentationRoot(); root != nullptr) {
+    root->rebindRenderer(renderer);
+  }
+}
+
 Node* DesktopWidget::presentationRoot() const noexcept {
   if (m_outerRootPtr != nullptr) {
     return m_outerRootPtr;

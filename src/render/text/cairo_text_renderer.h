@@ -54,8 +54,6 @@ public:
   void initialize(RenderBackend* backend, TextureManager* textures);
   void cleanup();
 
-  // HiDPI: raster at `scale × fontSize` pixels and shrink the quad by 1/scale.
-  void setContentScale(float scale);
   void setFontFamily(std::string family);
   void notifyFontConfigChanged();
 
@@ -67,24 +65,24 @@ public:
   void abandonGlyphTextures() noexcept;
 
   [[nodiscard]] TextMetrics measure(
-      std::string_view text, float fontSize, FontWeight fontWeight = FontWeight::Normal, float maxWidth = 0.0F,
-      int maxLines = 0, TextAlign align = TextAlign::Start, std::string_view fontFamily = {},
+      float contentScale, std::string_view text, float fontSize, FontWeight fontWeight = FontWeight::Normal,
+      float maxWidth = 0.0F, int maxLines = 0, TextAlign align = TextAlign::Start, std::string_view fontFamily = {},
       TextEllipsize ellipsize = TextEllipsize::End, bool useMarkup = false
   );
-  [[nodiscard]] TextMetrics measureFont(float fontSize, FontWeight fontWeight) const;
+  [[nodiscard]] TextMetrics measureFont(float contentScale, float fontSize, FontWeight fontWeight) const;
   void measureCursorStops(
-      std::string_view text, float fontSize, const std::vector<std::size_t>& byteOffsets, std::vector<float>& outStops,
-      FontWeight fontWeight = FontWeight::Normal
+      float contentScale, std::string_view text, float fontSize, const std::vector<std::size_t>& byteOffsets,
+      std::vector<float>& outStops, FontWeight fontWeight = FontWeight::Normal
   );
   void measureCursorStopsWrapped(
-      std::string_view text, float fontSize, const std::vector<std::size_t>& byteOffsets, float maxWidth,
-      std::vector<TextCursorStop>& outStops, FontWeight fontWeight = FontWeight::Normal
+      float contentScale, std::string_view text, float fontSize, const std::vector<std::size_t>& byteOffsets,
+      float maxWidth, std::vector<TextCursorStop>& outStops, FontWeight fontWeight = FontWeight::Normal
   );
 
   void draw(
-      float surfaceWidth, float surfaceHeight, float x, float baselineY, std::string_view text, float fontSize,
-      const Color& color, const Mat3& transform, FontWeight fontWeight = FontWeight::Normal, float maxWidth = 0.0F,
-      int maxLines = 0, TextAlign align = TextAlign::Start, std::string_view fontFamily = {},
+      float contentScale, float surfaceWidth, float surfaceHeight, float x, float baselineY, std::string_view text,
+      float fontSize, const Color& color, const Mat3& transform, FontWeight fontWeight = FontWeight::Normal,
+      float maxWidth = 0.0F, int maxLines = 0, TextAlign align = TextAlign::Start, std::string_view fontFamily = {},
       TextEllipsize ellipsize = TextEllipsize::End, bool useMarkup = false
   );
 
@@ -180,8 +178,8 @@ private:
 
   // Build a PangoLayout at the given scaled size. Caller owns the layout (g_object_unref).
   PangoLayout* buildLayout(
-      std::string_view text, float fontSize, FontWeight fontWeight, float maxWidthPxScaled, int maxLines,
-      TextAlign align, std::string_view fontFamily = {}, TextEllipsize ellipsize = TextEllipsize::End,
+      float contentScale, std::string_view text, float fontSize, FontWeight fontWeight, float maxWidthPxScaled,
+      int maxLines, TextAlign align, std::string_view fontFamily = {}, TextEllipsize ellipsize = TextEllipsize::End,
       bool useMarkup = false
   ) const;
   // Render a layout into a new GL texture; fills out fields of `entry`.
@@ -189,14 +187,14 @@ private:
   // coverage so the color is applied via u_tint at draw time. When false,
   // rasterizes as CAIRO_FORMAT_ARGB32 with `color` baked in (for COLR emoji
   // content).
-  void rasterizeLayout(PangoLayout* layout, const Color& color, bool tinted, CacheEntry& entry);
+  void rasterizeLayout(float contentScale, PangoLayout* layout, const Color& color, bool tinted, CacheEntry& entry);
   // Extract logical metrics from a laid-out PangoLayout, dividing by PANGO_SCALE and by scale.
-  TextMetrics metricsFromLayout(PangoLayout* layout) const;
+  TextMetrics metricsFromLayout(float contentScale, PangoLayout* layout) const;
 
   CacheEntry* lookupOrRasterize(
-      std::string_view text, float fontSize, FontWeight fontWeight, float maxWidth, int maxLines, TextAlign align,
-      const Color& color, std::string_view fontFamily = {}, TextEllipsize ellipsize = TextEllipsize::End,
-      bool useMarkup = false
+      float contentScale, std::string_view text, float fontSize, FontWeight fontWeight, float maxWidth, int maxLines,
+      TextAlign align, const Color& color, std::string_view fontFamily = {},
+      TextEllipsize ellipsize = TextEllipsize::End, bool useMarkup = false
   );
   void touch(CacheMap::iterator it);
   void evict(CacheMap::iterator it);
@@ -206,7 +204,6 @@ private:
   // last measure/draw, so newly loaded plugin fonts become resolvable here.
   void maybeSyncFontConfig();
 
-  float m_contentScale = 1.0F;
   bool m_fontConfigInitialized = false;
   std::uint64_t m_syncedFontGeneration = 0;
   std::string m_fontFamily = "sans-serif";
