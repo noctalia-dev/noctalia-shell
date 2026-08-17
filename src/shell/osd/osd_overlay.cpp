@@ -206,39 +206,27 @@ void OsdOverlay::initialize(WaylandConnection& wayland, ConfigService* config, R
 }
 
 void OsdOverlay::registerIpc(IpcService& ipc) {
-  ipc.registerHandler(
-      "osd-enable",
-      [this](const std::string& args) -> std::string {
-        if (!noctalia::ipc::splitWords(args).empty()) {
-          return "error: osd-enable takes no arguments\n";
-        }
-        setEnabledOverride(true);
-        return "ok\n";
-      },
-      "", "Enable OSD popups"
-  );
-  ipc.registerHandler(
-      "osd-disable",
-      [this](const std::string& args) -> std::string {
-        if (!noctalia::ipc::splitWords(args).empty()) {
-          return "error: osd-disable takes no arguments\n";
-        }
-        setEnabledOverride(false);
-        return "ok\n";
-      },
-      "", "Disable OSD popups"
-  );
-  ipc.registerHandler(
-      "osd-toggle",
-      [this](const std::string& args) -> std::string {
-        if (!noctalia::ipc::splitWords(args).empty()) {
-          return "error: osd-toggle takes no arguments\n";
-        }
-        setEnabledOverride(!isEnabled());
-        return isEnabled() ? "on\n" : "off\n";
-      },
-      "", "Toggle OSD popups"
-  );
+  ipc.bind(noctalia::cli::msg::osdEnable, [this](const std::string& args) -> std::string {
+    if (!noctalia::ipc::splitWords(args).empty()) {
+      return "error: osd-enable takes no arguments\n";
+    }
+    setEnabledOverride(true);
+    return "ok\n";
+  });
+  ipc.bind(noctalia::cli::msg::osdDisable, [this](const std::string& args) -> std::string {
+    if (!noctalia::ipc::splitWords(args).empty()) {
+      return "error: osd-disable takes no arguments\n";
+    }
+    setEnabledOverride(false);
+    return "ok\n";
+  });
+  ipc.bind(noctalia::cli::msg::osdToggle, [this](const std::string& args) -> std::string {
+    if (!noctalia::ipc::splitWords(args).empty()) {
+      return "error: osd-toggle takes no arguments\n";
+    }
+    setEnabledOverride(!isEnabled());
+    return isEnabled() ? "on\n" : "off\n";
+  });
 }
 
 bool OsdOverlay::isEnabled() const noexcept {

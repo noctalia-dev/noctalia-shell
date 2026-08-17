@@ -7,6 +7,7 @@
 #include "render/backend/render_backend.h"
 #include "render/core/texture_handle.h"
 #include "render/core/texture_manager.h"
+#include "render/core/wallpaper_types.h"
 #include "render/render_target.h"
 #include "render/scene/audio_spectrum_node.h"
 #include "render/scene/countdown_ring_node.h"
@@ -125,6 +126,7 @@ void RenderContext::initialize(GlSharedContext& shared) {
       paths::assetPath("fonts/tabler.ttf").string(), m_backend.get(), &m_backend->textureManager()
   );
   m_textRenderer.setFontFamily(m_textFontFamily);
+  m_textRenderer.setBaseDirection(m_textBaseDirRtl);
   ++m_textMetricsGeneration;
   m_graphicsResetPending = false;
 }
@@ -175,12 +177,22 @@ void RenderContext::setTextFontFamily(std::string family) {
   ++m_textMetricsGeneration;
 }
 
+void RenderContext::setTextBaseDirection(bool rtl) {
+  if (m_textBaseDirRtl == rtl) {
+    return;
+  }
+  makeCurrentNoSurface();
+  m_textBaseDirRtl = rtl;
+  m_textRenderer.setBaseDirection(rtl);
+  ++m_textMetricsGeneration;
+}
+
 void RenderContext::notifyFontConfigChanged() {
   m_textRenderer.notifyFontConfigChanged();
   ++m_textMetricsGeneration;
 }
 
-void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
+void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot, const WallpaperMaskDrawParams* wallpaperMask) {
   if (m_backend == nullptr || m_graphicsResetPending) {
     return;
   }
@@ -213,6 +225,11 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
       renderNode(
           renderScale, sceneRoot, Mat3::identity(), 1.0F, sw, sh, bw, bh, 0.0F, 0.0F, sw, sh, false, false, false
       );
+    }
+    if (wallpaperMask != nullptr && wallpaperMask->texture != 0) {
+      m_backend->disableScissor();
+      m_backend->setBlendMode(RenderBlendMode::DestinationOut);
+      m_backend->drawWallpaperMask(*wallpaperMask);
     }
   }
   float ms = elapsedSince(drawStart);

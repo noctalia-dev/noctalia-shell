@@ -227,6 +227,7 @@ namespace noctalia::config::schema {
         field(&NotificationFilterConfig::showToast, "show_toast"),
         field(&NotificationFilterConfig::saveHistory, "save_history"),
         field(&NotificationFilterConfig::playSound, "play_sound"),
+        field(&NotificationFilterConfig::bypassDnd, "bypass_dnd"),
         field(&NotificationFilterConfig::allowPermanent, "allow_permanent"),
         field(&NotificationFilterConfig::overrideDuration, "override_duration"),
         field(&NotificationFilterConfig::allowedUrgencies, "allowed_urgencies"),
@@ -881,6 +882,7 @@ namespace noctalia::config::schema {
       static const Schema<IdleBehaviorConfig> s = {
           field(&IdleBehaviorConfig::enabled, "enabled"),
           field(&IdleBehaviorConfig::timeoutSeconds, "timeout"),
+          field(&IdleBehaviorConfig::lockedTimeoutSeconds, "locked_timeout"),
           // action is trimmed on read.
           custom<IdleBehaviorConfig>(
               "action",
@@ -1341,7 +1343,9 @@ namespace noctalia::config::schema {
           field(&ShellConfig::LauncherConfig::showIcons, "show_icons"),
           field(&ShellConfig::LauncherConfig::compact, "compact"),
           field(&ShellConfig::LauncherConfig::appGrid, "app_grid"),
+          field(&ShellConfig::LauncherConfig::showAppActions, "show_app_actions"),
           field(&ShellConfig::LauncherConfig::sortByUsage, "sort_by_usage"),
+          field(&ShellConfig::LauncherConfig::pinned, "pinned"),
           field(&ShellConfig::LauncherConfig::fetchExchangeRates, "fetch_exchange_rates"),
           field(&ShellConfig::LauncherConfig::providerPrefix, "provider_prefix"),
           enumField(&ShellConfig::LauncherConfig::autoPaste, "auto_paste", kClipboardAutoPasteModes),
@@ -1732,8 +1736,8 @@ namespace noctalia::config::schema {
         return true;
       }
       static const std::unordered_set<std::string> kWidgetKeys = {
-          "id",         "type",     "output", "cx",     "cy",      "box_width",
-          "box_height", "rotation", "flip_x", "flip_y", "enabled", "settings",
+          "id",        "type",       "output",   "cx",     "cy",     "placement_width", "placement_height",
+          "box_width", "box_height", "rotation", "flip_x", "flip_y", "enabled",         "settings",
       };
       if (!kWidgetKeys.contains(path[3])) {
         return false;

@@ -4,6 +4,7 @@
 #include "config/config_types.h"
 #include "config/schema/diagnostics.h"
 #include "config/state_store.h"
+#include "core/inotify/inotify.h"
 #include "core/timer_manager.h"
 #include "core/toml.h"
 
@@ -41,7 +42,7 @@ public:
   };
 
   ConfigService();
-  ~ConfigService();
+  ~ConfigService() = default;
 
   ConfigService(const ConfigService&) = delete;
   ConfigService& operator=(const ConfigService&) = delete;
@@ -54,7 +55,7 @@ public:
   [[nodiscard]] const ConfigChangeSet& lastChange() const noexcept { return m_lastChange; }
   [[nodiscard]] const std::string& lastMutationError() const noexcept { return m_lastMutationError; }
   [[nodiscard]] bool matchesKeybind(KeybindAction action, std::uint32_t sym, std::uint32_t modifiers) const;
-  [[nodiscard]] int watchFd() const noexcept { return m_inotifyFd; }
+  [[nodiscard]] int watchFd() const noexcept { return m_inotify.fd(); }
   [[nodiscard]] std::string buildSupportReport() const;
   [[nodiscard]] std::string buildMergedUserConfig() const;
   [[nodiscard]] std::string buildEffectiveConfig() const;
@@ -261,7 +262,7 @@ private:
   NotificationManager* m_notificationManager = nullptr;
 
   // Single inotify fd, two watch descriptors (config dir + state dir).
-  int m_inotifyFd = -1;
+  Inotify m_inotify;
   int m_configWatchWd = -1;
   int m_overridesWatchWd = -1;
   struct SymlinkTargetWatch {

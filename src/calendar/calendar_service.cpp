@@ -272,6 +272,18 @@ void CalendarService::notifyGoogleConnectFailure(const std::string& body) const 
   );
 }
 
+void CalendarService::notifyGoogleCredentialLocked() const {
+  if (m_notifications == nullptr) {
+    kLog.warn("locked calendar credential notification dropped: notification manager unavailable");
+    return;
+  }
+  m_notifications->addInternal(
+      i18n::tr("notifications.internal.calendar"), i18n::tr("notifications.internal.calendar-credential-locked-title"),
+      i18n::tr("notifications.internal.calendar-credential-locked-body"), Urgency::Normal,
+      kDefaultNotificationTimeout * 2, std::string("noctalia-glyph:key")
+  );
+}
+
 void CalendarService::onConfigReload() {
   const CalendarConfig& next = m_configService.config().calendar;
   if (next == m_activeConfig) {
@@ -620,6 +632,14 @@ void CalendarService::refreshGoogleToken(const std::string& accountId, std::func
       [this, accountId, cb = std::move(cb)](
           security::SecretStoreStatus status, calendar::CalendarCredentialStore::Secret storedRefreshToken
       ) mutable {
+        if (status == security::SecretStoreStatus::DeniedOrLocked) {
+          if (!m_googleCredentialLockedNotificationShown) {
+            m_googleCredentialLockedNotificationShown = true;
+            notifyGoogleCredentialLocked();
+          }
+        } else if (!m_credentials.anyRefreshTokenLocked()) {
+          m_googleCredentialLockedNotificationShown = false;
+        }
         if (status != security::SecretStoreStatus::Success) {
           switch (status) {
           case security::SecretStoreStatus::NotFound:

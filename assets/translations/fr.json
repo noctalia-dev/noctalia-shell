@@ -29,7 +29,7 @@
   "bar": {
     "screenshot": {
       "choose-display": "Choisir un écran",
-      "confirm-region": "Appuie sur Entrée ou Espace pour capturer · Échap pour annuler · Fais glisser pour resélectionner",
+      "confirm-region": "{copy} pour copier · {save} pour sauvegarder · Entrée ou Espace pour les actions par défaut · {cancel} pour annuler · Cliquer et faire glisser pour resélectionner",
       "fullscreen": "Plein écran",
       "overlay-alloc-failed": "Ne peut pas afficher la capture d'écran (le GPU n'as plus de mémoire disponible ?)",
       "region": "Choisir une région"
@@ -92,6 +92,7 @@
       },
       "sysmon": {
         "cpu": "CPU",
+        "cpu-freq": "Fréq. CPU",
         "cpu-temp": "Temp CPU",
         "disk": "Disque",
         "disk-free": "Espace disque libre",
@@ -324,7 +325,8 @@
         "14-days": "14 jours",
         "3-days": "3 jours",
         "today": "Aujourd'hui"
-      }
+      },
+      "view-day": "Voir les détails de la journée"
     },
     "shortcuts": {
       "audio": "Audio",
@@ -523,6 +525,7 @@
         "shadow": "Ombre",
         "show-caps-lock": "Avertissement de verrouillage des majuscules",
         "show-device": "Afficher le périphérique",
+        "show-events": "Afficher les événements",
         "show-forecast": "Afficher la prévision",
         "show-keyboard-layout": "Disposition du clavier",
         "show-label": "Afficher l’étiquette",
@@ -532,8 +535,10 @@
         "show-unlock-hint": "Indice de déverrouillage",
         "show-vpn-label": "Afficher le libellé VPN",
         "show-weather": "Météo",
+        "show-week-numbers": "Afficher les numéros de semaine",
         "show-when-idle": "Afficher si inactif",
         "stat": "Stat",
+        "stat-cpu-freq": "Fréq. CPU",
         "stat-cpu-temp": "Temp CPU",
         "stat-cpu-usage": "Util CPU",
         "stat-gpu-temp": "Temp GPU",
@@ -569,6 +574,7 @@
       "types": {
         "audio-visualizer": "Visualiseur audio",
         "button": "Bouton",
+        "calendar": "Calendrier",
         "clock": "Horloge",
         "fancy-audio-visualizer": "Visualiseur audio stylisé",
         "label": "Label",
@@ -636,8 +642,8 @@
     },
     "context-menu": {
       "open": "Ouvrir",
-      "pin-to-dock": "Épingler au dock",
-      "unpin-from-dock": "Retirer du dock"
+      "pin-to-dock": "Épingler au Dock",
+      "unpin-from-dock": "Retirer du Dock"
     },
     "empty": {
       "no-results": "Aucun résultat",
@@ -686,7 +692,7 @@
   "lockscreen": {
     "authenticating": "Authentification en cours…",
     "authentication-failed": "Échec de l’authentification",
-    "caps-lock-on": "Verr. maj. est activé",
+    "caps-lock-on": "Verr. Maj. est activé",
     "password-cleared": "Mot de passe effacé",
     "password-placeholder": "Mot de passe",
     "ready": "Saisissez votre mot de passe et appuyez sur Entrée.",
@@ -719,6 +725,7 @@
       "calendar-google-connect-start-failed": "Impossible de démarrer l’autorisation Google. Vérifiez votre connexion réseau et réessayez.",
       "calendar-google-connect-start-http": "Impossible de démarrer l’autorisation Google. Le broker OAuth a renvoyé HTTP {status}.",
       "calendar-google-connect-timeout": "Délai d’attente de l’autorisation Google dépassé. Relancez la connexion lorsque vous êtes prêt à vous connecter.",
+      "config-migration-title": "Mise à jour de la configuration nécessaire",
       "dbus-disabled": "Notifications DBus désactivées",
       "desktop-widgets-editor": "Éditeur de widgets",
       "desktop-widgets-editor-enabled": "L’éditeur de widgets de bureau est activé. Basculez sur un espace de travail vide pour ne pas superposer des fenêtres sur l'éditeur.",
@@ -767,8 +774,8 @@
       "output": "Effets de sortie"
     },
     "lock-keys": {
-      "caps-off": "Verr. maj. désactivé",
-      "caps-on": "Verr. maj. activé",
+      "caps-off": "Verr. Maj. désactivé",
+      "caps-on": "Verr. Maj. activé",
       "num-off": "Verr. num. désactivé",
       "num-on": "Verr. num. activé",
       "scroll-off": "Arrêt défilement désactivé",
@@ -873,6 +880,7 @@
       "invalid": "Vérifiez les champs surlignés du compte de calendrier.",
       "name-label": "Nom d’affichage",
       "name-placeholder": "Calendrier personnel",
+      "password-file-label": "Ficher de mots de passe",
       "password-keep-placeholder": "Laissez vide pour conserver le mot de passe actuel",
       "password-label": "Mot de passe de l'application",
       "password-placeholder": "Mot de passe spécifique à l’application",
@@ -1137,6 +1145,7 @@
         "idle": "Inactivité",
         "interface": "Interface",
         "keybinds": "Raccourcis",
+        "keyboard-layout": "Disposition du clavier",
         "kinds": "Types",
         "launcher": "Lanceur",
         "layout": "Disposition",
@@ -1387,7 +1396,7 @@
       "panels": {
         "open-near-click": {
           "description": "Où le panel sera situé après avoir cliqué sur le widget de la barre",
-          "label": "Ouverture près du clic"
+          "label": "Le long de la Barre"
         },
         "placement": {
           "description": "Attacher le panel à la Bar ou le faire flotter près de son bord",
@@ -1406,8 +1415,6 @@
         "deprecated": "Déprécié",
         "empty": "Aucun plugin activé.",
         "incompatible-plugin-api": "API du plugin incompatible",
-        "loading": "Chargement des plugins…",
-        "refreshing": "Actualisation des plugins…",
         "remove": "Enlever le plugin",
         "requires": "A besoins de : {dependencies}",
         "title": "Plugins",
@@ -1459,6 +1466,12 @@
         "open-source": "Ouvrir le dépôt source du plugin",
         "results-count": "{count} plugins",
         "search-placeholder": "Recherche plugins...",
+        "sort-added-at-asc": "Trier par date d'ajout (du plus ancien au plus récent)",
+        "sort-added-at-desc": "Trier par date d'ajout (du plus récent au plus ancien)",
+        "sort-name-asc": "Trier par nom (A-Z)",
+        "sort-name-desc": "Trier par nom (Z-A)",
+        "sort-updated-at-asc": "Trier par date de mise à jour (du plus ancien au plus récent)",
+        "sort-updated-at-desc": "Trier par date de mise à jour (du plus récent au plus ancien)",
         "source-all": "Toutes les sources",
         "title": "Plugin Store"
       }
@@ -1466,6 +1479,7 @@
     "schema": {
       "accessibility": {
         "high-contrast": {
+          "description": "Améliore le contraste en augmentant les couleurs de surface et d'arrière-plan vers des valeurs extrêmes",
           "label": "Haut contraste"
         }
       },
@@ -1647,7 +1661,7 @@
           "description": "Décalage à chaque extrémité de la barre le long de son axe principal"
         },
         "font-family": {
-          "description": "Définit la police utilisée par les widgets de cette barre. Laissez vide pour hériter de la police globale. Ce paramètre peut être remplacé individuellement par le réglage pour chaque widget.",
+          "description": "Définit la police utilisée par les widgets de cette barre. Laissez vide pour hériter de la police globale. Ce paramètre peut être remplacé individuellement par le réglage pour chaque widget",
           "label": "Famille de police"
         },
         "font-weight": {
@@ -1655,7 +1669,7 @@
           "label": "Épaisseur de la police"
         },
         "layer": {
-          "description": "Utilise le mode de superposition pour afficher la barre au-dessus des applications en plein écran. Les panneaux attachés suivent la barre.",
+          "description": "Utilise le mode de superposition pour afficher la barre au-dessus des applications en plein écran. Les panneaux attachés suivent la barre",
           "label": "Couche Wayland"
         },
         "opposite-edge-margin": {
@@ -2084,7 +2098,8 @@
           "label": "Filtres de notifications"
         },
         "history-retention-hours": {
-          "label": "Garder l'historique pendant"
+          "description": "Supprimer automatiquement les notifications de l'historique après avoir dépassé le nombre d'heures souhaité (0 pour garder indéfiniment)",
+          "label": "Durée de rétention"
         },
         "layer": {
           "description": "Utilise Overlay pour afficher les toasts de notification au-dessus des applications en plein écran",
@@ -2298,7 +2313,7 @@
         },
         "calendar-add": {
           "button": "Ajouter un compte",
-          "description": "Ajoute des comptes iCloud, CalDAV ou Google",
+          "description": "Ajoute des comptes iCloud, CalDAV, Google ou ICS",
           "label": "Comptes de calendrier"
         },
         "calendar-credentials": {
@@ -2418,6 +2433,7 @@
             "label": "Intervalle de relevé réseau"
           },
           "stats": {
+            "cpu-freq": "Fréq. CPU",
             "cpu-temp": "Température CPU",
             "cpu-usage": "Utilisation CPU",
             "disk-free": "Espace disque libre",

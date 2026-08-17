@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config/config_types.h"
+#include "shell/desktop/desktop_widget_layout.h"
 #include "shell/desktop/desktop_widget_services.h"
 #include "ui/dialogs/layer_popup_host.h"
 
@@ -72,6 +73,7 @@ private:
   RenderContext* m_renderContext = nullptr;
 
   LockscreenWidgetsSnapshot m_snapshot;
+  desktop_widgets::PlacementMapper m_placementMapper;
   bool m_initialized = false;
   std::unique_ptr<LockscreenWidgetsHost> m_host;
   std::unique_ptr<DesktopWidgetsEditor> m_editor;

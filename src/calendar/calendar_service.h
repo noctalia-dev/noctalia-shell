@@ -96,6 +96,10 @@ public:
   [[nodiscard]] bool googleAccountNeedsReconnect(const std::string& accountId) const {
     return m_credentials.refreshTokenMissing(accountId);
   }
+  [[nodiscard]] bool googleAccountCredentialLocked(const std::string& accountId) const {
+    return m_credentials.refreshTokenLocked(accountId);
+  }
+  [[nodiscard]] bool hasMissingRefreshTokens() const { return m_credentials.anyRefreshTokenMissing(); }
   [[nodiscard]] CachePersistenceState cachePersistenceState() const noexcept { return m_cachePersistenceState; }
   [[nodiscard]] bool cacheMigrationPending() const noexcept { return m_cacheMigrationPending; }
   [[nodiscard]] bool hasEncryptedCache() const;
@@ -128,6 +132,7 @@ private:
   void googleFetchWithToken(const std::string& accountId, const std::string& accessToken, bool allowRefreshRetry);
   void pollConnect();
   void notifyGoogleConnectFailure(const std::string& body) const;
+  void notifyGoogleCredentialLocked() const;
   void initializeCredentials();
   [[nodiscard]] calendar::CredentialMigration credentialMigration();
   void storeGoogleTokens(
@@ -174,6 +179,7 @@ private:
   CachePersistenceState m_cachePersistenceState = CachePersistenceState::Opening;
   bool m_cacheMigrationPending = false;
   std::size_t m_pendingAccounts = 0;
+  bool m_googleCredentialLockedNotificationShown = false;
   ConnectFlow m_connect;
   calendar::CalDavClient m_caldav;
 };

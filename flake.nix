@@ -2,7 +2,7 @@
   description = "A sleek, customizable desktop shell crafted for Wayland.";
 
   inputs = {
-    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
 
     # Photosensitivity-filtered Milkdrop presets pack for the optional
     # livepaper visualizer. Its default package output is a pre-built,
@@ -52,9 +52,7 @@
           presets = presets-photosensitive-filtered.packages.${pkgs.stdenv.hostPlatform.system}.default;
 
           # DEPRECATED: identical to `default`; kept for compat, warns on use.
-          cuda = warn
-            "noctalia: the `.#cuda` package output is deprecated and now identical to `.#default` (autoAddDriverRunpath is always applied); switch to `.#default`. This alias will be removed in the future."
-            default;
+          cuda = warn "noctalia: the `.#cuda` package output is deprecated and now identical to `.#default` (autoAddDriverRunpath is always applied); switch to `.#default`. This alias will be removed in the future." default;
         }
       );
 

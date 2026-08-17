@@ -213,7 +213,7 @@ std::unique_ptr<DesktopWidget> DesktopWidgetFactory::create(
         .color = getColorSpecSetting(settings, "color", colorSpecFromRole(ColorRole::OnSurface)),
         .shadow = getBoolSetting(settings, "shadow", true),
         .showCircle = getBoolSetting(settings, "circle", true),
-        .centerText = getBoolSetting(settings, "center_text", false),
+        .centerText = getBoolSetting(settings, "center_text", true),
         .timezone = getStringSetting(settings, "timezone", ""),
     });
     applyCommonSettings(*widget, settings);
@@ -231,6 +231,7 @@ std::unique_ptr<DesktopWidget> DesktopWidgetFactory::create(
         DesktopAudioVisualizerWidget::Options{
             .bands = getIntSetting(settings, "bands", 32),
             .mirrored = getBoolSetting(settings, "mirrored", true),
+            .reversed = getBoolSetting(settings, "reversed", false),
             .centered = getBoolSetting(settings, "centered", true),
             .showWhenIdle = getBoolSetting(settings, "show_when_idle", true),
             .color1 = getColorSpecSetting(settings, "color_1", colorSpecFromRole(ColorRole::Primary)),
@@ -363,6 +364,8 @@ std::unique_ptr<DesktopWidget> DesktopWidgetFactory::create(
         return DesktopSysmonStat::GpuUsage;
       if (s == "gpu_vram")
         return DesktopSysmonStat::GpuVram;
+      if (s == "gpu_vram_used")
+        return DesktopSysmonStat::GpuVramUsed;
       if (s == "ram_pct")
         return DesktopSysmonStat::RamPct;
       if (s == "swap_pct")
@@ -464,6 +467,7 @@ std::unique_ptr<DesktopWidget> DesktopWidgetFactory::create(
         scripting::PluginRuntimeContext{
             .entryId = pluginEntry->fullId(),
             .sourcePath = pluginEntry->sourcePath,
+            .pluginDir = pluginEntry->pluginDir,
             .settings = std::move(seeded),
             .scriptApi = *m_scriptDeps.scriptApi,
             .fileWatcher = m_scriptDeps.fileWatcher,

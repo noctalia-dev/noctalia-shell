@@ -469,6 +469,7 @@ _noctalia_sources = files(
   'src/core/log.cpp',
   'src/core/process/process.cpp',
   'src/core/files/resource_paths.cpp',
+  'src/core/inotify/inotify.cpp',
   'src/core/timer_manager.cpp',
   'src/core/ui_phase.cpp',
   'src/dbus/accounts/accounts_service.cpp',
@@ -562,6 +563,7 @@ _noctalia_sources = files(
   'src/render/programs/graph_program.cpp',
   'src/render/programs/blur_program.cpp',
   'src/render/programs/wallpaper_program.cpp',
+  'src/render/programs/wallpaper_mask_program.cpp',
   'src/render/core/blur_cache.cpp',
   'src/render/core/cached_layer.cpp',
   'src/render/core/shared_texture_cache.cpp',
@@ -699,7 +701,7 @@ _noctalia_sources = files(
   'src/system/telemetry_service.cpp',
   'src/shell/settings/bar_widget_editor.cpp',
   'src/shell/settings/color_spec_picker.cpp',
-  'src/shell/settings/config_export_dialog_popup.cpp',
+  'src/shell/settings/config_export_dialog_modal.cpp',
   'src/shell/settings/settings_content.cpp',
   'src/shell/settings/settings_content_common.cpp',
   'src/shell/settings/settings_content_plugins.cpp',
@@ -720,7 +722,10 @@ _noctalia_sources = files(
   'src/shell/settings/widget_settings_registry.cpp',
   'src/shell/settings/widget_add_popup.cpp',
   'src/shell/settings/search_picker_popup.cpp',
-  'src/shell/settings/settings_sheet_popup.cpp',
+  'src/shell/settings/settings_dialog_presenter.cpp',
+  'src/shell/settings/settings_modal_host.cpp',
+  'src/shell/settings/settings_sheet.cpp',
+  'src/shell/settings/settings_sheet_modal.cpp',
   'src/shell/settings/settings_window_mutations.cpp',
   'src/shell/settings/settings_window_popups.cpp',
   'src/shell/settings/settings_window_scene.cpp',
@@ -734,6 +739,8 @@ _noctalia_sources = files(
   'src/shell/overview/overview_launcher_capture.cpp',
   'src/system/app_identity.cpp',
   'src/shell/wallpaper/wallpaper_paths.cpp',
+  'src/shell/wallpaper/wallpaper_geometry.cpp',
+  'src/shell/wallpaper/wallpaper_shuffle_state.cpp',
   'src/shell/wallpaper/wallpaper.cpp',
   'src/shell/wallpaper/panel/wallpaper_panel.cpp',
   'src/shell/wallpaper/panel/wallpaper_scanner.cpp',
@@ -975,6 +982,9 @@ _noctalia_sources = files(
   'src/theme/firefox_theme/native_messaging.cpp',
   'src/theme/firefox_theme/settings.cpp',
   'src/theme/template_engine.cpp',
+  'src/cli/completions.cpp',
+  'src/cli/parse.cpp',
+  'src/cli/help.cpp',
   'src/theme/cli.cpp',
   'src/ipc/cli.cpp',
 )
@@ -1081,7 +1091,6 @@ _noctalia_test_dependencies = _noctalia_system_dependencies + [
 ] + (have_livepaper ? [projectm_dep] : [])
 
 _noctalia_compile_definitions = [
-  '-DNOCTALIA_SOURCE_ASSETS_DIR="' + meson.project_source_root() / 'assets' + '"',
   '-DNOCTALIA_INSTALL_PREFIX="' + get_option('prefix') + '"',
   '-DNOCTALIA_INSTALL_DATADIR="' + get_option('datadir') + '"',
   '-DNOCTALIA_VERSION="' + meson.project_version() + '"',
@@ -1141,6 +1150,9 @@ if build_tests
     'battery_hook_state',
     'cairo_text_renderer',
     'calendar_cache_permissions',
+    'cli_help',
+    'cli_parse',
+    'cli_schema',
     'caldav_client',
     'calendar_credential_store',
     'calendar_discovery_state',
@@ -1156,12 +1168,14 @@ if build_tests
     'cpu_stat',
     'cpu_temp_sensor',
     'desktop_entry_launch',
+    'desktop_entry_localization',
     'disk_mounts',
     'dock_pinned_apps',
     'event_link',
     'fcitx_status',
     'google_client_calendar_list',
     'hook_manager',
+    'hyprland_workspace_backend',
     'i18n_language_tag',
     'i18n_supported_languages',
     'ical_parser',
@@ -1172,6 +1186,7 @@ if build_tests
     'input_area',
     'input_dispatcher',
     'input_password_mode',
+    'inotify',
     'ipc_service',
     'jxl_decoder',
     'keyboard_layout_label',
@@ -1180,6 +1195,8 @@ if build_tests
     'location_service',
     'math_provider',
     'monitor_selector',
+    'network_manager_security',
+    'notification_dnd',
     'notification_filter',
     'notification_history_utf8',
     'niri_workspace_backend',
@@ -1189,6 +1206,7 @@ if build_tests
     'plugin_git_export',
     'plugin_i18n',
     'plugin_lifecycle',
+    'plugin_process',
     'plugin_manifest',
     'plugin_source_locks',
     'plugin_source_paths',
@@ -1204,10 +1222,12 @@ if build_tests
     'tray_identifier',
     'triad_workspace_backend',
     'ui_tree_reconciler',
+    'upower_device_catalog',
     'wayland_output_scale',
     'wayland_toplevels_identity',
     'widget_action',
     'widget_definition',
+    'wallpaper_shuffle_state',
     'workspace_alert_service',
   ]
 
@@ -1215,8 +1235,13 @@ if build_tests
     test_exe = executable(test_name + '_test',
       sources: files('tests' / (test_name + '_test.cpp')),
       dependencies: noctalia_core_dep,
+      override_options: ['b_ndebug=false'],
     )
-    test(test_name, test_exe)
+    test_args = []
+    if test_name == 'i18n_supported_languages'
+      test_args = [meson.project_source_root() / 'assets' / 'translations']
+    endif
+    test(test_name, test_exe, args: test_args)
   endforeach
 
   config_validate_env = environment()

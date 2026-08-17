@@ -54,7 +54,7 @@
         "scroll-short": "S"
       },
       "media": {
-        "nothing-playing": "Nada reproduzindo",
+        "nothing-playing": "Nada Reproduzindo",
         "playing": "Reproduzindo"
       },
       "network": {
@@ -93,6 +93,7 @@
       },
       "sysmon": {
         "cpu": "CPU",
+        "cpu-freq": "Frequência da CPU",
         "cpu-temp": "Temperatura da CPU",
         "disk": "Disco",
         "disk-free": "Disco Livre",
@@ -185,7 +186,7 @@
       "choose-effects-profile": "Escolha um perfil",
       "effects-profile": "Efeitos",
       "input-device-prefix": "Entrada",
-      "no-application-audio": "Sem áudio de aplicativos",
+      "no-application-audio": "Sem Áudio de Aplicativos",
       "no-application-audio-body": "Não há fluxos de reprodução de aplicativos disponíveis no momento.",
       "no-input-devices": "Nenhuma entrada de dispositivos",
       "no-input-devices-body": "Nenhuma fonte de gravação disponível no momento.",
@@ -243,7 +244,7 @@
       "media": {
         "idle": "Ocioso",
         "no-active-player": "nenhum reprodutor ativo",
-        "nothing-playing": "Nada reproduzindo",
+        "nothing-playing": "Nada Reproduzindo",
         "paused": "Pausado",
         "playback-unavailable": "Reprodução indisponível",
         "playing": "Reproduzindo",
@@ -262,7 +263,7 @@
     },
     "media": {
       "active-player": "Player ativo",
-      "nothing-playing": "Nada reproduzindo",
+      "nothing-playing": "Nada Reproduzindo",
       "now-playing": "Reproduzindo agora",
       "start-playback": "Iniciar reprodução em um aplicativo MPRIS"
     },
@@ -291,7 +292,7 @@
       "dnd-off": "Desativar Não Perturbe",
       "dnd-on": "Ativar Não Perturbe",
       "empty-body": "Notificações recentes aparecerão aqui",
-      "empty-title": "Sem notificações",
+      "empty-title": "Sem Notificações",
       "filter": {
         "all": "Todas",
         "older": "Antigas",
@@ -518,6 +519,7 @@
         "opacity": "Opacidade",
         "primary-color": "Cor Primária",
         "reset-defaults": "Redefinir para Padrão",
+        "reversed": "Invertido",
         "ring-opacity": "Opacidade do Anel",
         "rotation-speed": "Velocidade de Rotação",
         "scroll-step": "Graduação de Rolagem",
@@ -526,6 +528,7 @@
         "shadow": "Sombra",
         "show-caps-lock": "Aviso de Caps Lock",
         "show-device": "Mostrar Dispositivo",
+        "show-events": "Exibir Eventos",
         "show-forecast": "Mostrar Previsão do Tempo",
         "show-keyboard-layout": "Layout do Teclado",
         "show-label": "Exibir Rótulo",
@@ -536,13 +539,16 @@
         "show-unlock-hint": "Dica de Desbloqueio",
         "show-vpn-label": "Mostra Rótulo VPN",
         "show-weather": "Clima",
+        "show-week-numbers": "Exibir Números da Semana",
         "show-when-idle": "Mostrar Quando Ocioso",
         "stat": "Estatísticas",
+        "stat-cpu-freq": "Frequência da CPU",
         "stat-cpu-temp": "Temperatura da CPU",
         "stat-cpu-usage": "Uso da CPU",
         "stat-gpu-temp": "Temperatura da GPU",
         "stat-gpu-usage": "Uso da GPU",
         "stat-gpu-vram": "VRAM da GPU",
+        "stat-gpu-vram-used": "VRAM Em Uso da GPU",
         "stat-net-rx": "Velocidade de Download",
         "stat-net-tx": "Velocidade de Upload",
         "stat-none": "Nenhum",
@@ -576,6 +582,7 @@
       "types": {
         "audio-visualizer": "Visualizador de Áudio",
         "button": "Botão",
+        "calendar": "Calendário",
         "clock": "Relógio",
         "fancy-audio-visualizer": "Vizualizador de Áudio Sofisticado",
         "label": "Texto",
@@ -588,7 +595,7 @@
       }
     },
     "media": {
-      "nothing-playing": "Nada reproduzindo"
+      "nothing-playing": "Nada Reproduzindo"
     },
     "volume": {
       "mic": "Mic",
@@ -643,12 +650,22 @@
     },
     "context-menu": {
       "open": "Abrir",
-      "pin-to-dock": "Fixar no dock",
-      "unpin-from-dock": "Desfixar do dock"
+      "pin": "Fixar no Launcher",
+      "pin-to-dock": "Fixar no Dock",
+      "unpin": "Desfixar do Launcher",
+      "unpin-from-dock": "Desfixar do Dock"
     },
     "empty": {
       "no-results": "Nenhum resultado encontrado",
       "type-to-search": "Digite para pesquisar..."
+    },
+    "origins": {
+      "appimage": "AppImage",
+      "flatpak": "Flatpak",
+      "nix": "Nix",
+      "snap": "Snap",
+      "system": "Sistema",
+      "user": "Usuário"
     },
     "providers": {
       "applications": {
@@ -717,6 +734,8 @@
       "battery-low-body": "{device}: {percent}% restantes",
       "battery-low-title": "Bateria baixa",
       "calendar": "Calendário",
+      "calendar-credential-locked-body": "Desbloqueie o chaveiro usado pelo Serviço Secreto e, em seguida, tente novamente em “Configurações”. No GNOME Keyring, defina como padrão um chaveiro que seja desbloqueado automaticamente, como o “Login”.",
+      "calendar-credential-locked-title": "Keyring do calendário está bloqueado",
       "calendar-google-connect-browser-failed": "Não foi possível abrir nenhum navegador com a autorização do Google. Verifique seu navegador padrão ou a configuração do xdg-open.",
       "calendar-google-connect-credential-store-failed": "A autorização foi concluída, mas não foi possível salvar o token de atualização. Desbloqueie ou inicie o Secret Service e, em seguida, conecte-se novamente.",
       "calendar-google-connect-expired": "A autorização do Google expirou antes da conclusão do login. Inicie a conexão novamente.",
@@ -727,7 +746,7 @@
       "calendar-google-connect-start-failed": "Não foi possível iniciar a autorização do Google. Verifique sua conexão de rede e tente novamente.",
       "calendar-google-connect-start-http": "Não foi possível iniciar a autorização do Google. O agente OAuth retornou HTTP {status}.",
       "calendar-google-connect-timeout": "A autorização do Google expirou. Reinicie a conexão quando estiver pronto para fazer login.",
-      "config-migration-body": "A configuração antiga está sendo migrada na memória, incluindo {path}. Atualize a configuração de origem; as opções “Configurações” e “Validar configuração do noctalia” mostram a substituição necessária.",
+      "config-migration-body": "Atualize {path} no arquivo fonte. Noctalia está aplicando está substituição só temporariamente. Execute nocatlia config validade para listar cada mudança necessária.",
       "config-migration-title": "Atualiação de configuração necessária",
       "dbus-disabled": "Notificações DBus desabilitadas",
       "desktop-widgets-editor": "Editor de Widget",
@@ -840,7 +859,7 @@
     "profiles": {
       "balanced": "Balanceado",
       "performance": "Performance",
-      "power-saver": "Economia de Energia"
+      "power-saver": "Economizador de Energia"
     }
   },
   "session": {
@@ -881,6 +900,7 @@
       "credential-source-label": "Armazenamento de Credenciais",
       "delete-error": "Não foi possível deletar conta de calendário",
       "edit-title": "Editar Conta de Calendário",
+      "ics-url-label": "URL ICS",
       "id-label": "ID da Conta",
       "invalid": "Verifique os campos de conta de calendário destacados.",
       "name-label": "Nome de Exibição",
@@ -894,7 +914,8 @@
       "provider": {
         "custom": "CalDAV",
         "google": "Google",
-        "icloud": "ICloud"
+        "icloud": "ICloud",
+        "ics": "URL ICS"
       },
       "provider-label": "Provedor",
       "save": "Salvar",
@@ -1114,7 +1135,7 @@
       "merged-user-description": "Combina arquivos de configuração e alterações na interface gráfica em um único arquivo TOML. Os valores padrão predefinidos permanecem implícitos.",
       "merged-user-save-title": "Salvar Configuração de Usuário Mesclada",
       "merged-user-title": "Configuração de Usuário Mesclada (Recomendado)",
-      "title": "Exportar Configurações"
+      "title": "Exportar Configuração"
     },
     "idle": {
       "behavior": {
@@ -1129,6 +1150,7 @@
           "suspend": "Suspender"
         },
         "kind-section-label": "Ação",
+        "locked-timeout-label": "Tempo de espera enquanto bloqueado (segundos, 0 = desativado)",
         "name-label": "Nome",
         "name-placeholder": "idle-behavior",
         "resume-command-label": "Comando ao retomar",
@@ -1252,7 +1274,9 @@
         "add-title": "Adicionar Filtro de Notificação",
         "allow-permanent": "Autorização permanente",
         "allowed-urgencies-label": "Urgências permitidas",
+        "bypass-dnd": "Ignorar “Não Perturbe”",
         "flag": {
+          "dnd-bypass": "Ignorar \"Não perturbe\"",
           "history": "histórico",
           "permanent": "permanente",
           "sound": "som",
@@ -1460,8 +1484,6 @@
         "held-back": "versão mais antiga",
         "held-back-hint": "v{version} requer a API de plugins {required}; este Noctalia suporta até {current}. Atualize o Noctalia para obtê-la.",
         "incompatible-plugin-api": "APi de plugin incoompatível",
-        "loading": "Carregando plugins...",
-        "refreshing": "Atualizando plugins...",
         "remove": "Remover plugin",
         "requires": "Requer: {dependencies}",
         "title": "Plugins",
@@ -1475,7 +1497,7 @@
       "sources": {
         "add": "Adicionar Fonte",
         "add-title": "Adicionar Fonte de Plugin",
-        "auto-update": "Auto-atualizar plugins",
+        "auto-update": "Auto-Atualizar Plugins",
         "auto-update-desc": "Verificar em fontes ativas por novas versões em segundo plano e manter plugins instalados atualizados",
         "edit": "Editar fonte",
         "edit-title": "Editar fonte de plugin",
@@ -1503,6 +1525,7 @@
       },
       "store": {
         "add": "Adicionar ao Noctalia",
+        "back-to-catalog": "Voltar ao catálogo de plugins",
         "categories": "Categoria",
         "category-all": "Todos",
         "empty": "Não foram encontrados plugins",
@@ -1624,7 +1647,7 @@
           "label": "Escala da Interface"
         },
         "wallpaper-generation-scheme": {
-          "description": "Escolha como as cores do papel de parede serão convertidas em uma paleta",
+          "description": "Escolher como as cores do papel de parede são convertidas em uma paleta",
           "label": "Esquema de Geração de Papel de Parede"
         }
       },
@@ -2285,6 +2308,10 @@
           "description": "Mostrar rótulos de texto sob ícones de atalho na aba de início",
           "label": "Mostra Rótulos de Atalhos"
         },
+        "launcher-app-actions": {
+          "description": "Mostrar ações de aplicação junto com as aplicações",
+          "label": "Mostrar Ações de Aplicação"
+        },
         "launcher-app-grid": {
           "description": "Exibe uma grade de ícones de aplicativos com legendas abaixo deles quando os resultados forem apenas aplicativos",
           "label": "Visão em Grade de Apps"
@@ -2324,6 +2351,10 @@
         "launcher-global-windows": {
           "description": "Também mostrar janelas abertas na busca sem prefixo",
           "label": "Janelas na Busca Global"
+        },
+        "launcher-pinned-apps": {
+          "description": "IDs de entradas na área de trabalho dos aplicativos fixados no iniciador; eles aparecem em primeiro lugar quando o iniciador é aberto",
+          "label": "Apps Fixados"
         },
         "launcher-prefix-calculator": {
           "description": "Acionar prefixo cálculos",
@@ -2479,7 +2510,7 @@
         },
         "calendar-add": {
           "button": "Adicionar Conta",
-          "description": "Adicionar contas iCloud, CalDAV ou Google",
+          "description": "Adicionar contas iCloud, CalDAV, Google ou uma URL ICS",
           "label": "Contas de Calendário"
         },
         "calendar-credentials": {
@@ -2495,7 +2526,9 @@
         "calendar-edit": {
           "button": "Editar",
           "button-reconnect": "Reconectar",
+          "button-retry": "Tentar novamente",
           "description": "Atualizar essa conta de Calendário",
+          "description-locked": "O token de atualização está em um chaveiro bloqueado; desbloqueie o chaveiro e tente novamente",
           "description-reconnect": "Autorização do Google está ausente; reconecte esta conta."
         },
         "calendar-event-date-format": {
@@ -2626,6 +2659,7 @@
             "label": "Intervalo de Polling da Rede"
           },
           "stats": {
+            "cpu-freq": "Frequência da CPU",
             "cpu-temp": "Temp da CPU",
             "cpu-usage": "Uso da CPU",
             "disk-free": "Disco Livre",
@@ -3208,6 +3242,7 @@
         "both": "Ambos",
         "compact": "Compacto",
         "count": "Contar",
+        "cpu-freq": "Frequência da CPU",
         "cpu-temp": "Temperatura da CPU",
         "cpu-usage": "Uso da CPU",
         "disk-free": "Disco Livre",
@@ -3222,6 +3257,7 @@
         "gpu-temp": "Temperatura da GPU",
         "gpu-usage": "Uso da GPU",
         "gpu-vram": "VRAM da GPU",
+        "gpu-vram-used": "VRAM Em Uso da GPU",
         "graph": "Gráfico",
         "graphic": "Gráfico",
         "hidden": "Oculto",
@@ -3356,7 +3392,7 @@
         },
         "custom-image": {
           "description": "Caminho para uma imagem personalizada; deixe em branco para usar o símbolo padrão",
-          "dialog-title": "Selecionar imagem personalizada",
+          "dialog-title": "Selecionar Imagem Personalizada",
           "label": "Imagem Personalizada"
         },
         "custom-image-colorize": {
@@ -3468,6 +3504,10 @@
           "description": "Oculta ícones de privacidade inativos e oculta o widget quando nada estiver ativo",
           "label": "Ocultar Inativo"
         },
+        "hide-passive": {
+          "description": "Ocultar itens do tray cujo status do StatusNotifierItem seja \"Passive\"",
+          "label": "Ocultar Itens Passivos"
+        },
         "hide-when-empty": {
           "description": "Ocultar ícones da área de trabalho quando não houver janelas abertas",
           "label": "Ocultar Quando Inativo",
@@ -3542,6 +3582,10 @@
           "description": "Interface de rede para monitorar; deixe vazio para usar o total agregado de todas interfaces",
           "label": "Interface"
         },
+        "item-spacing": {
+          "description": "Espaço entre ítens da barra de tarefas quando agrupamento de espaços de trabalho está desativado",
+          "label": "Espaçamento de Item"
+        },
         "label": {
           "description": "Texto estático opcional exibido neste botão",
           "label": "Rótulo"
@@ -3578,7 +3622,7 @@
         "max-label-chars": {
           "description": "Número máximo de caracteres a serem exibidos nos nomes dos espaços de trabalho",
           "label": "Máximo de Caracteres de Rótulo",
-          "workspaces-description": "Número máximo de caracteres para rótulos de nomes de espaços de trabalho"
+          "workspaces-description": "Número máximo de caracteres para rótulos não-numéricos de espaços de trabalho"
         },
         "max-length": {
           "description": "Comprimento máximo do widget em pixels",
@@ -3644,6 +3688,10 @@
           "description": "Opacidade dos apps fixados que não estão em execução",
           "label": "Opacidade do App Fixado"
         },
+        "reversed": {
+          "description": "Inverta a ordem de frequência de baixo-para-alto da barras",
+          "label": "Invertido"
+        },
         "scale": {
           "description": "Dimensionar este widget em relação à escala do conteúdo da barra",
           "label": "Escala"
@@ -3667,6 +3715,10 @@
         "show-all-outputs": {
           "description": "Incluir janelas de todos os monitores neste widget",
           "label": "Exibir Todos Monitores"
+        },
+        "show-all-workspaces": {
+          "description": "Mostrar espaços de trabalho de todos monitores neste widget",
+          "label": "Mostrar Todos Monitores"
         },
         "show-caps-lock": {
           "description": "Mostra o estado do Caps Lock",
@@ -3845,9 +3897,9 @@
     },
     "window": {
       "export-config": "Exportar Config...",
-      "export-config-saved": "Exportação de Config salvo.",
+      "export-config-saved": "Exportação de configuração salva.",
       "filter-overridden": "Sobrescrito",
-      "legacy-config-warning": "Configuração legada sendo migrada em memória: {issue}. Execute a noctalia config validate para todas as mudanças requeridas.",
+      "legacy-config-warning": "Configurações Legadas: {issue}. Edite esta entrada na fonte; Noctalia está aplicando está substituição só temporariamente. Execute nocatlia config validade para listar cada mudança necessária.",
       "native-title": "Configurações do Noctalia",
       "no-results": "Nenhuma configuração encontrada",
       "no-results-hint": "Tente um nome diferente de configuração ou uma tecla de config.",
@@ -3886,7 +3938,7 @@
     "subtitle": "Algumas escolhas rápidas para os primeiros passos",
     "title": "Seja Bem-Vindo ao Noctalia",
     "wallpaper": "Papel de parede",
-    "wallpaper-scheme": "Esquema do papel de parede"
+    "wallpaper-scheme": "Esquema do Papel de Parede"
   },
   "system": {
     "hardware": {
@@ -3898,15 +3950,15 @@
   },
   "theme": {
     "scheme": {
-      "dysfunctional": "Dysfunctional",
-      "faithful": "Faithful",
+      "dysfunctional": "Disfuncional",
+      "faithful": "Fiel",
       "m3-content": "M3 Content",
       "m3-fruit-salad": "M3 Fruit Salad",
-      "m3-monochrome": "M3 Monochrome",
+      "m3-monochrome": "M3 Monocromático",
       "m3-rainbow": "M3 Rainbow",
       "m3-tonal-spot": "M3 Tonal Spot",
       "muted": "Muted",
-      "soft": "Leve",
+      "soft": "Macio",
       "vibrant": "Vibrante"
     }
   },

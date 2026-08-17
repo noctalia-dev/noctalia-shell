@@ -524,6 +524,7 @@ std::unique_ptr<Shortcut> ShortcutRegistry::create(std::string_view type, const 
     return std::make_unique<PluginShortcut>(scripting::PluginRuntimeContext{
         .entryId = entry->fullId(),
         .sourcePath = entry->sourcePath,
+        .pluginDir = entry->pluginDir,
         .settings = std::move(seeded),
         .scriptApi = *s.scriptApi,
         .fileWatcher = s.fileWatcher,

@@ -132,6 +132,8 @@ void Application::initUiRenderSurfacesAndSettings() {
     m_asyncTextureCache.setMakeCurrentCallback([this]() { m_renderContext.backend().makeCurrentNoSurface(); });
   }
   m_renderContext.setTextFontFamily(m_configService.config().shell.fontFamily);
+  Style::setRtl(i18n::Service::instance().rtl());
+  m_renderContext.setTextBaseDirection(i18n::Service::instance().rtl());
 
   // Optional live-paper plumbing. ProjectMRenderer renders libprojectM into a
   // hidden window surface in the shared EGL group at a fixed working
@@ -397,20 +399,33 @@ void Application::initLockScreenAndSession() {
       [this]() {
         m_idleGraceOverlay.hide();
         m_lockscreenWidgetsController.onLockStateChanged();
+        m_idleManager.setSessionLocked(true);
+        m_screenTimeService.setSessionLocked(true);
         m_hookManager.fire(HookKind::SessionLocked);
+        if (m_logindService != nullptr) {
+          m_logindService->setSessionLockedHint(true);
+        }
         releaseSleepDelayInhibitIfPending();
       },
       [this]() {
         m_idleGraceOverlay.hide();
         m_lockscreenWidgetsController.onLockStateChanged();
+        m_idleManager.setSessionLocked(false);
+        m_screenTimeService.setSessionLocked(false);
         m_hookManager.fire(HookKind::SessionUnlocked);
         // Lock aborted before engage (e.g. compositor finished the lock object) — still release
         // so PrepareForSleep is not stuck on the delay inhibit.
         releaseSleepDelayInhibitIfPending();
         requestAllSurfacesRedraw();
         if (m_logindService != nullptr) {
-          m_logindService->syncSessionUnlocked();
+          m_logindService->setSessionLockedHint(false);
         }
+      },
+      [this]() {
+        m_idleGraceOverlay.hide();
+        m_lockscreenWidgetsController.onLockStateChanged();
+        releaseSleepDelayInhibitIfPending();
+        requestAllSurfacesRedraw();
       }
   );
   if (m_logindService != nullptr) {
@@ -428,12 +443,6 @@ void Application::initLockScreenAndSession() {
       if (m_lockScreen.isActive()) {
         m_lockScreen.unlock();
       }
-    });
-    m_lockScreen.setLockEngagedCallback([this]() {
-      if (!m_configService.isLockScreenEnabled() || m_logindService == nullptr) {
-        return;
-      }
-      m_logindService->syncSessionLocked();
     });
   }
 
@@ -995,13 +1004,16 @@ void Application::initBarDockAndLayout() {
   );
 
   m_colorPickerDialogPopup.initialize(m_wayland, m_configService, m_renderContext, m_layerPopupHosts);
-  ColorPickerDialog::setPresenter(&m_colorPickerDialogPopup);
 
   m_glyphPickerDialogPopup.initialize(m_wayland, m_configService, m_renderContext, m_layerPopupHosts);
-  GlyphPickerDialog::setPresenter(&m_glyphPickerDialogPopup);
 
   m_fileDialogPopup.initialize(m_wayland, m_configService, m_renderContext, m_layerPopupHosts, m_thumbnailService);
-  FileDialog::setPresenter(&m_fileDialogPopup);
+  m_settingsWindow.initializeDialogPresenter(
+      m_colorPickerDialogPopup, m_glyphPickerDialogPopup, m_fileDialogPopup, m_thumbnailService
+  );
+  ColorPickerDialog::setPresenter(m_settingsWindow.colorPickerDialogPresenter());
+  GlyphPickerDialog::setPresenter(m_settingsWindow.glyphPickerDialogPresenter());
+  FileDialog::setPresenter(m_settingsWindow.fileDialogPresenter());
 }
 
 void Application::initWidgetControllersAndCallbacks() {
@@ -1036,6 +1048,7 @@ void Application::initWidgetControllersAndCallbacks() {
       .config = &m_configService,
       .renderContext = &m_renderContext,
       .runtime = desktopWidgetRuntime,
+      .textureCache = &m_sharedTextureCache,
   };
   m_lockscreenWidgetsController.initialize({
       .widgets = lockscreenWidgetServices,
@@ -1066,7 +1079,7 @@ void Application::initWidgetControllersAndCallbacks() {
         lastShellFontFamily = newShellFontFamily;
         text::invalidateFontWeightCatalogCache();
         m_renderContext.setTextFontFamily(newShellFontFamily);
-        m_bar.requestLayout();
+        m_bar.reload();
         m_dock.requestLayout();
         m_desktopWidgetsController.requestLayout();
         m_lockscreenWidgetsController.requestLayout();
@@ -1083,6 +1096,36 @@ void Application::initWidgetControllersAndCallbacks() {
         scheduleGreeterAutoSync();
       },
       "shell-font-family"
+  );
+
+  bool lastRtl = i18n::Service::instance().rtl();
+  m_configService.addReloadCallback(
+      [this, lastRtl]() mutable {
+        const bool rtl = i18n::Service::instance().rtl();
+        if (rtl == lastRtl) {
+          return;
+        }
+
+        lastRtl = rtl;
+        Style::setRtl(rtl);
+        m_renderContext.setTextBaseDirection(rtl);
+        m_bar.requestLayout();
+        m_dock.requestLayout();
+        m_desktopWidgetsController.requestLayout();
+        m_lockscreenWidgetsController.requestLayout();
+        m_panelManager.requestLayout();
+        m_notificationToast.requestLayout();
+        m_lockScreen.onFontChanged();
+        m_osdOverlay.requestLayout();
+        m_trayMenu.onFontChanged();
+        m_backdrop.onFontChanged();
+        m_settingsWindow.onFontChanged();
+        m_colorPickerDialogPopup.requestLayout();
+        m_glyphPickerDialogPopup.requestLayout();
+        m_fileDialogPopup.requestLayout();
+        scheduleGreeterAutoSync();
+      },
+      "shell-language-direction"
   );
 
   m_timeService.setTickSecondCallback([this]() {

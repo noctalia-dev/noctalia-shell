@@ -268,6 +268,8 @@ struct IdleBehaviorConfig {
   std::string resumeCommand;
   /// When `action` is `suspend`, lock the session before running suspend so lock surfaces are ready (recommended).
   bool lockBeforeSuspend = true;
+  /// Shorter timeout (seconds) applied only while the session is locked; 0 = always use timeoutSeconds.
+  double lockedTimeoutSeconds = 0.0;
 
   bool operator==(const IdleBehaviorConfig&) const = default;
 };
@@ -282,6 +284,7 @@ struct NotificationFilterConfig {
   bool showToast = true;
   bool saveHistory = true;
   bool playSound = true;
+  bool bypassDnd = false;
   bool allowPermanent = true;
   std::optional<std::int32_t> overrideDuration;
   /// Empty = allow low, normal, and critical. Otherwise only listed urgencies pass this filter.
@@ -685,6 +688,10 @@ struct DesktopWidgetState {
   std::string outputName;
   float cx = 0.0F;
   float cy = 0.0F;
+  // Logical output size the position was last stored against. Zero denotes a
+  // legacy position whose reference size has not been recorded yet.
+  float placementWidth = 0.0F;
+  float placementHeight = 0.0F;
   // Box size of the widget's grid tile, in logical px. 0 means "unsized": the tile
   // auto-fits the content's natural size. Resizing in the editor sets explicit values.
   float boxWidth = 0.0F;
@@ -1008,7 +1015,10 @@ struct ShellConfig {
     bool showIcons = true;
     bool compact = false;
     bool appGrid = false;
+    bool showAppActions = false;
     bool sortByUsage = true;
+    // Desktop entry IDs shown first in the launcher when it opens without a query.
+    std::vector<std::string> pinned;
     /// When true, refresh currency exchange rates from libqalculate's online sources.
     bool fetchExchangeRates = true;
     std::string providerPrefix = "/";

@@ -2,6 +2,7 @@
 
 #include "core/timer_manager.h"
 #include "config/config_types.h"
+#include "shell/wallpaper/wallpaper_shuffle_state.h"
 #include "ui/signal.h"
 
 #include <cstdint>
@@ -107,6 +108,14 @@ private:
   [[nodiscard]] SwitchOutcome
   switchWallpaperTo(PickWallpaper action, std::optional<std::string_view> connector = std::nullopt);
   [[nodiscard]] ThemeMode directoryThemeMode() const noexcept;
+  [[nodiscard]] std::string pickRandomWallpaperPath(
+      const std::vector<std::string>& candidates, const std::string& currentPath, std::string_view scope,
+      std::string_view source
+  );
+  [[nodiscard]] std::string pickAutomationWallpaperPath(
+      const WallpaperAutomationConfig& automation, std::vector<std::string> candidates, const std::string& currentPath,
+      std::string_view scope, std::string_view source
+  );
   void createInstance(const WaylandOutput& output);
   [[nodiscard]] TextureHandle acquireTexture(const std::string& path);
   void releaseTexture(TextureHandle& handle, const std::string& path);
@@ -140,6 +149,7 @@ private:
   std::int64_t m_lastAutomationSecondStamp = -1;
   std::int64_t m_lastAutomationSwitchSecond = -1;
   std::function<bool()> m_automationGate;
+  wallpaper::ShuffleState m_shuffleState;
   Signal<>::ScopedConnection m_paletteConn;
   Signal<> m_changed;
   std::vector<std::unique_ptr<WallpaperInstance>> m_instances;
