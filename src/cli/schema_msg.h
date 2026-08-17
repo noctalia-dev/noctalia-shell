@@ -459,6 +459,18 @@ namespace noctalia::cli {
     inline constexpr Command keyboardLayoutCycle{
         "keyboard-layout-cycle", "Switch to the next keyboard layout", {}, {}, {}, {}, {}, false
     };
+    inline constexpr Command livepaperDisable{
+        "livepaper-disable", "Disable the live_paper visualizer (persisted)", {}, {}, {}, {}, {}, false
+    };
+    inline constexpr Command livepaperEnable{
+        "livepaper-enable", "Enable the live_paper visualizer (persisted)", {}, {}, {}, {}, {}, false
+    };
+    inline constexpr Command livepaperNext{
+        "livepaper-next", "Advance the live_paper visualizer to the next preset", {}, {}, {}, {}, {}, false
+    };
+    inline constexpr Command livepaperToggle{
+        "livepaper-toggle", "Toggle the live_paper visualizer on/off (persisted)", {}, {}, {}, {}, {}, false
+    };
     inline constexpr Command lockscreenWidgetsEdit{
         "lockscreen-widgets-edit", "Open the lockscreen widgets editor", {}, {}, {}, {}, {}, false
     };
@@ -856,6 +868,10 @@ namespace noctalia::cli {
       msg::keyboardBacklightToggle,
       msg::keyboardBacklightUp,
       msg::keyboardLayoutCycle,
+      msg::livepaperDisable,
+      msg::livepaperEnable,
+      msg::livepaperNext,
+      msg::livepaperToggle,
       msg::lockscreenWidgetsEdit,
       msg::lockscreenWidgetsExit,
       msg::lockscreenWidgetsToggleEdit,

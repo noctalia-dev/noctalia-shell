@@ -862,53 +862,41 @@ void Wallpaper::registerIpc(IpcService& ipc) {
   // the visualizer integration was active.
   auto requireService = [this]() -> VisualizerService* { return m_visualizerService; };
 
-  ipc.registerHandler(
-      "livepaper-next",
-      [requireService](const std::string&) -> std::string {
-        VisualizerService* svc = requireService();
-        if (svc == nullptr) {
-          return "error: live_paper unavailable\n";
-        }
-        svc->advancePreset();
-        return "ok\n";
-      },
-      "livepaper-next", "Advance the live_paper visualizer to the next preset");
+  ipc.bind(noctalia::cli::msg::livepaperNext, [requireService](const std::string&) -> std::string {
+    VisualizerService* svc = requireService();
+    if (svc == nullptr) {
+      return "error: live_paper unavailable\n";
+    }
+    svc->advancePreset();
+    return "ok\n";
+  });
 
-  ipc.registerHandler(
-      "livepaper-toggle",
-      [requireService](const std::string&) -> std::string {
-        VisualizerService* svc = requireService();
-        if (svc == nullptr) {
-          return "error: live_paper unavailable\n";
-        }
-        svc->toggleEnabled();
-        return svc->enabled() ? "enabled\n" : "disabled\n";
-      },
-      "livepaper-toggle", "Toggle the live_paper visualizer on/off (persisted)");
+  ipc.bind(noctalia::cli::msg::livepaperToggle, [requireService](const std::string&) -> std::string {
+    VisualizerService* svc = requireService();
+    if (svc == nullptr) {
+      return "error: live_paper unavailable\n";
+    }
+    svc->toggleEnabled();
+    return svc->enabled() ? "enabled\n" : "disabled\n";
+  });
 
-  ipc.registerHandler(
-      "livepaper-enable",
-      [requireService](const std::string&) -> std::string {
-        VisualizerService* svc = requireService();
-        if (svc == nullptr) {
-          return "error: live_paper unavailable\n";
-        }
-        svc->setEnabled(true);
-        return "ok\n";
-      },
-      "livepaper-enable", "Enable the live_paper visualizer (persisted)");
+  ipc.bind(noctalia::cli::msg::livepaperEnable, [requireService](const std::string&) -> std::string {
+    VisualizerService* svc = requireService();
+    if (svc == nullptr) {
+      return "error: live_paper unavailable\n";
+    }
+    svc->setEnabled(true);
+    return "ok\n";
+  });
 
-  ipc.registerHandler(
-      "livepaper-disable",
-      [requireService](const std::string&) -> std::string {
-        VisualizerService* svc = requireService();
-        if (svc == nullptr) {
-          return "error: live_paper unavailable\n";
-        }
-        svc->setEnabled(false);
-        return "ok\n";
-      },
-      "livepaper-disable", "Disable the live_paper visualizer (persisted)");
+  ipc.bind(noctalia::cli::msg::livepaperDisable, [requireService](const std::string&) -> std::string {
+    VisualizerService* svc = requireService();
+    if (svc == nullptr) {
+      return "error: live_paper unavailable\n";
+    }
+    svc->setEnabled(false);
+    return "ok\n";
+  });
 }
 
 void Wallpaper::syncInstances() {
