@@ -723,8 +723,8 @@ void Button::doLayout(Renderer& renderer) {
     }
   }
 
-  // After Flex layout the content row is left-anchored inside the padding.
-  // Shift the whole group to honour m_contentAlign (Start leaves it as-is).
+  // After Flex layout the content row is leading-anchored inside the padding.
+  // Shift the whole group to honor m_contentAlign (Start leaves it as-is).
   if (m_contentAlign != ButtonContentAlign::Start) {
     float contentLeft = 0.0F;
     float contentRight = 0.0F;
@@ -762,7 +762,7 @@ void Button::doLayout(Renderer& renderer) {
       if (m_contentAlign == ButtonContentAlign::Center) {
         targetLeft = std::round((width() - contentWidth) * 0.5F);
       } else { // End
-        targetLeft = std::round(width() - contentWidth - paddingRight());
+        targetLeft = std::round(Style::rtl() ? paddingLeft() : width() - contentWidth - paddingRight());
       }
       const float shiftX = targetLeft - contentLeft;
       const float targetTop = std::round((height() - contentHeight) * 0.5F);

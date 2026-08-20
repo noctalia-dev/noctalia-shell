@@ -205,7 +205,7 @@ namespace {
       platform.activateToplevel(handle);
       return;
     }
-    platform.focusCompositorWindow(entry.windowId);
+    platform.focusCompositorWindow(entry.windowId, true);
   }
 
   [[nodiscard]] std::string identityKeyForEntry(const WindowSwitcherEntry& entry) {
@@ -534,31 +534,27 @@ void WindowSwitcher::initialize(
 }
 
 void WindowSwitcher::registerIpc(IpcService& ipc) {
-  ipc.registerHandler(
-      "window-switcher",
-      [this](const std::string& args) -> std::string {
-        const std::string token = StringUtils::trim(args);
-        if (token == "close" || token == "hide") {
-          if (m_active) {
-            hide();
-          }
-          return "ok\n";
-        }
-        if (m_platform == nullptr) {
-          return "error: compositor unavailable\n";
-        }
-        wl_output* output = m_platform->preferredInteractiveOutput();
-        if (output == nullptr && m_wayland != nullptr && !m_wayland->outputs().empty()) {
-          output = m_wayland->outputs().front().output;
-        }
-        if (output == nullptr) {
-          return "error: no output available\n";
-        }
-        show(output);
-        return "ok\n";
-      },
-      "[close]", "Open or close the window switcher overlay"
-  );
+  ipc.bind(noctalia::cli::msg::windowSwitcher, [this](const std::string& args) -> std::string {
+    const std::string token = StringUtils::trim(args);
+    if (token == "close" || token == "hide") {
+      if (m_active) {
+        hide();
+      }
+      return "ok\n";
+    }
+    if (m_platform == nullptr) {
+      return "error: compositor unavailable\n";
+    }
+    wl_output* output = m_platform->preferredInteractiveOutput();
+    if (output == nullptr && m_wayland != nullptr && !m_wayland->outputs().empty()) {
+      output = m_wayland->outputs().front().output;
+    }
+    if (output == nullptr) {
+      return "error: no output available\n";
+    }
+    show(output);
+    return "ok\n";
+  });
 }
 
 void WindowSwitcher::onOutputChange() {

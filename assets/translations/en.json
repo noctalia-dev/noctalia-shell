@@ -54,7 +54,7 @@
         "scroll-short": "S"
       },
       "media": {
-        "nothing-playing": "Nothing playing",
+        "nothing-playing": "Nothing Playing",
         "playing": "Playing"
       },
       "network": {
@@ -186,7 +186,7 @@
       "choose-effects-profile": "Choose a profile",
       "effects-profile": "Effects",
       "input-device-prefix": "Input",
-      "no-application-audio": "No application audio",
+      "no-application-audio": "No Application Audio",
       "no-application-audio-body": "No application playback streams are currently available.",
       "no-input-devices": "No input devices",
       "no-input-devices-body": "No recording sources are currently available.",
@@ -244,7 +244,7 @@
       "media": {
         "idle": "Idle",
         "no-active-player": "No active player",
-        "nothing-playing": "Nothing playing",
+        "nothing-playing": "Nothing Playing",
         "paused": "Paused",
         "playback-unavailable": "Playback unavailable",
         "playing": "Playing",
@@ -263,7 +263,7 @@
     },
     "media": {
       "active-player": "Active player",
-      "nothing-playing": "Nothing playing",
+      "nothing-playing": "Nothing Playing",
       "now-playing": "Now Playing",
       "start-playback": "Start playback in an MPRIS app"
     },
@@ -292,7 +292,7 @@
       "dnd-off": "Turn Do Not Disturb Off",
       "dnd-on": "Turn Do Not Disturb On",
       "empty-body": "Recent notifications will show here.",
-      "empty-title": "No notifications",
+      "empty-title": "No Notifications",
       "filter": {
         "all": "All",
         "older": "Older",
@@ -519,6 +519,7 @@
         "opacity": "Opacity",
         "primary-color": "Primary Color",
         "reset-defaults": "Reset to Defaults",
+        "reversed": "Reversed",
         "ring-opacity": "Ring Opacity",
         "rotation-speed": "Rotation Speed",
         "scroll-step": "Scroll Step",
@@ -547,6 +548,7 @@
         "stat-gpu-temp": "GPU Temp",
         "stat-gpu-usage": "GPU Usage",
         "stat-gpu-vram": "GPU VRAM",
+        "stat-gpu-vram-used": "GPU VRAM Used",
         "stat-net-rx": "Net Rx",
         "stat-net-tx": "Net Tx",
         "stat-none": "None",
@@ -593,7 +595,7 @@
       }
     },
     "media": {
-      "nothing-playing": "Nothing playing"
+      "nothing-playing": "Nothing Playing"
     },
     "volume": {
       "mic": "Mic",
@@ -648,12 +650,22 @@
     },
     "context-menu": {
       "open": "Open",
-      "pin-to-dock": "Pin to dock",
-      "unpin-from-dock": "Unpin from dock"
+      "pin": "Pin to Launcher",
+      "pin-to-dock": "Pin to Dock",
+      "unpin": "Unpin from Launcher",
+      "unpin-from-dock": "Unpin from Dock"
     },
     "empty": {
       "no-results": "No results found",
       "type-to-search": "Type to search…"
+    },
+    "origins": {
+      "appimage": "AppImage",
+      "flatpak": "Flatpak",
+      "nix": "Nix",
+      "snap": "Snap",
+      "system": "System",
+      "user": "User"
     },
     "providers": {
       "applications": {
@@ -722,6 +734,8 @@
       "battery-low-body": "{device}: {percent}% remaining",
       "battery-low-title": "Battery low",
       "calendar": "Calendar",
+      "calendar-credential-locked-body": "Unlock the keyring used by Secret Service, then retry in Settings. With GNOME Keyring, make an automatically unlocked keyring such as Login the default.",
+      "calendar-credential-locked-title": "Calendar keyring is locked",
       "calendar-google-connect-browser-failed": "No browser opener could be launched for Google authorization. Check your default browser or xdg-open setup.",
       "calendar-google-connect-credential-store-failed": "Authorization completed, but the refresh token could not be saved. Unlock or start Secret Service, then connect again.",
       "calendar-google-connect-expired": "Google authorization expired before sign-in finished. Start the connection again.",
@@ -732,7 +746,7 @@
       "calendar-google-connect-start-failed": "Could not start Google authorization. Check your network connection and try again.",
       "calendar-google-connect-start-http": "Could not start Google authorization. The OAuth broker returned HTTP {status}.",
       "calendar-google-connect-timeout": "Google authorization timed out. Start the connection again when you are ready to sign in.",
-      "config-migration-body": "Legacy configuration is being migrated in memory, including {path}. Update the source configuration; Settings and noctalia config validate show the required replacement.",
+      "config-migration-body": "Update {path} in the source file. Noctalia is applying this replacement only temporarily. Run noctalia config validate to list every required change.",
       "config-migration-title": "Configuration update needed",
       "dbus-disabled": "DBus notifications disabled",
       "desktop-widgets-editor": "Widget editor",
@@ -845,7 +859,7 @@
     "profiles": {
       "balanced": "Balanced",
       "performance": "Performance",
-      "power-saver": "Power saver"
+      "power-saver": "Power Saver"
     }
   },
   "session": {
@@ -886,6 +900,7 @@
       "credential-source-label": "Credential Storage",
       "delete-error": "Could not delete calendar account.",
       "edit-title": "Edit Calendar Account",
+      "ics-url-label": "ICS URL",
       "id-label": "Account ID",
       "invalid": "Check the highlighted calendar account fields.",
       "name-label": "Display Name",
@@ -912,7 +927,6 @@
       "secret-service-locked": "Calendar credentials are locked or access was denied. Unlock Secret Service and retry.",
       "secret-service-unavailable": "No Secret Service provider is available. Start a compatible provider and retry.",
       "server-url-label": "Server URL",
-      "ics-url-label": "ICS URL",
       "username-label": "Username",
       "username-placeholder": "name@example.com"
     },
@@ -1136,6 +1150,7 @@
           "suspend": "Suspend"
         },
         "kind-section-label": "Action",
+        "locked-timeout-label": "Timeout while locked (seconds, 0 = off)",
         "name-label": "Name",
         "name-placeholder": "idle-behavior",
         "resume-command-label": "Resume command",
@@ -1259,7 +1274,9 @@
         "add-title": "Add Notification Filter",
         "allow-permanent": "Allow permanent",
         "allowed-urgencies-label": "Allowed urgencies",
+        "bypass-dnd": "Bypass Do Not Disturb",
         "flag": {
+          "dnd-bypass": "DND bypass",
           "history": "history",
           "permanent": "permanent",
           "sound": "sound",
@@ -1467,8 +1484,6 @@
         "held-back": "older version",
         "held-back-hint": "v{version} needs plugin API {required}; this Noctalia supports up to {current}. Upgrade Noctalia to get it.",
         "incompatible-plugin-api": "incompatible plugin API",
-        "loading": "Loading plugins…",
-        "refreshing": "Refreshing plugins…",
         "remove": "Remove plugin",
         "requires": "Requires: {dependencies}",
         "title": "Plugins",
@@ -1482,7 +1497,7 @@
       "sources": {
         "add": "Add Source",
         "add-title": "Add Plugin Source",
-        "auto-update": "Auto-update plugins",
+        "auto-update": "Auto-Update Plugins",
         "auto-update-desc": "Check enabled sources for new versions in the background and keep installed plugins current",
         "edit": "Edit source",
         "edit-title": "Edit plugin source",
@@ -1510,6 +1525,7 @@
       },
       "store": {
         "add": "Add to Noctalia",
+        "back-to-catalog": "Back to the plugin catalog",
         "categories": "Categories",
         "category-all": "All",
         "empty": "No plugins found",
@@ -2292,6 +2308,10 @@
           "description": "Display text labels under shortcut icons in the home tab",
           "label": "Show Shortcut Labels"
         },
+        "launcher-app-actions": {
+          "description": "Show application action entries alongside applications in results",
+          "label": "Show App Actions"
+        },
         "launcher-app-grid": {
           "description": "Show a grid of application icons with labels underneath when results are apps only",
           "label": "App Grid View"
@@ -2331,6 +2351,10 @@
         "launcher-global-windows": {
           "description": "Also show open windows in unprefixed search",
           "label": "Windows in Global Search"
+        },
+        "launcher-pinned-apps": {
+          "description": "Desktop entry IDs of apps pinned to the launcher; they appear first when the launcher opens",
+          "label": "Pinned Apps"
         },
         "launcher-prefix-calculator": {
           "description": "Trigger prefix for calculator calculations",
@@ -2502,7 +2526,9 @@
         "calendar-edit": {
           "button": "Edit",
           "button-reconnect": "Reconnect",
+          "button-retry": "Retry",
           "description": "Update this calendar account",
+          "description-locked": "The refresh token is in a locked keyring; unlock the keyring and retry",
           "description-reconnect": "Google authorization is missing; reconnect this account"
         },
         "calendar-event-date-format": {
@@ -3231,6 +3257,7 @@
         "gpu-temp": "GPU Temperature",
         "gpu-usage": "GPU Usage",
         "gpu-vram": "GPU VRAM",
+        "gpu-vram-used": "GPU VRAM Used",
         "graph": "Graph",
         "graphic": "Graphic",
         "hidden": "Hidden",
@@ -3365,12 +3392,12 @@
         },
         "custom-image": {
           "description": "Path to a custom image; leave empty to use the icon glyph",
-          "dialog-title": "Select custom image",
-          "label": "Custom image"
+          "dialog-title": "Select Custom Image",
+          "label": "Custom Image"
         },
         "custom-image-colorize": {
           "description": "Tint the custom image with the widget Icon Color setting",
-          "label": "Colorize custom image"
+          "label": "Colorize Custom Image"
         },
         "detached-panel": {
           "description": "Open the drawer as a floating panel instead of anchoring it to the bar edge",
@@ -3477,6 +3504,10 @@
           "description": "Hide inactive privacy icons and hide the widget when nothing is active",
           "label": "Hide Inactive"
         },
+        "hide-passive": {
+          "description": "Hide tray items whose StatusNotifierItem status is Passive",
+          "label": "Hide Passive Items"
+        },
         "hide-when-empty": {
           "description": "Hide workspace pills when there are no open windows",
           "label": "Hide When Empty",
@@ -3522,6 +3553,10 @@
           "description": "Overrides the widget color for icons only; fixed hex colors are also supported",
           "label": "Icon Color"
         },
+        "icon-scale": {
+          "description": "Scale of taskbar application icons relative to their default size",
+          "label": "Icon Scale"
+        },
         "icon-size": {
           "description": "Icon size in pixels",
           "label": "Icon Size"
@@ -3550,6 +3585,10 @@
         "interface": {
           "description": "Network interface to monitor; leave empty to use the total across all interfaces",
           "label": "Interface"
+        },
+        "item-spacing": {
+          "description": "Space between taskbar items when workspace grouping is off",
+          "label": "Item Spacing"
         },
         "label": {
           "description": "Optional static text shown on this button",
@@ -3587,7 +3626,7 @@
         "max-label-chars": {
           "description": "Maximum number of characters to show for workspace names",
           "label": "Max Label Characters",
-          "workspaces-description": "Maximum characters for workspace name labels"
+          "workspaces-description": "Maximum characters for non-numeric workspace labels"
         },
         "max-length": {
           "description": "Maximum widget length in pixels",
@@ -3653,6 +3692,10 @@
           "description": "Opacity of pinned apps that are not currently running",
           "label": "Pinned App Opacity"
         },
+        "reversed": {
+          "description": "Reverse the low-to-high frequency order of the bars",
+          "label": "Reversed"
+        },
         "scale": {
           "description": "Scale this widget relative to the bar content scale",
           "label": "Scale"
@@ -3674,7 +3717,11 @@
           "label": "Active Window Indicator"
         },
         "show-all-outputs": {
-          "description": "Include windows from every display on this widget",
+          "description": "Include windows from every monitor on this widget",
+          "label": "Show All Monitors"
+        },
+        "show-all-workspaces": {
+          "description": "Show workspaces from every monitor on this widget",
           "label": "Show All Monitors"
         },
         "show-caps-lock": {
@@ -3856,7 +3903,7 @@
       "export-config": "Export Config…",
       "export-config-saved": "Config export saved.",
       "filter-overridden": "Overridden",
-      "legacy-config-warning": "Legacy configuration is being migrated in memory: {issue}. Run noctalia config validate for all required changes.",
+      "legacy-config-warning": "Legacy setting: {issue}. Edit this source entry; Noctalia is applying the replacement only temporarily. Run noctalia config validate to list every required change.",
       "native-title": "Noctalia Settings",
       "no-results": "No settings found",
       "no-results-hint": "Try a different setting name or config key.",

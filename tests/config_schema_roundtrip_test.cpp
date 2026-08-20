@@ -450,7 +450,7 @@ location = "https://example.invalid/bad"
     // Explicit normalized actions so normalizeIdleBehaviorAction is a no-op on read.
     c.idle.behaviors = {
         {"dim", true, 60, "lock", "", "", true},
-        {"off", false, 300, "screen_off", "", "", true},
+        {"off", false, 300, "screen_off", "", "", true, 30},
     };
     c.wallpaper.enabled = false;
     c.wallpaper.fillColor = colorSpecFromConfigString("#ff8800");

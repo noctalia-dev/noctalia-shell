@@ -668,7 +668,12 @@ void Dock::syncInstances() {
   // Remove instances for dead outputs or outputs no longer selected.
   std::erase_if(m_instances, [this, &outputs, &outputAllowed](const auto& inst) {
     const auto it = std::ranges::find(outputs, inst->outputName, &WaylandOutput::name);
-    const bool drop = (it == outputs.end()) || !outputAllowed(*it);
+    const bool geometryChanged = it != outputs.end()
+        && (inst->outputLogicalX != it->logicalX
+            || inst->outputLogicalY != it->logicalY
+            || inst->outputLogicalWidth != it->effectiveLogicalWidth()
+            || inst->outputLogicalHeight != it->effectiveLogicalHeight());
+    const bool drop = (it == outputs.end()) || !outputAllowed(*it) || geometryChanged;
     if (drop) {
       detachInstanceState(*inst);
     }
@@ -778,6 +783,10 @@ void Dock::createInstance(const WaylandOutput& output) {
   instance->outputName = output.name;
   instance->output = output.output;
   instance->scale = output.scale;
+  instance->outputLogicalX = output.logicalX;
+  instance->outputLogicalY = output.logicalY;
+  instance->outputLogicalWidth = output.effectiveLogicalWidth();
+  instance->outputLogicalHeight = output.effectiveLogicalHeight();
 
   const auto& shadowConfig = m_config->config().shell.shadow;
   LayerSurfaceConfig lsCfg = shell::dock::makeLayerSurfaceConfig(
@@ -1266,42 +1275,26 @@ void Dock::openItemMenu(shell::dock::DockInstance& instance, const shell::dock::
 }
 
 void Dock::registerIpc(IpcService& ipc) {
-  ipc.registerHandler(
-      "dock-show",
-      [this](const std::string&) -> std::string {
-        if (m_config)
-          m_config->setDockEnabled(true);
-        return "ok\n";
-      },
-      "", "Show the dock (persists override)"
-  );
+  ipc.bind(noctalia::cli::msg::dockShow, [this](const std::string&) -> std::string {
+    if (m_config)
+      m_config->setDockEnabled(true);
+    return "ok\n";
+  });
 
-  ipc.registerHandler(
-      "dock-hide",
-      [this](const std::string&) -> std::string {
-        if (m_config)
-          m_config->setDockEnabled(false);
-        return "ok\n";
-      },
-      "", "Hide the dock (persists override)"
-  );
+  ipc.bind(noctalia::cli::msg::dockHide, [this](const std::string&) -> std::string {
+    if (m_config)
+      m_config->setDockEnabled(false);
+    return "ok\n";
+  });
 
-  ipc.registerHandler(
-      "dock-toggle",
-      [this](const std::string&) -> std::string {
-        if (m_config)
-          m_config->setDockEnabled(!m_config->config().dock.enabled);
-        return "ok\n";
-      },
-      "", "Toggle dock visibility (persists override)"
-  );
+  ipc.bind(noctalia::cli::msg::dockToggle, [this](const std::string&) -> std::string {
+    if (m_config)
+      m_config->setDockEnabled(!m_config->config().dock.enabled);
+    return "ok\n";
+  });
 
-  ipc.registerHandler(
-      "dock-reload",
-      [this](const std::string&) -> std::string {
-        reload();
-        return "ok\n";
-      },
-      "", "Reload dock configuration"
-  );
+  ipc.bind(noctalia::cli::msg::dockReload, [this](const std::string&) -> std::string {
+    reload();
+    return "ok\n";
+  });
 }

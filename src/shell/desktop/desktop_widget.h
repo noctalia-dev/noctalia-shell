@@ -136,6 +136,9 @@ protected:
     (void)family;
     (void)renderer;
   }
+  // Content is centered in boxed desktop widgets by default. Widgets with text that should be
+  // start-aligned can opt into the tile's leading edge without changing their intrinsic size.
+  [[nodiscard]] virtual bool contentAlignsToStart() const noexcept { return false; }
 
   // Outer node released to the host: background wrapper when enabled, otherwise content.
   [[nodiscard]] Node* presentationRoot() const noexcept;

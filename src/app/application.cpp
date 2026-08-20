@@ -165,7 +165,12 @@ Application::Application()
     scheduleNotificationShellRefresh();
   });
 
-  m_notificationManager.setStateCallback([this]() { scheduleNotificationShellRefresh(); });
+  m_notificationManager.setStateCallback([this]() {
+    if (m_notificationManager.doNotDisturb()) {
+      m_notificationToast.hideDndSuppressed();
+    }
+    scheduleNotificationShellRefresh();
+  });
 }
 
 Application::~Application() {
@@ -186,6 +191,10 @@ Application::~Application() {
   m_pipewirePcmTap.reset();
 #endif
 
+  ColorPickerDialog::setPresenter(nullptr);
+  GlyphPickerDialog::setPresenter(nullptr);
+  FileDialog::setPresenter(nullptr);
+  m_settingsWindow.shutdownDialogPresenter();
   // m_systemMonitor is declared after the plugin hosts, so it is destroyed first; drop the script
   // API's pointer to it here, while both are still alive, or a plugin that used noctalia.cpuCores
   // releases its reference through a dangling pointer as its host is torn down.

@@ -1188,7 +1188,7 @@ namespace settings {
                 return ui::button({
                     .text = control.label,
                     .fontSize = Style::fontSizeBody * scale,
-                    .variant = control.destructive ? ButtonVariant::Destructive : ButtonVariant::Default,
+                    .variant = control.variant,
                     .minHeight = Style::controlHeight * scale,
                     .paddingV = Style::spaceSm * scale,
                     .paddingH = Style::spaceMd * scale,
@@ -1201,7 +1201,7 @@ namespace settings {
                   .glyph = control.glyph,
                   .fontSize = Style::fontSizeBody * scale,
                   .glyphSize = Style::fontSizeBody * scale,
-                  .variant = control.destructive ? ButtonVariant::Destructive : ButtonVariant::Default,
+                  .variant = control.variant,
                   .minHeight = Style::controlHeight * scale,
                   .paddingV = Style::spaceSm * scale,
                   .paddingH = Style::spaceMd * scale,
