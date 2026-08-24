@@ -75,6 +75,7 @@ namespace i18n {
     } else {
       candidate = detectSystemLanguage();
     }
+    m_requestedLanguage = candidate;
 
     // English fallback is always loaded first so lookup() can fall back to it
     // even if the active catalog is English itself.

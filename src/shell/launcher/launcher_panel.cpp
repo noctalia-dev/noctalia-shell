@@ -110,6 +110,7 @@ namespace {
   struct LauncherListStyle {
     float scale = 1.0F;
     bool showIcons = true;
+    bool showAppOriginIndicator = true;
     bool compact = false;
     std::optional<ColorSpec> appIconColorizeTint;
     std::optional<ColorSpec> listItemBackground;
@@ -182,6 +183,7 @@ namespace {
     if (config != nullptr) {
       const auto& launcher = config->config().shell.launcher;
       style.showIcons = launcher.showIcons;
+      style.showAppOriginIndicator = launcher.showAppOriginIndicator;
       style.compact = launcher.compact;
       style.appIconColorizeTint = effectiveShellAppIconColorizationTint(config->config().shell);
       if (config->config().shell.panel.listItemBackground) {
@@ -351,7 +353,7 @@ namespace {
       m_pinnedGlyph->setGlyphSize(Style::fontSizeBody * m_style.scale);
       m_pinnedGlyph->setVisible(result.pinned);
       m_pinnedGlyph->setParticipatesInLayout(result.pinned);
-      const bool hasOrigin = !result.originGlyph.empty();
+      const bool hasOrigin = m_style.showAppOriginIndicator && !result.originGlyph.empty();
       if (hasOrigin) {
         m_originGlyph->setGlyph(result.originGlyph);
       }
@@ -557,7 +559,7 @@ namespace {
       m_pinnedGlyph->setVisible(result.pinned);
       m_pinnedGlyph->setPosition(Style::rtl() ? padding : width - padding - pinSize, padding);
       m_pinnedGlyph->setFrameSize(pinSize, pinSize);
-      const bool hasOrigin = !result.originGlyph.empty();
+      const bool hasOrigin = m_style.showAppOriginIndicator && !result.originGlyph.empty();
       if (hasOrigin) {
         m_originGlyph->setGlyph(result.originGlyph);
       }
@@ -977,9 +979,7 @@ private:
 };
 
 LauncherPanel::LauncherPanel(ConfigService* config, AsyncTextureCache* asyncTextures)
-    : m_iconResolver(true), m_config(config), m_asyncTextures(asyncTextures) {
-  syncUsageTrackingState();
-}
+    : m_iconResolver(true), m_config(config), m_asyncTextures(asyncTextures) {}
 
 LauncherPanel::~LauncherPanel() = default;
 
@@ -1071,6 +1071,7 @@ void LauncherPanel::create() {
           .controlHeight = Style::controlHeight * scale,
           .horizontalPadding = Style::spaceMd * scale,
           .clearButtonEnabled = true,
+          .lineEditing = true,
           .surfaceOpacity = panelCardOpacity(),
           .onChange =
               [this](const std::string& text) {
@@ -1297,15 +1298,18 @@ void LauncherPanel::syncLauncherViewLayout(Renderer* renderer) {
 
 void LauncherPanel::syncLauncherListStyle() {
   const bool showIcons = m_config == nullptr || m_config->config().shell.launcher.showIcons;
+  const bool showAppOriginIndicator = m_config == nullptr || m_config->config().shell.launcher.showAppOriginIndicator;
   const bool compact = m_config != nullptr && m_config->config().shell.launcher.compact;
   const bool appGrid = m_config != nullptr && m_config->config().shell.launcher.appGrid;
   if (showIcons == m_launcherShowIcons
+      && showAppOriginIndicator == m_launcherShowAppOriginIndicator
       && compact == m_launcherCompact
       && appGrid == m_launcherAppGrid
       && m_listAdapter != nullptr) {
     return;
   }
   m_launcherShowIcons = showIcons;
+  m_launcherShowAppOriginIndicator = showAppOriginIndicator;
   m_launcherCompact = compact;
   m_launcherAppGrid = appGrid;
   m_launcherRowHeight = 0.0F;
@@ -1460,8 +1464,8 @@ bool LauncherPanel::shouldTrackUsage() const {
 }
 
 void LauncherPanel::syncUsageTrackingState() {
-  if (!shouldTrackUsage()) {
-    clearUsage();
+  if (m_input != nullptr) {
+    reapplyCurrentQuery();
   }
 }
 

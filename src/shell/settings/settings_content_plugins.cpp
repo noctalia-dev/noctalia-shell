@@ -14,6 +14,7 @@
 #include "shell/settings/widget_settings_registry.h"
 #include "ui/builders.h"
 #include "ui/controls/flex.h"
+#include "ui/dialogs/glyph_picker_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
@@ -549,8 +550,41 @@ namespace settings {
             },
             path
         );
+      case WidgetControlKind::Glyph: {
+        const std::string currentValue = valueAsString(value);
+        auto textNode = factory.makeText(currentValue, {}, path);
+        return ui::row(
+            {
+                .align = FlexAlign::Center,
+                .gap = Style::spaceSm * factory.scale(),
+            },
+            std::move(textNode),
+            ui::button({
+                .glyph = "apps",
+                .glyphSize = Style::fontSizeBody * factory.scale(),
+                .variant = ButtonVariant::Default,
+                .minWidth = Style::controlHeight * factory.scale(),
+                .minHeight = Style::controlHeight * factory.scale(),
+                .paddingV = Style::spaceXs * factory.scale(),
+                .paddingH = Style::spaceSm * factory.scale(),
+                .radius = Style::scaledRadiusMd(factory.scale()),
+                .onClick = [setOverride = factory.context().setOverride, path, currentValue]() {
+                  GlyphPickerDialogOptions options;
+                  if (!currentValue.empty()) {
+                    options.initialGlyph = currentValue;
+                  }
+                  (void)GlyphPickerDialog::open(
+                      std::move(options), [setOverride, path](std::optional<GlyphPickerResult> result) {
+                        if (result.has_value()) {
+                          setOverride(path, result->name);
+                        }
+                      }
+                  );
+                },
+            })
+        );
+      }
       case WidgetControlKind::String:
-      case WidgetControlKind::Glyph:
       default:
         return factory.makeText(valueAsString(value), {}, path);
       }
@@ -720,7 +754,7 @@ namespace settings {
       return s.kind == PluginSourceKind::Git && s.enabled;
     });
     if (hasGitSource && ctx.setAutoUpdate) {
-      // Separate from the source list so the toggle doesn't read as another source.
+      // Separate from the source list so the dropdown doesn't read as another source.
       section->addChild(ui::separator({.spacing = Style::spaceSm * scale}));
       auto autoRow = ui::row({.align = FlexAlign::Center, .gap = Style::spaceSm * scale, .fillWidth = true});
       auto autoInfo = ui::column({.align = FlexAlign::Start, .gap = 2.0F * scale, .flexGrow = 1.0F});
@@ -732,14 +766,23 @@ namespace settings {
           i18n::tr("settings.plugins.sources.auto-update-desc"), Style::fontSizeCaption * scale,
           ColorRole::OnSurfaceVariant
       ));
+      std::vector<SelectOption> modeOptions;
+      modeOptions.reserve(std::size(kPluginAutoUpdateModes));
+      for (const auto& opt : kPluginAutoUpdateModes) {
+        modeOptions.push_back(SelectOption{std::string(opt.key), i18n::tr(opt.labelKey)});
+      }
+      const auto selectedModeIndex = optionIndex(modeOptions, enumToKey(kPluginAutoUpdateModes, ctx.autoUpdateMode));
       autoRow->addChild(std::move(autoInfo));
       autoRow->addChild(
-          ui::toggle({
-              .checked = ctx.autoUpdateEnabled,
-              .scale = scale,
-              .onChange = [cb = ctx.setAutoUpdate](bool on) {
-                if (cb) {
-                  cb(on);
+          ui::select({
+              .options = optionLabels(modeOptions),
+              .selectedIndex = selectedModeIndex,
+              .fontSize = Style::fontSizeBody * scale,
+              .controlHeight = Style::controlHeight * scale,
+              .glyphSize = Style::fontSizeBody * scale,
+              .onSelectionChanged = [cb = ctx.setAutoUpdate](std::size_t index, std::string_view /*label*/) {
+                if (cb && index < std::size(kPluginAutoUpdateModes)) {
+                  cb(kPluginAutoUpdateModes[index].value);
                 }
               },
           })

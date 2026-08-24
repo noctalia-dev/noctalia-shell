@@ -497,6 +497,7 @@ _noctalia_sources = files(
   'src/dbus/system_bus.cpp',
   'src/dbus/tray/fcitx_status.cpp',
   'src/dbus/tray/tray_service.cpp',
+  'src/dbus/upower/upower_charge_limit_support.cpp',
   'src/dbus/upower/upower_service.cpp',
   'src/debug/debug_service.cpp',
   'src/i18n/i18n.cpp',
@@ -941,6 +942,11 @@ _noctalia_sources = files(
   'src/compositors/triad/triad_output_backend.cpp',
   'src/compositors/triad/triad_keyboard_backend.cpp',
   'src/compositors/triad/triad_workspace_backend.cpp',
+  'src/compositors/umbriel/umbriel_runtime.cpp',
+  'src/compositors/umbriel/umbriel_event_handler.cpp',
+  'src/compositors/umbriel/umbriel_workspace_backend.cpp',
+  'src/compositors/umbriel/umbriel_keyboard_backend.cpp',
+  'src/compositors/umbriel/umbriel_output_backend.cpp',
   'src/compositors/sway/sway_runtime.cpp',
   'src/compositors/sway/sway_keyboard_backend.cpp',
   'src/compositors/sway/sway_output_backend.cpp',
@@ -1148,6 +1154,7 @@ if build_tests
     'app_identity',
     'audio_glyphs',
     'battery_hook_state',
+    'button_layout',
     'cairo_text_renderer',
     'calendar_cache_permissions',
     'cli_help',
@@ -1164,6 +1171,7 @@ if build_tests
     'config_path_resolution',
     'config_schema_roundtrip',
     'config_widget',
+    'context_menu_popup',
     'cpu_freq',
     'cpu_stat',
     'cpu_temp_sensor',
@@ -1185,6 +1193,7 @@ if build_tests
     'image_source_log',
     'input_area',
     'input_dispatcher',
+    'input_readline_shortcuts',
     'input_password_mode',
     'inotify',
     'ipc_service',
@@ -1222,6 +1231,7 @@ if build_tests
     'tray_identifier',
     'triad_workspace_backend',
     'ui_tree_reconciler',
+    'upower_charge_limit',
     'upower_device_catalog',
     'wayland_output_scale',
     'wayland_toplevels_identity',
@@ -1238,11 +1248,30 @@ if build_tests
       override_options: ['b_ndebug=false'],
     )
     test_args = []
-    if test_name == 'i18n_supported_languages'
+    if test_name == 'desktop_entry_localization'
+      test_args = [meson.project_source_root() / 'assets']
+    elif test_name == 'i18n_supported_languages'
       test_args = [meson.project_source_root() / 'assets' / 'translations']
     endif
     test(test_name, test_exe, args: test_args)
   endforeach
+
+  upower_integration_exe = executable('upower_charge_limit_integration_test',
+    sources: files('tests/upower_charge_limit_integration_test.cpp'),
+    dependencies: noctalia_core_dep,
+  )
+  dbus_run_session = find_program('dbus-run-session', required: false)
+  if dbus_run_session.found()
+    test('upower_charge_limit_integration',
+      dbus_run_session,
+      args: [
+        '--', 'sh', '-c',
+        'export DBUS_SYSTEM_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS"; exec "$1"',
+        'sh', upower_integration_exe.full_path(),
+      ],
+      depends: upower_integration_exe,
+    )
+  endif
 
   config_validate_env = environment()
   config_validate_env.set('NOCTALIA_CONFIG_HOME', meson.current_source_dir() / 'tests/config_validate/config-home')
