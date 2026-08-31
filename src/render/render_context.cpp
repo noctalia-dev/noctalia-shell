@@ -528,7 +528,7 @@ void RenderContext::renderNode(
     // node-level transition is needed).
     TextureId liveTex{};
     if (wallpaper->liveImage() != nullptr) {
-      liveTex = m_backend->importLiveImage(wallpaper->liveImage());
+      liveTex = m_backend->importLiveImage(wallpaper->liveImage(), wallpaper->liveImageSerial());
     }
     const bool live = liveTex != 0;
     const TextureId tex1 = live ? liveTex : wallpaper->texture1();

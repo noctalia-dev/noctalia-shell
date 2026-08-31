@@ -221,8 +221,20 @@ that point the user has already authenticated past it once.
 ## Runtime configuration
 
 Behaviour lives in the freeform `settings.wallpaper.live_paper` TOML
-table (`enabled`, `fps`, mesh size, darken, audio source, preset
-interval, …). See `example.toml`.
+table (`enabled`, `fps`, mesh size, render size, darken, audio source,
+preset interval, …). See `example.toml`.
+
+`render_width` / `render_height` (default `1280x720`, clamped to
+320..7680) set the working resolution of the offscreen framebuffer the
+visualizer renders into. There is exactly one such framebuffer for the
+whole shell — every output and the lock surface sample the same texture and
+scale it with `wallpaper.fill_mode` — so it is a global sharpness-vs-fill-rate
+knob, not a per-output mode. On a large or high-DPI output the 720p default
+is a visible upscale; raise it towards that output's mode, and pick an aspect
+ratio matching it so `fill_mode` does not crop. Changing it at runtime is
+handled by `VisualizerService::applyConfigToRenderer()` →
+`ProjectMRenderer::resize()`, which rebuilds the FBO, texture and EGLImage and
+publishes a new image serial so every consumer's alias cache re-imports.
 
 IPC handlers: `livepaper-next`, `livepaper-toggle`, `livepaper-enable`,
 `livepaper-disable`.

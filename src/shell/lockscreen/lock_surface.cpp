@@ -1645,7 +1645,7 @@ void LockSurface::applyWallpaperTexture() {
   bool loaded = true;
   if (m_livePaperTexture.valid()) {
     m_wallpaperTexture = {};
-    m_wallpaper->setLiveImage(m_livePaperImage);
+    m_wallpaper->setLiveImage(m_livePaperImage, m_livePaperImageSerial);
     m_wallpaper->setTextures(m_livePaperTexture.id, {}, static_cast<float>(m_livePaperTexture.width),
                              static_cast<float>(m_livePaperTexture.height), 0.0F, 0.0F);
     m_wallpaper->setTransition(WallpaperTransition::Fade, 0.0F, TransitionParams{});
@@ -1731,13 +1731,15 @@ void LockSurface::applyWallpaperTexture() {
   m_wallpaperDirty = !loaded;
 }
 
-void LockSurface::setLivePaperTexture(TextureHandle tex, void* eglImage) {
+void LockSurface::setLivePaperTexture(TextureHandle tex, void* eglImage, std::uint64_t serial) {
   if (m_livePaperTexture.id == tex.id && m_livePaperTexture.width == tex.width &&
-      m_livePaperTexture.height == tex.height && m_livePaperImage == eglImage) {
+      m_livePaperTexture.height == tex.height && m_livePaperImage == eglImage &&
+      m_livePaperImageSerial == serial) {
     return;
   }
   m_livePaperTexture = tex;
   m_livePaperImage = eglImage;
+  m_livePaperImageSerial = serial;
   m_wallpaperDirty = true;
 }
 

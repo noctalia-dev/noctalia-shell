@@ -1657,7 +1657,7 @@ void Wallpaper::updateRendererState(WallpaperInstance& instance) {
     // Hand the node the visualizer's EGLImage; render_context imports it into
     // the backend context and samples that. The raw texture id is kept only
     // for its dimensions / non-zero source gate.
-    wallpaperNode->setLiveImage(m_visualizer->eglImage());
+    wallpaperNode->setLiveImage(m_visualizer->eglImage(), m_visualizer->eglImageSerial());
     wallpaperNode->setSources(
         WallpaperSourceKind::Image, vizTex.id, instance.currentColor, WallpaperSourceKind::Image,
         vizTex.id, instance.nextColor, static_cast<float>(vizTex.width),

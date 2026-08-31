@@ -793,6 +793,8 @@ namespace noctalia::config::schema {
           field(&LivePaperConfig::fps, "fps", kLivePaperFpsRange),
           field(&LivePaperConfig::meshW, "mesh_w", kLivePaperMeshRange),
           field(&LivePaperConfig::meshH, "mesh_h", kLivePaperMeshRange),
+          field(&LivePaperConfig::renderWidth, "render_width", kLivePaperRenderSizeRange),
+          field(&LivePaperConfig::renderHeight, "render_height", kLivePaperRenderSizeRange),
           field(&LivePaperConfig::darken, "darken", kUnitRange),
           pathStringField(&LivePaperConfig::presetsDir, "presets_dir"),
           field(&LivePaperConfig::audioSource, "audio_source"),

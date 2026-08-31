@@ -94,10 +94,11 @@ void LockScreen::setVisualizer(ProjectMRenderer* renderer) {
   // for surfaces spawned later.
   TextureHandle tex = (renderer != nullptr) ? renderer->textureHandle() : TextureHandle{};
   void* img = (renderer != nullptr) ? renderer->eglImage() : nullptr;
+  const std::uint64_t serial = (renderer != nullptr) ? renderer->eglImageSerial() : 0;
   for (auto& inst : m_instances) {
     if (inst.surface != nullptr) {
       const bool on = livePaperActive();
-      inst.surface->setLivePaperTexture(on ? tex : TextureHandle{}, on ? img : nullptr);
+      inst.surface->setLivePaperTexture(on ? tex : TextureHandle{}, on ? img : nullptr, on ? serial : 0);
       inst.surface->requestRedraw();
     }
   }
@@ -504,7 +505,8 @@ void LockScreen::handleLocked(void* data, ext_session_lock_v1* /*lock*/) {
     instance.surface->setOnLogin([self]() { self->tryAuthenticate(); });
     if (self->m_visualizer != nullptr && self->livePaperActive()) {
       instance.surface->setLivePaperTexture(self->m_visualizer->textureHandle(),
-                                            self->m_visualizer->eglImage());
+                                            self->m_visualizer->eglImage(),
+                                            self->m_visualizer->eglImageSerial());
     }
   }
   self->syncVisualizerTimer();
@@ -772,7 +774,8 @@ void LockScreen::createInstance(const WaylandOutput& output) {
     surface->setWallpaperFillColor(resolveWallpaperFillColor(m_configService->config().wallpaper));
   }
   if (livePaperActive()) {
-    surface->setLivePaperTexture(m_visualizer->textureHandle(), m_visualizer->eglImage());
+    surface->setLivePaperTexture(m_visualizer->textureHandle(), m_visualizer->eglImage(),
+                                 m_visualizer->eglImageSerial());
   }
   if (auto captureIt = m_desktopCaptures.find(output.output); captureIt != m_desktopCaptures.end()) {
     surface->setDesktopCapture(std::move(captureIt->second));

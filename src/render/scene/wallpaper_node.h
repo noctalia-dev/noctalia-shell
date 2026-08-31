@@ -35,12 +35,17 @@ public:
   // group on Mesa, so when this is set the render backend imports the image
   // into its own context (glEGLImageTargetTexture2DOES) and samples that
   // instead of texture1/texture2.
+  // serial identifies the *generation* of the image (ProjectMRenderer bumps it
+  // per published image) so a resize that recycles the old address is still
+  // seen as a new image here and in the backend's alias cache.
   [[nodiscard]] void* liveImage() const noexcept { return m_liveImage; }
-  void setLiveImage(void* image) noexcept {
-    if (m_liveImage == image) {
+  [[nodiscard]] std::uint64_t liveImageSerial() const noexcept { return m_liveImageSerial; }
+  void setLiveImage(void* image, std::uint64_t serial = 0) noexcept {
+    if (m_liveImage == image && m_liveImageSerial == serial) {
       return;
     }
     m_liveImage = image;
+    m_liveImageSerial = serial;
     markPaintDirty();
   }
 
@@ -144,6 +149,7 @@ private:
   WallpaperFillMode m_fillMode = WallpaperFillMode::Crop;
   Color m_fillColor = rgba(0.0F, 0.0F, 0.0F, 1.0F);
   TransitionParams m_params;
-  void* m_liveImage = nullptr; // EGLImageKHR for the live-paper visualizer source
+  void* m_liveImage = nullptr;          // EGLImageKHR for the live-paper visualizer source
+  std::uint64_t m_liveImageSerial = 0;  // generation of m_liveImage; see setLiveImage()
   WallpaperSpanParams m_span;
 };

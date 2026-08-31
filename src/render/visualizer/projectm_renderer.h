@@ -54,6 +54,14 @@ public:
   // instead. Null until initialize() succeeds.
   [[nodiscard]] void* eglImage() const noexcept { return m_eglImage; }
 
+  // Monotonic counter, bumped every time a new EGLImage is published (once at
+  // initialize(), then on every resize()). Consumers that cache an imported
+  // alias texture keyed on the image pointer MUST fold this into their key:
+  // destroying an EGLImage and creating the next one can legitimately hand
+  // back the very same address, so the pointer alone cannot tell "same image"
+  // apart from "different image, recycled address".
+  [[nodiscard]] std::uint64_t eglImageSerial() const noexcept { return m_eglImageSerial; }
+
   // Knobs from [wallpaper.live_paper] in TOML. Safe to call after init.
   void setMeshSize(int meshW, int meshH);
   void setFps(int fps);
@@ -100,6 +108,7 @@ private:
   void* m_wlEglWindow = nullptr;  // wl_egl_window*
   void* m_eglSurface = nullptr;   // EGLSurface
   void* m_eglImage = nullptr; // EGLImageKHR aliasing m_textureName for cross-context sharing
+  std::uint64_t m_eglImageSerial = 0; // bumped per published image; see eglImageSerial()
 
   int m_meshW = 24;
   int m_meshH = 18;

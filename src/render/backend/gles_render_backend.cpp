@@ -541,22 +541,26 @@ int GlesRenderBackend::maxTextureSize() {
   return m_maxTextureSize;
 }
 
-TextureId GlesRenderBackend::importLiveImage(void* eglImage) {
+TextureId GlesRenderBackend::importLiveImage(void* eglImage, std::uint64_t serial) {
   if (eglImage == nullptr) {
     return TextureId{};
   }
   // ProjectMRenderer publishes ONE EGLImage at a time. Cache a single alias
-  // texture; when the producer replaces the image (e.g. on resize) the
-  // pointer changes and we drop the stale alias before importing the new
-  // one. A multi-slot cache would leak any alias whose owning EGLImage was
-  // destroyed by the producer before backend::cleanup() runs.
-  if (m_liveImageCacheKey == eglImage && m_liveImageCacheTex != 0) {
+  // texture; when the producer replaces the image (e.g. on a live_paper
+  // resolution change) the (pointer, serial) key changes and we drop the stale
+  // alias before importing the new one. The serial is what makes this correct:
+  // EGL may return the address it just freed, so a pointer-only key can miss a
+  // replacement and keep sampling an alias of destroyed storage. A multi-slot
+  // cache would leak any alias whose owning EGLImage was destroyed by the
+  // producer before backend::cleanup() runs.
+  if (m_liveImageCacheKey == eglImage && m_liveImageCacheSerial == serial && m_liveImageCacheTex != 0) {
     return TextureId{m_liveImageCacheTex};
   }
   if (m_liveImageCacheTex != 0) {
     glDeleteTextures(1, &m_liveImageCacheTex);
     m_liveImageCacheTex = 0;
     m_liveImageCacheKey = nullptr;
+    m_liveImageCacheSerial = 0;
   }
   static auto* targetTex2D =
       reinterpret_cast<PFNGLEGLIMAGETARGETTEXTURE2DOESPROC>(eglGetProcAddress("glEGLImageTargetTexture2DOES"));
@@ -583,6 +587,7 @@ TextureId GlesRenderBackend::importLiveImage(void* eglImage) {
     return TextureId{};
   }
   m_liveImageCacheKey = eglImage;
+  m_liveImageCacheSerial = serial;
   m_liveImageCacheTex = tex;
   return TextureId{tex};
 }
@@ -823,6 +828,7 @@ void GlesRenderBackend::destroyGpuObjects() {
     m_liveImageCacheTex = 0;
   }
   m_liveImageCacheKey = nullptr;
+  m_liveImageCacheSerial = 0;
   m_textureManager.cleanup();
 }
 

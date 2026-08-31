@@ -62,8 +62,11 @@ public:
   // When set, the lock surface draws the visualizer instead of the static
   // wallpaper image. eglImage (EGLImageKHR as void*) is the cross-context
   // handle the backend imports to sample it; tex carries the dimensions.
-  // Passing a zero TextureHandle / null image disables it.
-  void setLivePaperTexture(TextureHandle tex, void* eglImage);
+  // Passing a zero TextureHandle / null image disables it. serial is the
+  // producer's image generation (ProjectMRenderer::eglImageSerial()), carried
+  // through so a resolution change is not mistaken for the same image when EGL
+  // recycles the released address.
+  void setLivePaperTexture(TextureHandle tex, void* eglImage, std::uint64_t serial = 0);
   // Force a repaint of the wallpaper node. The visualizer reuses one GL
   // texture id whose contents change every tick; the node dedups on id, so
   // the live-paper driver must invalidate it explicitly each frame.
@@ -182,7 +185,8 @@ private:
   Color m_wallpaperFillColor = rgba(0.0F, 0.0F, 0.0F, 0.0F);
   bool m_wallpaperDirty = false;
   TextureHandle m_livePaperTexture{};
-  void* m_livePaperImage = nullptr; // EGLImageKHR for the live-paper visualizer source
+  void* m_livePaperImage = nullptr;         // EGLImageKHR for the live-paper visualizer source
+  std::uint64_t m_livePaperImageSerial = 0; // generation of m_livePaperImage
   InputDispatcher m_inputDispatcher;
   std::function<void()> m_onLogin;
   std::function<void()> m_onCycleLayout;

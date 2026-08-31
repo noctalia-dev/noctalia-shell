@@ -34,6 +34,9 @@ namespace noctalia::config::schema {
   inline constexpr Range<std::int64_t> kLivePaperIntervalRange{0, 86400, 1}; // preset rotation; 0 = no rotation
   inline constexpr Range<std::int64_t> kLivePaperFpsRange{1, 240, 1};
   inline constexpr Range<std::int64_t> kLivePaperMeshRange{4, 256, 1};
+  // Offscreen visualizer framebuffer size. Upper bound covers an 8K-wide
+  // output; cost grows with the pixel count, so the default stays at 720p.
+  inline constexpr Range<std::int64_t> kLivePaperRenderSizeRange{320, 7680, 16};
 
   // Dock.
   inline constexpr Range<std::int64_t> kDockIconSizeRange{16, 128, 1};

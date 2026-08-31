@@ -54,7 +54,7 @@ public:
   void clear(Color color) override;
   void setBlendMode(RenderBlendMode mode) override;
   [[nodiscard]] int maxTextureSize() override;
-  [[nodiscard]] TextureId importLiveImage(void* eglImage) override;
+  [[nodiscard]] TextureId importLiveImage(void* eglImage, std::uint64_t serial) override;
   void setScissor(RenderScissor scissor) override;
   void disableScissor() override;
   void drawRect(
@@ -119,9 +119,12 @@ private:
   bool m_resetStatusLogged = false;
   int m_maxTextureSize = 0;
   // Single-slot cache for the live-paper EGLImage alias. Keyed by the
-  // EGLImageKHR pointer; replaced (with `glDeleteTextures` on the old entry)
-  // whenever the producer publishes a different image. See importLiveImage().
+  // EGLImageKHR pointer *and* the producer's serial (an address can be
+  // recycled across a resize); replaced (with `glDeleteTextures` on the old
+  // entry) whenever the producer publishes a different image. See
+  // importLiveImage().
   void* m_liveImageCacheKey = nullptr;
+  std::uint64_t m_liveImageCacheSerial = 0;
   std::uint32_t m_liveImageCacheTex = 0;
   bool m_viewportValid = false;
   std::uint32_t m_viewportWidth = 0;

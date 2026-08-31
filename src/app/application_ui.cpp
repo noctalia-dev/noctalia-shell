@@ -136,10 +136,13 @@ void Application::initUiRenderSurfacesAndSettings() {
   m_renderContext.setTextBaseDirection(i18n::Service::instance().rtl());
 
   // Optional live-paper plumbing. ProjectMRenderer renders libprojectM into a
-  // hidden window surface in the shared EGL group at a fixed working
-  // resolution — visualizer content doesn't need per-output sharpness, the
-  // wallpaper's fill_mode handles scaling. The texture is created up front so
-  // any output that turns on live_paper later can pick it up without
+  // hidden window surface in the shared EGL group at the working resolution
+  // from [wallpaper.live_paper] (render_width/render_height, 720p by default)
+  // — one texture feeds every output and the wallpaper's fill_mode handles the
+  // scaling, so this trades GPU fill-rate for sharpness on large/high-DPI
+  // outputs. A later config reload re-applies it via
+  // VisualizerService::applyConfigToRenderer(). The texture is created up
+  // front so any output that turns on live_paper later can pick it up without
   // renegotiating GL.
   //
   // Requires GLES3 (libprojectM 4.x uses VAOs which are core in GLES3 and only
@@ -148,8 +151,11 @@ void Application::initUiRenderSurfacesAndSettings() {
   // live_paper.
 #ifdef NOCTALIA_HAVE_LIVEPAPER
   if (m_glShared.clientVersion() >= 3) {
+    const auto& livePaperCfg = m_configService.config().wallpaper.livePaper;
     m_projectMRenderer = std::make_unique<ProjectMRenderer>();
-    if (!m_projectMRenderer->initialize(m_glShared, m_wayland.compositor(), 1280, 720)) {
+    if (!m_projectMRenderer->initialize(m_glShared, m_wayland.compositor(),
+                                        static_cast<std::uint32_t>(livePaperCfg.renderWidth),
+                                        static_cast<std::uint32_t>(livePaperCfg.renderHeight))) {
       kLog.warn("live_paper visualizer unavailable: ProjectMRenderer::initialize failed");
       m_projectMRenderer.reset();
     }

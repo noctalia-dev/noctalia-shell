@@ -508,6 +508,13 @@ struct LivePaperConfig {
   std::int32_t fps = 30;
   std::int32_t meshW = 24;
   std::int32_t meshH = 18;
+  // Working resolution of the offscreen visualizer framebuffer. The same
+  // texture feeds every output (and the lock surface), scaled by the
+  // wallpaper's fillMode, so this is a quality/GPU-cost knob rather than a
+  // per-output property: raise it towards the largest output's mode for a
+  // sharper live paper, lower it to cut fill-rate cost.
+  std::int32_t renderWidth = 1280;
+  std::int32_t renderHeight = 720;
   float darken = 0.7f; // 0.0 = no overlay, 1.0 = fully black
   std::string presetsDir;
   std::string audioSource; // PipeWire node target; "" = follow active sink, fall back to mic if allowMicFallback

@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <cstdlib>
 #include <filesystem>
 #include <random>
@@ -95,6 +96,11 @@ void VisualizerService::applyConfigToRenderer() {
     return;
   }
   const auto& lp = m_config->config().wallpaper.livePaper;
+  // Working framebuffer size first: resize() recreates the FBO/texture and is
+  // a no-op when the size is unchanged, so it costs nothing on the common
+  // reload where only an unrelated field flipped. Mesh/fps are re-applied
+  // afterwards because resize() also resizes libprojectM's internal mesh.
+  m_renderer->resize(static_cast<std::uint32_t>(lp.renderWidth), static_cast<std::uint32_t>(lp.renderHeight));
   m_renderer->setMeshSize(lp.meshW, lp.meshH);
   m_renderer->setFps(lp.fps);
   m_renderer->setTextureSearchPaths(resolveTextureSearchPaths());

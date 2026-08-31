@@ -136,6 +136,13 @@ interval_seconds = 120              # 0 = no rotation
 fps              = 30
 mesh_w           = 24               # projectM warp mesh width
 mesh_h           = 18               # projectM warp mesh height
+# Working resolution of the visualizer framebuffer (320..7680). One texture
+# feeds every output and the lock surface, scaled by wallpaper.fill_mode — so
+# this is the sharpness/GPU-cost knob, not a per-output setting. Raise it
+# towards the mode of your largest output (and match that output's aspect
+# ratio to avoid cropping); cost grows with the pixel count.
+render_width     = 1280
+render_height    = 720
 darken           = 0.7              # 0.0 = no overlay, 1.0 = fully black
 presets_dir      = ""               # "" = default XDG location
 audio_source     = ""               # PipeWire node target; "" = follow active sink (see allow_mic_fallback)

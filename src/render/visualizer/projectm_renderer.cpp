@@ -388,6 +388,11 @@ bool ProjectMRenderer::createFbo(std::uint32_t width, std::uint32_t height) {
     m_eglImage = nullptr;
   }
 
+  // Publish the new image under a fresh serial. Consumers cache their alias
+  // texture keyed on (pointer, serial) because EGL is free to hand back the
+  // address we just released in destroyFbo() — see eglImageSerial().
+  ++m_eglImageSerial;
+
   m_width = width;
   m_height = height;
   return true;
