@@ -45,6 +45,7 @@ namespace {
   constexpr const char* kScreenshotPathEnv = "NOCTALIA_SCREENSHOT_PATH";
   constexpr const char* kStateOwner = "screenshot";
   constexpr const char* kLastRegionKey = "last_region";
+  constexpr auto kFreezeCaptureTimeout = std::chrono::seconds(1);
 
   [[nodiscard]] std::string encodeRegion(const LogicalRect& region) {
     return std::format("{},{},{},{}", region.x, region.y, region.width, region.height);
@@ -423,6 +424,14 @@ namespace {
     return targets;
   }
 
+  [[nodiscard]] int scaleLogicalFloor(int logical, double scale) {
+    return static_cast<int>(std::floor(static_cast<double>(logical) * scale));
+  }
+
+  [[nodiscard]] int scaleLogicalCeil(int logical, double scale) {
+    return static_cast<int>(std::ceil(static_cast<double>(logical) * scale));
+  }
+
   [[nodiscard]] std::optional<ScreencopyImage>
   composeGlobalRegion(LogicalRect globalRegion, std::vector<GlobalRegionPiece> pieces) {
     if (globalRegion.width <= 0 || globalRegion.height <= 0 || pieces.empty()) {
@@ -445,10 +454,8 @@ namespace {
       });
     }
 
-    const auto scaled = [canvasScale](int logical) { return static_cast<int>(std::lround(logical * canvasScale)); };
-
-    const int canvasWidth = scaled(globalRegion.width);
-    const int canvasHeight = scaled(globalRegion.height);
+    const int canvasWidth = scaleLogicalCeil(globalRegion.width, canvasScale);
+    const int canvasHeight = scaleLogicalCeil(globalRegion.height, canvasScale);
     if (canvasWidth <= 0 || canvasHeight <= 0) {
       return std::nullopt;
     }
@@ -461,10 +468,12 @@ namespace {
     for (auto& piece : pieces) {
       const int globalPieceX = piece.output->logicalX + piece.localRegion.x;
       const int globalPieceY = piece.output->logicalY + piece.localRegion.y;
-      const int destX = scaled(globalPieceX - globalRegion.x);
-      const int destY = scaled(globalPieceY - globalRegion.y);
-      const int targetWidth = scaled(piece.localRegion.width);
-      const int targetHeight = scaled(piece.localRegion.height);
+      const int offsetX = globalPieceX - globalRegion.x;
+      const int offsetY = globalPieceY - globalRegion.y;
+      const int destX = scaleLogicalFloor(offsetX, canvasScale);
+      const int destY = scaleLogicalFloor(offsetY, canvasScale);
+      const int targetWidth = scaleLogicalCeil(offsetX + piece.localRegion.width, canvasScale) - destX;
+      const int targetHeight = scaleLogicalCeil(offsetY + piece.localRegion.height, canvasScale) - destY;
       if (!resampleRgbaImage(piece.image, targetWidth, targetHeight)) {
         return std::nullopt;
       }
@@ -506,19 +515,28 @@ namespace {
       minLogicalY = std::min(minLogicalY, frame.output->logicalY);
     }
 
-    const auto scaled = [canvasScale](int logical) { return static_cast<int>(std::lround(logical * canvasScale)); };
+    const auto outputPixelRect = [canvasScale, minLogicalX, minLogicalY](const WaylandOutput& output) {
+      const int offsetX = output.logicalX - minLogicalX;
+      const int offsetY = output.logicalY - minLogicalY;
+      const int x = scaleLogicalFloor(offsetX, canvasScale);
+      const int y = scaleLogicalFloor(offsetY, canvasScale);
+      return LogicalRect{
+          .x = x,
+          .y = y,
+          .width = scaleLogicalCeil(offsetX + output.logicalWidth, canvasScale) - x,
+          .height = scaleLogicalCeil(offsetY + output.logicalHeight, canvasScale) - y,
+      };
+    };
 
     int canvasWidth = 0;
     int canvasHeight = 0;
     for (auto& frame : frames) {
-      const auto* out = frame.output;
-      const int targetWidth = scaled(out->logicalWidth);
-      const int targetHeight = scaled(out->logicalHeight);
-      if (!resampleRgbaImage(frame.image, targetWidth, targetHeight)) {
+      const LogicalRect pixelRect = outputPixelRect(*frame.output);
+      if (!resampleRgbaImage(frame.image, pixelRect.width, pixelRect.height)) {
         return std::nullopt;
       }
-      canvasWidth = std::max(canvasWidth, scaled(out->logicalX - minLogicalX) + targetWidth);
-      canvasHeight = std::max(canvasHeight, scaled(out->logicalY - minLogicalY) + targetHeight);
+      canvasWidth = std::max(canvasWidth, pixelRect.x + pixelRect.width);
+      canvasHeight = std::max(canvasHeight, pixelRect.y + pixelRect.height);
     }
 
     if (canvasWidth <= 0 || canvasHeight <= 0) {
@@ -531,8 +549,8 @@ namespace {
     canvas.rgba.assign(static_cast<std::size_t>(canvasWidth) * static_cast<std::size_t>(canvasHeight) * 4U, 0);
 
     for (const auto& frame : frames) {
-      const auto* out = frame.output;
-      blitOpaqueRgba(canvas, scaled(out->logicalX - minLogicalX), scaled(out->logicalY - minLogicalY), frame.image);
+      const LogicalRect pixelRect = outputPixelRect(*frame.output);
+      blitOpaqueRgba(canvas, pixelRect.x, pixelRect.y, frame.image);
     }
 
     return canvas;
@@ -884,48 +902,70 @@ void ScreenshotService::beginFreezeCapture() {
   }
 
   m_freezeCaptureActive = true;
+  startNextFreezeCapture();
+}
 
-  while (!m_pendingFreezeOutputs.empty()) {
-    if (!m_freezeCaptureActive) {
-      m_frozenScreenshots.clear();
-      return;
-    }
-
-    wl_output* output = m_pendingFreezeOutputs.front();
-    m_pendingFreezeOutputs.erase(m_pendingFreezeOutputs.begin());
-
-    if (m_capture.busy()) {
-      m_capture.cancelInFlight();
-    }
-
-    ScreencopyImage image;
-    std::string error;
-    if (!screencopy::captureOutputBlocking(
-            m_capture, m_wayland, output, image, error, m_regionOutputOptions.showCursor
-        )) {
-      if (!m_freezeCaptureActive) {
-        m_frozenScreenshots.clear();
-        return;
-      }
-      abortFreezeCapture(error.empty() ? "Failed to freeze screen" : error);
-      return;
-    }
-    if (!m_freezeCaptureActive) {
-      m_frozenScreenshots.clear();
-      return;
-    }
-    if (!screencopy::orientCaptureNative(image, m_wayland, output)) {
-      abortFreezeCapture("Failed to orient frozen screenshot");
-      return;
-    }
-    m_frozenScreenshots.push_back(capture::FrozenScreenshot{.output = output, .image = std::move(image)});
+void ScreenshotService::startNextFreezeCapture() {
+  if (!m_freezeCaptureActive) {
+    return;
   }
 
-  m_freezeCaptureActive = false;
-  finishFreezeCapture();
+  if (m_pendingFreezeOutputs.empty()) {
+    m_freezeCaptureActive = false;
+    finishFreezeCapture();
+    return;
+  }
+
+  wl_output* output = m_pendingFreezeOutputs.front();
+  m_pendingFreezeOutputs.erase(m_pendingFreezeOutputs.begin());
+  if (m_capture.busy()) {
+    m_capture.cancelInFlight();
+  }
+
+  m_capture.capture(
+      output, std::nullopt, m_regionOutputOptions.showCursor,
+      [this, output](std::optional<ScreencopyImage> image, const std::string& error) {
+        onFreezeFrameCaptured(output, std::move(image), error);
+      }
+  );
+  if (m_capture.busy()) {
+    m_freezeCaptureTimeout.start(kFreezeCaptureTimeout, [this]() {
+      if (!m_freezeCaptureActive || !m_capture.busy()) {
+        return;
+      }
+      kLog.warn("timed out freezing output for screenshot region");
+      m_capture.cancelInFlight();
+      DeferredCall::callLater([this]() {
+        if (m_freezeCaptureActive) {
+          startNextFreezeCapture();
+        }
+      });
+    });
+  }
+}
+
+void ScreenshotService::onFreezeFrameCaptured(
+    wl_output* output, std::optional<ScreencopyImage> image, const std::string& error
+) {
+  m_freezeCaptureTimeout.stop();
+  if (!m_freezeCaptureActive) {
+    return;
+  }
+
+  if (!error.empty() || !image.has_value()) {
+    kLog.warn("failed to freeze output for screenshot region: {}", error.empty() ? "empty frame" : error);
+  } else if (!screencopy::orientCaptureNative(*image, m_wayland, output)) {
+    kLog.warn("failed to orient frozen screenshot");
+  } else {
+    m_frozenScreenshots.push_back(capture::FrozenScreenshot{.output = output, .image = std::move(*image)});
+  }
+
+  DeferredCall::callLater([this]() { startNextFreezeCapture(); });
 }
 
 void ScreenshotService::finishFreezeCapture() {
+  m_freezeCaptureTimeout.stop();
+  m_freezeCaptureActive = false;
   if (m_regionRenderContext == nullptr) {
     notifyError("Render context unavailable");
     m_frozenScreenshots.clear();
@@ -947,6 +987,7 @@ void ScreenshotService::finishFreezeCapture() {
 
 void ScreenshotService::abortFreezeCapture(const std::string& message) {
   cancelAllOutputsBatch();
+  m_freezeCaptureTimeout.stop();
   m_freezeCaptureActive = false;
   m_pendingFreezeOutputs.clear();
   m_frozenScreenshots.clear();

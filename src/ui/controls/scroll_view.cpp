@@ -103,7 +103,12 @@ ScrollView::ScrollView() {
       return false;
     }
 
-    scrollBy(data.scrollDelta(m_scrollWheelStep));
+    const float delta = data.scrollDelta(m_scrollWheelStep);
+    if (data.axisSource == WL_POINTER_AXIS_SOURCE_FINGER) {
+      setScrollOffset(m_scrollOffset + delta);
+    } else {
+      scrollBy(delta);
+    }
     return true;
   });
   m_viewportArea = static_cast<InputArea*>(addChild(std::move(viewportArea)));
@@ -133,6 +138,15 @@ void ScrollView::setOrientation(ScrollOrientation orientation) {
     m_scrollbar->setOrientation(orientation);
   }
   markLayoutDirty();
+  updateTouchScrollAxis();
+}
+
+void ScrollView::updateTouchScrollAxis() {
+  m_viewportArea->setTouchScrollAxis(
+      scrollable() ? (m_orientation == ScrollOrientation::Horizontal ? InputArea::TouchScrollAxis::Horizontal
+                                                                     : InputArea::TouchScrollAxis::Vertical)
+                   : InputArea::TouchScrollAxis::None
+  );
 }
 
 void ScrollView::setScrollOffset(float offset) {
@@ -382,6 +396,7 @@ void ScrollView::doLayout(Renderer& renderer) {
     m_viewportArea->setFrameSize(availableW, viewportH);
 
     m_maxScrollOffset = std::max(0.0F, contentWidth - availableW);
+    updateTouchScrollAxis();
     m_scrollbar->setPosition(viewportX, viewportY + viewportH + Style::scrollbarGap);
     m_scrollbar->setVisible(m_showScrollbar);
     m_scrollbar->update(availableW, contentWidth, m_scrollOffset);
@@ -417,6 +432,7 @@ void ScrollView::doLayout(Renderer& renderer) {
 
     const float contentHeight = m_content->height();
     m_maxScrollOffset = std::max(0.0F, contentHeight - viewportH);
+    updateTouchScrollAxis();
     const float scrollbarX =
         Style::rtl() ? m_viewportPaddingH : m_viewportPaddingH + m_viewportWidth - Style::scrollbarWidth;
     m_scrollbar->setPosition(scrollbarX, m_viewportPaddingV);
