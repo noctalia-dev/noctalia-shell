@@ -573,6 +573,8 @@ void SettingsWindow::destroyWindow() {
   m_headerRow = nullptr;
   m_filterRow = nullptr;
   m_contentContainer = nullptr;
+  m_pageTitleRow = nullptr;
+  m_groupJumpRow = nullptr;
   m_contentScrollView = nullptr;
   m_sidebarScrollView = nullptr;
   m_sidebarNav = nullptr;
@@ -636,6 +638,7 @@ void SettingsWindow::destroyWindow() {
   m_showOverriddenOnly = false;
   m_sidebarScrollState = {};
   m_contentScrollState = {};
+  m_expandedSettingGroups.clear();
 
   // Plugin-store thumbnails are the only async textures this window holds; drop the
   // zero-ref residents once the scene (and with it every Image) is gone.
@@ -1207,7 +1210,11 @@ void SettingsWindow::onExternalOptionsChanged() { requestSceneRebuild(); }
 void SettingsWindow::onPluginsChanged() {
   markPluginListDirty();
   if (isOpen() && m_selectedSection == "plugins") {
-    requestContentRebuild();
+    // The plugin store's body shows install progress, so it needs the rebuild; any other
+    // editor sheet would just lose its focus for an unrelated plugin event.
+    requestContentRebuild(
+        /*refreshRegistry=*/false, /*refreshFilterRow=*/false, /*rebuildEditorSheet=*/m_pluginStoreSheetOpen
+    );
   }
 }
 

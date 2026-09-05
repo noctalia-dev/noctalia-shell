@@ -3,12 +3,12 @@
 // The schema is now the single source for both serialize (config_export::serialize →
 // writeTable) and parse (parseConfigTable → readInto), so there is no legacy code
 // to compare against. What still earns its keep:
-//   - read inverse — readInto(writeTable(x)) == x for every section: the schema's
+//   - read inverse: readInto(writeTable(x)) == x for every section: the schema's
 //                    read and write are mutual inverses (catches a field whose read
 //                    key != write key, or a lossy codec).
-//   - bar golden   — config_export::serialize(probe)["bar"] stays byte-identical to a captured
+//   - bar golden: config_export::serialize(probe)["bar"] stays byte-identical to a captured
 //                    reference (locks the resolve-and-flatten monitor-override emit).
-//   - clamp goldens — pin parse-time range behavior.
+//   - clamp goldens: pin parse-time range behavior.
 
 #include "config/config_export.h"
 #include "config/config_types.h"
@@ -231,6 +231,7 @@ location = "https://example.invalid/bad"
     bar.panelOverlap = 2;
     bar.capsuleThickness = 0.5f;
     bar.scale = 2.0f;
+    bar.fontScale = 1.5f;
     bar.fontWeight = 600;
     bar.fontFamily = "Inter";
     bar.startWidgets = {"launcher"};
@@ -295,6 +296,7 @@ location = "https://example.invalid/bad"
     ovr.panelOverlap = -1;
     ovr.capsuleThickness = 0.25f;
     ovr.scale = 1.5f;
+    ovr.fontScale = 1.5f;
     ovr.fontFamily = "Fira Sans";
     ovr.startWidgets = std::vector<std::string>{"tray"};
     ovr.centerWidgets = std::vector<std::string>{"media"};
@@ -406,8 +408,8 @@ location = "https://example.invalid/bad"
     c.brightness.enableDdcutil = true;
     c.brightness.ddcutilIgnoreMmids = {"ABC123"};
     c.brightness.monitorOverrides = {
-        {"DP-1", BrightnessBackendPreference::Ddcutil},
-        {"eDP-1", std::nullopt},
+        {"DP-1", BrightnessBackendPreference::Ddcutil, std::nullopt, 7},
+        {"eDP-1", std::nullopt, "intel_backlight", std::nullopt},
     };
     c.battery.warningThreshold = 15;
     c.battery.deviceThresholds = {{"BAT0", 10}, {"hidpp:1", 25}};
@@ -415,11 +417,11 @@ location = "https://example.invalid/bad"
     c.controlCenter.sidebarSectionMode = ControlCenterSidebarMode::None;
     c.controlCenter.calendarTab.showEventsCard = false;
     c.controlCenter.calendarTab.showWeekNumbers = true;
-    c.controlCenter.calendarTab.eventDateFormat = "%Y-%m-%d";
-    c.controlCenter.calendarTab.eventTimeFormat = "%I:%M %p";
     c.controlCenter.shortcuts = {{"wifi"}, {"bluetooth"}};
     c.calendar.enabled = true;
     c.calendar.refreshMinutes = 30;
+    c.calendar.eventDateFormat = "%Y-%m-%d";
+    c.calendar.eventTimeFormat = "%I:%M %p";
     c.calendar.accounts = {
         {"acc1", "google", "Work", "#ff0000", "", "", "", {}},
         {"acc2",
@@ -523,6 +525,7 @@ location = "https://example.invalid/bad"
     c.theme.source = PaletteSource::Wallpaper;
     c.theme.builtinPalette = "Tokyo";
     c.theme.mode = ThemeMode::Light;
+    c.theme.shellMode = ShellThemeMode::Auto;
     c.theme.templates.enableBuiltinTemplates = false;
     c.theme.templates.builtinIds = {"a", "b"};
     c.theme.templates.customColors = {
@@ -597,6 +600,16 @@ location = "https://example.invalid/bad"
         fail("osd.scale clamp: expected 0.5");
       }
     }
+    // Bar font_scale uses the same lower bound exposed by the Settings slider.
+    {
+      auto t = toml::parse("font_scale = 0.1");
+      BarConfig b{};
+      Diagnostics d;
+      readInto(t, b, barFieldsSchema(), "bar", d);
+      if (b.fontScale != 0.2f) {
+        fail("bar.font_scale clamp: expected 0.2");
+      }
+    }
     // Clipboard history count accepts large text-heavy histories but still has
     // an explicit config ceiling.
     {
@@ -607,6 +620,22 @@ location = "https://example.invalid/bad"
       if (s.clipboardHistoryMaxEntries != 10000) {
         fail("shell.clipboard_history_max_entries clamp: expected 10000");
       }
+    }
+  }
+
+  void checkMonitorFontScaleChangeSet() {
+    Config before;
+    BarConfig bar;
+    bar.name = "default";
+    BarMonitorOverride monitor;
+    monitor.match = "DP-1";
+    bar.monitorOverrides.push_back(monitor);
+    before.bars.push_back(bar);
+
+    Config after = before;
+    after.bars.front().monitorOverrides.front().fontScale = 1.5F;
+    if (!computeConfigChangeSet(before, after).bars) {
+      fail("monitor font_scale override did not mark bars changed");
     }
   }
 
@@ -974,6 +1003,7 @@ contact_shadow = true
 enabled = false
 end = [ "battery" ]
 font_family = "Inter"
+font_scale = 1.5
 font_weight = 600
 hover_highlight = false
 icon_color = "#0C0B0A"
@@ -1031,6 +1061,7 @@ widget_spacing = 8
     enabled = true
     end = [ "volume" ]
     font_family = "Fira Sans"
+    font_scale = 1.5
     font_weight = 600
     hover_highlight = true
     icon_color = "#E3E2E1"
@@ -1146,14 +1177,14 @@ widget_spacing = 8
 
   // Every schema-backed section must round-trip, AND the probe must actually populate
   // it. Iterating the section registry rather than a hand-written list means a new
-  // section is covered the moment it is declared — and fails here until its probe
+  // section is covered the moment it is declared, and fails here until its probe
   // values are filled in.
   {
     const Config defaults;
     for (const SectionSpec& spec : sections()) {
       const std::string name(spec.name);
       if (spec.sectionEqual(probe, defaults)) {
-        fail(name + ": makeProbe leaves this section at its defaults — populate it, or the round-trip is vacuous");
+        fail(name + ": makeProbe leaves this section at its defaults; populate it, or the round-trip is vacuous");
         continue;
       }
       const auto* sectionTbl = serialized[spec.name].as_table();
@@ -1192,6 +1223,7 @@ widget_spacing = 8
   checkStorageKeySourceValidation();
   checkPanelFloatingLayerValidation();
   checkClamps();
+  checkMonitorFontScaleChangeSet();
   checkPluginAutoUpdateMode();
   checkAutoUpdateScopeSelection();
   checkDuplicatePluginSourceRejection();
