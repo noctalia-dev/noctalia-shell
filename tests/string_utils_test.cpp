@@ -56,5 +56,21 @@ int main() {
   ok = expectCompare(StringUtils::naturalCaseInsensitiveCompare("file", "file1"), -1, "natural: shorter prefix first")
       && ok;
 
+  ok = expectEqual(
+           StringUtils::sanitizeMarkup("<b>bold</b><br>next"), "bold\nnext", "strips supported notification markup"
+       )
+      && ok;
+  ok = expectEqual(
+           StringUtils::sanitizeMarkup("<.< wawd :>"), "<.< wawd :>",
+           "preserves angle-bracket text that is not notification markup"
+       )
+      && ok;
+  ok = expectEqual(
+           StringUtils::sanitizeMarkup("<span>literal</span>"), "<span>literal</span>",
+           "preserves unsupported markup literally"
+       )
+      && ok;
+  ok = expectEqual(StringUtils::sanitizeMarkup("&lt;literal&gt;"), "<literal>", "unescapes XML entities") && ok;
+
   return ok ? 0 : 1;
 }
