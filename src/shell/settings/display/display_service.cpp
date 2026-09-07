@@ -289,7 +289,13 @@ namespace settings::display {
     }
     if (command.action) {
       command.action();
-      drainNext();
+      m_finishTimer.start(50ms, [this]() {
+        if (!m_queue.empty()) {
+          drainNext();
+        } else {
+          m_refreshTimer.start(300ms, [this]() { fetchAsync(); });
+        }
+      });
       return;
     }
     if (command.args.empty()) {
