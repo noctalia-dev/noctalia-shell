@@ -26,6 +26,7 @@ class HttpClient;
 class IdleInhibitor;
 class IpcService;
 class LockKeysService;
+class ModemManagerService;
 class MprisService;
 class BluetoothService;
 class BrightnessService;
@@ -177,6 +178,7 @@ private:
   SystemMonitorService* m_sysmon = nullptr;
   PowerProfilesService* m_powerProfiles = nullptr;
   INetworkService* m_network = nullptr;
+  ModemManagerService* m_modem = nullptr;
   ExternalIpService* m_externalIp = nullptr;
   IdleInhibitor* m_idleInhibitor = nullptr;
   MprisService* m_mpris = nullptr;
