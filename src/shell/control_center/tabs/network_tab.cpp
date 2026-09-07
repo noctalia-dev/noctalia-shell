@@ -14,17 +14,94 @@
 #include "ui/style.h"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 using namespace control_center;
 
 namespace {
 
   constexpr float kRowMinHeight = Style::controlHeightLg;
+
+  // Label and wire value in one row, so the visible dropdown order and the value
+  // sent to NetworkManager cannot drift apart.
+  struct EapOption {
+    std::string_view label;
+    network_enterprise::EapMethod method;
+  };
+
+  struct Phase2Option {
+    std::string_view label;
+    network_enterprise::Phase2Auth auth;
+  };
+
+  constexpr std::array kEapOptions{
+      EapOption{"PEAP", network_enterprise::EapMethod::Peap},
+      EapOption{"TTLS", network_enterprise::EapMethod::Ttls},
+  };
+
+  // MSCHAPv2 first: it is the only inner method PEAP accepts, and PEAP is the
+  // default EAP method.
+  constexpr std::array kPhase2Options{
+      Phase2Option{"MSCHAPv2", network_enterprise::Phase2Auth::MsChapV2},
+      Phase2Option{"PAP", network_enterprise::Phase2Auth::Pap},
+      Phase2Option{"MSCHAP", network_enterprise::Phase2Auth::MsChap},
+      Phase2Option{"CHAP", network_enterprise::Phase2Auth::Chap},
+  };
+
+  constexpr std::size_t phase2IndexOf(network_enterprise::Phase2Auth auth) {
+    for (std::size_t index = 0U; index < kPhase2Options.size(); ++index) {
+      if (kPhase2Options[index].auth == auth) {
+        return index;
+      }
+    }
+    return kPhase2Options.size();
+  }
+
+  // Both dropdowns open on their first option, and PEAP accepts MSCHAPv2 only, so
+  // choosing PEAP pins the inner dropdown to this row.
+  constexpr std::size_t kDefaultOptionIndex = 0U;
+  constexpr std::size_t kPeapPhase2Index = phase2IndexOf(network_enterprise::Phase2Auth::MsChapV2);
+  static_assert(kPeapPhase2Index < kPhase2Options.size());
+  static_assert(kEapOptions[kDefaultOptionIndex].method == network_enterprise::EapMethod::Peap);
+  static_assert(kPeapPhase2Index == kDefaultOptionIndex);
+
+  template <typename Options> std::vector<std::string> optionLabels(const Options& options) {
+    std::vector<std::string> labels;
+    labels.reserve(options.size());
+    for (const auto& option : options) {
+      labels.emplace_back(option.label);
+    }
+    return labels;
+  }
+
+  // A Select with no selection reports npos; the first option is the documented
+  // default for both dropdowns.
+  template <typename Options> const auto& optionAt(const Options& options, std::size_t index) {
+    return index < options.size() ? options[index] : options.front();
+  }
+
+  std::string validationMessage(network_enterprise::Validation problem) {
+    switch (problem) {
+    case network_enterprise::Validation::MissingIdentity:
+      return i18n::tr("control-center.network.error-missing-identity");
+    case network_enterprise::Validation::MissingPassword:
+      return i18n::tr("control-center.network.error-missing-password");
+    case network_enterprise::Validation::UnsupportedPhase2:
+      return i18n::tr("control-center.network.error-unsupported-phase2");
+    case network_enterprise::Validation::CaCertNotAbsolute:
+      return i18n::tr("control-center.network.error-ca-not-absolute");
+    case network_enterprise::Validation::Ok:
+      break;
+    }
+    return {};
+  }
 
   std::string currentTitle(const NetworkState& s, const CellularModemInfo* modem) {
     if (s.kind == NetworkConnectivity::Wireless && s.connected && !s.ssid.empty()) {
@@ -614,6 +691,106 @@ std::unique_ptr<Flex> NetworkTab::create() {
       })
   );
 
+  passwordCard->addChild(
+      ui::label({
+          .out = &m_credentialError,
+          .fontSize = Style::fontSizeCaption * scale,
+          .color = colorSpecFromRole(ColorRole::Error),
+          .maxLines = 4,
+          .visible = false,
+      })
+  );
+
+  const auto submitFromForm = [this](const std::string& /*value*/) {
+    submitPasswordPrompt(m_passwordInput != nullptr ? m_passwordInput->value() : std::string{});
+  };
+
+  auto enterpriseFields = ui::column({
+      .out = &m_enterpriseFields,
+      // Flex defaults to Center on the cross axis, which collapses each field to
+      // its natural width. The card itself stretches via applySectionCardStyle();
+      // this nested column has to say so for itself.
+      .align = FlexAlign::Stretch,
+      .visible = false,
+      .configure = [scale](Flex& column) { column.setGap(Style::spaceSm * scale); },
+  });
+
+  enterpriseFields->addChild(
+      ui::row(
+          {.align = FlexAlign::Center, .gap = Style::spaceSm * scale},
+          ui::select({
+              .out = &m_eapSelect,
+              .options = optionLabels(kEapOptions),
+              .selectedIndex = std::size_t{0},
+              .placeholder = i18n::tr("control-center.network.eap-method"),
+              .surfaceOpacity = panelCardOpacity(),
+              .flexGrow = 1.0F,
+              .onSelectionChanged =
+                  [this](std::size_t index, std::string_view /*text*/) {
+                    // PEAP tunnels MSCHAPv2 only. Pinning and locking the inner method
+                    // beats letting the user assemble a pair that cannot authenticate
+                    // and only fails later, at association time.
+                    if (m_phase2Select == nullptr) {
+                      return;
+                    }
+                    const bool pinsInnerMethod =
+                        optionAt(kEapOptions, index).method == network_enterprise::EapMethod::Peap;
+                    if (pinsInnerMethod) {
+                      m_phase2Select->setSelectedIndexSilently(kPeapPhase2Index);
+                    }
+                    m_phase2Select->setEnabled(!pinsInnerMethod);
+                  },
+          }),
+          ui::select({
+              .out = &m_phase2Select,
+              .options = optionLabels(kPhase2Options),
+              .selectedIndex = kPeapPhase2Index,
+              .placeholder = i18n::tr("control-center.network.phase2-auth"),
+              .enabled = false,
+              .surfaceOpacity = panelCardOpacity(),
+              .flexGrow = 1.0F,
+          })
+      )
+  );
+
+  enterpriseFields->addChild(
+      ui::input({
+          .out = &m_identityInput,
+          .placeholder = i18n::tr("control-center.network.identity"),
+          .surfaceOpacity = panelCardOpacity(),
+          .onSubmit = submitFromForm,
+      })
+  );
+
+  enterpriseFields->addChild(
+      ui::input({
+          .out = &m_anonymousIdentityInput,
+          .placeholder = i18n::tr("control-center.network.anonymous-identity"),
+          .surfaceOpacity = panelCardOpacity(),
+          .onSubmit = submitFromForm,
+      })
+  );
+
+  enterpriseFields->addChild(
+      ui::input({
+          .out = &m_domainMatchInput,
+          .placeholder = i18n::tr("control-center.network.domain-suffix-match"),
+          .surfaceOpacity = panelCardOpacity(),
+          .onSubmit = submitFromForm,
+      })
+  );
+
+  enterpriseFields->addChild(
+      ui::input({
+          .out = &m_caCertInput,
+          .placeholder = i18n::tr("control-center.network.ca-certificate"),
+          .surfaceOpacity = panelCardOpacity(),
+          .onSubmit = submitFromForm,
+      })
+  );
+
+  passwordCard->addChild(std::move(enterpriseFields));
+
   auto inputRow = ui::row(
       {.align = FlexAlign::Center, .gap = Style::spaceSm * scale},
       ui::input({
@@ -730,6 +907,14 @@ void NetworkTab::onClose() {
   m_passwordInput = nullptr;
   m_passwordRevealButton = nullptr;
   m_passwordRevealed = false;
+  m_enterpriseFields = nullptr;
+  m_eapSelect = nullptr;
+  m_phase2Select = nullptr;
+  m_identityInput = nullptr;
+  m_anonymousIdentityInput = nullptr;
+  m_caCertInput = nullptr;
+  m_domainMatchInput = nullptr;
+  m_credentialError = nullptr;
   m_listScroll = nullptr;
   m_list = nullptr;
   m_rescanButton = nullptr;
@@ -759,44 +944,116 @@ void NetworkTab::syncPasswordCard() {
     return;
   }
   m_passwordCard->setVisible(m_hasPendingSecret);
-  if (m_hasPendingSecret && m_passwordTitle != nullptr) {
-    m_passwordTitle->setText(
-        m_pendingSsid.empty() ? i18n::tr("control-center.network.password-prompt")
-                              : i18n::tr("control-center.network.password-prompt-for", "ssid", m_pendingSsid)
-    );
+  if (m_enterpriseFields != nullptr) {
+    m_enterpriseFields->setVisible(m_hasPendingSecret && m_pendingEnterprise);
   }
+  if (m_hasPendingSecret && m_passwordTitle != nullptr) {
+    if (m_pendingSsid.empty()) {
+      m_passwordTitle->setText(i18n::tr("control-center.network.password-prompt"));
+    } else if (m_pendingEnterprise) {
+      m_passwordTitle->setText(i18n::tr("control-center.network.enterprise-prompt-for", "ssid", m_pendingSsid));
+    } else {
+      m_passwordTitle->setText(i18n::tr("control-center.network.password-prompt-for", "ssid", m_pendingSsid));
+    }
+  }
+}
+
+void NetworkTab::setCredentialError(const std::string& message) {
+  if (m_credentialError == nullptr) {
+    return;
+  }
+  m_credentialError->setText(message);
+  m_credentialError->setVisible(!message.empty());
+  // Showing or hiding the message changes the card's height, and the card is
+  // above the network list.
+  PanelManager::instance().requestLayout();
+}
+
+network_enterprise::EnterpriseCredentials NetworkTab::collectEnterpriseCredentials(const std::string& password) const {
+  const auto selectedIndexOf = [](const Select* select) -> std::size_t {
+    return select != nullptr ? select->selectedIndex() : kDefaultOptionIndex;
+  };
+  const auto valueOf = [](const Input* input) -> std::string {
+    return input != nullptr ? input->value() : std::string{};
+  };
+
+  network_enterprise::EnterpriseCredentials credentials;
+  credentials.eap = optionAt(kEapOptions, selectedIndexOf(m_eapSelect)).method;
+  credentials.phase2 = optionAt(kPhase2Options, selectedIndexOf(m_phase2Select)).auth;
+  credentials.identity = valueOf(m_identityInput);
+  credentials.anonymousIdentity = valueOf(m_anonymousIdentityInput);
+  credentials.password = password;
+  credentials.caCertPath = valueOf(m_caCertInput);
+  credentials.domainSuffixMatch = valueOf(m_domainMatchInput);
+  return credentials;
+}
+
+std::string NetworkTab::enterpriseBlockReason(const AccessPointInfo& ap) const {
+  if (m_network == nullptr || !m_network->supportsEnterprise()) {
+    return i18n::tr("control-center.network.error-enterprise-unsupported");
+  }
+  if (!network_enterprise::passwordAuthUsable(ap.keyManagement)) {
+    return i18n::tr("control-center.network.error-certificate-required");
+  }
+  return {};
 }
 
 void NetworkTab::showPasswordPrompt(const NetworkSecretAgent::SecretRequest& request) {
+  // A form the user is filling outranks NM's own secret request: letting it
+  // through would replace the card mid-typing and discard what has been entered.
+  // Decline instead, so NM stops waiting rather than blocking on a prompt that
+  // will never be answered.
+  if (m_hasPendingSecret && m_pendingAccessPoint.has_value()) {
+    if (m_secrets != nullptr) {
+      m_secrets->cancelSecret();
+    }
+    return;
+  }
+
+  clearPasswordPrompt();
   m_hasPendingSecret = true;
   m_pendingSsid = request.ssid;
-  m_pendingAccessPoint.reset();
-  m_passwordRevealed = false;
-  if (m_passwordInput != nullptr) {
-    m_passwordInput->setValue("");
-    m_passwordInput->setPasswordMode(true);
-  }
-  if (m_passwordRevealButton != nullptr) {
-    m_passwordRevealButton->setGlyph("eye");
-  }
+  // NM is asking for one secret against a profile it already holds, so only the
+  // password is missing; the rest of the 802.1X form would have nothing to fill.
+  m_pendingEnterprise = false;
+  PanelManager::instance().requestLayout();
 }
 
 void NetworkTab::showPasswordPrompt(const AccessPointInfo& ap) {
+  clearPasswordPrompt();
   m_hasPendingSecret = true;
   m_pendingSsid = ap.ssid;
   m_pendingAccessPoint = ap;
-  m_passwordRevealed = false;
-  if (m_passwordInput != nullptr) {
-    m_passwordInput->setValue("");
-    m_passwordInput->setPasswordMode(true);
+  m_pendingEnterprise = ap.isEnterprise();
+  if (m_pendingEnterprise) {
+    // Say up front when this network cannot be joined with a password, rather
+    // than after the user has filled in the whole form.
+    setCredentialError(enterpriseBlockReason(ap));
   }
-  if (m_passwordRevealButton != nullptr) {
-    m_passwordRevealButton->setGlyph("eye");
-  }
+  PanelManager::instance().requestLayout();
 }
 
 void NetworkTab::submitPasswordPrompt(const std::string& value) {
-  if (m_pendingAccessPoint.has_value()) {
+  if (m_pendingAccessPoint.has_value() && m_pendingEnterprise) {
+    if (m_network == nullptr) {
+      return;
+    }
+    // Every rejection below leaves the card open with a reason showing, so the
+    // user can fix the field rather than watch the prompt close and nothing happen.
+    if (const auto blocked = enterpriseBlockReason(*m_pendingAccessPoint); !blocked.empty()) {
+      setCredentialError(blocked);
+      PanelManager::instance().refresh();
+      return;
+    }
+    const auto credentials = collectEnterpriseCredentials(value);
+    const auto problem = network_enterprise::validate(credentials);
+    if (problem != network_enterprise::Validation::Ok) {
+      setCredentialError(validationMessage(problem));
+      PanelManager::instance().refresh();
+      return;
+    }
+    m_network->activateEnterpriseAccessPoint(*m_pendingAccessPoint, credentials);
+  } else if (m_pendingAccessPoint.has_value()) {
     if (value.empty()) {
       return;
     }
@@ -820,6 +1077,7 @@ void NetworkTab::cancelPasswordPrompt() {
 
 void NetworkTab::clearPasswordPrompt() {
   m_hasPendingSecret = false;
+  m_pendingEnterprise = false;
   m_pendingSsid.clear();
   m_pendingAccessPoint.reset();
   m_passwordRevealed = false;
@@ -830,6 +1088,19 @@ void NetworkTab::clearPasswordPrompt() {
   if (m_passwordRevealButton != nullptr) {
     m_passwordRevealButton->setGlyph("eye");
   }
+  for (Input* input : {m_identityInput, m_anonymousIdentityInput, m_caCertInput, m_domainMatchInput}) {
+    if (input != nullptr) {
+      input->setValue("");
+    }
+  }
+  if (m_eapSelect != nullptr) {
+    m_eapSelect->setSelectedIndexSilently(kDefaultOptionIndex);
+  }
+  if (m_phase2Select != nullptr) {
+    m_phase2Select->setSelectedIndexSilently(kPeapPhase2Index);
+    m_phase2Select->setEnabled(false); // PEAP is the default, and it pins MSCHAPv2.
+  }
+  setCredentialError({});
 }
 
 void NetworkTab::syncCurrentCard() {
@@ -945,7 +1216,7 @@ NetworkTab::structureKey(const std::vector<AccessPointInfo>& aps, const std::vec
     key.push_back(':');
     key += ap.secured ? '1' : '0';
     key.push_back(':');
-    key += ap.supportsSae ? '1' : '0';
+    key += static_cast<char>('0' + static_cast<int>(ap.keyManagement));
     key.push_back(':');
     key += ap.active ? '1' : '0';
     key.push_back(':');
