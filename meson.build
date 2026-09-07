@@ -1300,4 +1300,9 @@ if build_tests
     args: ['tests/template_undo_signal_test.sh', meson.current_source_dir() / 'assets/templates'],
     workdir: meson.current_source_dir(),
   )
+  test('umbriel_apply_include_comment',
+    bash_program,
+    args: ['tests/umbriel_apply_include_comment_test.sh', meson.current_source_dir() / 'assets/templates/umbriel/apply.sh'],
+    workdir: meson.current_source_dir(),
+  )
 endif # build_tests

@@ -35,14 +35,37 @@ awk '
         added = 1
     }
 
+    # Code before an inline '#' comment. Needed so "# []" is not array syntax.
+    function code_before_comment(s,   hash) {
+        hash = index(s, "#")
+        if (hash == 0)
+            return s
+        return substr(s, 1, hash - 1)
+    }
+
+    function has_array_close(s) {
+        return index(code_before_comment(s), "]") > 0
+    }
+
+    # First ']' after open that is not inside a '#' comment on that line.
+    function find_close(buf, open,   i, c, in_comment) {
+        in_comment = 0
+        for (i = open + 1; i <= length(buf); i++) {
+            c = substr(buf, i, 1)
+            if (c == "\n") { in_comment = 0; continue }
+            if (in_comment) continue
+            if (c == "#") { in_comment = 1; continue }
+            if (c == "]") return i
+        }
+        return 0
+    }
+
     # Rebuild a complete "files = [ ... ]" statement (buf may span lines),
     # dropping any existing noctalia.toml entry and appending it last so it
     # overrides earlier includes. Handles single-line and multi-line arrays.
-    function build(buf,   open, endp, i, head, inner, tail, test, multiline, indent) {
+    function build(buf,   open, endp, head, inner, tail, test, multiline, indent) {
         open = index(buf, "[")
-        endp = 0
-        for (i = length(buf); i >= 1; i--)
-            if (substr(buf, i, 1) == "]") { endp = i; break }
+        endp = find_close(buf, open)
         if (open == 0 || endp == 0 || endp < open) {
             print "error: include.files must be an array" > "/dev/stderr"
             exit 2
@@ -79,7 +102,7 @@ awk '
 
     collecting {
         buf = buf "\n" $0
-        if (index($0, "]") > 0) {
+        if (has_array_close($0)) {
             print build(buf)
             collecting = 0
             added = 1
@@ -107,7 +130,7 @@ awk '
             exit 2
         }
         buf = $0
-        if (index($0, "]") > 0) {
+        if (has_array_close($0)) {
             print build(buf)
             added = 1
         } else {
