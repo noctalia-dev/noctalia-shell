@@ -108,7 +108,7 @@ int main() {
   }
 
   // An explicit CA path pins that file instead, and must not also request the
-  // system store — the two anchors are mutually exclusive in the profile.
+  // system store: the two anchors are mutually exclusive in the profile.
   {
     auto credentials = validCredentials();
     credentials.caCertPath = "/etc/ssl/certs/radius-ca.pem";

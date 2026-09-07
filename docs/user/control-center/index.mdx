@@ -106,6 +106,14 @@ The Network tab uses the configured network backend to show wireless state and c
 
 The current connection line lists the IPv4 address, signal strength, radio band, and external IP. The band (`2.4 GHz`, `5 GHz`, `6 GHz`, or `60 GHz`) is shown only when the backend reports the connection frequency: NetworkManager and wpa_supplicant do, iwd does not.
 
+### Enterprise Wi-Fi (802.1X)
+
+Clicking a WPA2/WPA3-Enterprise network opens a credential form instead of the pre-shared-key field: EAP method (PEAP or TTLS), inner authentication, identity, anonymous identity, server domain suffix, and CA certificate path. The password field below the form is the one used for the EAP login.
+
+PEAP accepts MSCHAPv2 only, so the inner dropdown is pinned and disabled while PEAP is selected; TTLS also allows PAP, MSCHAP, and CHAP. Leaving the CA certificate path empty trusts the system CA store; a path must be absolute and pins that file instead of the system store. The server domain suffix is the RADIUS server name suffix your organization publishes, and is optional.
+
+Enterprise networks are recognized on the NetworkManager backend only; the wpa_supplicant and iwd backends still show the pre-shared-key prompt for them, which an 802.1X network cannot accept. Certificate-based EAP-TLS, including WPA3-Enterprise 192-bit, is not supported: the form says so instead of writing a profile NetworkManager would reject. Use `nmcli` or another NetworkManager front end for those networks.
+
 ### Cellular
 
 When ModemManager reports a modem, the Network tab adds a **Cellular** card with a mobile-data switch and one row per modem showing its operator (or hardware name), state, access technology (`5G`, `LTE`, `HSPA+`, ...), and signal percentage. The card disappears again when ModemManager stops or the modem is unplugged.

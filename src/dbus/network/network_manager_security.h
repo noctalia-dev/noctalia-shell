@@ -13,10 +13,10 @@ namespace network_manager_security {
   inline constexpr std::uint32_t kNm80211ApSecKeyMgmtEapSuiteB192 = 0x00002000U;
 
   enum class KeyManagement : std::uint8_t {
-    Psk,              // wpa-psk        — WPA/WPA2 Personal
-    Sae,              // sae            — WPA3 Personal
-    Enterprise,       // wpa-eap        — WPA2/WPA3 Enterprise (802.1X)
-    EnterpriseSuiteB, // wpa-eap-suite-b-192 — WPA3 Enterprise 192-bit (CNSA)
+    Psk,              // wpa-psk: WPA/WPA2 Personal
+    Sae,              // sae: WPA3 Personal
+    Enterprise,       // wpa-eap: WPA2/WPA3 Enterprise (802.1X)
+    EnterpriseSuiteB, // wpa-eap-suite-b-192: WPA3 Enterprise 192-bit (CNSA)
   };
 
   [[nodiscard]] constexpr bool supportsSae(std::uint32_t rsnFlags) noexcept {

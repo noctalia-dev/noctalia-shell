@@ -14,7 +14,7 @@
 namespace network_enterprise {
 
   enum class EapMethod : std::uint8_t {
-    Peap, // Protected EAP — the eduroam and Windows-domain default.
+    Peap, // Protected EAP: the eduroam and Windows-domain default.
     Ttls, // Tunneled TLS.
   };
 

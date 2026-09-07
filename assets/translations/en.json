@@ -315,7 +315,7 @@
     "network": {
       "anonymous-identity": "Anonymous identity (optional)",
       "available": "Available",
-      "ca-certificate": "CA certificate — leave empty to use the system store",
+      "ca-certificate": "CA certificate path (optional)",
       "cellular": "Cellular",
       "cellular-connected": "Connected",
       "cellular-connecting": "Connecting…",

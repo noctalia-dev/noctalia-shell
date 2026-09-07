@@ -39,7 +39,7 @@ int main() {
   TEST_CHECK(network_manager_security::keyManagementFor(kWpa3Enterprise192) == KeyManagement::EnterpriseSuiteB);
 
   // Priority. An AP advertising 802.1X needs EAP credentials, so enterprise must
-  // win over SAE and PSK no matter which other key-mgmt bits are also set —
+  // win over SAE and PSK no matter which other key-mgmt bits are also set;
   // classifying such an AP as personal is what makes it prompt for a password
   // that can never authenticate.
   TEST_CHECK(

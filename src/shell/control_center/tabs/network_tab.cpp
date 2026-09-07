@@ -14,11 +14,14 @@
 #include "ui/style.h"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 using namespace control_center;
 
@@ -26,23 +29,62 @@ namespace {
 
   constexpr float kRowMinHeight = Style::controlHeightLg;
 
-  // Option order in the two enterprise dropdowns. Mapped explicitly rather than
-  // by cast so reordering the visible list cannot silently change what is sent.
-  network_enterprise::EapMethod eapFromIndex(std::size_t index) {
-    return index == 1U ? network_enterprise::EapMethod::Ttls : network_enterprise::EapMethod::Peap;
+  // Label and wire value in one row, so the visible dropdown order and the value
+  // sent to NetworkManager cannot drift apart.
+  struct EapOption {
+    std::string_view label;
+    network_enterprise::EapMethod method;
+  };
+
+  struct Phase2Option {
+    std::string_view label;
+    network_enterprise::Phase2Auth auth;
+  };
+
+  constexpr std::array kEapOptions{
+      EapOption{"PEAP", network_enterprise::EapMethod::Peap},
+      EapOption{"TTLS", network_enterprise::EapMethod::Ttls},
+  };
+
+  // MSCHAPv2 first: it is the only inner method PEAP accepts, and PEAP is the
+  // default EAP method.
+  constexpr std::array kPhase2Options{
+      Phase2Option{"MSCHAPv2", network_enterprise::Phase2Auth::MsChapV2},
+      Phase2Option{"PAP", network_enterprise::Phase2Auth::Pap},
+      Phase2Option{"MSCHAP", network_enterprise::Phase2Auth::MsChap},
+      Phase2Option{"CHAP", network_enterprise::Phase2Auth::Chap},
+  };
+
+  constexpr std::size_t phase2IndexOf(network_enterprise::Phase2Auth auth) {
+    for (std::size_t index = 0U; index < kPhase2Options.size(); ++index) {
+      if (kPhase2Options[index].auth == auth) {
+        return index;
+      }
+    }
+    return kPhase2Options.size();
   }
 
-  network_enterprise::Phase2Auth phase2FromIndex(std::size_t index) {
-    switch (index) {
-    case 1U:
-      return network_enterprise::Phase2Auth::Pap;
-    case 2U:
-      return network_enterprise::Phase2Auth::MsChap;
-    case 3U:
-      return network_enterprise::Phase2Auth::Chap;
-    default:
-      return network_enterprise::Phase2Auth::MsChapV2;
+  // Both dropdowns open on their first option, and PEAP accepts MSCHAPv2 only, so
+  // choosing PEAP pins the inner dropdown to this row.
+  constexpr std::size_t kDefaultOptionIndex = 0U;
+  constexpr std::size_t kPeapPhase2Index = phase2IndexOf(network_enterprise::Phase2Auth::MsChapV2);
+  static_assert(kPeapPhase2Index < kPhase2Options.size());
+  static_assert(kEapOptions[kDefaultOptionIndex].method == network_enterprise::EapMethod::Peap);
+  static_assert(kPeapPhase2Index == kDefaultOptionIndex);
+
+  template <typename Options> std::vector<std::string> optionLabels(const Options& options) {
+    std::vector<std::string> labels;
+    labels.reserve(options.size());
+    for (const auto& option : options) {
+      labels.emplace_back(option.label);
     }
+    return labels;
+  }
+
+  // A Select with no selection reports npos; the first option is the documented
+  // default for both dropdowns.
+  template <typename Options> const auto& optionAt(const Options& options, std::size_t index) {
+    return index < options.size() ? options[index] : options.front();
   }
 
   std::string validationMessage(network_enterprise::Validation problem) {
@@ -678,7 +720,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
           {.align = FlexAlign::Center, .gap = Style::spaceSm * scale},
           ui::select({
               .out = &m_eapSelect,
-              .options = std::vector<std::string>{"PEAP", "TTLS"},
+              .options = optionLabels(kEapOptions),
               .selectedIndex = std::size_t{0},
               .placeholder = i18n::tr("control-center.network.eap-method"),
               .surfaceOpacity = panelCardOpacity(),
@@ -691,17 +733,18 @@ std::unique_ptr<Flex> NetworkTab::create() {
                     if (m_phase2Select == nullptr) {
                       return;
                     }
-                    const bool isPeap = index == 0U;
-                    if (isPeap) {
-                      m_phase2Select->setSelectedIndexSilently(0U);
+                    const bool pinsInnerMethod =
+                        optionAt(kEapOptions, index).method == network_enterprise::EapMethod::Peap;
+                    if (pinsInnerMethod) {
+                      m_phase2Select->setSelectedIndexSilently(kPeapPhase2Index);
                     }
-                    m_phase2Select->setEnabled(!isPeap);
+                    m_phase2Select->setEnabled(!pinsInnerMethod);
                   },
           }),
           ui::select({
               .out = &m_phase2Select,
-              .options = std::vector<std::string>{"MSCHAPv2", "PAP", "MSCHAP", "CHAP"},
-              .selectedIndex = std::size_t{0},
+              .options = optionLabels(kPhase2Options),
+              .selectedIndex = kPeapPhase2Index,
               .placeholder = i18n::tr("control-center.network.phase2-auth"),
               .enabled = false,
               .surfaceOpacity = panelCardOpacity(),
@@ -844,10 +887,6 @@ void NetworkTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
 
 void NetworkTab::doUpdate(Renderer& renderer) {
   syncPasswordCard();
-  if (m_promptLayoutDirty && m_rootLayout != nullptr) {
-    m_rootLayout->layout(renderer);
-    m_promptLayoutDirty = false;
-  }
   rebuildApList(renderer);
   // A signal percent's text changes its width, so the list has to be laid out again.
   bool listChanged = syncApRows();
@@ -876,9 +915,6 @@ void NetworkTab::onClose() {
   m_caCertInput = nullptr;
   m_domainMatchInput = nullptr;
   m_credentialError = nullptr;
-  m_promptLayoutDirty = false;
-  m_lastCardVisible = false;
-  m_lastFormVisible = false;
   m_listScroll = nullptr;
   m_list = nullptr;
   m_rescanButton = nullptr;
@@ -907,16 +943,9 @@ void NetworkTab::syncPasswordCard() {
   if (m_passwordCard == nullptr) {
     return;
   }
-  const bool cardVisible = m_hasPendingSecret;
-  const bool formVisible = m_hasPendingSecret && m_pendingEnterprise;
-  if (cardVisible != m_lastCardVisible || formVisible != m_lastFormVisible) {
-    m_promptLayoutDirty = true;
-    m_lastCardVisible = cardVisible;
-    m_lastFormVisible = formVisible;
-  }
-  m_passwordCard->setVisible(cardVisible);
+  m_passwordCard->setVisible(m_hasPendingSecret);
   if (m_enterpriseFields != nullptr) {
-    m_enterpriseFields->setVisible(formVisible);
+    m_enterpriseFields->setVisible(m_hasPendingSecret && m_pendingEnterprise);
   }
   if (m_hasPendingSecret && m_passwordTitle != nullptr) {
     if (m_pendingSsid.empty()) {
@@ -935,31 +964,38 @@ void NetworkTab::setCredentialError(const std::string& message) {
   }
   m_credentialError->setText(message);
   m_credentialError->setVisible(!message.empty());
+  // Showing or hiding the message changes the card's height, and the card is
+  // above the network list.
+  PanelManager::instance().requestLayout();
 }
 
 network_enterprise::EnterpriseCredentials NetworkTab::collectEnterpriseCredentials(const std::string& password) const {
-  // A Select with no selection reports npos; treat that as the first option so a
-  // half-initialised form still produces the documented defaults.
-  const auto indexOr0 = [](const Select* select) -> std::size_t {
-    if (select == nullptr) {
-      return 0U;
-    }
-    const std::size_t index = select->selectedIndex();
-    return index == static_cast<std::size_t>(-1) ? 0U : index;
+  const auto selectedIndexOf = [](const Select* select) -> std::size_t {
+    return select != nullptr ? select->selectedIndex() : kDefaultOptionIndex;
   };
   const auto valueOf = [](const Input* input) -> std::string {
     return input != nullptr ? input->value() : std::string{};
   };
 
   network_enterprise::EnterpriseCredentials credentials;
-  credentials.eap = eapFromIndex(indexOr0(m_eapSelect));
-  credentials.phase2 = phase2FromIndex(indexOr0(m_phase2Select));
+  credentials.eap = optionAt(kEapOptions, selectedIndexOf(m_eapSelect)).method;
+  credentials.phase2 = optionAt(kPhase2Options, selectedIndexOf(m_phase2Select)).auth;
   credentials.identity = valueOf(m_identityInput);
   credentials.anonymousIdentity = valueOf(m_anonymousIdentityInput);
   credentials.password = password;
   credentials.caCertPath = valueOf(m_caCertInput);
   credentials.domainSuffixMatch = valueOf(m_domainMatchInput);
   return credentials;
+}
+
+std::string NetworkTab::enterpriseBlockReason(const AccessPointInfo& ap) const {
+  if (m_network == nullptr || !m_network->supportsEnterprise()) {
+    return i18n::tr("control-center.network.error-enterprise-unsupported");
+  }
+  if (!network_enterprise::passwordAuthUsable(ap.keyManagement)) {
+    return i18n::tr("control-center.network.error-certificate-required");
+  }
+  return {};
 }
 
 void NetworkTab::showPasswordPrompt(const NetworkSecretAgent::SecretRequest& request) {
@@ -978,8 +1014,9 @@ void NetworkTab::showPasswordPrompt(const NetworkSecretAgent::SecretRequest& req
   m_hasPendingSecret = true;
   m_pendingSsid = request.ssid;
   // NM is asking for one secret against a profile it already holds, so only the
-  // password is missing — the rest of the 802.1X form would have nothing to fill.
+  // password is missing; the rest of the 802.1X form would have nothing to fill.
   m_pendingEnterprise = false;
+  PanelManager::instance().requestLayout();
 }
 
 void NetworkTab::showPasswordPrompt(const AccessPointInfo& ap) {
@@ -988,6 +1025,12 @@ void NetworkTab::showPasswordPrompt(const AccessPointInfo& ap) {
   m_pendingSsid = ap.ssid;
   m_pendingAccessPoint = ap;
   m_pendingEnterprise = ap.isEnterprise();
+  if (m_pendingEnterprise) {
+    // Say up front when this network cannot be joined with a password, rather
+    // than after the user has filled in the whole form.
+    setCredentialError(enterpriseBlockReason(ap));
+  }
+  PanelManager::instance().requestLayout();
 }
 
 void NetworkTab::submitPasswordPrompt(const std::string& value) {
@@ -997,13 +1040,8 @@ void NetworkTab::submitPasswordPrompt(const std::string& value) {
     }
     // Every rejection below leaves the card open with a reason showing, so the
     // user can fix the field rather than watch the prompt close and nothing happen.
-    if (!m_network->supportsEnterprise()) {
-      setCredentialError(i18n::tr("control-center.network.error-enterprise-unsupported"));
-      PanelManager::instance().refresh();
-      return;
-    }
-    if (!network_enterprise::passwordAuthUsable(m_pendingAccessPoint->keyManagement)) {
-      setCredentialError(i18n::tr("control-center.network.error-certificate-required"));
+    if (const auto blocked = enterpriseBlockReason(*m_pendingAccessPoint); !blocked.empty()) {
+      setCredentialError(blocked);
       PanelManager::instance().refresh();
       return;
     }
@@ -1056,10 +1094,10 @@ void NetworkTab::clearPasswordPrompt() {
     }
   }
   if (m_eapSelect != nullptr) {
-    m_eapSelect->setSelectedIndexSilently(0U);
+    m_eapSelect->setSelectedIndexSilently(kDefaultOptionIndex);
   }
   if (m_phase2Select != nullptr) {
-    m_phase2Select->setSelectedIndexSilently(0U);
+    m_phase2Select->setSelectedIndexSilently(kPeapPhase2Index);
     m_phase2Select->setEnabled(false); // PEAP is the default, and it pins MSCHAPv2.
   }
   setCredentialError({});

@@ -71,6 +71,8 @@ private:
   // Shows a message inside the credential card; empty hides the row. The prompt
   // stays open so the user can correct what is wrong.
   void setCredentialError(const std::string& message);
+  // Reason this access point cannot be joined with a password, empty when it can.
+  [[nodiscard]] std::string enterpriseBlockReason(const AccessPointInfo& ap) const;
   [[nodiscard]] std::string
   structureKey(const std::vector<AccessPointInfo>& aps, const std::vector<VpnConnectionInfo>& vpns) const;
 
@@ -118,13 +120,6 @@ private:
 
   bool m_hasPendingSecret = false;
   bool m_pendingEnterprise = false;
-  // doUpdate() runs every frame but only doLayout() re-lays-out the root, and
-  // that is driven by panel resizes. Showing or hiding the credential form
-  // changes the card's height, so the reflow has to be requested explicitly or
-  // the card is drawn over the list below it.
-  bool m_promptLayoutDirty = false;
-  bool m_lastCardVisible = false;
-  bool m_lastFormVisible = false;
   std::string m_pendingSsid;
   std::optional<AccessPointInfo> m_pendingAccessPoint;
   bool m_active = false;
