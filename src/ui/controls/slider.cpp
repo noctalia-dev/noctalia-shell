@@ -261,10 +261,27 @@ void Slider::setPlayingEffect(bool enabled) {
       [this]() {
         m_playingAnimId = 0;
 
-        if (m_playingEffect) {
-          setPlayingEffect(false);
-          setPlayingEffect(true);
+        if (!m_playingEffect) {
+          return;
         }
+
+        m_playingPulse = 0.0F;
+        applyVisualState();
+        markPaintDirty();
+
+        m_playingAnimId = animationManager()->animateTimer(
+            0.0F, 0.0F, 500.0F, Easing::Linear,
+            [](float) {},
+            [this]() {
+              m_playingAnimId = 0;
+
+              if (m_playingEffect) {
+                m_playingEffect = false;
+                setPlayingEffect(true);
+              }
+            },
+            this
+        );
       },
       this
   );
@@ -351,19 +368,26 @@ void Slider::applyVisualState() {
   }
 
   if (m_playingEffect && m_enabled && !pressing) {
-    const float pulse =
-        0.5F
-        - 0.5F * std::cos(m_playingPulse * 2.0F * 3.14159265358979323846F);
+    const float pulse = [&]() {
+      if (m_playingPulse <= 0.5F) {
+        const float t = m_playingPulse * 2.0F;
+        return 0.5F - 0.5F * std::cos(t * 3.14159265358979323846F);
+      }
+
+      const float t = (m_playingPulse - 0.5F) * 2.0F;
+      return 1.0F - t * t * t;
+    }();
 
     fillColor = brighten(fillColor, 1.0F + pulse * 0.18F);
 
     thumbBorder = brighten(
         resolved(ColorRole::Primary),
-        1.0F + pulse * 0.35F
+        1.0F + pulse * 0.30F
     );
   }
 
-  auto trackStyle = solidStyle(trackColor, m_trackHeight * 0.5F);
+
+    auto trackStyle = solidStyle(trackColor, m_trackHeight * 0.5F);
   m_track->setStyle(trackStyle);
 
   auto fillStyle = solidStyle(fillColor, m_trackHeight * 0.5F);
@@ -372,15 +396,22 @@ void Slider::applyVisualState() {
   auto thumbStyle = solidStyle(thumbColor, m_thumbSizePx * 0.5F);
   thumbStyle.border = thumbBorder;
 
-  if (m_playingEffect && m_enabled && !pressing) {
-    const float pulse =
-        0.5F
-        - 0.5F * std::cos(m_playingPulse * 2.0F * 3.14159265358979323846F);
+    if (m_playingEffect && m_enabled && !pressing) {
+    const float pulse = [&]() {
+      if (m_playingPulse <= 0.5F) {
+        const float t = m_playingPulse * 2.0F;
+        return 0.5F - 0.5F * std::cos(t * 3.14159265358979323846F);
+      }
+
+      const float t = (m_playingPulse - 0.5F) * 2.0F;
+      return 1.0F - t * t * t;
+    }();
 
     thumbStyle.borderWidth =
         Style::borderWidth + pulse * Style::borderWidth * 1.5F;
   } else {
-    thumbStyle.borderWidth = focused ? Style::focusRingWidth : Style::borderWidth;
+    thumbStyle.borderWidth =
+        focused ? Style::focusRingWidth : Style::borderWidth;
   }
 
   m_thumb->setStyle(thumbStyle);

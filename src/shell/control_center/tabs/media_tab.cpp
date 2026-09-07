@@ -1,29 +1,54 @@
+#include "util/string_utils.h"
 #include "shell/control_center/tabs/media_tab.h"
 
+#include "util/string_utils.h"
 #include "config/config_service.h"
+#include "util/string_utils.h"
 #include "core/deferred_call.h"
+#include "util/string_utils.h"
 #include "core/log.h"
+#include "util/string_utils.h"
 #include "dbus/mpris/mpris_art.h"
+#include "util/string_utils.h"
 #include "dbus/mpris/mpris_service.h"
+#include "util/string_utils.h"
 #include "i18n/i18n.h"
+#include "util/string_utils.h"
 #include "net/http_client.h"
+#include "util/string_utils.h"
 #include "pipewire/pipewire_spectrum.h"
+#include "util/string_utils.h"
 #include "render/core/renderer.h"
+#include "util/string_utils.h"
 #include "render/render_context.h"
+#include "util/string_utils.h"
 #include "render/scene/node.h"
+#include "util/string_utils.h"
 #include "shell/control_center/tab.h"
+#include "util/string_utils.h"
 #include "shell/panel/panel_manager.h"
+#include "util/string_utils.h"
 #include "ui/builders.h"
+#include "util/string_utils.h"
 #include "ui/controls/context_menu.h"
+#include "util/string_utils.h"
 #include "ui/controls/context_menu_popup.h"
 
+#include "util/string_utils.h"
 #include <algorithm>
+#include "util/string_utils.h"
 #include <chrono>
+#include "util/string_utils.h"
 #include <cmath>
+#include "util/string_utils.h"
 #include <format>
+#include "util/string_utils.h"
 #include <memory>
+#include "util/string_utils.h"
 #include <string>
+#include "util/string_utils.h"
 #include <string_view>
+#include "util/string_utils.h"
 #include <vector>
 
 using namespace control_center;
@@ -928,7 +953,18 @@ void MediaTab::refresh(Renderer& renderer) {
       m_pendingSeekUs = -1;
     }
 
-    m_trackTitle->setText(player.title.empty() ? player.identity : player.title);
+    const auto truncateTrackTitle = [](const std::string& text) {
+      constexpr std::size_t kMaxChars = 25;
+      if (StringUtils::truncateUtf8CodePoints(text, kMaxChars).size() == text.size()) {
+        return text;
+      }
+      return StringUtils::truncateUtf8CodePoints(text, kMaxChars) + "...";
+    };
+
+    const std::string trackTitle = player.title.empty()
+        ? player.identity
+        : truncateTrackTitle(player.title);
+    m_trackTitle->setText(trackTitle);
     m_trackArtist->setText(joinArtists(player.artists).empty() ? player.identity : joinArtists(player.artists));
 
     const std::string resolvedArtUrl = effectiveArtUrl(player);
