@@ -31,6 +31,7 @@ class BluetoothService;
 class BrightnessService;
 class ClipboardService;
 class EasyEffectsService;
+class ExternalIpService;
 class ScreenshotService;
 class INetworkService;
 class NotificationManager;
@@ -176,6 +177,7 @@ private:
   SystemMonitorService* m_sysmon = nullptr;
   PowerProfilesService* m_powerProfiles = nullptr;
   INetworkService* m_network = nullptr;
+  ExternalIpService* m_externalIp = nullptr;
   IdleInhibitor* m_idleInhibitor = nullptr;
   MprisService* m_mpris = nullptr;
   PipeWireSpectrum* m_audioSpectrum = nullptr;
