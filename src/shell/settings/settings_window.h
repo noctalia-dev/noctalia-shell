@@ -25,6 +25,8 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -237,6 +239,9 @@ private:
   bool m_pluginListDirty = true;
   bool m_pluginListRefreshInFlight = false;
   std::uint64_t m_pluginListRefreshGeneration = 0;
+  // The plugin store sheet is the sheet currently on screen, so plugin events may rebuild
+  // the sheet body; any other editor sheet must be left alone.
+  bool m_pluginStoreSheetOpen = false;
   // Plugin catalog scroll state outlives both the store sheet and its async file callbacks.
   ScrollViewState m_pluginStoreScrollState;
   scripting::PluginFileCache m_pluginFileCache;
@@ -262,6 +267,8 @@ private:
   Node* m_filterRow = nullptr;
   Button* m_actionsMenuButton = nullptr;
   Flex* m_contentContainer = nullptr;
+  Flex* m_pageTitleRow = nullptr;
+  Flex* m_groupJumpRow = nullptr;
   ScrollView* m_contentScrollView = nullptr;
   ScrollView* m_sidebarScrollView = nullptr;
   RovingListNavHost* m_sidebarNav = nullptr;
@@ -321,6 +328,9 @@ private:
   // plain flag so the group survives the rebuild an edit triggers, but starts folded on every
   // other widget.
   std::string m_actionsExpandedFor;
+  // Expanded setting groups per page, keyed by content section key (pageScopeKey).
+  // A page gets its default first-group expansion when first rendered this session.
+  std::unordered_map<std::string, std::unordered_set<std::string>> m_expandedSettingGroups;
   std::string m_creatingBarName;
   std::string m_renamingBarName;
   std::string m_pendingDeleteBarName;

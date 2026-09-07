@@ -10,6 +10,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -60,6 +61,9 @@ public:
   bool deactivateVpnConnection(const VpnConnectionInfo& vpn) override;
   [[nodiscard]] bool canActivateWiredConnection() const noexcept override;
   bool activateWiredConnection() override;
+  [[nodiscard]] bool canActivateCellularConnection() const noexcept override;
+  bool activateCellularConnection() override;
+  bool deactivateCellularConnection() override;
 
   // Enable / disable the Wi-Fi radio.
   void setWirelessEnabled(bool enabled, WirelessEnabledCompletion onComplete = {}) override;
@@ -77,10 +81,14 @@ public:
 private:
   void refreshAccessPoints(std::function<void()> onComplete);
   void refreshSavedConnections(std::function<void()> onComplete);
-  void refreshVpnConnections(std::function<void()> onComplete);
+  // Rebuilds the VPN profile list and, from one pass over NM's active
+  // connections, the derived flags those profiles share with cellular
+  // (m_anyVpnConnected, m_anyCellularActive).
+  void refreshVpnAndActiveConnections(std::function<void()> onComplete);
   void reconcileVpnActiveWatchers(const std::set<std::string>& activePaths);
   void finishSavedConnections(
-      std::vector<std::string>& ssids, std::vector<std::string>& wiredConnectionPaths, std::function<void()> onComplete
+      std::vector<std::string>& ssids, std::vector<std::string>& wiredConnectionPaths,
+      std::vector<std::string>& cellularConnectionPaths, std::function<void()> onComplete
   );
   void finishRefreshAccessPoints(std::vector<AccessPointInfo>& aps, std::function<void()> onComplete);
   bool addAndActivateAccessPoint(
@@ -110,6 +118,11 @@ private:
   void
   collectWifiDevices(std::function<void(std::vector<std::string> devicePaths, std::int64_t lastScanBaseline)> done);
   void tryActivateWiredConnection(std::shared_ptr<std::vector<std::string>> candidates, std::size_t index);
+  void tryActivateCellularConnection(std::shared_ptr<std::vector<std::string>> candidates, std::size_t index);
+  // Shared deactivate-by-profile-paths machinery used by the VPN and cellular
+  // toggles. Deactivates active (or stuck-activating) connections whose profile
+  // path is in the set. Returns false only on an immediate dispatch error.
+  bool deactivateConnectionsByProfilePaths(const std::set<std::string>& profilePaths, std::string_view kindTag);
   void readStateAsync(std::function<void(NetworkState)> onComplete);
   [[nodiscard]] NetworkChangeOrigin consumeWirelessEnabledChangeOrigin(bool enabled);
   void beginScan(std::int64_t lastScanBaseline);
@@ -132,6 +145,7 @@ private:
   std::vector<VpnConnectionInfo> m_vpnConnections;
   std::vector<std::string> m_savedSsids;
   std::vector<std::string> m_savedWiredConnectionPaths;
+  std::vector<std::string> m_savedCellularConnectionPaths;
   std::unordered_map<std::string, std::unique_ptr<PendingAccessPointActivation>> m_pendingApActivations;
   // Finished activations whose proxy may still be executing its own handler;
   // freed at the next refresh completion (an async reply context).
@@ -144,6 +158,7 @@ private:
   bool m_emitOnNextRefresh = false;
   bool m_scanning = false;
   bool m_anyVpnConnected = false;
+  bool m_anyCellularActive = false;
   std::int64_t m_scanBaselineLastScan = 0;
   Timer m_scanTimeoutTimer;
   std::uint64_t m_scanGeneration = 0;

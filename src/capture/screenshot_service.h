@@ -1,13 +1,16 @@
 #pragma once
 
+#include "capture/annotation_overlay.h"
 #include "capture/screencopy_capture.h"
 #include "capture/screenshot_region_overlay.h"
 #include "core/timer_manager.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 class ClipboardService;
@@ -32,6 +35,7 @@ public:
     bool confirmRegion = false;
     bool rememberLastRegion = false;
     bool showCursor = false;
+    bool annotate = false;
     std::string pipeCommand;
     std::string directory;
     std::string filenamePattern;
@@ -49,6 +53,10 @@ public:
   void captureFullscreenInteractive(RenderContext& renderContext, const OutputOptions& options);
   void beginRegionCapture(RenderContext& renderContext, const OutputOptions& options);
   void beginFullscreenCapture(RenderContext& renderContext, const OutputOptions& options);
+  // freezeFirst selects the frozen annotator (screenshot-annotate); otherwise the overlay
+  // starts transparent over the running desktop (annotate).
+  void beginAnnotation(RenderContext& renderContext, const OutputOptions& options, bool freezeFirst);
+  [[nodiscard]] bool overlayBusy() const noexcept;
 
   void onOutputChange();
 
@@ -97,6 +105,21 @@ private:
     std::size_t next = 0;
   };
 
+  enum class FreezeTarget : std::uint8_t { Region, Annotation };
+
+  // One screencopy request. The annotator needs each output twice, once with the cursor
+  // composited and once without, so the cursor toggle costs no extra capture.
+  struct FreezeRequest {
+    wl_output* output = nullptr;
+    bool overlayCursor = false;
+  };
+
+  // Delivery policy captured before the annotator opened, applied when the user hits Done.
+  struct PendingDelivery {
+    OutputOptions options{};
+    std::optional<std::filesystem::path> destPath;
+  };
+
   void captureOutput(
       wl_output* output, std::optional<LogicalRect> region, const std::string& labelBase, const OutputOptions& options,
       int pathSuffix = 0
@@ -106,10 +129,16 @@ private:
   void startFullscreenOverlay(RenderContext& renderContext);
   void beginFreezeCapture();
   void startNextFreezeCapture();
-  void onFreezeFrameCaptured(wl_output* output, std::optional<ScreencopyImage> image, const std::string& error);
+  void onFreezeFrameCaptured(FreezeRequest request, std::optional<ScreencopyImage> image, const std::string& error);
   void finishFreezeCapture();
   void abortFreezeCapture(const std::string& message);
   void cancelRegionCapture();
+  void ensureAnnotationOverlay();
+  void beginImageAnnotation(
+      ScreencopyImage image, const OutputOptions& options, std::optional<std::filesystem::path> destPath
+  );
+  [[nodiscard]] capture::AnnotationToolState loadAnnotationToolState() const;
+  void persistAnnotationToolState(std::string_view key, std::string_view value);
   void deliverFrozenRegion(LogicalRect region, wl_output* output, const OutputOptions& options);
   void deliverFrozenGlobalRegion(LogicalRect globalRegion, const OutputOptions& options);
   void captureGlobalRegion(LogicalRect globalRegion, const OutputOptions& options);
@@ -131,6 +160,8 @@ private:
   void deliverCaptureResult(
       ScreencopyImage image, const OutputOptions& options, std::optional<std::filesystem::path> destPath
   );
+  void
+  finishDelivery(ScreencopyImage image, const OutputOptions& options, std::optional<std::filesystem::path> destPath);
   void onCaptureComplete(
       std::optional<ScreencopyImage> image, const std::string& error, OutputOptions options,
       std::optional<std::filesystem::path> destPath, wl_output* output
@@ -158,7 +189,11 @@ private:
   RenderContext* m_regionRenderContext = nullptr;
   bool m_regionFullscreenPick = false;
   std::vector<capture::FrozenScreenshot> m_frozenScreenshots;
-  std::vector<wl_output*> m_pendingFreezeOutputs;
+  std::unique_ptr<capture::AnnotationOverlay> m_annotationOverlay;
+  std::vector<capture::AnnotationOverlay::FrozenPair> m_frozenPairs;
+  std::vector<FreezeRequest> m_pendingFreezeCaptures;
+  std::optional<PendingDelivery> m_pendingDelivery;
+  FreezeTarget m_freezeTarget = FreezeTarget::Region;
   bool m_freezeCaptureActive = false;
   Timer m_freezeCaptureTimeout;
 };

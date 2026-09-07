@@ -19,7 +19,7 @@ These commands control user-facing shell features that are not tied to one persi
 | Show Do Not Disturb status | <IpcCommand command="notification-dnd-status" /> | Print the current Do Not Disturb state. |
 | Send internal notification | <IpcCommand command="notification-show <summary>" /> | Create a Noctalia-origin notification with the provided summary text. |
 | Invoke latest notification | <IpcCommand command="notification-invoke-latest" /> | Invoke the default action of the most recent active notification (raises/focuses the source app), mirroring a toast left-click. |
-| Clear active notifications | <IpcCommand command="notification-clear-active" /> | Dismiss all currently visible active notifications. |
+| Clear active notifications | <IpcCommand command="notification-clear-active" /> | Dismiss all currently visible active notifications. Dismissed notifications stay in control-center history. |
 | Clear notification history | <IpcCommand command="notification-clear-history" /> | Remove all entries from notification history. |
 
 DND enable/disable IPC commands show a short OSD for the new state.
@@ -54,7 +54,7 @@ Supported JSON fields:
 
 | Action | Command | Description |
 |--------|---------|-------------|
-| Clear clipboard history | <IpcCommand command="clipboard-clear" /> | Clear clipboard history without opening the panel. Pinned entries survive, so with nothing pinned this clears everything. Does not ask for confirmation. The live selection is untouched — pasting still works until something else is copied. |
+| Clear clipboard history | <IpcCommand command="clipboard-clear" /> | Clear clipboard history without opening the panel. Pinned entries survive, so with nothing pinned this clears everything. Does not ask for confirmation. The live selection is untouched; pasting still works until something else is copied. |
 | Copy text to clipboard | <IpcCommand command="clipboard-copy <text>" /> | Set the clipboard selection to `<text>`. Everything after the verb is the payload, so spaces and newlines are kept verbatim. Payloads are capped at 64 KiB by the IPC transport. |
 | Print clipboard text | <IpcCommand command="clipboard-text" /> | Print the most recent clipboard text on stdout with no trailing newline. Pinned entries and images are skipped, so this matches what pasting into a Noctalia input would insert. Prints nothing when the history holds no text. |
 
@@ -119,5 +119,13 @@ Requires compositor support for `wlr-screencopy-unstable-v1`. Uses the global `[
 | Fullscreen (pick monitor) | <IpcCommand command="screenshot-fullscreen pick" /> | Open the display picker on multi-monitor setups. On a single monitor, captures immediately. |
 | Fullscreen (specific output) | <IpcCommand command="screenshot-fullscreen DP-2" /> | Capture one output without the picker. Pass the Wayland connector name (e.g. `DP-1`, `HDMI-A-1`) or a word-boundary match in the output description. |
 | Fullscreen (all monitors) | <IpcCommand command="screenshot-fullscreen all" /> | One combined desktop PNG spanning every monitor. |
+| Annotate a frozen screen | <IpcCommand command="screenshot-annotate" /> | Freeze every monitor and open the annotation editor over the frozen image. **Copy** and **Save** deliver the annotated PNG; **`[keybinds].cancel`** closes without delivering. |
+| Annotate the live screen | <IpcCommand command="annotate" /> | Transparent drawing overlay for presentations. Apps keep updating behind the ink; **`F`** freezes the screen under it and reveals Blur, Crop, Copy, and Save. |
 
 In picker mode, choose a connector from the top bar on any screen, or click the desktop to capture the monitor under the cursor. Errors list available connector names when the selector is unknown.
+
+Annotation tool keys (no modifier): **`m`** move, **`b`** brush, **`h`** highlighter, **`l`** line, **`a`** arrow, **`s`** rectangle, **`o`** circle, **`t`** text, **`n`** numbering, **`u`** blur, **`e`** eraser, **`c`** crop, **`f`** freeze (live overlay), **`p`** toggle the frozen pointer, **`[`** and **`]`** change the current tool's size. **`Ctrl+Z`** undoes, **`Ctrl+Shift+Z`** and **`Ctrl+Y`** redo, **`[keybinds].copy`** copies, **`[keybinds].save`** saves.
+
+The toolbar carries a grab handle on its left edge: drag it to move the bar out of the way. The position is remembered for later sessions and clamped to the output, so a bar dragged off a large monitor stays reachable on a smaller one. Every control has a tooltip naming its shortcut. **S**, **M**, and **L** set the current tool's size to half, one, or twice its default weight, and the adjustments button next to them reveals the fine stepper (`-`, the current pixel size, `+`) for anything in between; fine values are kept, not snapped back to the nearest preset.
+
+The live color is the swatch carrying a check mark, and the shape-fill button shows a struck-through paint roller while fill is off. Size and color are per tool, so each remembers its own weight and color. While a text caret is open, changing size or color restyles the text under the caret instead of only the next one, and touching any other control (a tool, undo, freeze, export) commits that text first.

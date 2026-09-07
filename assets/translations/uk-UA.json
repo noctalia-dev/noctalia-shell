@@ -93,6 +93,7 @@
       },
       "sysmon": {
         "cpu": "ЦП",
+        "cpu-freq": "Тактова частота ЦП",
         "cpu-temp": "Температура ЦП",
         "disk": "Диск",
         "disk-free": "Вільне місце на диску",
@@ -121,6 +122,7 @@
         "off": "Прогноз погоди вимкнено.",
         "tooltip": {
           "condition": "Умови",
+          "feels-like": "Відчувається як",
           "high": "Найвища температура",
           "humidity": "Вологість повітря",
           "low": "Найвища температура",
@@ -182,6 +184,7 @@
     "audio": {
       "application-volumes": "Гучність застосунків",
       "choose-effects-profile": "Виберіть профіль",
+      "default-device": "Типовий пристрій",
       "effects-profile": "Ефекти",
       "input-device-prefix": "Ввід",
       "no-application-audio": "Немає звуку застосунку",
@@ -303,6 +306,21 @@
     },
     "power": {
       "battery": "Акумулятор",
+      "charging": {
+        "configured": "Налаштовано: {limits}",
+        "error-denied": "Помилка авторизації. Пороги заряджання не змінено.",
+        "error-failed": "Не вдалося змінити пороги заряджяння.",
+        "externally-managed": "Визначені іншим засобом. Налаштуйте UPower, щоб визначити пороги тут.",
+        "firmware-managed": "Заряджанням керує системна мікропрограма",
+        "full-charge": "Заряджати до 100%",
+        "starts": "Починати, коли менше {start}%",
+        "starts-stops": "поріг початку: {start}% · поріг зупинки: {end}%",
+        "stops": "Поріг зупинки: {end}%",
+        "title": "Заряджання акумулятора",
+        "unreadable": "Недоступно",
+        "unsupported": "Регулювання порогів заряджання не підтримується.",
+        "use-thresholds": "Застосовувати пороги заряджання"
+      },
       "design-capacity": "Залишок розрахункової місткості",
       "health": "Роботоздатність акумулятора",
       "performance-inhibited": "Потужність недоступна",
@@ -458,12 +476,12 @@
       },
       "settings": {
         "aspect-ratio": "Співвідношення сторін",
-        "background": "Фон",
+        "background": "Тло",
         "background-color": "Колір",
         "background-opacity": "Непрозорість",
         "background-padding": "Відступи",
         "background-radius": "Радіус",
-        "background-section": "Фон",
+        "background-section": "Тло",
         "bands": "Смуги",
         "bar-width": "Ширина панелі",
         "bloom-intensity": "Bloom",
@@ -489,6 +507,7 @@
         "fill-color": "Колір заповнення",
         "font-family": "Шрифт",
         "font-family-default": "За замовчуванням системи",
+        "forecast-days": "Кількість днів",
         "format": "Формат",
         "glyph": "Значок",
         "hide-when-no-media": "Приховувати, коли немає медіа",
@@ -512,23 +531,30 @@
         "reset-defaults": "Повернути початкові",
         "ring-opacity": "Непрозорість кільця",
         "rotation-speed": "Швидкість обертання",
+        "scroll-step": "Крок прокручування",
         "secondary-color": "Другорядний колір",
         "sensitivity": "Чутливість",
         "shadow": "Тінь",
+        "show-caps-lock": "Попереджати про Caps Lock",
         "show-device": "Показати пристрій",
+        "show-events": "Показувати події",
         "show-forecast": "Показати прогноз погоди",
         "show-keyboard-layout": "Розкладка клавіатури",
         "show-label": "Показати мітку",
         "show-login-button": "Кнопка підтвердження входу",
+        "show-media": "Що грає",
         "show-session-buttons": "Кнопки керування сеансом",
         "show-weather": "Прогноз погоди",
+        "show-week-numbers": "Номери тижнів",
         "show-when-idle": "Показувати, коли неактивний",
         "stat": "Стан",
+        "stat-cpu-freq": "Тактова частота ЦП",
         "stat-cpu-temp": "Температура CPU",
         "stat-cpu-usage": "Використання CPU",
         "stat-gpu-temp": "Температура GPU",
         "stat-gpu-usage": "Використання GPU",
         "stat-gpu-vram": "GPU VRAM",
+        "stat-gpu-vram-used": "Зайнята пам'ять відеокарти",
         "stat-net-rx": "Вхідна швидкість мережі",
         "stat-net-tx": "Мережа: Вихідна швидкість",
         "stat-none": "Немає",
@@ -537,6 +563,7 @@
         "stat2": "Статистика 2",
         "title": "Заголовок",
         "variant": "Стиль",
+        "variant-default": "Типовий",
         "variant-ghost": "Без контуру й заповнення",
         "variant-outline": "Лише контур",
         "variant-primary": "Основний",
@@ -556,9 +583,11 @@
         "grid": "Сітка"
       },
       "title": "Віджети робочого столу",
+      "title-lockscreen": "Віджети на екрані блокування",
       "types": {
         "audio-visualizer": "Аудіовізуалізатор",
         "button": "Кнопка",
+        "calendar": "Календар",
         "clock": "Годинник",
         "fancy-audio-visualizer": "Ефектний аудіовізуалізатор",
         "label": "Мітка",
@@ -574,6 +603,7 @@
     },
     "volume": {
       "mic": "Мікрофон",
+      "muted": "Заглушено",
       "volume": "Гучність"
     },
     "weather": {
@@ -624,12 +654,22 @@
     },
     "context-menu": {
       "open": "Відкрити",
+      "pin": "Закріпити в запускачі",
       "pin-to-dock": "Закріпити на док-панелі",
+      "unpin": "Відкріпити в запускачі",
       "unpin-from-dock": "Відкріпити від док-панелі"
     },
     "empty": {
       "no-results": "Нічого не знайдено",
       "type-to-search": "Введіть для пошуку..."
+    },
+    "origins": {
+      "appimage": "AppImage",
+      "flatpak": "Flatpak",
+      "nix": "Nix",
+      "snap": "Snap",
+      "system": "Системний пакет",
+      "user": "Користувацький"
     },
     "providers": {
       "applications": {
@@ -690,12 +730,12 @@
       "placeholder": "Введіть відповідь..."
     },
     "internal": {
-      "battery": "Батарея",
+      "battery": "Акумулятор",
       "battery-critical-body": "{device}: {percent}% — комп'ютер скоро вимкнеться",
       "battery-critical-title": "Критично низький заряд акумулятора",
-      "battery-device": "Пристрій батареї",
+      "battery-device": "Пристрій акумулятора",
       "battery-low-body": "{device}: залишилося {percent}%",
-      "battery-low-title": "Низький заряд батареї",
+      "battery-low-title": "Низький заряд акумулятора",
       "calendar": "Календар",
       "calendar-google-connect-browser-failed": "Не вдалося запустити браузер для авторизації Google. Перевірте свій типовий браузер або налаштування xdg-open.",
       "calendar-google-connect-expired": "Термін дії авторизації Google вичерпався до виконання входу. Спробуйте з'єднатися знову.",
@@ -770,6 +810,8 @@
   },
   "plugins": {
     "auto-disabled": {
+      "body-errors": "Додаток «{plugin}» було вимкнено через завелику кількість помилок у роботі. Усуньте їх причину й перезапустіть його.",
+      "body-timeouts": "Додаток {plugin} не відповідає, тож його було вимкнено. Усуньте причину цього й перезапустіть його.",
       "title": "Додаток вимкнутий."
     },
     "enable-failed": {
@@ -828,6 +870,7 @@
     "badges": {
       "advanced": "Додаткові",
       "community": "Спільнота",
+      "deprecated": "Застаріло",
       "inherited": "Успадковано",
       "monitor": "Монітор",
       "official": "Офіційні",
@@ -907,7 +950,7 @@
         "label": "Монітор: {name}",
         "management": "Змінити на моніторі",
         "match-placeholder": "Введіть монітор",
-        "new": "Зміни для окремого монітора",
+        "new": "Зміни для монітора",
         "rename": "Перейменувати",
         "rename-save": "Зберегти"
       },
@@ -928,7 +971,7 @@
           "drag": "Змінити порядок",
           "drawer-detached": "Окрема панель",
           "edit": "Редагувати стиль",
-          "fill": "Фон",
+          "fill": "Тло",
           "fill-description": "Роль кольору тла Капсули; також підтримуються фіксовані шістнадцяткові кольори",
           "foreground": "Передній план",
           "foreground-description": "Роль кольору іконки та підпису для віджетів у цій групі",
@@ -945,16 +988,20 @@
           "radius-description": "Радіус заокруглення капсули в пікселях; Авто успадковує радіус капсули панелі",
           "remove-from-group": "Вилучити з групи",
           "selected": "{count} вибрано",
+          "settings-widget": "Параметри віджета",
           "show": "Показувати цю групу",
           "show-widget": "Показувати цей віджет",
           "style": "Стиль",
           "title": "Група капсул",
-          "ungroup": "Розгрупувати"
+          "ungroup": "Розгрупувати",
+          "widget-spacing": "Інтервал",
+          "widget-spacing-description": "Проміжок між віджетами у цій групі. Якщо вибрати «Авто», буде такий, як на решті панелі."
         },
         "inspector": {
-          "add-instance-title": "Додати новий іменований віджет {widget} до {lane}",
-          "add-title": "Додати widget до {lane}",
-          "move-to-lane": "Перемістити до {lane}"
+          "add-instance-title": "Додати новий іменований віджет «{widget}» на {lane}",
+          "add-title": "Додати віджет на {lane}",
+          "move-to-lane": "Перенести на {lane}",
+          "reset-defaults": "Повернути початкові"
         },
         "instance": {
           "create-save": "Створити",
@@ -967,12 +1014,12 @@
           "rename-save": "Зберегти"
         },
         "lanes": {
-          "center": "Центр",
+          "center": "центр",
           "customize": "Налаштувати",
           "empty": "Немає віджетів",
           "empty-hint": "Додайте віджет, щоб заповнити цю смугу.",
-          "end": "Кінець",
-          "start": "Почати"
+          "end": "кінець",
+          "start": "початок"
         },
         "picker": {
           "empty": "Віджетів не знайдено",
@@ -988,6 +1035,7 @@
         "settings": {
           "empty": "Жодні налаштування не відповідають поточним фільтрам.",
           "groups": {
+            "actions": "Дії",
             "behavior": "Поведінка",
             "grouping": "Групування",
             "presentation": "Презентація",
@@ -1079,8 +1127,8 @@
         "authentication": "Автентифікація",
         "automation": "Автоматизація",
         "backdrop": "Фон",
-        "background": "Фон",
-        "battery": "Батарея",
+        "background": "Тло",
+        "battery": "Акумулятор",
         "behavior": "Поведінка",
         "borders": "Контури",
         "brightness": "Яскравість",
@@ -1090,6 +1138,7 @@
         "clipboard": "Буфер обміну",
         "community": "Спільнота",
         "control-center": "Центр керування",
+        "dead-zone": "Мертва зона",
         "directories": "Каталоги",
         "display": "Дисплей",
         "effects": "Ефекти",
@@ -1105,6 +1154,7 @@
         "idle": "Неактивний",
         "interface": "Інтерфейс",
         "keybinds": "Гарячі клавіші",
+        "keyboard-layout": "Розкладка клавіатури",
         "kinds": "Види",
         "launcher": "Запускач",
         "layout": "Макет",
@@ -1141,7 +1191,8 @@
         "wallpaper": "Тло екрана",
         "weather": "Погода",
         "widget-list": "Список віджетів",
-        "widgets": "Віджети"
+        "widgets": "Віджети",
+        "window-switcher": "Перемикання вікон"
       },
       "sections": {
         "accessibility": "Доступність",
@@ -1174,12 +1225,17 @@
       "filter": {
         "add": "Додати фільтр",
         "add-title": "Додавання фільтру сповіщень",
+        "flag": {
+          "dnd-bypass": "Навіть у режимі «Без сповіщень»"
+        },
         "flags-label": "Повна відповідність",
         "match-content-label": "Регулярний вираз",
         "match-label": "Програма",
         "play-sound": "Грати звук",
         "save-history": "Зберегти до історії",
+        "show-toast": "Спливне сповіщення",
         "summary": "{match} · {flags}",
+        "summary-blocked": "{match} · заблоковано",
         "summary-disabled": "{match} · вимкнено",
         "unnamed": "Фільтр без назви"
       }
@@ -1561,6 +1617,9 @@
         "corner-top-right": {
           "description": "Радіус верхнього правого кута для панелі"
         },
+        "dead-zone-action": {
+          "description": "Дія, яку виконує клацання на вільному місці на панелі."
+        },
         "edge-margin": {
           "description": "Відстань від найближчого краю екрана; позитивні значення віддаляють Bar від нього"
         },
@@ -1573,6 +1632,9 @@
         },
         "ends-margin": {
           "description": "Відступ від кожного кінця панелі вздовж її головної осі"
+        },
+        "font-family": {
+          "description": "Шрифт для віджетів на цій панелі. Залиште це поле пустим, щоб застосувати загальний шрифт оболонки. Визначений для окремого віджета шрифт має приорітет перед цим параметром."
         },
         "font-weight": {
           "description": "Стандартна вага для міток віджетів на цій панелі.",
@@ -3003,7 +3065,7 @@
       "types": {
         "active-window": "Активне вікно",
         "audio-visualizer": "Аудіовізуалізатор",
-        "battery": "Батарея",
+        "battery": "Акумулятор",
         "bluetooth": "Bluetooth",
         "brightness": "Яскравість",
         "caffeine": "Присипляння",

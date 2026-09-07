@@ -16,10 +16,12 @@
 
 class AccessPointRow;
 class Button;
+class CellularRow;
 class ExternalIpService;
 class Flex;
 class Input;
 class Label;
+class ModemManagerService;
 class ScrollView;
 class Select;
 class Spinner;
@@ -28,7 +30,9 @@ class INetworkService;
 
 class NetworkTab : public Tab {
 public:
-  NetworkTab(INetworkService* network, NetworkSecretAgent* secrets, ExternalIpService* externalIp);
+  NetworkTab(
+      INetworkService* network, NetworkSecretAgent* secrets, ExternalIpService* externalIp, ModemManagerService* modem
+  );
   ~NetworkTab() override;
 
   std::unique_ptr<Flex> create() override;
@@ -48,6 +52,13 @@ private:
   void rebuildApList(Renderer& renderer);
   // Pushes live signal values into the existing rows. Returns true if any changed.
   bool syncApRows();
+  // Same for the cellular rows and the cellular toggle. Returns true if any changed.
+  bool syncCellularCard();
+  // GNOME-style mobile-data semantics when the network backend owns a saved gsm
+  // connection (toggle reflects cellularActive); otherwise raw modem power.
+  [[nodiscard]] bool cellularToggleChecked() const;
+  [[nodiscard]] bool cellularToggleDisplayChecked() const;
+  void requestCellularEnabled(bool enabled);
   void syncPasswordCard();
   void showPasswordPrompt(const NetworkSecretAgent::SecretRequest& request);
   void showPasswordPrompt(const AccessPointInfo& ap);
@@ -66,6 +77,7 @@ private:
   INetworkService* m_network = nullptr;
   NetworkSecretAgent* m_secrets = nullptr;
   ExternalIpService* m_externalIpService = nullptr;
+  ModemManagerService* m_modem = nullptr;
 
   Flex* m_rootLayout = nullptr;
   Flex* m_currentCard = nullptr;
@@ -98,6 +110,9 @@ private:
 
   std::unordered_map<std::string, AccessPointRow*> m_apRows;
 
+  Toggle* m_cellularToggle = nullptr;
+  std::vector<CellularRow*> m_cellularRows;
+
   std::string m_lastStructureKey;
   float m_lastListWidth = -1.0F;
 
@@ -126,7 +141,16 @@ private:
   bool m_wifiToggleTargetObserved = false;
   std::uint64_t m_wifiToggleRequestGeneration = 0;
 
+  // A cellular request is only observable once ModemManager and NM have walked
+  // the modem through enable/registration, so the switch shows the requested
+  // position until then. It stays clickable: a second click just retargets.
+  bool m_cellularTogglePending = false;
+  bool m_cellularToggleTarget = false;
+  std::chrono::steady_clock::time_point m_cellularTogglePendingSince;
+
   Timer m_actionPendingTimer;
+  Timer m_cellularTogglePendingTimer;
 
   static constexpr std::chrono::seconds kActionPendingTimeout = std::chrono::seconds(6);
+  static constexpr std::chrono::seconds kCellularPendingTimeout = std::chrono::seconds(25);
 };

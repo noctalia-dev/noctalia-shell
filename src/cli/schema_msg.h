@@ -254,6 +254,12 @@ namespace noctalia::cli {
   };
 
   namespace msg {
+    inline constexpr Command annotate{
+        "annotate", "Draw on the screen over running apps; press F or the Freeze button to capture the background",
+        {},         {},
+        {},         {},
+        {},         false
+    };
     inline constexpr Command barAutoHideSet{
         "bar-auto-hide-set", "Set auto-hide state for a bar", {}, {}, {}, kMsgBarAutoHideSetPositionals, {}, false
     };
@@ -614,6 +620,9 @@ namespace noctalia::cli {
         {},          kMsgPowerSetPositionals,
         {},          false
     };
+    inline constexpr Command screenshotAnnotate{
+        "screenshot-annotate", "Freeze the screen and annotate it, then copy or save", {}, {}, {}, {}, {}, false
+    };
     inline constexpr Command screenshotFullscreen{
         "screenshot-fullscreen",
         "Capture the focused monitor by default, pick interactively with pick, or all outputs with all",
@@ -812,6 +821,7 @@ namespace noctalia::cli {
   } // namespace msg
 
   inline constexpr std::array kMsgSubcommands{
+      msg::annotate,
       msg::barAutoHideSet,
       msg::barHide,
       msg::barLayerSet,
@@ -889,6 +899,7 @@ namespace noctalia::cli {
       msg::plugins,
       msg::powerCycle,
       msg::powerSet,
+      msg::screenshotAnnotate,
       msg::screenshotFullscreen,
       msg::screenshotRegion,
       msg::session,

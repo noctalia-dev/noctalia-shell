@@ -23,7 +23,9 @@
 #include "wayland/wayland_seat.h"
 
 #include <algorithm>
+#include <array>
 #include <cerrno>
+#include <charconv>
 #include <chrono>
 #include <cmath>
 #include <csignal>
@@ -38,6 +40,7 @@
 #include <sys/wait.h>
 #include <thread>
 #include <unistd.h>
+#include <utility>
 
 namespace {
 
@@ -46,6 +49,46 @@ namespace {
   constexpr const char* kStateOwner = "screenshot";
   constexpr const char* kLastRegionKey = "last_region";
   constexpr auto kFreezeCaptureTimeout = std::chrono::seconds(1);
+  constexpr const char* kAnnotateStateOwner = "annotate";
+
+  [[nodiscard]] std::optional<double> parseDouble(std::string_view text) {
+    double value = 0.0;
+    const auto* end = text.data() + text.size();
+    const auto result = std::from_chars(text.data(), end, value);
+    if (result.ec != std::errc{} || result.ptr != end || !std::isfinite(value)) {
+      return std::nullopt;
+    }
+    return value;
+  }
+
+  [[nodiscard]] std::optional<capture::AnnotationColor> parseAnnotationColor(std::string_view text) {
+    std::array<float, 4> channels{};
+    std::size_t index = 0;
+    std::size_t start = 0;
+    while (index < channels.size()) {
+      const std::size_t comma = text.find(',', start);
+      const std::string_view field = text.substr(start, comma == std::string_view::npos ? comma : comma - start);
+      const auto parsed = parseDouble(field);
+      if (!parsed.has_value()) {
+        return std::nullopt;
+      }
+      channels[index] = std::clamp(static_cast<float>(*parsed), 0.0F, 1.0F);
+      ++index;
+      if (comma == std::string_view::npos) {
+        break;
+      }
+      start = comma + 1;
+    }
+    if (index != channels.size()) {
+      return std::nullopt;
+    }
+    return capture::AnnotationColor{
+        .r = channels[0],
+        .g = channels[1],
+        .b = channels[2],
+        .a = channels[3],
+    };
+  }
 
   [[nodiscard]] std::string encodeRegion(const LogicalRect& region) {
     return std::format("{},{},{},{}", region.x, region.y, region.width, region.height);
@@ -595,9 +638,15 @@ void ScreenshotService::onOutputChange() {
   if (m_regionOverlay != nullptr) {
     m_regionOverlay->onOutputChange();
   }
+  if (m_annotationOverlay != nullptr) {
+    m_annotationOverlay->onOutputChange();
+  }
 }
 
 bool ScreenshotService::onPointerEvent(const PointerEvent& event) {
+  if (m_annotationOverlay != nullptr && m_annotationOverlay->isActive()) {
+    return m_annotationOverlay->onPointerEvent(event);
+  }
   if (m_regionOverlay == nullptr || !m_regionOverlay->isActive()) {
     return false;
   }
@@ -605,6 +654,11 @@ bool ScreenshotService::onPointerEvent(const PointerEvent& event) {
 }
 
 bool ScreenshotService::onKeyboardEvent(const KeyboardEvent& event) {
+  if (m_annotationOverlay != nullptr && m_annotationOverlay->isActive()) {
+    if (m_annotationOverlay->onKeyboardEvent(event)) {
+      return true;
+    }
+  }
   if (!event.pressed) {
     return false;
   }
@@ -622,6 +676,12 @@ bool ScreenshotService::onKeyboardEvent(const KeyboardEvent& event) {
   return true;
 }
 
+bool ScreenshotService::overlayBusy() const noexcept {
+  return (m_regionOverlay != nullptr && m_regionOverlay->isActive())
+      || (m_annotationOverlay != nullptr && m_annotationOverlay->isActive())
+      || m_freezeCaptureActive;
+}
+
 ScreenshotService::OutputOptions ScreenshotService::outputOptionsFromConfig(const Config& config) {
   const auto& screenshot = config.shell.screenshot;
   OutputOptions options;
@@ -632,6 +692,7 @@ ScreenshotService::OutputOptions ScreenshotService::outputOptionsFromConfig(cons
   options.confirmRegion = screenshot.confirmRegion;
   options.rememberLastRegion = screenshot.rememberLastRegion;
   options.showCursor = screenshot.showCursor;
+  options.annotate = screenshot.annotate;
   options.pipeCommand = screenshot.pipeCommand;
   options.directory = screenshot.directory;
   options.filenamePattern = screenshot.filenamePattern;
@@ -642,6 +703,9 @@ void ScreenshotService::registerIpc(IpcService& ipc, const ConfigService& config
   ipc.bind(noctalia::cli::msg::screenshotRegion, [this, &configService](const std::string& /*args*/) -> std::string {
     if (!available()) {
       return "error: screen capture is not available on this compositor\n";
+    }
+    if (m_annotationOverlay != nullptr && m_annotationOverlay->isActive()) {
+      return "error: a screenshot overlay is already active\n";
     }
     auto* renderContext = PanelManager::instance().renderContext();
     if (renderContext == nullptr) {
@@ -654,6 +718,9 @@ void ScreenshotService::registerIpc(IpcService& ipc, const ConfigService& config
   ipc.bind(noctalia::cli::msg::screenshotFullscreen, [this, &configService](const std::string& args) -> std::string {
     if (!available()) {
       return "error: screen capture is not available on this compositor\n";
+    }
+    if (m_annotationOverlay != nullptr && m_annotationOverlay->isActive()) {
+      return "error: a screenshot overlay is already active\n";
     }
     const std::string token = StringUtils::trim(args);
     const auto options = outputOptionsFromConfig(configService.config());
@@ -686,6 +753,35 @@ void ScreenshotService::registerIpc(IpcService& ipc, const ConfigService& config
     captureFullscreen(options);
     return "ok\n";
   });
+
+  ipc.bind(noctalia::cli::msg::screenshotAnnotate, [this, &configService](const std::string& /*args*/) -> std::string {
+    if (!available()) {
+      return "error: screen capture is not available on this compositor\n";
+    }
+    if (overlayBusy()) {
+      return "error: a screenshot overlay is already active\n";
+    }
+    auto* renderContext = PanelManager::instance().renderContext();
+    if (renderContext == nullptr) {
+      return "error: render context unavailable\n";
+    }
+    beginAnnotation(*renderContext, outputOptionsFromConfig(configService.config()), true);
+    return "ok\n";
+  });
+
+  // The live annotator draws over running apps, so it opens without screencopy;
+  // only its Freeze action needs capture support.
+  ipc.bind(noctalia::cli::msg::annotate, [this, &configService](const std::string& /*args*/) -> std::string {
+    if (overlayBusy()) {
+      return "error: a screenshot overlay is already active\n";
+    }
+    auto* renderContext = PanelManager::instance().renderContext();
+    if (renderContext == nullptr) {
+      return "error: render context unavailable\n";
+    }
+    beginAnnotation(*renderContext, outputOptionsFromConfig(configService.config()), false);
+    return "ok\n";
+  });
 }
 
 wl_output* ScreenshotService::preferredCaptureOutput() const {
@@ -703,6 +799,10 @@ void ScreenshotService::captureFullscreen(const OutputOptions& options, wl_outpu
   }
   if (!hasAnyOutput(options)) {
     notifyError("No screenshot output enabled");
+    return;
+  }
+  if (m_annotationOverlay != nullptr && m_annotationOverlay->isActive()) {
+    notifyError("An annotation overlay is already active");
     return;
   }
   if (output == nullptr) {
@@ -740,6 +840,10 @@ void ScreenshotService::beginRegionCapture(RenderContext& renderContext, const O
     notifyError("No screenshot output enabled");
     return;
   }
+  if (m_annotationOverlay != nullptr && m_annotationOverlay->isActive()) {
+    notifyError("An annotation overlay is already active");
+    return;
+  }
   if (m_regionOverlay != nullptr && m_regionOverlay->isActive()) {
     m_regionOverlay->cancel();
   }
@@ -766,6 +870,10 @@ void ScreenshotService::beginFullscreenCapture(RenderContext& renderContext, con
   }
   if (!hasAnyOutput(options)) {
     notifyError("No screenshot output enabled");
+    return;
+  }
+  if (m_annotationOverlay != nullptr && m_annotationOverlay->isActive()) {
+    notifyError("An annotation overlay is already active");
     return;
   }
   if (m_regionOverlay != nullptr && m_regionOverlay->isActive()) {
@@ -846,11 +954,9 @@ void ScreenshotService::ensureRegionOverlay() {
         if (action == capture::ConfirmAction::ForceClipboard) {
           options.copyToClipboard = true;
           options.saveToFile = false;
-          options.pipeToCommand = false;
         } else if (action == capture::ConfirmAction::ForceSave) {
           options.copyToClipboard = false;
           options.saveToFile = true;
-          options.pipeToCommand = false;
         }
 
         if (options.freezeScreen && m_regionOverlay != nullptr) {
@@ -890,13 +996,23 @@ void ScreenshotService::beginFreezeCapture() {
   }
 
   m_frozenScreenshots.clear();
-  m_pendingFreezeOutputs.clear();
+  m_frozenPairs.clear();
+  m_pendingFreezeCaptures.clear();
   for (const auto& output : m_wayland.outputs()) {
-    if (output.output != nullptr && output.logicalWidth > 0 && output.logicalHeight > 0) {
-      m_pendingFreezeOutputs.push_back(output.output);
+    if (output.output == nullptr || output.logicalWidth <= 0 || output.logicalHeight <= 0) {
+      continue;
+    }
+    if (m_freezeTarget == FreezeTarget::Annotation) {
+      // Both cursor variants up front, so the annotator's cursor toggle is instant.
+      m_pendingFreezeCaptures.push_back(FreezeRequest{.output = output.output, .overlayCursor = false});
+      m_pendingFreezeCaptures.push_back(FreezeRequest{.output = output.output, .overlayCursor = true});
+    } else {
+      m_pendingFreezeCaptures.push_back(
+          FreezeRequest{.output = output.output, .overlayCursor = m_regionOutputOptions.showCursor}
+      );
     }
   }
-  if (m_pendingFreezeOutputs.empty()) {
+  if (m_pendingFreezeCaptures.empty()) {
     notifyError("No outputs available");
     return;
   }
@@ -910,22 +1026,22 @@ void ScreenshotService::startNextFreezeCapture() {
     return;
   }
 
-  if (m_pendingFreezeOutputs.empty()) {
+  if (m_pendingFreezeCaptures.empty()) {
     m_freezeCaptureActive = false;
     finishFreezeCapture();
     return;
   }
 
-  wl_output* output = m_pendingFreezeOutputs.front();
-  m_pendingFreezeOutputs.erase(m_pendingFreezeOutputs.begin());
+  const FreezeRequest request = m_pendingFreezeCaptures.front();
+  m_pendingFreezeCaptures.erase(m_pendingFreezeCaptures.begin());
   if (m_capture.busy()) {
     m_capture.cancelInFlight();
   }
 
   m_capture.capture(
-      output, std::nullopt, m_regionOutputOptions.showCursor,
-      [this, output](std::optional<ScreencopyImage> image, const std::string& error) {
-        onFreezeFrameCaptured(output, std::move(image), error);
+      request.output, std::nullopt, request.overlayCursor,
+      [this, request](std::optional<ScreencopyImage> image, const std::string& error) {
+        onFreezeFrameCaptured(request, std::move(image), error);
       }
   );
   if (m_capture.busy()) {
@@ -945,7 +1061,7 @@ void ScreenshotService::startNextFreezeCapture() {
 }
 
 void ScreenshotService::onFreezeFrameCaptured(
-    wl_output* output, std::optional<ScreencopyImage> image, const std::string& error
+    FreezeRequest request, std::optional<ScreencopyImage> image, const std::string& error
 ) {
   m_freezeCaptureTimeout.stop();
   if (!m_freezeCaptureActive) {
@@ -953,11 +1069,22 @@ void ScreenshotService::onFreezeFrameCaptured(
   }
 
   if (!error.empty() || !image.has_value()) {
-    kLog.warn("failed to freeze output for screenshot region: {}", error.empty() ? "empty frame" : error);
-  } else if (!screencopy::orientCaptureNative(*image, m_wayland, output)) {
+    kLog.warn("failed to freeze output: {}", error.empty() ? "empty frame" : error);
+  } else if (!screencopy::orientCaptureNative(*image, m_wayland, request.output)) {
     kLog.warn("failed to orient frozen screenshot");
+  } else if (m_freezeTarget == FreezeTarget::Annotation) {
+    auto pair = std::ranges::find_if(m_frozenPairs, [&](const auto& entry) { return entry.output == request.output; });
+    if (pair == m_frozenPairs.end()) {
+      m_frozenPairs.push_back(capture::AnnotationOverlay::FrozenPair{.output = request.output});
+      pair = std::prev(m_frozenPairs.end());
+    }
+    if (request.overlayCursor) {
+      pair->cursor = std::move(*image);
+    } else {
+      pair->plain = std::move(*image);
+    }
   } else {
-    m_frozenScreenshots.push_back(capture::FrozenScreenshot{.output = output, .image = std::move(*image)});
+    m_frozenScreenshots.push_back(capture::FrozenScreenshot{.output = request.output, .image = std::move(*image)});
   }
 
   DeferredCall::callLater([this]() { startNextFreezeCapture(); });
@@ -966,11 +1093,46 @@ void ScreenshotService::onFreezeFrameCaptured(
 void ScreenshotService::finishFreezeCapture() {
   m_freezeCaptureTimeout.stop();
   m_freezeCaptureActive = false;
+  const FreezeTarget target = std::exchange(m_freezeTarget, FreezeTarget::Region);
+
   if (m_regionRenderContext == nullptr) {
     notifyError("Render context unavailable");
     m_frozenScreenshots.clear();
+    m_frozenPairs.clear();
     return;
   }
+
+  if (target == FreezeTarget::Annotation) {
+    // A missing cursor variant falls back to the plain frame (and vice versa), so the
+    // toggle is a no-op on that output instead of showing nothing.
+    std::erase_if(m_frozenPairs, [](const capture::AnnotationOverlay::FrozenPair& pair) {
+      return pair.plain.rgba.empty() && pair.cursor.rgba.empty();
+    });
+    for (auto& pair : m_frozenPairs) {
+      if (pair.plain.rgba.empty()) {
+        pair.plain = pair.cursor;
+      } else if (pair.cursor.rgba.empty()) {
+        pair.cursor = pair.plain;
+      }
+    }
+    if (m_frozenPairs.empty()) {
+      notifyError("Failed to freeze the screen");
+      if (m_annotationOverlay != nullptr && m_annotationOverlay->isActive()) {
+        m_annotationOverlay->resumeAfterCapture();
+      }
+      return;
+    }
+    ensureAnnotationOverlay();
+    m_annotationOverlay->setFrozenScreenshots(std::move(m_frozenPairs));
+    m_frozenPairs.clear();
+    if (m_annotationOverlay->isActive()) {
+      m_annotationOverlay->resumeAfterCapture();
+    } else {
+      m_annotationOverlay->begin();
+    }
+    return;
+  }
+
   if (m_frozenScreenshots.empty()) {
     notifyError("Failed to freeze screen");
     return;
@@ -989,7 +1151,9 @@ void ScreenshotService::abortFreezeCapture(const std::string& message) {
   cancelAllOutputsBatch();
   m_freezeCaptureTimeout.stop();
   m_freezeCaptureActive = false;
-  m_pendingFreezeOutputs.clear();
+  m_pendingFreezeCaptures.clear();
+  m_frozenPairs.clear();
+  m_freezeTarget = FreezeTarget::Region;
   m_frozenScreenshots.clear();
   m_capture.cancelInFlight();
   if (!message.empty()) {
@@ -1006,6 +1170,148 @@ void ScreenshotService::cancelRegionCapture() {
   if (m_regionOverlay != nullptr && m_regionOverlay->isActive()) {
     m_regionOverlay->cancelSelection();
   }
+}
+
+capture::AnnotationToolState ScreenshotService::loadAnnotationToolState() const {
+  capture::AnnotationToolState state = capture::defaultAnnotationToolState();
+  if (const auto tool = m_configService.stateString(kAnnotateStateOwner, "tool"); tool.has_value()) {
+    if (const auto parsed = capture::annotationToolFromName(*tool); parsed.has_value()) {
+      state.tool = *parsed;
+    }
+  }
+  if (const auto fill = m_configService.stateString(kAnnotateStateOwner, "fill"); fill.has_value()) {
+    state.fill = *fill == "1";
+  }
+  if (const auto advanced = m_configService.stateString(kAnnotateStateOwner, "advanced_size"); advanced.has_value()) {
+    state.advancedSize = *advanced == "1";
+  }
+  {
+    const auto x = m_configService.stateString(kAnnotateStateOwner, "toolbar_x");
+    const auto y = m_configService.stateString(kAnnotateStateOwner, "toolbar_y");
+    if (x.has_value() && y.has_value()) {
+      const auto parsedX = parseDouble(*x);
+      const auto parsedY = parseDouble(*y);
+      if (parsedX.has_value() && parsedY.has_value()) {
+        state.toolbarPosition = capture::AnnotationPoint{.x = *parsedX, .y = *parsedY};
+      }
+    }
+  }
+  for (std::size_t i = 0; i < capture::kAnnotationToolCount; ++i) {
+    const std::string name(capture::annotationToolName(static_cast<capture::AnnotationTool>(i)));
+    if (const auto width = m_configService.stateString(kAnnotateStateOwner, std::format("width_{}", name));
+        width.has_value()) {
+      if (const auto parsed = parseDouble(*width); parsed.has_value()) {
+        state.width[i] = *parsed;
+      }
+    }
+    if (const auto color = m_configService.stateString(kAnnotateStateOwner, std::format("color_{}", name));
+        color.has_value()) {
+      if (const auto parsed = parseAnnotationColor(*color); parsed.has_value()) {
+        state.color[i] = *parsed;
+      }
+    }
+  }
+  return state;
+}
+
+void ScreenshotService::persistAnnotationToolState(std::string_view key, std::string_view value) {
+  (void)m_configService.setStateString(kAnnotateStateOwner, key, value);
+}
+
+void ScreenshotService::ensureAnnotationOverlay() {
+  if (m_regionRenderContext == nullptr) {
+    m_regionRenderContext = PanelManager::instance().renderContext();
+  }
+  if (m_regionRenderContext == nullptr) {
+    return;
+  }
+  if (m_annotationOverlay == nullptr) {
+    m_annotationOverlay = std::make_unique<capture::AnnotationOverlay>();
+  }
+  m_annotationOverlay->initialize(m_wayland, m_regionRenderContext);
+  m_annotationOverlay->setStateSetter([this](std::string_view key, std::string_view value) {
+    persistAnnotationToolState(key, value);
+  });
+  m_annotationOverlay->setFailureCallback([this](const std::string& message) {
+    m_pendingDelivery.reset();
+    notifyError(message);
+  });
+  m_annotationOverlay->setClosedCallback([this]() { m_pendingDelivery.reset(); });
+  m_annotationOverlay->setFreezeCallback([this]() {
+    if (m_annotationOverlay == nullptr || !m_annotationOverlay->isActive()) {
+      return;
+    }
+    if (!available()) {
+      notifyError("Screen capture is not available on this compositor");
+      return;
+    }
+    // Surfaces go away before the first capture_output request, so the frame the
+    // compositor copies no longer contains the ink.
+    m_annotationOverlay->hideForCapture();
+    m_freezeTarget = FreezeTarget::Annotation;
+    beginFreezeCapture();
+  });
+  m_annotationOverlay->setExportCallback([this](ScreencopyImage image, capture::AnnotationExport action) {
+    if (action == capture::AnnotationExport::Done) {
+      if (!m_pendingDelivery.has_value()) {
+        return;
+      }
+      OutputOptions options = m_pendingDelivery->options;
+      options.annotate = false;
+      const auto destPath = m_pendingDelivery->destPath;
+      m_pendingDelivery.reset();
+      deliverCaptureResult(std::move(image), options, destPath);
+      return;
+    }
+
+    OutputOptions options = m_pendingDelivery.has_value() ? m_pendingDelivery->options : m_regionOutputOptions;
+    options.copyToClipboard = action == capture::AnnotationExport::Copy;
+    options.saveToFile = action == capture::AnnotationExport::Save;
+    options.pipeToCommand = false;
+    options.annotate = false;
+    const std::optional<std::filesystem::path> destPath =
+        options.saveToFile ? std::optional(makeScreenshotPath(options, "annotated")) : std::nullopt;
+    deliverCaptureResult(std::move(image), options, destPath);
+  });
+}
+
+void ScreenshotService::beginAnnotation(RenderContext& renderContext, const OutputOptions& options, bool freezeFirst) {
+  m_regionRenderContext = &renderContext;
+  m_regionOutputOptions = options;
+  m_regionFullscreenPick = false;
+  m_pendingDelivery.reset();
+
+  ensureAnnotationOverlay();
+  if (m_annotationOverlay == nullptr) {
+    notifyError("Render context unavailable");
+    return;
+  }
+  m_annotationOverlay->setToolState(loadAnnotationToolState());
+  m_annotationOverlay->setCursorVisible(options.showCursor);
+
+  if (freezeFirst) {
+    m_freezeTarget = FreezeTarget::Annotation;
+    DeferredCall::callLater([this]() { beginFreezeCapture(); });
+    return;
+  }
+
+  m_annotationOverlay->setFrozenScreenshots({});
+  m_annotationOverlay->begin();
+}
+
+void ScreenshotService::beginImageAnnotation(
+    ScreencopyImage image, const OutputOptions& options, std::optional<std::filesystem::path> destPath
+) {
+  ensureAnnotationOverlay();
+  if (m_annotationOverlay == nullptr) {
+    kLog.warn("annotate requested but no render context is available; delivering unannotated");
+    finishDelivery(std::move(image), options, std::move(destPath));
+    return;
+  }
+  m_pendingDelivery = PendingDelivery{.options = options, .destPath = std::move(destPath)};
+  m_annotationOverlay->setToolState(loadAnnotationToolState());
+  m_annotationOverlay->setCursorVisible(false);
+  m_annotationOverlay->beginImage(std::move(image), preferredCaptureOutput());
 }
 
 void ScreenshotService::deliverFrozenGlobalRegion(LogicalRect globalRegion, const OutputOptions& options) {
@@ -1290,6 +1596,10 @@ void ScreenshotService::startNextQueuedCapture() {
 }
 
 void ScreenshotService::captureAllOutputs(const OutputOptions& options) {
+  if (m_annotationOverlay != nullptr && m_annotationOverlay->isActive()) {
+    notifyError("An annotation overlay is already active");
+    return;
+  }
   cancelAllOutputsBatch();
   cancelGlobalRegionBatch();
   m_captureQueue.clear();
@@ -1419,6 +1729,18 @@ void ScreenshotService::cancelAllOutputsBatch() {
 }
 
 void ScreenshotService::deliverCaptureResult(
+    ScreencopyImage image, const OutputOptions& options, std::optional<std::filesystem::path> destPath
+) {
+  // With [shell.screenshot] annotate the capture goes to the editor first; Done re-enters
+  // here with annotate cleared, so an annotated export can never reopen the editor.
+  if (options.annotate && image.width > 0 && image.height > 0) {
+    beginImageAnnotation(std::move(image), options, std::move(destPath));
+    return;
+  }
+  finishDelivery(std::move(image), options, std::move(destPath));
+}
+
+void ScreenshotService::finishDelivery(
     ScreencopyImage image, const OutputOptions& options, std::optional<std::filesystem::path> destPath
 ) {
   std::string encodeError;

@@ -58,7 +58,7 @@ Use these context IDs with `noctalia msg panel-toggle control-center <context>` 
 | `audio` | Audio | Output/input volume, mute controls, devices, streams, and media-related audio controls |
 | `monitor` | Monitor | Brightness controls for displays that expose writable backlight devices |
 | `system` | System | Distro/kernel, hardware summary, uptime, CPU/RAM/GPU/network graphs, and resource details |
-| `network` | Network | Wi-Fi state, connection status, known wireless controls, and NetworkManager-backed actions |
+| `network` | Network | Wi-Fi state, connection status, cellular controls, known wireless controls, and NetworkManager-backed actions |
 | `bluetooth` | Bluetooth | Adapter power, discoverability, paired devices, connection controls, and pairing flows |
 | `weather` | Weather | Current conditions, forecast, location status, and weather service diagnostics |
 | `calendar` | Calendar | Month view and configured calendar account events |
@@ -104,7 +104,15 @@ System monitor sampling is configured globally under `[system.monitor]`; see [Sy
 
 The Network tab uses the configured network backend to show wireless state and connection details. It is the destination for Wi-Fi shortcuts and network-related right-click actions.
 
-The current connection line lists the IPv4 address, signal strength, radio band, and external IP. The band (`2.4 GHz`, `5 GHz`, `6 GHz`, or `60 GHz`) is shown only when the backend reports the connection frequency — NetworkManager and wpa_supplicant do, iwd does not.
+The current connection line lists the IPv4 address, signal strength, radio band, and external IP. The band (`2.4 GHz`, `5 GHz`, `6 GHz`, or `60 GHz`) is shown only when the backend reports the connection frequency: NetworkManager and wpa_supplicant do, iwd does not.
+
+### Cellular
+
+When ModemManager reports a modem, the Network tab adds a **Cellular** card with a mobile-data switch and one row per modem showing its operator (or hardware name), state, access technology (`5G`, `LTE`, `HSPA+`, ...), and signal percentage. The card disappears again when ModemManager stops or the modem is unplugged.
+
+The switch follows GNOME's mobile-data semantics: with a saved NetworkManager `gsm` profile it turns the data connection on and off and leaves the modem registered on the network; with no such profile it powers the modem radio itself. Turning it on can take several seconds while the modem enables, searches, and registers, and the switch holds the requested position until the change lands.
+
+Cellular needs ModemManager running (`org.freedesktop.ModemManager1`) and, for mobile data, a `gsm` connection profile created with `nmcli` or another NetworkManager front end. Noctalia does not create or edit cellular profiles.
 
 ## Bluetooth
 
@@ -123,24 +131,21 @@ The Calendar tab shows the month view and events from configured calendar accoun
 Right-click a day to launch the application registered for the `text/calendar` MIME type. The Calendar panel closes
 after a successful launch.
 
-`[control_center.calendar]` holds how the tab is drawn; `[calendar]` holds whether events are synced at all.
+`[control_center.calendar]` holds how the tab is drawn; `[calendar]` holds whether events are synced and the shared event date and time formats.
 
 ```toml
 [control_center.calendar]
 show_events_card  = true
 show_week_numbers = false       # ISO 8601 week numbers in the month grid
-event_date_format = "%A %e %B"  # date heading above the event list
-event_time_format = "%H:%M"     # per-event start time
 ```
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `show_events_card` | bool | `true` | Show the event list beside the month grid. Also toggled from the calendar button in the tab header. |
 | `show_week_numbers` | bool | `false` | Show a column of ISO 8601 week numbers to the left of the month grid, separated from it by a divider. Each row is numbered by the week its Thursday falls in. |
-| `event_date_format` | string | `"%A %e %B"` | strftime format for the date heading above the event list. |
-| `event_time_format` | string | `"%H:%M"` | strftime format for each event's start time. All-day events show an "All day" label instead. |
 
-Week numbers are a decoration of the month grid, so they work with `[calendar].enabled = false` and no accounts configured. The other three options only have visible effect once events are syncing.
+The shared `event_date_format` and `event_time_format` options are documented under [Calendar](/noctalia/services/calendar/).
+Week numbers are a decoration of the month grid, so they work with `[calendar].enabled = false` and no accounts configured.
 
 ## Notifications
 
