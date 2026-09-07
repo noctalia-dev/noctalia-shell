@@ -1,6 +1,4 @@
-#include "compositors/hyprland/hyprland_display_backend.h"
-
-#include "core/process/process.h"
+#include "compositors/display_backend.h"
 #include "util/string_utils.h"
 
 #include <cmath>
@@ -11,22 +9,30 @@ namespace compositors::display {
 
   namespace {
 
-    [[nodiscard]] std::vector<std::string> monitorKeyword(const std::string& outputName, const OutputState& cfg) {
+    [[nodiscard]] std::string monitorKeywordArg(const std::string& outputName, const OutputState& cfg) {
       const std::string mode = cfg.modeStr.empty() ? "preferred" : cfg.modeStr;
       const auto scale = StringUtils::formatDotDecimal(cfg.scale);
-      return {
-          "hyprctl", "keyword", "monitor",
-          outputName
-              + ","
-              + mode
-              + ","
-              + std::to_string(cfg.x)
-              + "x"
-              + std::to_string(cfg.y)
-              + ","
-              + scale
-              + ",transform,"
-              + std::to_string(transformToCode(cfg.transform))
+      return outputName
+          + ","
+          + mode
+          + ","
+          + std::to_string(cfg.x)
+          + "x"
+          + std::to_string(cfg.y)
+          + ","
+          + scale
+          + ",transform,"
+          + std::to_string(transformToCode(cfg.transform));
+    }
+
+    [[nodiscard]] std::vector<std::string> monitorKeyword(const std::string& outputName, const OutputState& cfg) {
+      return {"hyprctl", "keyword", "monitor", monitorKeywordArg(outputName, cfg)};
+    }
+
+    [[nodiscard]] DisplayCommand hdrCommand(const std::string& outputName, const OutputState& cfg) {
+      return DisplayCommand{
+          {"hyprctl", "keyword", "monitor", monitorKeywordArg(outputName, cfg) + ",bitdepth," + (cfg.hdr ? "10" : "8")},
+          std::nullopt
       };
     }
 
@@ -56,6 +62,7 @@ namespace compositors::display {
           out.scale = mon.value("scale", 1.0);
           out.transform = transformFromCode(mon.value("transform", 0));
           out.vrr = mon.value("vrr", false);
+          out.hdr = mon.value("hdr", false);
           const int width = mon.value("width", 0);
           const int height = mon.value("height", 0);
           const double refreshRate = mon.value("refreshRate", 0.0);
@@ -111,74 +118,34 @@ namespace compositors::display {
 
   } // namespace
 
-  std::vector<std::string> HyprlandDisplayBackend::fetchArgs() const { return {"hyprctl", "monitors", "all", "-j"}; }
-
-  std::vector<OutputState> HyprlandDisplayBackend::parseFetch(std::string_view payload, std::string& error) const {
-    return parseFetchJson(payload, error);
-  }
-
-  std::vector<DisplayCommand> HyprlandDisplayBackend::changeCommands(
-      DisplayChangeKind kind, const std::string& outputName, const std::map<std::string, OutputState>& target
-  ) {
-    if (kind == DisplayChangeKind::Vrr) {
-      return {};
-    }
-    if (kind == DisplayChangeKind::Toggle) {
-      const auto it = target.find(outputName);
-      if (it == target.end()) {
-        return {};
-      }
-      return {DisplayCommand{
-          {"hyprctl", "keyword", "monitor", outputName + "," + (it->second.enabled ? "preferred,auto,1" : "disable")},
-          std::nullopt
-      }};
-    }
-    if (kind == DisplayChangeKind::Positions) {
-      std::vector<DisplayCommand> cmds;
-      for (const auto& [name, cfg] : target) {
-        if (!cfg.enabled) {
-          continue;
-        }
-        cmds.push_back(DisplayCommand{monitorKeyword(name, cfg), std::nullopt});
-      }
-      return cmds;
-    }
-    const auto it = target.find(outputName);
-    if (it == target.end() || !it->second.enabled) {
-      return {};
-    }
-    return {DisplayCommand{monitorKeyword(outputName, it->second), std::nullopt}};
-  }
-
-  std::vector<DisplayCommand> HyprlandDisplayBackend::revertCommands(
-      const std::map<std::string, OutputState>& snapshot, const std::map<std::string, OutputState>& current
-  ) {
-    std::vector<DisplayCommand> onOff;
-    std::vector<DisplayCommand> pending;
-    for (const auto& [name, snap] : snapshot) {
-      const auto curIt = current.find(name);
-      const OutputState& cur = curIt != current.end() ? curIt->second : OutputState{};
-
-      if (snap.enabled != cur.enabled) {
-        if (!snap.enabled) {
-          onOff.push_back(DisplayCommand{{"hyprctl", "keyword", "monitor", name + ",disable"}, std::nullopt});
-        } else {
-          onOff.push_back(DisplayCommand{monitorKeyword(name, snap), std::nullopt});
-        }
-      }
-      if (!snap.enabled) {
-        continue;
-      }
-      if (snap.modeStr != cur.modeStr
-          || std::abs(snap.scale - cur.scale) > 0.01
-          || snap.x != cur.x
-          || snap.y != cur.y
-          || snap.transform != cur.transform) {
-        pending.push_back(DisplayCommand{monitorKeyword(name, snap), std::nullopt});
-      }
-    }
-    onOff.insert(onOff.end(), pending.begin(), pending.end());
-    return onOff;
+  DisplayBackendSpec hyprlandSpec() {
+    return DisplayBackendSpec{
+        .kind = "hyprland",
+        .supportsHdr = true,
+        .fetchArgs = []() { return std::vector<std::string>{"hyprctl", "monitors", "all", "-j"}; },
+        .parseFetch = [](std::string_view payload, std::string& error) { return parseFetchJson(payload, error); },
+        .composeAll = [](const std::map<std::string, OutputState>& target) -> std::vector<DisplayCommand> {
+          std::vector<DisplayCommand> cmds;
+          for (const auto& [name, cfg] : target) {
+            if (!cfg.enabled) {
+              cmds.push_back(DisplayCommand{{"hyprctl", "keyword", "monitor", name + ",disable"}, std::nullopt});
+              continue;
+            }
+            cmds.push_back(DisplayCommand{monitorKeyword(name, cfg), std::nullopt});
+            cmds.push_back(hdrCommand(name, cfg));
+          }
+          return cmds;
+        },
+        .composePositions = [](const std::map<std::string, OutputState>& target) -> std::vector<DisplayCommand> {
+          std::vector<DisplayCommand> cmds;
+          for (const auto& [name, cfg] : target) {
+            if (cfg.enabled) {
+              cmds.push_back(DisplayCommand{monitorKeyword(name, cfg), std::nullopt});
+            }
+          }
+          return cmds;
+        },
+    };
   }
 
 } // namespace compositors::display

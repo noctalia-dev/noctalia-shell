@@ -2,12 +2,10 @@
 
 #include "compositors/compositor_detect.h"
 #include "compositors/compositor_runtime.h"
-#include "compositors/hyprland/hyprland_display_backend.h"
-#include "compositors/niri/niri_display_backend.h"
-#include "compositors/sway/sway_display_backend.h"
-#include "compositors/wlr_display_backend.h"
+#include "compositors/sway/sway_runtime.h"
 #include "core/process/process.h"
 
+#include <cmath>
 #include <cstdio>
 
 namespace compositors::display {
@@ -23,24 +21,28 @@ namespace compositors::display {
 
   } // namespace
 
+  DisplayBackend::DisplayBackend(DisplayBackendSpec spec)
+      : m_spec(std::move(spec)), m_fetchArgs(m_spec.fetchArgs ? m_spec.fetchArgs() : std::vector<std::string>{}) {}
+
   std::unique_ptr<DisplayBackend> createDisplayBackend(CompositorRuntimeRegistry& runtimeRegistry) {
     switch (compositors::detect()) {
     case compositors::CompositorKind::Hyprland:
       if (process::commandExists("hyprctl")) {
-        return std::make_unique<HyprlandDisplayBackend>();
+        return std::make_unique<DisplayBackend>(hyprlandSpec());
       }
       break;
     case compositors::CompositorKind::Niri:
       if (process::commandExists("niri")) {
-        return std::make_unique<NiriDisplayBackend>();
+        return std::make_unique<DisplayBackend>(niriSpec());
       }
       break;
     case compositors::CompositorKind::Sway:
       if (runtimeRegistry.sway().hasOutputCommand()) {
-        return std::make_unique<SwayDisplayBackend>(runtimeRegistry.sway());
+        return std::make_unique<DisplayBackend>(swaySpec(runtimeRegistry.sway()));
       }
       break;
     case compositors::CompositorKind::Mango:
+      return std::make_unique<DisplayBackend>(mangoSpec(runtimeRegistry.mango()));
     case compositors::CompositorKind::Labwc:
     case compositors::CompositorKind::Triad:
     case compositors::CompositorKind::Dwl:
@@ -50,86 +52,55 @@ namespace compositors::display {
       break;
     }
     if (wlrRandrWorks()) {
-      return std::make_unique<WlrDisplayBackend>(false);
+      return std::make_unique<DisplayBackend>(wlrSpec(false));
     }
-    return std::make_unique<WlrDisplayBackend>(true);
+    return std::make_unique<DisplayBackend>(wlrSpec(true));
   }
 
   std::string_view transformToName(std::string_view transform) {
-    if (transform == "90")
-      return "90";
-    if (transform == "180")
-      return "180";
-    if (transform == "270")
-      return "270";
-    if (transform == "Flipped")
-      return "flipped";
-    if (transform == "Flipped90")
-      return "flipped-90";
-    if (transform == "Flipped180")
-      return "flipped-180";
-    if (transform == "Flipped270")
-      return "flipped-270";
+    for (const auto& [canonical, name] : kTransforms) {
+      if (canonical == transform) {
+        return name;
+      }
+    }
     return "normal";
   }
 
   std::string transformFromName(std::string_view name) {
-    if (name == "normal")
-      return "Normal";
-    if (name == "90")
-      return "90";
-    if (name == "180")
-      return "180";
-    if (name == "270")
-      return "270";
-    if (name == "flipped")
-      return "Flipped";
-    if (name == "flipped-90")
-      return "Flipped90";
-    if (name == "flipped-180")
-      return "Flipped180";
-    if (name == "flipped-270")
-      return "Flipped270";
+    for (const auto& [canonical, backendName] : kTransforms) {
+      if (backendName == name) {
+        return std::string(canonical);
+      }
+    }
     return "Normal";
   }
 
   std::string transformFromCode(int code) {
-    switch (code) {
-    case 1:
-      return "90";
-    case 2:
-      return "180";
-    case 3:
-      return "270";
-    case 4:
-      return "Flipped";
-    case 5:
-      return "Flipped90";
-    case 6:
-      return "Flipped180";
-    case 7:
-      return "Flipped270";
-    default:
+    if (code < 0 || static_cast<std::size_t>(code) >= kTransforms.size()) {
       return "Normal";
     }
+    return std::string(kTransforms[static_cast<std::size_t>(code)].first);
   }
 
   int transformToCode(std::string_view transform) {
-    if (transform == "90")
-      return 1;
-    if (transform == "180")
-      return 2;
-    if (transform == "270")
-      return 3;
-    if (transform == "Flipped")
-      return 4;
-    if (transform == "Flipped90")
-      return 5;
-    if (transform == "Flipped180")
-      return 6;
-    if (transform == "Flipped270")
-      return 7;
+    for (std::size_t i = 0; i < kTransforms.size(); ++i) {
+      if (kTransforms[i].first == transform) {
+        return static_cast<int>(i);
+      }
+    }
     return 0;
+  }
+
+  OutputDiff diffOutputs(const OutputState& snapshot, const OutputState& current) {
+    OutputDiff diff;
+    diff.enabled = snapshot.enabled != current.enabled;
+    diff.mode = !snapshot.modeStr.empty() && snapshot.modeStr != current.modeStr;
+    diff.scale = std::abs(snapshot.scale - current.scale) > 0.01;
+    diff.transform = snapshot.transform != current.transform;
+    diff.position = snapshot.x != current.x || snapshot.y != current.y;
+    diff.vrr = snapshot.vrr != current.vrr;
+    diff.hdr = snapshot.hdr != current.hdr;
+    return diff;
   }
 
   std::string swayModeStr(std::string_view modeStr) {

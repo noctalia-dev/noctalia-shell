@@ -9,7 +9,6 @@
 #include "ui/style.h"
 
 #include <algorithm>
-#include <utility>
 
 namespace settings::display {
 
@@ -20,82 +19,40 @@ namespace settings::display {
 
   } // namespace
 
-  RevertDialogModal::~RevertDialogModal() {
-    if (m_open) {
-      close();
-    }
-    m_aliveGuard.reset();
-  }
-
-  void RevertDialogModal::initialize(SettingsModalHost& host) { m_host = &host; }
-
-  void RevertDialogModal::open(DisplayService& display, float scale) {
-    if (m_host == nullptr || m_open) {
+  void RevertDialogModal::open(SettingsModalHost& host, DisplayService& display, float scale) {
+    if (isOpen()) {
       return;
     }
     m_display = &display;
     m_scale = std::max(0.1F, scale);
     m_lastCountdown = -1;
-
-    const std::weak_ptr<void> aliveGuard = m_aliveGuard;
-    m_modalId = m_host->push(
-        SettingsModalRequest{
-            .build = [this, aliveGuard]() -> std::unique_ptr<Node> { return aliveGuard.expired() ? nullptr : build(); },
-            .measure =
-                [this](Renderer& renderer, const SettingsModalLayoutSpace& space) { return measure(renderer, space); },
-            .arrange = [this](Renderer& renderer, float width, float height) { arrange(renderer, width, height); },
-            .update = [this](Renderer& renderer) { update(renderer); },
-            .requestClose =
-                [this, aliveGuard]() {
-                  if (!aliveGuard.expired()) {
-                    close();
-                  }
-                },
-            .onClosed =
-                [this, aliveGuard]() {
-                  if (!aliveGuard.expired()) {
-                    m_open = false;
-                    m_modalId.reset();
-                    m_display = nullptr;
-                    m_root = nullptr;
-                  }
-                },
-            .contentPadding = Style::spaceMd * m_scale,
-            .windowMargin = 24.0F * m_scale,
-        }
-    );
-    m_open = m_modalId.has_value();
-    if (!m_open) {
+    pushModal(host, Style::spaceMd * m_scale, 24.0F * m_scale);
+    if (!isOpen()) {
       m_display = nullptr;
-      m_root = nullptr;
+      resetRoot();
     }
   }
 
-  void RevertDialogModal::close() {
-    if (!m_open || m_host == nullptr || !m_modalId.has_value()) {
-      return;
-    }
-    (void)m_host->pop(*m_modalId);
-  }
-
-  void RevertDialogModal::update(Renderer& renderer) {
-    if (!m_open || m_display == nullptr) {
+  void RevertDialogModal::updateContent(Renderer& /*renderer*/) {
+    if (!isOpen() || m_display == nullptr) {
       return;
     }
     if (!m_display->awaitingConfirmation()) {
       close();
       return;
     }
-    if (m_lastCountdown != m_display->revertCountdown()
-        && m_host != nullptr
-        && m_modalId.has_value()
-        && m_host->isTop(*m_modalId)) {
+    if (m_lastCountdown != m_display->revertCountdown()) {
       m_lastCountdown = m_display->revertCountdown();
-      m_host->rebuildTop();
+      rebuild();
     }
   }
 
-  std::unique_ptr<Node> RevertDialogModal::build() {
+  void RevertDialogModal::onClosed() {
+    m_display = nullptr;
+    resetRoot();
+  }
+
+  std::unique_ptr<Node> RevertDialogModal::buildContent() {
     const float gap = Style::spaceMd * m_scale;
     auto root = ui::column({
         .out = &m_root,
@@ -157,9 +114,9 @@ namespace settings::display {
                 .radius = Style::scaledRadiusMd(m_scale),
                 .onClick =
                     [this]() {
-                      const std::weak_ptr<void> aliveGuard = m_aliveGuard;
-                      DeferredCall::callLater([this, aliveGuard]() {
-                        if (aliveGuard.expired()) {
+                      const auto alive = aliveToken();
+                      DeferredCall::callLater([this, alive]() {
+                        if (alive.expired()) {
                           return;
                         }
                         if (m_display != nullptr) {
@@ -178,9 +135,9 @@ namespace settings::display {
                 .paddingH = Style::spaceMd * m_scale,
                 .radius = Style::scaledRadiusMd(m_scale),
                 .onClick = [this]() {
-                  const std::weak_ptr<void> aliveGuard = m_aliveGuard;
-                  DeferredCall::callLater([this, aliveGuard]() {
-                    if (aliveGuard.expired()) {
+                  const auto alive = aliveToken();
+                  DeferredCall::callLater([this, alive]() {
+                    if (alive.expired()) {
                       return;
                     }
                     if (m_display != nullptr) {
@@ -196,27 +153,12 @@ namespace settings::display {
     return root;
   }
 
-  LayoutSize RevertDialogModal::measure(Renderer& renderer, const SettingsModalLayoutSpace& space) {
-    if (m_root == nullptr) {
-      return {.width = 1.0F, .height = 1.0F};
-    }
-    const float width = std::min(kDialogWidth * m_scale, space.maxContentWidth);
-    LayoutConstraints constraints;
-    constraints.setExactWidth(width);
-    const float height = std::min(m_root->measure(renderer, constraints).height, space.maxContentHeight);
-    return {.width = width, .height = height};
+  LayoutSize RevertDialogModal::measureContent(Renderer& renderer, const SettingsModalLayoutSpace& space) {
+    return measureFixedWidth(renderer, space, kDialogWidth * m_scale);
   }
 
-  void RevertDialogModal::arrange(Renderer& renderer, float width, float height) {
-    if (m_root != nullptr) {
-      m_root->arrange(renderer, {.x = 0.0F, .y = 0.0F, .width = width, .height = height});
-    }
-  }
-
-  void RevertDialogModal::requestLayout() {
-    if (m_open && m_host != nullptr) {
-      m_host->requestLayout();
-    }
+  void RevertDialogModal::arrangeContent(Renderer& renderer, float width, float height) {
+    arrangeRoot(renderer, width, height);
   }
 
 } // namespace settings::display

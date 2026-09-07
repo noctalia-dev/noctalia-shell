@@ -399,7 +399,7 @@ void SettingsWindow::openMonitorEditor() {
   }
   if (m_edidDialog == nullptr) {
     m_edidDialog = std::make_unique<settings::display::EdidDialogModal>();
-    m_edidDialog->initialize(m_modalHost);
+    m_edidDialog->initialize(m_modalHost, [this]() { dismissOpenSelectDropdown(); });
   }
   m_displayService->setOnStateChanged([this]() {
     if (m_monitorEditor != nullptr) {

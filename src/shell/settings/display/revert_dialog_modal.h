@@ -1,12 +1,7 @@
 #pragma once
 
-#include "shell/settings/settings_modal_host.h"
+#include "shell/settings/display/modal_base.h"
 
-#include <functional>
-#include <memory>
-#include <optional>
-
-class Flex;
 class Renderer;
 
 namespace settings::display {
@@ -14,31 +9,19 @@ namespace settings::display {
   class DisplayService;
 
   // "Keep these display settings?" countdown stacked above the monitor editor.
-  class RevertDialogModal {
+  class RevertDialogModal final : public settings::ModalBase {
   public:
-    RevertDialogModal() = default;
-    ~RevertDialogModal();
-
-    void initialize(SettingsModalHost& host);
-    void open(DisplayService& display, float scale);
-    void close();
-
-    [[nodiscard]] bool isOpen() const noexcept { return m_open; }
-    void requestLayout();
+    void open(SettingsModalHost& host, DisplayService& display, float scale);
 
   private:
-    [[nodiscard]] std::unique_ptr<Node> build();
-    [[nodiscard]] LayoutSize measure(Renderer& renderer, const SettingsModalLayoutSpace& space);
-    void arrange(Renderer& renderer, float width, float height);
-    void update(Renderer& renderer);
+    [[nodiscard]] std::unique_ptr<Node> buildContent() override;
+    [[nodiscard]] LayoutSize measureContent(Renderer& renderer, const SettingsModalLayoutSpace& space) override;
+    void arrangeContent(Renderer& renderer, float width, float height) override;
+    void updateContent(Renderer& renderer) override;
+    void onClosed() override;
 
-    std::shared_ptr<void> m_aliveGuard = std::make_shared<int>(0);
-    SettingsModalHost* m_host = nullptr;
-    std::optional<SettingsModalHost::ModalId> m_modalId;
     DisplayService* m_display = nullptr;
     float m_scale = 1.0F;
-    Flex* m_root = nullptr;
-    bool m_open = false;
     int m_lastCountdown = -1;
   };
 

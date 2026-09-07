@@ -195,7 +195,8 @@ namespace settings::display {
   }
 
   LayoutSize MonitorLayoutCanvas::doMeasure(Renderer& /*renderer*/, const LayoutConstraints& constraints) {
-    return {.width = constraints.maxWidth, .height = 220.0F * m_scale};
+    const float width = std::min(constraints.maxWidth, 980.0F * m_scale);
+    return {.width = width, .height = 220.0F * m_scale};
   }
 
   void MonitorLayoutCanvas::doArrange(Renderer& renderer, const LayoutRect& rect) {

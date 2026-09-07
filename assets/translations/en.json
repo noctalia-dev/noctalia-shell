@@ -188,7 +188,8 @@
     "resolution": "Resolution",
     "revert": "Revert",
     "scale": "Scale",
-    "copied-to-clipboard": "Copied to clipboard"
+    "copied-to-clipboard": "Copied to clipboard",
+    "unknown": "Unknown"
   },
   "control-center": {
     "audio": {
@@ -4510,7 +4511,8 @@
       "edid-field-physical-size": "Physical Size: {value}",
       "edid-field-preferred-mode": "Preferred Mode: {value}",
       "edid-size-cm": "{width} x {height} cm",
-      "edid-view-original": "Original"
+      "edid-view-original": "Original",
+      "hdr": "HDR"
     }
   },
   "setup-wizard": {

@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+class WaylandConnection;
+
 namespace settings::display {
 
   enum class EdidStatus : std::uint8_t { Idle, Decoded, DecodedEmpty, ReadError, DecodeError };
@@ -35,11 +37,12 @@ namespace settings::display {
 
   class DisplayService {
   public:
-    explicit DisplayService(std::unique_ptr<compositors::display::DisplayBackend> backend);
+    DisplayService(std::unique_ptr<compositors::display::DisplayBackend> backend, WaylandConnection* wayland);
 
     [[nodiscard]] const std::vector<compositors::display::OutputState>& outputs() const { return m_outputs; }
     [[nodiscard]] const std::map<std::string, compositors::display::OutputState>& target() const { return m_target; }
     [[nodiscard]] bool writable() const;
+    [[nodiscard]] bool supportsHdr() const;
     [[nodiscard]] std::string backendKind() const;
     [[nodiscard]] bool loading() const { return m_loading; }
     [[nodiscard]] const std::string& lastError() const { return m_lastError; }
@@ -55,6 +58,7 @@ namespace settings::display {
     void setScale(const std::string& outputName, double scale);
     void setTransform(const std::string& outputName, const std::string& transform);
     void setVrr(const std::string& outputName, bool enabled);
+    void setHdr(const std::string& outputName, bool enabled);
     void toggleOutput(const std::string& outputName, bool enabled);
     void setPosition(const std::string& outputName, int x, int y);
     void keepChanges();
@@ -75,12 +79,15 @@ namespace settings::display {
         const std::vector<compositors::display::DisplayCommand>& commands, const std::optional<TargetMap>& snapshot
     );
     void drainNext();
+    static void stampHdrSupport(std::vector<compositors::display::OutputState>& outputs);
+    void stampOutputMetadata(std::vector<compositors::display::OutputState>& outputs);
     void applyTopologyChange(
         const std::optional<TargetMap>& snapshot, std::vector<compositors::display::DisplayCommand> commands
     );
     void notifyStateChanged();
 
     std::shared_ptr<compositors::display::DisplayBackend> m_backend;
+    WaylandConnection* m_wayland = nullptr;
     std::vector<compositors::display::OutputState> m_outputs;
     TargetMap m_target;
     std::optional<TargetMap> m_pendingSnapshot;

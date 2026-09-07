@@ -1,5 +1,4 @@
-#include "compositors/wlr_display_backend.h"
-
+#include "compositors/display_backend.h"
 #include "core/process/process.h"
 #include "util/string_utils.h"
 
@@ -160,38 +159,26 @@ namespace compositors::display {
 
   } // namespace
 
-  WlrDisplayBackend::WlrDisplayBackend(bool readonly) : m_readonly(readonly) {}
-
-  std::vector<std::string> WlrDisplayBackend::fetchArgs() const {
-    if (m_readonly) {
-      return {};
+  DisplayBackendSpec wlrSpec(bool readonly) {
+    DisplayBackendSpec spec;
+    spec.kind = readonly ? "readonly" : "wlroots";
+    spec.writable = !readonly;
+    if (readonly) {
+      spec.fetchArgs = []() { return std::vector<std::string>{}; };
+      spec.parseFetch = [](std::string_view /*payload*/, std::string& error) { return readDrmSysfs(error); };
+      spec.composeAll = [](const std::map<std::string, OutputState>&) { return std::vector<DisplayCommand>{}; };
+      spec.composePositions = [](const std::map<std::string, OutputState>&) { return std::vector<DisplayCommand>{}; };
+      return spec;
     }
-    return {"wlr-randr", "--json"};
-  }
-
-  std::vector<OutputState> WlrDisplayBackend::parseFetch(std::string_view payload, std::string& error) const {
-    if (m_readonly) {
-      return readDrmSysfs(error);
-    }
-    return parseWlrJson(payload, error);
-  }
-
-  std::vector<DisplayCommand> WlrDisplayBackend::changeCommands(
-      DisplayChangeKind /*kind*/, const std::string& /*outputName*/, const std::map<std::string, OutputState>& target
-  ) {
-    if (m_readonly) {
-      return {};
-    }
-    return {DisplayCommand{fullWlrCmd(target), std::nullopt}};
-  }
-
-  std::vector<DisplayCommand> WlrDisplayBackend::revertCommands(
-      const std::map<std::string, OutputState>& snapshot, const std::map<std::string, OutputState>& /*current*/
-  ) {
-    if (m_readonly) {
-      return {};
-    }
-    return {DisplayCommand{fullWlrCmd(snapshot), std::nullopt}};
+    spec.fetchArgs = []() { return std::vector<std::string>{"wlr-randr", "--json"}; };
+    spec.parseFetch = [](std::string_view payload, std::string& error) { return parseWlrJson(payload, error); };
+    spec.composeAll = [](const std::map<std::string, OutputState>& target) {
+      return std::vector<DisplayCommand>{DisplayCommand{fullWlrCmd(target), std::nullopt}};
+    };
+    spec.composePositions = [](const std::map<std::string, OutputState>& target) {
+      return std::vector<DisplayCommand>{DisplayCommand{fullWlrCmd(target), std::nullopt}};
+    };
+    return spec;
   }
 
 } // namespace compositors::display

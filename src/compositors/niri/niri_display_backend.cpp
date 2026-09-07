@@ -1,6 +1,4 @@
-#include "compositors/niri/niri_display_backend.h"
-
-#include "core/process/process.h"
+#include "compositors/display_backend.h"
 #include "util/string_utils.h"
 
 #include <cmath>
@@ -108,98 +106,50 @@ namespace compositors::display {
 
   } // namespace
 
-  std::vector<std::string> NiriDisplayBackend::fetchArgs() const { return {"niri", "msg", "--json", "outputs"}; }
-
-  std::vector<OutputState> NiriDisplayBackend::parseFetch(std::string_view payload, std::string& error) const {
-    return parseFetchJson(payload, error);
-  }
-
-  std::vector<DisplayCommand> NiriDisplayBackend::changeCommands(
-      DisplayChangeKind kind, const std::string& outputName, const std::map<std::string, OutputState>& target
-  ) {
-    const auto it = target.find(outputName);
-    if (it == target.end()) {
-      return {};
-    }
-    const OutputState& cfg = it->second;
-    switch (kind) {
-    case DisplayChangeKind::Mode:
-      if (!cfg.enabled)
-        return {};
-      return {DisplayCommand{niriCmd({outputName, "mode", cfg.modeStr}), std::nullopt}};
-    case DisplayChangeKind::Scale:
-      if (!cfg.enabled)
-        return {};
-      return {DisplayCommand{niriCmd({outputName, "scale", StringUtils::formatDotDecimal(cfg.scale)}), std::nullopt}};
-    case DisplayChangeKind::Transform:
-      if (!cfg.enabled)
-        return {};
-      return {
-          DisplayCommand{niriCmd({outputName, "transform", std::string(transformToName(cfg.transform))}), std::nullopt}
-      };
-    case DisplayChangeKind::Vrr:
-      return {DisplayCommand{niriCmd({outputName, "vrr", cfg.vrr ? "on" : "off"}), std::nullopt}};
-    case DisplayChangeKind::Toggle:
-      return {DisplayCommand{niriCmd({outputName, cfg.enabled ? "on" : "off"}), std::nullopt}};
-    case DisplayChangeKind::Positions: {
-      std::vector<DisplayCommand> cmds;
-      for (const auto& [name, other] : target) {
-        if (!other.enabled) {
-          continue;
-        }
-        cmds.push_back(
-            DisplayCommand{
-                niriCmd({name, "position", "set", "--", std::to_string(other.x), std::to_string(other.y)}), std::nullopt
+  DisplayBackendSpec niriSpec() {
+    return DisplayBackendSpec{
+        .kind = "niri",
+        .fetchArgs = []() { return std::vector<std::string>{"niri", "msg", "--json", "outputs"}; },
+        .parseFetch = [](std::string_view payload, std::string& error) { return parseFetchJson(payload, error); },
+        .composeAll = [](const std::map<std::string, OutputState>& target) -> std::vector<DisplayCommand> {
+          std::vector<DisplayCommand> cmds;
+          for (const auto& [name, cfg] : target) {
+            if (!cfg.enabled) {
+              cmds.push_back(DisplayCommand{niriCmd({name, "off"}), std::nullopt});
+              continue;
             }
-        );
-      }
-      return cmds;
-    }
-    }
-    return {};
-  }
-
-  std::vector<DisplayCommand> NiriDisplayBackend::revertCommands(
-      const std::map<std::string, OutputState>& snapshot, const std::map<std::string, OutputState>& current
-  ) {
-    std::vector<DisplayCommand> onOff;
-    std::vector<DisplayCommand> pending;
-    for (const auto& [name, snap] : snapshot) {
-      const auto curIt = current.find(name);
-      const OutputState& cur = curIt != current.end() ? curIt->second : OutputState{};
-
-      if (snap.enabled != cur.enabled) {
-        onOff.push_back(DisplayCommand{niriCmd({name, snap.enabled ? "on" : "off"}), std::nullopt});
-      }
-      if (!snap.enabled) {
-        continue;
-      }
-      if (!snap.modeStr.empty() && snap.modeStr != cur.modeStr) {
-        pending.push_back(DisplayCommand{niriCmd({name, "mode", snap.modeStr}), std::nullopt});
-      }
-      if (std::abs(snap.scale - cur.scale) > 0.01) {
-        pending.push_back(
-            DisplayCommand{niriCmd({name, "scale", StringUtils::formatDotDecimal(snap.scale)}), std::nullopt}
-        );
-      }
-      if (snap.transform != cur.transform) {
-        pending.push_back(
-            DisplayCommand{niriCmd({name, "transform", std::string(transformToName(snap.transform))}), std::nullopt}
-        );
-      }
-      if (snap.x != cur.x || snap.y != cur.y) {
-        pending.push_back(
-            DisplayCommand{
-                niriCmd({name, "position", "set", "--", std::to_string(snap.x), std::to_string(snap.y)}), std::nullopt
+            cmds.push_back(DisplayCommand{niriCmd({name, "on"}), std::nullopt});
+            cmds.push_back(DisplayCommand{niriCmd({name, "mode", cfg.modeStr}), std::nullopt});
+            cmds.push_back(
+                DisplayCommand{niriCmd({name, "scale", StringUtils::formatDotDecimal(cfg.scale)}), std::nullopt}
+            );
+            cmds.push_back(
+                DisplayCommand{niriCmd({name, "transform", std::string(transformToName(cfg.transform))}), std::nullopt}
+            );
+            cmds.push_back(
+                DisplayCommand{
+                    niriCmd({name, "position", "set", "--", std::to_string(cfg.x), std::to_string(cfg.y)}), std::nullopt
+                }
+            );
+            cmds.push_back(DisplayCommand{niriCmd({name, "vrr", cfg.vrr ? "on" : "off"}), std::nullopt});
+          }
+          return cmds;
+        },
+        .composePositions = [](const std::map<std::string, OutputState>& target) -> std::vector<DisplayCommand> {
+          std::vector<DisplayCommand> cmds;
+          for (const auto& [name, cfg] : target) {
+            if (cfg.enabled) {
+              cmds.push_back(
+                  DisplayCommand{
+                      niriCmd({name, "position", "set", "--", std::to_string(cfg.x), std::to_string(cfg.y)}),
+                      std::nullopt
+                  }
+              );
             }
-        );
-      }
-      if (snap.vrr != cur.vrr) {
-        pending.push_back(DisplayCommand{niriCmd({name, "vrr", snap.vrr ? "on" : "off"}), std::nullopt});
-      }
-    }
-    onOff.insert(onOff.end(), pending.begin(), pending.end());
-    return onOff;
+          }
+          return cmds;
+        },
+    };
   }
 
 } // namespace compositors::display

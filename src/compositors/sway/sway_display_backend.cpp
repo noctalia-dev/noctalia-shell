@@ -1,6 +1,5 @@
-#include "compositors/sway/sway_display_backend.h"
-
-#include "core/process/process.h"
+#include "compositors/display_backend.h"
+#include "compositors/sway/sway_runtime.h"
 #include "util/string_utils.h"
 
 #include <cmath>
@@ -118,126 +117,69 @@ namespace compositors::display {
 
   } // namespace
 
-  SwayDisplayBackend::SwayDisplayBackend(compositors::sway::SwayRuntime& runtime) : m_runtime(runtime) {}
-
-  std::vector<std::string> SwayDisplayBackend::fetchArgs() const {
-    const auto& msg = m_runtime.outputCommand();
-    if (msg.empty()) {
-      return {};
-    }
-    return {msg, "-t", "get_outputs", "-r"};
-  }
-
-  std::vector<OutputState> SwayDisplayBackend::parseFetch(std::string_view payload, std::string& error) const {
-    return parseFetchJson(payload, error);
-  }
-
-  std::vector<DisplayCommand> SwayDisplayBackend::changeCommands(
-      DisplayChangeKind kind, const std::string& outputName, const std::map<std::string, OutputState>& target
-  ) {
-    const auto& msg = m_runtime.outputCommand();
-    if (msg.empty()) {
-      return {};
-    }
-    const auto it = target.find(outputName);
-    if (it == target.end()) {
-      return {};
-    }
-    const OutputState& cfg = it->second;
-    std::vector<std::string> args{msg, "output", outputName};
-    switch (kind) {
-    case DisplayChangeKind::Mode:
-      if (!cfg.enabled)
-        return {};
-      args.push_back("mode");
-      args.push_back(swayModeStr(cfg.modeStr));
-      break;
-    case DisplayChangeKind::Scale:
-      if (!cfg.enabled)
-        return {};
-      args.push_back("scale");
-      args.push_back(StringUtils::formatDotDecimal(cfg.scale));
-      break;
-    case DisplayChangeKind::Transform:
-      if (!cfg.enabled)
-        return {};
-      args.push_back("transform");
-      args.push_back(std::string(transformToName(cfg.transform)));
-      break;
-    case DisplayChangeKind::Vrr:
-      args.push_back("adaptive_sync");
-      args.push_back(cfg.vrr ? "on" : "off");
-      break;
-    case DisplayChangeKind::Toggle:
-      args.push_back(cfg.enabled ? "enable" : "disable");
-      break;
-    case DisplayChangeKind::Positions: {
-      std::vector<DisplayCommand> cmds;
-      for (const auto& [name, other] : target) {
-        if (!other.enabled) {
-          continue;
-        }
-        cmds.push_back(
-            DisplayCommand{
-                {msg, "output", name, "position", std::to_string(other.x), std::to_string(other.y)}, std::nullopt
+  DisplayBackendSpec swaySpec(compositors::sway::SwayRuntime& runtime) {
+    return DisplayBackendSpec{
+        .kind = "sway",
+        .fetchArgs =
+            [&runtime]() {
+              const auto& msg = runtime.outputCommand();
+              if (msg.empty()) {
+                return std::vector<std::string>{};
+              }
+              return std::vector<std::string>{msg, "-t", "get_outputs", "-r"};
+            },
+        .parseFetch = [](std::string_view payload, std::string& error) { return parseFetchJson(payload, error); },
+        .composeAll = [&runtime](const std::map<std::string, OutputState>& target) -> std::vector<DisplayCommand> {
+          const auto& msg = runtime.outputCommand();
+          if (msg.empty()) {
+            return {};
+          }
+          std::vector<DisplayCommand> cmds;
+          for (const auto& [name, cfg] : target) {
+            if (!cfg.enabled) {
+              cmds.push_back(DisplayCommand{{msg, "output", name, "disable"}, std::nullopt});
+              continue;
             }
-        );
-      }
-      return cmds;
-    }
-    }
-    return {DisplayCommand{std::move(args), std::nullopt}};
-  }
-
-  std::vector<DisplayCommand> SwayDisplayBackend::revertCommands(
-      const std::map<std::string, OutputState>& snapshot, const std::map<std::string, OutputState>& current
-  ) {
-    const auto& msg = m_runtime.outputCommand();
-    if (msg.empty()) {
-      return {};
-    }
-    std::vector<DisplayCommand> onOff;
-    std::vector<DisplayCommand> pending;
-    for (const auto& [name, snap] : snapshot) {
-      const auto curIt = current.find(name);
-      const OutputState& cur = curIt != current.end() ? curIt->second : OutputState{};
-
-      if (snap.enabled != cur.enabled) {
-        onOff.push_back(DisplayCommand{{msg, "output", name, snap.enabled ? "enable" : "disable"}, std::nullopt});
-      }
-      if (!snap.enabled) {
-        continue;
-      }
-      if (!snap.modeStr.empty() && snap.modeStr != cur.modeStr) {
-        pending.push_back(DisplayCommand{{msg, "output", name, "mode", swayModeStr(snap.modeStr)}, std::nullopt});
-      }
-      if (std::abs(snap.scale - cur.scale) > 0.01) {
-        pending.push_back(
-            DisplayCommand{{msg, "output", name, "scale", StringUtils::formatDotDecimal(snap.scale)}, std::nullopt}
-        );
-      }
-      if (snap.transform != cur.transform) {
-        pending.push_back(
-            DisplayCommand{
-                {msg, "output", name, "transform", std::string(transformToName(snap.transform))}, std::nullopt
+            cmds.push_back(DisplayCommand{{msg, "output", name, "enable"}, std::nullopt});
+            cmds.push_back(DisplayCommand{{msg, "output", name, "mode", swayModeStr(cfg.modeStr)}, std::nullopt});
+            cmds.push_back(
+                DisplayCommand{{msg, "output", name, "scale", StringUtils::formatDotDecimal(cfg.scale)}, std::nullopt}
+            );
+            cmds.push_back(
+                DisplayCommand{
+                    {msg, "output", name, "transform", std::string(transformToName(cfg.transform))}, std::nullopt
+                }
+            );
+            cmds.push_back(
+                DisplayCommand{
+                    {msg, "output", name, "position", std::to_string(cfg.x), std::to_string(cfg.y)}, std::nullopt
+                }
+            );
+            cmds.push_back(
+                DisplayCommand{{msg, "output", name, "adaptive_sync", cfg.vrr ? "on" : "off"}, std::nullopt}
+            );
+          }
+          return cmds;
+        },
+        .composePositions =
+            [&runtime](const std::map<std::string, OutputState>& target) -> std::vector<DisplayCommand> {
+          const auto& msg = runtime.outputCommand();
+          if (msg.empty()) {
+            return {};
+          }
+          std::vector<DisplayCommand> cmds;
+          for (const auto& [name, cfg] : target) {
+            if (cfg.enabled) {
+              cmds.push_back(
+                  DisplayCommand{
+                      {msg, "output", name, "position", std::to_string(cfg.x), std::to_string(cfg.y)}, std::nullopt
+                  }
+              );
             }
-        );
-      }
-      if (snap.x != cur.x || snap.y != cur.y) {
-        pending.push_back(
-            DisplayCommand{
-                {msg, "output", name, "position", std::to_string(snap.x), std::to_string(snap.y)}, std::nullopt
-            }
-        );
-      }
-      if (snap.vrr != cur.vrr) {
-        pending.push_back(
-            DisplayCommand{{msg, "output", name, "adaptive_sync", snap.vrr ? "on" : "off"}, std::nullopt}
-        );
-      }
-    }
-    onOff.insert(onOff.end(), pending.begin(), pending.end());
-    return onOff;
+          }
+          return cmds;
+        },
+    };
   }
 
 } // namespace compositors::display

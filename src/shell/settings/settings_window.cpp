@@ -20,6 +20,7 @@
 #include "shell/settings/display/edid_dialog_modal.h"
 #include "shell/settings/display/monitor_editor_modal.h"
 #include "shell/settings/display/monitor_identifier_overlay.h"
+#include "shell/settings/display/revert_dialog_modal.h"
 #include "shell/settings/settings_content_plugins.h"
 #include "shell/settings/settings_dialog_presenter.h"
 #include "shell/tooltip/tooltip_manager.h"
@@ -200,7 +201,8 @@ void SettingsWindow::initialize(
       }
   );
   if (m_platform != nullptr) {
-    m_displayService = std::make_unique<settings::display::DisplayService>(m_platform->createDisplayBackend());
+    m_displayService =
+        std::make_unique<settings::display::DisplayService>(m_platform->createDisplayBackend(), &wayland);
   }
   m_monitorIdentifierOverlay = std::make_unique<settings::display::MonitorIdentifierOverlay>();
   m_monitorIdentifierOverlay->initialize(wayland, renderContext);

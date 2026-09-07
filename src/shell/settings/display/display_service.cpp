@@ -5,6 +5,7 @@
 #include "core/process/process.h"
 #include "shell/settings/display/display_layout.h"
 #include "util/string_utils.h"
+#include "wayland/wayland_connection.h"
 
 extern "C" {
 #include <libdisplay-info/edid.h>
@@ -71,12 +72,50 @@ namespace settings::display {
       return std::nullopt;
     }
 
+    [[nodiscard]] bool edidSupportsHdr(const std::string& outputName) {
+      const auto bytes = readEdidBytes(outputName);
+      if (!bytes.has_value() || bytes->empty()) {
+        return false;
+      }
+      struct di_info* info = di_info_parse_edid(bytes->data(), bytes->size());
+      if (info == nullptr) {
+        return false;
+      }
+      const bool supports = di_info_get_hdr_static_metadata(info) != nullptr;
+      di_info_destroy(info);
+      return supports;
+    }
+
   } // namespace
 
-  DisplayService::DisplayService(std::unique_ptr<compositors::display::DisplayBackend> backend)
-      : m_backend(std::move(backend)) {}
+  DisplayService::DisplayService(
+      std::unique_ptr<compositors::display::DisplayBackend> backend, WaylandConnection* wayland
+  )
+      : m_backend(std::move(backend)), m_wayland(wayland) {}
+
+  void DisplayService::stampOutputMetadata(std::vector<compositors::display::OutputState>& outputs) {
+    if (m_wayland == nullptr) {
+      return;
+    }
+    for (auto& output : outputs) {
+      for (const auto& wlOutput : m_wayland->outputs()) {
+        if (wlOutput.connectorName != output.name) {
+          continue;
+        }
+        if (output.make.empty()) {
+          output.make = wlOutput.make;
+        }
+        if (output.model.empty()) {
+          output.model = wlOutput.model;
+        }
+        break;
+      }
+    }
+  }
 
   bool DisplayService::writable() const { return m_backend != nullptr && m_backend->writable(); }
+
+  bool DisplayService::supportsHdr() const { return m_backend != nullptr && m_backend->supportsHdr(); }
 
   std::string DisplayService::backendKind() const {
     return m_backend != nullptr ? m_backend->kindName() : std::string{};
@@ -95,6 +134,8 @@ namespace settings::display {
       state.x = out.x;
       state.y = out.y;
       state.vrr = out.vrr;
+      state.hdr = out.hdr;
+      state.hdrSupported = out.hdrSupported;
       if (!out.modes.empty()) {
         const auto idx = std::clamp(out.currentModeIndex, 0, static_cast<int>(out.modes.size()) - 1);
         const auto& mode = out.modes[static_cast<std::size_t>(idx)];
@@ -153,6 +194,12 @@ namespace settings::display {
     }
   }
 
+  void DisplayService::stampHdrSupport(std::vector<compositors::display::OutputState>& outputs) {
+    for (auto& output : outputs) {
+      output.hdrSupported = edidSupportsHdr(output.name);
+    }
+  }
+
   void DisplayService::notifyStateChanged() {
     if (m_onStateChanged) {
       m_onStateChanged();
@@ -168,6 +215,8 @@ namespace settings::display {
       m_loading = false;
       std::string error;
       m_outputs = m_backend->parseFetch({}, error);
+      stampHdrSupport(m_outputs);
+      stampOutputMetadata(m_outputs);
       if (!error.empty()) {
         m_lastError = error;
         kLog.warn("display fetch failed: {}", error);
@@ -186,6 +235,7 @@ namespace settings::display {
                               std::string error;
                               auto outputs = result ? backend->parseFetch(result.out, error)
                                                     : std::vector<compositors::display::OutputState>{};
+                              stampHdrSupport(outputs);
                               if (!result) {
                                 error = result.err.empty() ? "display fetch failed" : StringUtils::trim(result.err);
                               }
@@ -201,6 +251,7 @@ namespace settings::display {
                                   notifyStateChanged();
                                   return;
                                 }
+                                stampOutputMetadata(outputs);
                                 m_outputs = std::move(outputs);
                                 m_lastError.clear();
                                 m_target = currentSnapshot();
@@ -234,6 +285,11 @@ namespace settings::display {
 
     if (command.sleepMs.has_value()) {
       m_sleepTimer.start(std::chrono::milliseconds(*command.sleepMs), [this]() { drainNext(); });
+      return;
+    }
+    if (command.action) {
+      command.action();
+      drainNext();
       return;
     }
     if (command.args.empty()) {
@@ -274,21 +330,8 @@ namespace settings::display {
     if (!hasChangesComparedToCurrent()) {
       return;
     }
-    bool hasHyprTransformCommand = false;
-    for (const auto& command : commands) {
-      if (backendKind() == "hyprland"
-          && command.args.size() >= 4
-          && command.args[0] == "hyprctl"
-          && command.args[1] == "keyword"
-          && command.args[2] == "monitor"
-          && command.args[3].find(",transform,") != std::string::npos) {
-        hasHyprTransformCommand = true;
-        break;
-      }
-    }
-    if (backendKind() != "wlroots" && !hasHyprTransformCommand) {
-      const auto positionCommands =
-          m_backend->changeCommands(compositors::display::DisplayChangeKind::Positions, {}, m_target);
+    if (backendKind() != "wlroots") {
+      const auto positionCommands = m_backend->positionsCommands(m_target);
       for (const auto& positionCommand : positionCommands) {
         const auto joined = joinArgs(positionCommand.args);
         const auto duplicate =
@@ -310,9 +353,7 @@ namespace settings::display {
         m_pendingSnapshot.has_value() ? m_pendingSnapshot : std::optional<TargetMap>(currentSnapshot());
     it->second.modeStr = modeStr;
     normalizeLayout(m_outputs, m_target);
-    applyTopologyChange(
-        snapshot, m_backend->changeCommands(compositors::display::DisplayChangeKind::Mode, outputName, m_target)
-    );
+    applyTopologyChange(snapshot, m_backend->applyCommands(m_target));
     notifyStateChanged();
   }
 
@@ -325,9 +366,7 @@ namespace settings::display {
         m_pendingSnapshot.has_value() ? m_pendingSnapshot : std::optional<TargetMap>(currentSnapshot());
     it->second.scale = scale;
     normalizeLayout(m_outputs, m_target);
-    applyTopologyChange(
-        snapshot, m_backend->changeCommands(compositors::display::DisplayChangeKind::Scale, outputName, m_target)
-    );
+    applyTopologyChange(snapshot, m_backend->applyCommands(m_target));
     notifyStateChanged();
   }
 
@@ -340,9 +379,7 @@ namespace settings::display {
         m_pendingSnapshot.has_value() ? m_pendingSnapshot : std::optional<TargetMap>(currentSnapshot());
     it->second.transform = transform;
     normalizeLayout(m_outputs, m_target);
-    applyTopologyChange(
-        snapshot, m_backend->changeCommands(compositors::display::DisplayChangeKind::Transform, outputName, m_target)
-    );
+    applyTopologyChange(snapshot, m_backend->applyCommands(m_target));
     notifyStateChanged();
   }
 
@@ -354,7 +391,19 @@ namespace settings::display {
     const auto snapshot =
         m_pendingSnapshot.has_value() ? m_pendingSnapshot : std::optional<TargetMap>(currentSnapshot());
     it->second.vrr = enabled;
-    enqueueAll(m_backend->changeCommands(compositors::display::DisplayChangeKind::Vrr, outputName, m_target), snapshot);
+    enqueueAll(m_backend->applyCommands(m_target), snapshot);
+    notifyStateChanged();
+  }
+
+  void DisplayService::setHdr(const std::string& outputName, bool enabled) {
+    const auto it = m_target.find(outputName);
+    if (it == m_target.end()) {
+      return;
+    }
+    const auto snapshot =
+        m_pendingSnapshot.has_value() ? m_pendingSnapshot : std::optional<TargetMap>(currentSnapshot());
+    it->second.hdr = enabled;
+    enqueueAll(m_backend->applyCommands(m_target), snapshot);
     notifyStateChanged();
   }
 
@@ -370,9 +419,7 @@ namespace settings::display {
         m_pendingSnapshot.has_value() ? m_pendingSnapshot : std::optional<TargetMap>(currentSnapshot());
     it->second.enabled = enabled;
     normalizeLayout(m_outputs, m_target);
-    applyTopologyChange(
-        snapshot, m_backend->changeCommands(compositors::display::DisplayChangeKind::Toggle, outputName, m_target)
-    );
+    applyTopologyChange(snapshot, m_backend->applyCommands(m_target));
     notifyStateChanged();
   }
 
@@ -457,7 +504,7 @@ namespace settings::display {
 
     const auto snapshot =
         m_pendingSnapshot.has_value() ? m_pendingSnapshot : std::optional<TargetMap>(currentSnapshot());
-    const auto commands = m_backend->changeCommands(compositors::display::DisplayChangeKind::Positions, {}, m_target);
+    const auto commands = m_backend->positionsCommands(m_target);
     enqueueAll(commands, snapshot);
     if (backendKind() == "hyprland" || backendKind() == "wlroots") {
       enqueue(compositors::display::DisplayCommand{{}, 250}, std::nullopt);
