@@ -60,10 +60,8 @@ public:
   ModemManagerService& operator=(const ModemManagerService&) = delete;
 
   void setChangeCallback(ChangeCallback callback);
-  void refresh();
 
   [[nodiscard]] const std::vector<CellularModemInfo>& modems() const noexcept { return m_modems; }
-  [[nodiscard]] bool hasStateSnapshot() const noexcept { return m_hasStateSnapshot; }
 
   // The modem that best represents the device right now: a connected one if any,
   // otherwise the first enabled one, otherwise the first modem at all.
@@ -77,10 +75,11 @@ private:
   struct Impl;
   friend struct Impl;
 
+  // Re-reads the whole modem set from the daemon's ObjectManager.
+  void refresh();
   void emitChanged();
 
   std::unique_ptr<Impl> m_impl;
   std::vector<CellularModemInfo> m_modems;
-  bool m_hasStateSnapshot = false;
   ChangeCallback m_changeCallback;
 };

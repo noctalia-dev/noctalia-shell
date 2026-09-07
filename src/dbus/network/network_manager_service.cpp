@@ -104,7 +104,7 @@ namespace {
     int pending = 0;
   };
 
-  struct ActiveVpnState {
+  struct ActiveConnectionScan {
     std::set<std::string> activeProfilePaths;    // profiles activating or activated
     std::set<std::string> activatedProfilePaths; // profiles fully activated only
     std::set<std::string> vpnActivePaths;        // active-connection object paths belonging to VPN profiles
@@ -138,7 +138,7 @@ namespace {
     std::function<void(std::vector<std::string>, std::int64_t)> done;
   };
 
-  struct VpnDeactivateLookup {
+  struct DeactivateLookup {
     bool dispatched = false;
     int pending = 0;
   };
@@ -291,7 +291,7 @@ void NetworkManagerService::refresh() {
   };
 
   refreshAccessPoints(onOpComplete);
-  refreshVpnConnections(onOpComplete);
+  refreshVpnAndActiveConnections(onOpComplete);
   refreshSavedConnections(onOpComplete);
 }
 
@@ -691,7 +691,7 @@ bool NetworkManagerService::deactivateConnectionsByProfilePaths(
             return;
           }
 
-          auto lookup = std::make_shared<VpnDeactivateLookup>();
+          auto lookup = std::make_shared<DeactivateLookup>();
           lookup->pending = static_cast<int>(activePaths.size());
 
           auto onLookupComplete = [this, lifetimeToken, lookup, tag]() {
@@ -1291,7 +1291,7 @@ void NetworkManagerService::refreshSavedConnections(std::function<void()> onComp
   }
 }
 
-void NetworkManagerService::refreshVpnConnections(std::function<void()> onComplete) {
+void NetworkManagerService::refreshVpnAndActiveConnections(std::function<void()> onComplete) {
   const std::weak_ptr<int> lifetimeToken = m_lifetimeToken;
   try {
     auto settings =
@@ -1304,7 +1304,7 @@ void NetworkManagerService::refreshVpnConnections(std::function<void()> onComple
             return;
           }
           if (err.has_value()) {
-            kLog.debug("refreshVpnConnections ListConnections failed: {}", err->what());
+            kLog.debug("refreshVpnAndActiveConnections ListConnections failed: {}", err->what());
             onComplete();
             return;
           }
@@ -1348,7 +1348,7 @@ void NetworkManagerService::refreshVpnConnections(std::function<void()> onComple
                     return;
                   }
                   if (activeListErr.has_value()) {
-                    kLog.debug("refreshVpnConnections active list failed: {}", activeListErr->what());
+                    kLog.debug("refreshVpnAndActiveConnections active list failed: {}", activeListErr->what());
                     m_anyVpnConnected = false;
                     m_anyCellularActive = false;
                     reconcileVpnActiveWatchers({});
@@ -1375,7 +1375,7 @@ void NetworkManagerService::refreshVpnConnections(std::function<void()> onComple
                     return;
                   }
 
-                  auto activeState = std::make_shared<ActiveVpnState>();
+                  auto activeState = std::make_shared<ActiveConnectionScan>();
                   activeState->pending = static_cast<int>(activePaths.size());
 
                   auto onActiveComplete = [this, lifetimeToken, vpnState, activeState, finalize]() {
@@ -1526,7 +1526,7 @@ void NetworkManagerService::refreshVpnConnections(std::function<void()> onComple
           }
         });
   } catch (const sdbus::Error& e) {
-    kLog.debug("refreshVpnConnections: {}", e.what());
+    kLog.debug("refreshVpnAndActiveConnections: {}", e.what());
     onComplete();
   }
 }
@@ -2058,23 +2058,26 @@ void NetworkManagerService::resolvePhysicalPrimary(
                           || deviceType == kNmDeviceTypeWifi
                           || deviceType == kNmDeviceTypeModem;
                       if (physical && !activePath.empty() && activePath != "/") {
-                        // Prefer activated over activating, ethernet over wifi over
-                        // cellular. An activated device only counts as the connected
-                        // primary once NM has an established default route; otherwise
-                        // it may be a bridge/bond slave that activates long before
-                        // the link it feeds is usable.
-                        int score = 0;
+                        // Activation tier dominates the device rank, so an activated
+                        // link always outranks an activating one no matter the medium.
+                        // An activated device only counts as the connected primary
+                        // once NM has an established default route; otherwise it may
+                        // be a bridge/bond slave that activates long before the link
+                        // it feeds is usable.
+                        int tier = 0;
                         if (allowActivatedAsPrimary && state == kNmDeviceStateActivated) {
-                          score = 4;
+                          tier = 2;
                         } else if (state >= kNmDeviceStatePrepare && state < kNmDeviceStateActivated) {
-                          score = 2;
+                          tier = 1;
                         }
-                        if (score > 0 && deviceType == kNmDeviceTypeEthernet) {
-                          ++score;
+                        // Ethernet over wifi over cellular.
+                        int deviceRank = 0;
+                        if (deviceType == kNmDeviceTypeEthernet) {
+                          deviceRank = 2;
+                        } else if (deviceType == kNmDeviceTypeWifi) {
+                          deviceRank = 1;
                         }
-                        if (score > 0 && deviceType == kNmDeviceTypeModem) {
-                          --score;
-                        }
+                        const int score = tier > 0 ? (tier * 10) + deviceRank : 0;
                         if (score > scan->score) {
                           scan->score = score;
                           scan->connectionPath = activePath;

@@ -205,12 +205,12 @@ void NetworkWidget::doLayout(Renderer& renderer, float containerWidth, float con
     }
     rootNode->setSize(w, y);
   } else {
-    // Horizontal: vpnGlyph + vpnLabel | networkGlyph + networkLabel
+    // Horizontal: vpnGlyph + vpnLabel | space | networkGlyph + networkLabel
     const float vpnGroupWidth =
         vpnVisible ? m_vpnGlyph->width() + (vpnLabelVisible ? Style::spaceXs + m_vpnLabel->width() : 0.0F) : 0.0F;
     const float networkGroupWidth = icon->width() + (networkLabelVisible ? Style::spaceXs + m_label->width() : 0.0F);
-    const float vpnGap = vpnVisible ? Style::spaceXs : 0.0F;
-    const float totalWidth = vpnGroupWidth + vpnGap + networkGroupWidth;
+    const float gap = vpnVisible ? Style::spaceXs : 0.0F;
+    const float totalWidth = vpnGroupWidth + gap + networkGroupWidth;
     const float h = [&]() {
       float maxH = icon->height();
       if (vpnVisible) {
@@ -233,8 +233,8 @@ void NetworkWidget::doLayout(Renderer& renderer, float containerWidth, float con
         m_vpnLabel->setPosition(x + Style::spaceXs, std::round((h - m_vpnLabel->height()) * 0.5F));
         x += Style::spaceXs + m_vpnLabel->width();
       }
-      x += vpnGap;
     }
+    x += gap;
     icon->setPosition(x, std::round((h - icon->height()) * 0.5F));
     x += icon->width();
     if (networkLabelVisible) {
@@ -367,18 +367,19 @@ std::vector<TooltipRow> NetworkWidget::buildTooltipRows() const {
     return rows;
   }
 
+  // Only an enabled modem earns rows on a non-cellular connection; an idle WWAN
+  // card would otherwise add "Cellular: Off" to every tooltip.
   const CellularModemInfo* modem = m_modem != nullptr ? m_modem->primaryModem() : nullptr;
+  const CellularModemInfo* secondaryModem = (modem != nullptr && modem->enabled()) ? modem : nullptr;
 
   auto appendCellularRows = [&rows](const CellularModemInfo& m) {
     rows.push_back({i18n::tr("bar.widgets.network.cellular"), cellularStateText(m.state)});
     if (!m.operatorName.empty()) {
       rows.push_back({i18n::tr("bar.widgets.network.operator"), m.operatorName});
     }
-    if (m.enabled()) {
-      rows.push_back({i18n::tr("bar.widgets.network.signal"), std::to_string(m.signalQuality) + "%"});
-      if (const char* tech = cellularAccessTechnologyName(m.accessTechnologies); tech[0] != '\0') {
-        rows.push_back({i18n::tr("bar.widgets.network.technology"), tech});
-      }
+    rows.push_back({i18n::tr("bar.widgets.network.signal"), std::to_string(m.signalQuality) + "%"});
+    if (const char* tech = cellularAccessTechnologyName(m.accessTechnologies); tech[0] != '\0') {
+      rows.push_back({i18n::tr("bar.widgets.network.technology"), tech});
     }
   };
 
@@ -454,8 +455,8 @@ std::vector<TooltipRow> NetworkWidget::buildTooltipRows() const {
     if (s.kind == NetworkConnectivity::Wireless) {
       rows.push_back({i18n::tr("bar.widgets.network.networks"), networkCountText(m_network->accessPoints().size())});
     }
-    if (s.kind != NetworkConnectivity::Cellular && modem != nullptr) {
-      appendCellularRows(*modem);
+    if (s.kind != NetworkConnectivity::Cellular && secondaryModem != nullptr) {
+      appendCellularRows(*secondaryModem);
     }
     return rows;
   }
@@ -468,8 +469,8 @@ std::vector<TooltipRow> NetworkWidget::buildTooltipRows() const {
   if (s.wirelessEnabled) {
     rows.push_back({i18n::tr("bar.widgets.network.networks"), networkCountText(m_network->accessPoints().size())});
   }
-  if (modem != nullptr) {
-    appendCellularRows(*modem);
+  if (secondaryModem != nullptr) {
+    appendCellularRows(*secondaryModem);
   }
   if (s.vpnActive) {
     rows.push_back({i18n::tr("bar.widgets.network.vpn"), i18n::tr("bar.widgets.network.active")});

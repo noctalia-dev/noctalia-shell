@@ -76,7 +76,10 @@ public:
 private:
   void refreshAccessPoints(std::function<void()> onComplete);
   void refreshSavedConnections(std::function<void()> onComplete);
-  void refreshVpnConnections(std::function<void()> onComplete);
+  // Rebuilds the VPN profile list and, from one pass over NM's active
+  // connections, the derived flags those profiles share with cellular
+  // (m_anyVpnConnected, m_anyCellularActive).
+  void refreshVpnAndActiveConnections(std::function<void()> onComplete);
   void reconcileVpnActiveWatchers(const std::set<std::string>& activePaths);
   void finishSavedConnections(
       std::vector<std::string>& ssids, std::vector<std::string>& wiredConnectionPaths,

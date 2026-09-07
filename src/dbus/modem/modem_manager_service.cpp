@@ -25,8 +25,9 @@ namespace {
   constexpr auto kDaemonInterface = "org.freedesktop.DBus";
   constexpr auto kModemInterface = "org.freedesktop.ModemManager1.Modem";
   constexpr auto kModem3gppInterface = "org.freedesktop.ModemManager1.Modem.Modem3gpp";
-  constexpr auto kModemSignalInterface = "org.freedesktop.ModemManager1.Modem.Signal";
-  constexpr std::uint32_t kSignalRefreshRateSeconds = 30;
+  // SignalQuality on the base Modem interface is maintained by ModemManager itself.
+  // Modem.Signal (extended RSSI/RSRP dictionaries) is deliberately not set up: its
+  // Setup(rate) polling is global modem state that would outlive the shell.
   constexpr auto kObjectManagerInterface = "org.freedesktop.DBus.ObjectManager";
   constexpr auto kPropertiesInterface = "org.freedesktop.DBus.Properties";
 
@@ -148,22 +149,6 @@ struct ModemManagerService::Impl {
       self.m_modems.push_back(std::move(info));
     }
     ensureModemProxy(path);
-    enableSignalRefresh(path);
-  }
-
-  void enableSignalRefresh(const std::string& path) {
-    auto it = modemProxies.find(path);
-    if (it == modemProxies.end()) {
-      return;
-    }
-    it->second->callMethodAsync("Setup")
-        .onInterface(kModemSignalInterface)
-        .withArguments(kSignalRefreshRateSeconds)
-        .uponReplyInvoke([path](std::optional<sdbus::Error> err) {
-          if (err.has_value()) {
-            kLog.debug("Signal.Setup failed path={}: {}", path, err->what());
-          }
-        });
   }
 
   void onInterfacesAdded(const sdbus::ObjectPath& path, const ObjectInterfaces& interfaces) {
@@ -190,7 +175,6 @@ struct ModemManagerService::Impl {
     if (modem == nullptr) {
       return;
     }
-    const bool wasEnabled = modem->enabled();
     CellularModemInfo updated = *modem;
     if (interfaceName == kModemInterface) {
       mergeModemProps(changed, updated);
@@ -200,9 +184,6 @@ struct ModemManagerService::Impl {
       return;
     }
     if (updated != *modem) {
-      if (!wasEnabled && updated.enabled()) {
-        enableSignalRefresh(objectPath);
-      }
       *modem = std::move(updated);
       self.emitChanged();
     }
@@ -240,7 +221,6 @@ struct ModemManagerService::Impl {
   void detach() {
     root.reset();
     modemProxies.clear();
-    self.m_hasStateSnapshot = false;
     if (!self.m_modems.empty()) {
       self.m_modems.clear();
       self.emitChanged();
@@ -301,7 +281,6 @@ void ModemManagerService::refresh() {
         m_modems.clear();
         m_impl->modemProxies.clear();
         m_impl->seedFromManagedObjects(objects);
-        m_hasStateSnapshot = true;
         emitChanged();
       });
 }
@@ -406,6 +385,7 @@ std::string cellularStateText(CellularModemState state) {
   case CellularModemState::Disabled:
   case CellularModemState::Disabling:
     return i18n::tr("control-center.network.cellular-off");
+  case CellularModemState::Initializing:
   case CellularModemState::Enabling:
     return i18n::tr("control-center.network.cellular-enabling");
   case CellularModemState::Enabled:
@@ -424,7 +404,6 @@ std::string cellularStateText(CellularModemState state) {
   case CellularModemState::Failed:
     return i18n::tr("control-center.network.cellular-failed");
   case CellularModemState::Unknown:
-  case CellularModemState::Initializing:
     return i18n::tr("control-center.network.cellular-no-service");
   }
   return i18n::tr("control-center.network.cellular-no-service");

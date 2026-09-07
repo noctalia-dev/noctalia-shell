@@ -457,7 +457,7 @@ namespace {
 } // namespace
 
 // Informational modem row: signal glyph, operator/modem name, and live status
-// detail. No actions of its own — the card header carries the enable toggle.
+// detail. It has no actions of its own; the card header carries the enable toggle.
 class CellularRow : public Flex {
 public:
   CellularRow(float scale, CellularModemInfo modem) : m_modem(std::move(modem)) {
@@ -485,7 +485,7 @@ public:
             .text = cellularTitleFor(m_modem),
             .fontSize = Style::fontSizeBody * scale,
             .color = colorSpecFromRole(ColorRole::OnSurface),
-            .flexGrow = 1.0f,
+            .flexGrow = 1.0F,
         })
     );
 
@@ -739,6 +739,8 @@ void NetworkTab::onClose() {
   m_disconnectButton = nullptr;
   m_cellularToggle = nullptr;
   m_cellularRows.clear();
+  m_cellularTogglePending = false;
+  m_cellularTogglePendingTimer.stop();
   m_apRows.clear();
   m_lastStructureKey.clear();
   m_lastListWidth = -1.0F;
@@ -1170,30 +1172,10 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
       cellularHeader->addChild(
           ui::toggle({
               .out = &m_cellularToggle,
-              .checkedImmediate = cellularToggleChecked(),
+              .checkedImmediate = cellularToggleDisplayChecked(),
               .toggleSize = ToggleSize::Medium,
               .scale = scale,
-              .onChange = [this](bool checked) {
-                const bool nmCellular = m_network != nullptr && m_network->canActivateCellularConnection();
-                if (checked) {
-                  // GNOME parity: powering the modem is a prerequisite; the gsm
-                  // connection is what actually brings up mobile data.
-                  if (m_modem != nullptr) {
-                    m_modem->setAllModemsEnabled(true);
-                  }
-                  if (nmCellular) {
-                    m_network->activateCellularConnection();
-                  }
-                } else {
-                  // Data off, modem stays registered — like GNOME's mobile-data
-                  // switch. Without an NM gsm profile, fall back to modem power.
-                  if (nmCellular) {
-                    m_network->deactivateCellularConnection();
-                  } else if (m_modem != nullptr) {
-                    m_modem->setAllModemsEnabled(false);
-                  }
-                }
-              },
+              .onChange = [this](bool checked) { requestCellularEnabled(checked); },
           })
       );
       cellularCard->addChild(std::move(cellularHeader));
@@ -1279,6 +1261,17 @@ bool NetworkTab::syncCellularCard() {
   if (m_modem == nullptr) {
     return false;
   }
+  if (m_cellularTogglePending) {
+    // Bringing mobile data up walks Enabling -> Searching -> Registered ->
+    // Connecting, so the requested position is held instead of snapping back
+    // while the modem works. Give up once it lands or the request times out.
+    const bool reached = cellularToggleChecked() == m_cellularToggleTarget;
+    const bool timedOut = std::chrono::steady_clock::now() - m_cellularTogglePendingSince > kCellularPendingTimeout;
+    if (reached || timedOut) {
+      m_cellularTogglePending = false;
+      m_cellularTogglePendingTimer.stop();
+    }
+  }
   const auto& modems = m_modem->modems();
   bool changed = false;
   const std::size_t count = std::min(m_cellularRows.size(), modems.size());
@@ -1288,7 +1281,7 @@ bool NetworkTab::syncCellularCard() {
     }
   }
   if (m_cellularToggle != nullptr) {
-    m_cellularToggle->setChecked(cellularToggleChecked());
+    m_cellularToggle->setChecked(cellularToggleDisplayChecked());
   }
   return changed;
 }
@@ -1301,6 +1294,42 @@ bool NetworkTab::cellularToggleChecked() const {
     return std::ranges::any_of(m_modem->modems(), [](const CellularModemInfo& modem) { return modem.enabled(); });
   }
   return false;
+}
+
+// The requested position while a toggle request is in flight, the observed one
+// otherwise.
+bool NetworkTab::cellularToggleDisplayChecked() const {
+  return m_cellularTogglePending ? m_cellularToggleTarget : cellularToggleChecked();
+}
+
+void NetworkTab::requestCellularEnabled(bool enabled) {
+  const bool nmCellular = m_network != nullptr && m_network->canActivateCellularConnection();
+  if (enabled) {
+    // GNOME parity: powering the modem is a prerequisite; the gsm connection is
+    // what actually brings up mobile data.
+    if (m_modem != nullptr) {
+      m_modem->setAllModemsEnabled(true);
+    }
+    if (nmCellular) {
+      m_network->activateCellularConnection();
+    }
+  } else {
+    // Data off while the modem stays registered, like GNOME's mobile-data
+    // switch. Without an NM gsm profile there is only modem power to cut.
+    if (nmCellular) {
+      m_network->deactivateCellularConnection();
+    } else if (m_modem != nullptr) {
+      m_modem->setAllModemsEnabled(false);
+    }
+  }
+  m_cellularTogglePending = true;
+  m_cellularToggleTarget = enabled;
+  m_cellularTogglePendingSince = std::chrono::steady_clock::now();
+  // Nothing else wakes the panel if the request never changes any state.
+  m_cellularTogglePendingTimer.start(kCellularPendingTimeout + std::chrono::milliseconds(50), []() {
+    PanelManager::instance().requestUpdateOnly();
+    PanelManager::instance().requestRedraw();
+  });
 }
 
 void NetworkTab::onPanelCardOpacityChanged(float opacity) {

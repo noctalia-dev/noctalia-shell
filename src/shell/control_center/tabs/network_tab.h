@@ -55,6 +55,8 @@ private:
   // GNOME-style mobile-data semantics when the network backend owns a saved gsm
   // connection (toggle reflects cellularActive); otherwise raw modem power.
   [[nodiscard]] bool cellularToggleChecked() const;
+  [[nodiscard]] bool cellularToggleDisplayChecked() const;
+  void requestCellularEnabled(bool enabled);
   void syncPasswordCard();
   void showPasswordPrompt(const NetworkSecretAgent::SecretRequest& request);
   void showPasswordPrompt(const AccessPointInfo& ap);
@@ -113,7 +115,16 @@ private:
   bool m_wifiToggleTargetObserved = false;
   std::uint64_t m_wifiToggleRequestGeneration = 0;
 
+  // A cellular request is only observable once ModemManager and NM have walked
+  // the modem through enable/registration, so the switch shows the requested
+  // position until then. It stays clickable: a second click just retargets.
+  bool m_cellularTogglePending = false;
+  bool m_cellularToggleTarget = false;
+  std::chrono::steady_clock::time_point m_cellularTogglePendingSince;
+
   Timer m_actionPendingTimer;
+  Timer m_cellularTogglePendingTimer;
 
   static constexpr std::chrono::seconds kActionPendingTimeout = std::chrono::seconds(6);
+  static constexpr std::chrono::seconds kCellularPendingTimeout = std::chrono::seconds(25);
 };
