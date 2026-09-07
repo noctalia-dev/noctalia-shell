@@ -1,3 +1,4 @@
+#include "util/string_utils.h"
 #include "shell/control_center/tabs/home_tab.h"
 
 #include "config/config_service.h"
@@ -417,7 +418,7 @@ std::unique_ptr<Flex> HomeTab::create() {
           })
       ),
       ui::column(
-          {.out = &m_mediaText, .align = FlexAlign::Stretch, .gap = Style::spaceXs * 0.5F * scale, .flexGrow = 1.0F},
+          {.out = &m_mediaText, .align = FlexAlign::Stretch, .gap = Style::spaceXs * 0.5F * scale, .fillWidth = true, .flexGrow = 0.0F},
           ui::label({
               .out = &m_mediaTrack,
               .text = "...",
@@ -1510,10 +1511,21 @@ void HomeTab::sync(Renderer& renderer) {
         m_loadedMediaArtUrl.clear();
         PanelManager::instance().requestLayout();
       } else {
-        const std::string trackText =
-            active->title.empty() ? i18n::tr("control-center.home.media.unknown-track") : active->title;
         const std::string artists = mpris::joinArtists(active->artists);
-        const std::string artistText = artists.empty() ? i18n::tr("control-center.home.media.unknown-artist") : artists;
+        const auto truncateMediaText = [](const std::string& text) {
+          constexpr std::size_t kMaxChars = 20;
+          if (StringUtils::truncateUtf8CodePoints(text, kMaxChars).size() == text.size()) {
+            return text;
+          }
+          return StringUtils::truncateUtf8CodePoints(text, kMaxChars) + "...";
+        };
+
+        const std::string trackText = active->title.empty()
+            ? i18n::tr("control-center.home.media.unknown-track")
+            : truncateMediaText(active->title);
+        const std::string artistText = artists.empty()
+            ? i18n::tr("control-center.home.media.unknown-artist")
+            : truncateMediaText(artists);
         if (m_mediaTrack->text() != trackText || m_mediaArtist->text() != artistText) {
           m_mediaTrack->setText(trackText);
           m_mediaArtist->setText(artistText);
@@ -1594,24 +1606,13 @@ void HomeTab::sync(Renderer& renderer) {
             PanelManager::instance().requestLayout();
           }
         }
-        std::string statusText;
-        if (active->playbackStatus == "Playing") {
-          statusText = i18n::tr("control-center.home.media.playing");
-          m_mediaStatus->setColor(colorSpecFromRole(ColorRole::Primary));
-        } else if (active->playbackStatus == "Paused") {
-          statusText = i18n::tr("control-center.home.media.paused");
-          m_mediaStatus->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-        } else {
-          statusText = active->playbackStatus;
-          m_mediaStatus->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-        }
-        if (!progressText.empty()) {
-          statusText = std::format("{} · {}", statusText, progressText);
-        }
+        std::string statusText = progressText;
+        m_mediaStatus->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
         if (m_mediaStatus->text() != statusText) {
           m_mediaStatus->setText(statusText);
           PanelManager::instance().requestLayout();
         }
+        m_mediaStatus->setVisible(!progressText.empty());
       }
     }
   }
