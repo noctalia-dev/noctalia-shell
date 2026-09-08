@@ -225,9 +225,6 @@ void FingerprintAuthenticator::startVerify(bool isRetry) {
           // the async reply handler, so defer the reset until after it returns.
           if (!m_reclaimAttempted && m_active && !m_sleeping && !m_abort && isRecoverableVerifyStartError(*e)) {
             m_reclaimAttempted = true;
-            // Reset the device from the timer callback, not here: destroying the
-            // sdbus proxy while still inside its async reply handler corrupts the
-            // callback context and causes a crash on the very next line.
             m_retryTimer.start(kRetryDelay, [this]() {
               m_device.reset();
               startVerify(false);
