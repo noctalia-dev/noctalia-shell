@@ -44,9 +44,9 @@ namespace capture {
     std::array<AnnotationColor, kAnnotationToolCount> color{};
     std::array<double, kAnnotationToolCount> width{};
     bool fill = false;
-    // Fine size stepper revealed, and the toolbar's dragged spot; both survive across runs.
+    // Fine size stepper revealed, and each output's dragged toolbar spot; both survive across runs.
     bool advancedSize = false;
-    std::optional<AnnotationPoint> toolbarPosition;
+    std::unordered_map<std::string, AnnotationPoint> toolbarPositions;
   };
 
   [[nodiscard]] AnnotationToolState defaultAnnotationToolState();
@@ -105,6 +105,7 @@ namespace capture {
     [[nodiscard]] std::unique_ptr<Flex> buildToolbar(Instance& instance);
     void refreshToolbar(Instance& instance, Renderer* renderer);
     void positionToolbar(Instance& instance);
+    void syncToolbarPositionsForConnectedOutputs();
     void beginToolbarDrag(Instance& instance);
     void dragToolbarTo(double surfaceX, double surfaceY);
     [[nodiscard]] std::size_t nearestSizePreset(AnnotationTool tool) const;
@@ -193,9 +194,9 @@ namespace capture {
     double m_pointerX = 0.0;
     double m_pointerY = 0.0;
 
-    // Toolbar placement (surface-logical top-left) once dragged; unset keeps the centered default.
-    std::optional<AnnotationPoint> m_toolbarPosition;
-    bool m_toolbarDragging = false;
+    // Runtime positions use wl_output identity so unnamed outputs remain independent while active.
+    std::unordered_map<wl_output*, AnnotationPoint> m_toolbarPositions;
+    Instance* m_toolbarDragInstance = nullptr;
     float m_toolbarGrabX = 0.0F;
     float m_toolbarGrabY = 0.0F;
     bool m_advancedSize = false;

@@ -35,6 +35,7 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <nlohmann/json.hpp>
 #include <stb/stb_image_resize2.h>
 #include <sys/wait.h>
 #include <thread>
@@ -1126,15 +1127,32 @@ capture::AnnotationToolState ScreenshotService::loadAnnotationToolState() const 
   if (const auto advanced = m_configService.stateString(kAnnotateStateOwner, "advanced_size"); advanced.has_value()) {
     state.advancedSize = *advanced == "1";
   }
-  {
-    const auto x = m_configService.stateString(kAnnotateStateOwner, "toolbar_x");
-    const auto y = m_configService.stateString(kAnnotateStateOwner, "toolbar_y");
-    if (x.has_value() && y.has_value()) {
-      const auto parsedX = parseDouble(*x);
-      const auto parsedY = parseDouble(*y);
-      if (parsedX.has_value() && parsedY.has_value()) {
-        state.toolbarPosition = capture::AnnotationPoint{.x = *parsedX, .y = *parsedY};
+  if (const auto encoded = m_configService.stateString(kAnnotateStateOwner, "toolbar_positions"); encoded.has_value()) {
+    const nlohmann::json positions = nlohmann::json::parse(*encoded, nullptr, false);
+    bool invalid = !positions.is_object();
+    if (positions.is_object()) {
+      for (const auto& [outputName, position] : positions.items()) {
+        if (outputName.empty() || !position.is_object()) {
+          invalid = true;
+          continue;
+        }
+        const auto x = position.find("x");
+        const auto y = position.find("y");
+        if (x == position.end() || y == position.end() || !x->is_number() || !y->is_number()) {
+          invalid = true;
+          continue;
+        }
+        const double parsedX = x->get<double>();
+        const double parsedY = y->get<double>();
+        if (!std::isfinite(parsedX) || !std::isfinite(parsedY)) {
+          invalid = true;
+          continue;
+        }
+        state.toolbarPositions.insert_or_assign(outputName, capture::AnnotationPoint{.x = parsedX, .y = parsedY});
       }
+    }
+    if (invalid) {
+      kLog.warn("invalid annotation toolbar position state");
     }
   }
   for (std::size_t i = 0; i < capture::kAnnotationToolCount; ++i) {

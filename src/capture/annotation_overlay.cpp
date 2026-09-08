@@ -38,6 +38,7 @@
 #include <format>
 #include <limits>
 #include <linux/input-event-codes.h>
+#include <nlohmann/json.hpp>
 #include <utility>
 
 namespace capture {
@@ -365,7 +366,7 @@ namespace capture {
       m_tools.width[i] = std::clamp(m_tools.width[i], floorWidth, limit);
     }
     m_advancedSize = state.advancedSize;
-    m_toolbarPosition = state.toolbarPosition;
+    m_toolbarPositions.clear();
     for (auto& inst : m_instances) {
       if (inst != nullptr) {
         positionToolbar(*inst);
@@ -479,6 +480,10 @@ namespace capture {
     if (!m_active) {
       return;
     }
+    syncToolbarPositionsForConnectedOutputs();
+    std::erase_if(m_toolbarPositions, [this](const auto& entry) {
+      return findOutput(*m_wayland, entry.first) == nullptr;
+    });
     if (m_mode == AnnotationMode::Image) {
       if (findOutput(*m_wayland, m_imageOutput) == nullptr) {
         DeferredCall::callLater([this]() { cancel(); });
@@ -608,7 +613,7 @@ namespace capture {
     m_textInstance = nullptr;
     m_textIndex.reset();
     m_moveIndex.reset();
-    m_toolbarDragging = false;
+    m_toolbarDragInstance = nullptr;
     m_cropDragging = false;
     clearBlurCache();
   }
@@ -956,7 +961,7 @@ namespace capture {
           );
         }
         TooltipManager::instance().onHoverChange(
-            m_toolbarDragging ? nullptr : next, instPtr->surface->layerSurface(), instPtr->output
+            m_toolbarDragInstance != nullptr ? nullptr : next, instPtr->surface->layerSurface(), instPtr->output
         );
       }
     });
@@ -1092,10 +1097,17 @@ namespace capture {
     inst.dragHandle->setOnPress([this, instPtr](float /*localX*/, float /*localY*/, bool pressed) {
       if (pressed) {
         beginToolbarDrag(*instPtr);
-      } else {
-        m_toolbarDragging = false;
+      } else if (m_toolbarDragInstance == instPtr) {
+        m_toolbarDragInstance = nullptr;
       }
     });
+    if (InputArea* dragArea = inst.dragHandle->inputArea(); dragArea != nullptr) {
+      dragArea->setOnCancel([this, instPtr]() {
+        if (m_toolbarDragInstance == instPtr) {
+          m_toolbarDragInstance = nullptr;
+        }
+      });
+    }
     addSeparator();
 
     inst.undoButton = addGhostButton("arrow-back-up", "bar.annotate.undo", [this]() { undo(); });
@@ -1363,8 +1375,8 @@ namespace capture {
     requestRedrawAll();
   }
 
-  // Default placement is centered under the top edge; a dragged toolbar keeps its own spot,
-  // clamped so it stays reachable when the output resizes or a smaller monitor takes over.
+  // Default placement is centered under the top edge. Each output keeps its own dragged spot,
+  // clamped so it stays reachable when that output resizes.
   void AnnotationOverlay::positionToolbar(Instance& inst) {
     if (inst.toolbar == nullptr || inst.surface == nullptr) {
       return;
@@ -1376,13 +1388,43 @@ namespace capture {
     const float maxX = std::max(kToolbarEdgeMargin, surfaceW - width - kToolbarEdgeMargin);
     const float maxY = std::max(kToolbarEdgeMargin, surfaceH - height - kToolbarEdgeMargin);
 
+    const WaylandOutput* output = m_wayland != nullptr ? findOutput(*m_wayland, inst.output) : nullptr;
+    auto positionIt = m_toolbarPositions.find(inst.output);
+    if (positionIt == m_toolbarPositions.end() && output != nullptr && !output->connectorName.empty()) {
+      const auto savedIt = m_tools.toolbarPositions.find(output->connectorName);
+      if (savedIt != m_tools.toolbarPositions.end()) {
+        positionIt = m_toolbarPositions.emplace(inst.output, savedIt->second).first;
+      }
+    }
+
     float x = std::max(Style::spaceMd, (surfaceW - width) * 0.5F);
     float y = Style::spaceMd;
-    if (m_toolbarPosition.has_value()) {
-      x = static_cast<float>(m_toolbarPosition->x);
-      y = static_cast<float>(m_toolbarPosition->y);
+    if (positionIt != m_toolbarPositions.end()) {
+      x = static_cast<float>(positionIt->second.x);
+      y = static_cast<float>(positionIt->second.y);
     }
-    inst.toolbar->setPosition(std::clamp(x, kToolbarEdgeMargin, maxX), std::clamp(y, kToolbarEdgeMargin, maxY));
+    x = std::clamp(x, kToolbarEdgeMargin, maxX);
+    y = std::clamp(y, kToolbarEdgeMargin, maxY);
+    inst.toolbar->setPosition(x, y);
+
+    if (positionIt != m_toolbarPositions.end()) {
+      positionIt->second = AnnotationPoint{.x = static_cast<double>(x), .y = static_cast<double>(y)};
+      if (output != nullptr && !output->connectorName.empty()) {
+        m_tools.toolbarPositions.insert_or_assign(output->connectorName, positionIt->second);
+      }
+    }
+  }
+
+  void AnnotationOverlay::syncToolbarPositionsForConnectedOutputs() {
+    if (m_wayland == nullptr) {
+      return;
+    }
+    for (const auto& [outputHandle, position] : m_toolbarPositions) {
+      const WaylandOutput* output = findOutput(*m_wayland, outputHandle);
+      if (output != nullptr && !output->connectorName.empty()) {
+        m_tools.toolbarPositions.insert_or_assign(output->connectorName, position);
+      }
+    }
   }
 
   // The grab is anchored in surface coordinates rather than as a delta inside the handle,
@@ -1391,23 +1433,28 @@ namespace capture {
     if (inst.toolbar == nullptr) {
       return;
     }
-    m_toolbarDragging = true;
+    m_toolbarDragInstance = &inst;
     TooltipManager::instance().forceDestroy();
     m_toolbarGrabX = static_cast<float>(m_pointerX) - inst.toolbar->x();
     m_toolbarGrabY = static_cast<float>(m_pointerY) - inst.toolbar->y();
   }
 
   void AnnotationOverlay::dragToolbarTo(double surfaceX, double surfaceY) {
-    m_toolbarPosition = AnnotationPoint{
-        .x = surfaceX - static_cast<double>(m_toolbarGrabX),
-        .y = surfaceY - static_cast<double>(m_toolbarGrabY),
-    };
-    for (auto& instance : m_instances) {
-      if (instance != nullptr) {
-        positionToolbar(*instance);
-      }
+    if (m_toolbarDragInstance == nullptr) {
+      return;
     }
-    requestRedrawAll();
+    Instance& inst = *m_toolbarDragInstance;
+    m_toolbarPositions.insert_or_assign(
+        inst.output,
+        AnnotationPoint{
+            .x = surfaceX - static_cast<double>(m_toolbarGrabX),
+            .y = surfaceY - static_cast<double>(m_toolbarGrabY),
+        }
+    );
+    positionToolbar(inst);
+    if (inst.surface != nullptr) {
+      inst.surface->requestRedraw();
+    }
   }
 
   void AnnotationOverlay::markCommittedDirty(Instance& inst, const AnnotationRect& logicalBounds) {
@@ -1690,7 +1737,7 @@ namespace capture {
         target->pointerInside = true;
       }
       if (onTarget || target->pointerInside) {
-        if (m_toolbarDragging) {
+        if (m_toolbarDragInstance != nullptr) {
           dragToolbarTo(event.sx, event.sy);
           return true;
         }
@@ -2399,10 +2446,12 @@ namespace capture {
     m_stateSetter("tool", annotationToolName(m_tools.tool));
     m_stateSetter("fill", m_tools.fill ? "1" : "0");
     m_stateSetter("advanced_size", m_advancedSize ? "1" : "0");
-    if (m_toolbarPosition.has_value()) {
-      m_stateSetter("toolbar_x", std::format("{}", m_toolbarPosition->x));
-      m_stateSetter("toolbar_y", std::format("{}", m_toolbarPosition->y));
+    syncToolbarPositionsForConnectedOutputs();
+    nlohmann::json toolbarPositions = nlohmann::json::object();
+    for (const auto& [outputName, position] : m_tools.toolbarPositions) {
+      toolbarPositions[outputName] = {{"x", position.x}, {"y", position.y}};
     }
+    m_stateSetter("toolbar_positions", toolbarPositions.dump());
     for (std::size_t i = 0; i < kAnnotationToolCount; ++i) {
       const std::string name(annotationToolName(static_cast<AnnotationTool>(i)));
       m_stateSetter(std::format("width_{}", name), std::format("{}", m_tools.width[i]));
