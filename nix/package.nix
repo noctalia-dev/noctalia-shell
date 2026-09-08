@@ -52,19 +52,21 @@ let
   inherit (builtins) head match readFile;
   version = head (match ".*version: '([0-9][^']+)'.*" (readFile ../meson.build));
 
+  # libprojectm 4.x links against desktop GL by default, but noctalia runs
+  # projectM on its own EGL/GLES share group, so the library has to be built
+  # for the same profile. ENABLE_GLES only changes the compiled code; the
+  # generated pkg-config file still says "Requires: opengl".
   libprojectm-gles = libprojectm.overrideAttrs (old: {
     pname = "libprojectm-gles";
     cmakeFlags = (old.cmakeFlags or [ ]) ++ [
       "-DENABLE_GLES=ON"
     ];
-    buildInputs = (old.buildInputs or [ ]) ++ [ libglvnd ];
+    # Upstream emits "-l:projectM-4" (GCC exact-filename syntax) whose literal
+    # filename does not exist — the real library is "libprojectM-4.so" — so
+    # the linker cannot resolve it. Rewrite to the conventional "-lprojectM-4".
     postFixup = (old.postFixup or "") + ''
       for pc in "$out"/lib/pkgconfig/projectM-4*.pc; do
         sed -i 's/-l:projectM-4/-lprojectM-4/g' "$pc"
-        # pkg-config is case-sensitive; meson lower-cases dependency names
-        # when caching lookups. Provide a lowercase symlink alongside the
-        # canonical capital-M name so dependency('projectM-4') resolves.
-        ln -sf "$(basename "$pc")" "$(dirname "$pc")/$(basename "$pc" | tr '[:upper:]' '[:lower:]')"
       done
     '';
   });
