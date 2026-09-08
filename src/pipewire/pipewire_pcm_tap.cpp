@@ -22,17 +22,11 @@ namespace {
 
   constexpr Logger kLog{"pipewire_pcm_tap"};
 
-  // Microphone automatic gain control — ported from the livepaper-v5 prototype.
-  // Sink-monitor capture already arrives at program level, but a mic tapping
-  // ambient room sound peaks far below full scale; without makeup gain
-  // libprojectM's beat/FFT analysis barely moves. A peak envelope tracks the
-  // input with a fast attack and slow release, and makeup gain aims it at a
-  // target peak. Applied to source (mic/line-in) captures only.
   constexpr float kAgcTargetPeak = 0.6f;       // makeup gain aims the envelope here
-  constexpr float kAgcMaxGain = 40.0f;         // ceiling — keeps a near-silent room from blowing up
+  constexpr float kAgcMaxGain = 40.0f;         // ceiling - keeps a near-silent room from blowing up
   constexpr float kAgcAttack = 0.5f;           // per-chunk: envelope rises fast toward a louder peak
   constexpr float kAgcRelease = 0.002f;        // per-chunk: envelope decays slowly so gain does not pump
-  constexpr float kAgcFloor = 0.001f;          // envelope lower bound — caps the computed gain
+  constexpr float kAgcFloor = 0.001f;          // envelope lower bound - caps the computed gain
   constexpr float kAgcInitialEnvelope = 0.01f; // envelope seed on each (re)bind
 
   class BufferRequeueGuard {
@@ -100,23 +94,17 @@ bool PipeWirePcmTap::Stream::start() {
     return false;
   }
 
-  // For Audio/Sink targets we capture the sink's monitor side (the
-  // PW_KEY_STREAM_CAPTURE_SINK hint + Monitor category) and stay passive, so
-  // tapping a sink never wakes it from idle. For Audio/Source targets (the mic
-  // fallback) those monitor hints would point PipeWire at a non-existent
-  // monitor port — use a plain Capture category — and the stream is
-  // deliberately NOT passive: it must activate the source, otherwise the tap
-  // would only ever see silence and the fallback would be pointless.
   auto* props = m_targetIsSink
-                    ? pw_properties_new(PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY, "Monitor",
-                                        PW_KEY_MEDIA_NAME, "Noctalia LivePaper", PW_KEY_APP_NAME,
-                                        "Noctalia LivePaper", PW_KEY_STREAM_MONITOR, "true",
-                                        PW_KEY_STREAM_CAPTURE_SINK, "true", PW_KEY_TARGET_OBJECT,
-                                        m_targetObject.c_str(), PW_KEY_NODE_PASSIVE, "true", nullptr)
-                    : pw_properties_new(PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY, "Capture",
-                                        PW_KEY_MEDIA_ROLE, "DSP", PW_KEY_MEDIA_NAME, "Noctalia LivePaper",
-                                        PW_KEY_APP_NAME, "Noctalia LivePaper", PW_KEY_TARGET_OBJECT,
-                                        m_targetObject.c_str(), nullptr);
+      ? pw_properties_new(
+            PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY, "Monitor", PW_KEY_MEDIA_NAME, "Noctalia LivePaper",
+            PW_KEY_APP_NAME, "Noctalia LivePaper", PW_KEY_STREAM_MONITOR, "true", PW_KEY_STREAM_CAPTURE_SINK, "true",
+            PW_KEY_TARGET_OBJECT, m_targetObject.c_str(), PW_KEY_NODE_PASSIVE, "true", nullptr
+        )
+      : pw_properties_new(
+            PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY, "Capture", PW_KEY_MEDIA_ROLE, "DSP", PW_KEY_MEDIA_NAME,
+            "Noctalia LivePaper", PW_KEY_APP_NAME, "Noctalia LivePaper", PW_KEY_TARGET_OBJECT, m_targetObject.c_str(),
+            nullptr
+        );
   if (props == nullptr) {
     kLog.warn("failed to create pcm-tap stream properties");
     return false;
@@ -164,8 +152,9 @@ void PipeWirePcmTap::Stream::onParamChanged(void* data, std::uint32_t id, const 
   static_cast<Stream*>(data)->handleParamChanged(id, param);
 }
 
-void PipeWirePcmTap::Stream::onStateChanged(void* data, pw_stream_state /*oldState*/, pw_stream_state state,
-                                            const char* error) {
+void PipeWirePcmTap::Stream::onStateChanged(
+    void* data, pw_stream_state /*oldState*/, pw_stream_state state, const char* error
+) {
   auto* self = static_cast<Stream*>(data);
   if (state == PW_STREAM_STATE_ERROR) {
     kLog.warn("pcm-tap stream error: {}", error != nullptr ? error : "unknown");
@@ -248,9 +237,6 @@ PipeWirePcmTap::PipeWirePcmTap(PipeWireService& service, PipeWireSpectrum* spect
 }
 
 PipeWirePcmTap::~PipeWirePcmTap() {
-  // Drop the spectrum listener before our members go — its callback captures
-  // `this`. Application destroys the tap before the spectrum (declaration
-  // order), so the spectrum is still alive here.
   if (m_spectrum != nullptr && m_spectrumListener != 0) {
     m_spectrum->removeChangeListener(m_spectrumListener);
   }
@@ -294,15 +280,6 @@ void PipeWirePcmTap::setMicFallbackAllowed(bool allowed) {
 }
 
 void PipeWirePcmTap::updateSpectrumSubscription() {
-  // Follow mode keys off PipeWireSpectrum::idle() — the same signal that shows
-  // or hides the bar's audio-visualizer widget. Holding a listener keeps the
-  // spectrum analysing the default sink even when no widget is on the bar, and
-  // delivers the idle/active transitions that drive our rebind. An explicit
-  // target needs no spectrum.
-  //
-  // bandCount=1 because we never call values() — only the change-callback
-  // signal matters here. Asking for the smallest meaningful number keeps the
-  // spectrum from allocating an 8-band FFT output it'll never read.
   const bool wantSubscription = m_started && m_explicitTarget.empty() && m_spectrum != nullptr;
   if (wantSubscription && m_spectrumListener == 0) {
     m_spectrumListener = m_spectrum->addChangeListener(1, [this]() { handleAudioStateChanged(); });
@@ -313,11 +290,6 @@ void PipeWirePcmTap::updateSpectrumSubscription() {
 }
 
 void PipeWirePcmTap::handleAudioStateChanged() {
-  // Rebind whenever the resolved target changes. m_started — not the bound
-  // state — is the gate: a tap that was start()ed while no audio device
-  // existed yet has {m_stream==null, m_boundNodeId==0}, which is otherwise
-  // indistinguishable from "never started" and would never pick up a sink or
-  // mic that appears later.
   if (!m_started) {
     return;
   }
@@ -344,26 +316,14 @@ const AudioNode* PipeWirePcmTap::resolvedTargetNode() const noexcept {
     }
     return nullptr;
   }
-  // Follow mode (no explicit target): mirror the bar's audio-visualizer
-  // widget. While the spectrum reports audio — i.e. the widget is visible —
-  // tap exactly the node it analyses, so the projectM visualizer reacts to the
-  // same sound the widget shows. Once the spectrum goes idle (~1 s of silence,
-  // widget hidden) we OPTIONALLY fall back to the default source (mic) so the
-  // visualizer keeps reacting to ambient sound — gated on
-  // m_micFallbackAllowed because opening the user's mic is a privacy
-  // decision they must opt into.
-  //
-  // NOTE: the returned AudioNode* is borrowed from PipeWireService::state(),
-  // which is reassigned on every state publish. Caller must extract any
-  // string/id fields synchronously before the next pw_loop pump.
   if (m_spectrum != nullptr && !m_spectrum->idle()) {
     if (const AudioNode* node = m_spectrum->resolvedTargetNode(); node != nullptr) {
       return node;
     }
   }
   if (m_micFallbackAllowed && state.defaultSourceId != 0) {
-    auto source = std::ranges::find_if(
-        state.sources, [id = state.defaultSourceId](const AudioNode& n) { return n.id == id; });
+    auto source =
+        std::ranges::find_if(state.sources, [id = state.defaultSourceId](const AudioNode& n) { return n.id == id; });
     if (source != state.sources.end()) {
       return &*source;
     }
@@ -383,12 +343,6 @@ void PipeWirePcmTap::rebuildStream() {
     return;
   }
   const bool targetIsSink = node->mediaClass == "Audio/Sink";
-  // AGC runs for both mic captures and sink monitors so projectM sees a
-  // consistent signal level regardless of source volume. We're on the (single)
-  // pw_loop thread, m_stream.reset() above drained any in-flight on_process,
-  // and the new Stream below has not started yet — so feedSamples cannot be
-  // running concurrently with this write. Seed the envelope fresh for the new
-  // source. (See the threading note in the header for the wider picture.)
   m_agcActive = true;
   m_agcEnvelope = kAgcInitialEnvelope;
   m_stream = std::make_unique<Stream>(*this, node->id, node->name, targetIsSink);
@@ -402,21 +356,6 @@ void PipeWirePcmTap::rebuildStream() {
 }
 
 void PipeWirePcmTap::resetRing(int channels, int sampleRate) {
-  // Channel count is the publication gate: consume() acquires it FIRST, then
-  // reads the indices. So we MUST land the new indices before re-publishing a
-  // non-zero channel count, otherwise a consumer can observe (channels > 0,
-  // writeFrames == 0, readFrames stale) and compute available = 0 - stale, get
-  // a size_t wrap, snap to kRingFrames, and serve kRingFrames worth of
-  // zero/garbage data.
-  //
-  // Order:
-  //   1. Drop channels to 0 (release) → any concurrent consume() that next
-  //      loads channels with acquire sees 0 and bails.
-  //   2. Reset indices with relaxed stores (no consumer is going to read past
-  //      step 1 until we re-publish channels).
-  //   3. Publish sampleRate (informational; not on the consume() path).
-  //   4. Re-publish channels (release) — pairs with consume()'s acquire and
-  //      is the single linearization point for "the new format is live".
   m_channels.store(0, std::memory_order_release);
   m_writeFrames.store(0, std::memory_order_relaxed);
   m_readFrames.store(0, std::memory_order_relaxed);
