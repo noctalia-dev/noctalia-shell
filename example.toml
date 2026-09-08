@@ -131,29 +131,18 @@ order                      = "random" # random | alphabetical
 recursive                  = true    # include subdirectories when picking random wallpapers
 
 [wallpaper.live_paper]
-# projectM/Milkdrop visualizer wallpaper. When enabled, replaces the static
-# image source on every output (and on the lock surface). Presets are staged
-# by the home-module under $XDG_DATA_HOME/waylivepaper/presets — override the
-# location with presets_dir below.
+# projectM/Milkdrop visualizer; replaces the static image on every output and the lock surface.
 enabled          = false
-interval_seconds = 120              # 0 = no rotation
+interval_seconds = 120              # seconds between preset changes; 0 = no rotation
 fps              = 30
 mesh_w           = 24               # projectM warp mesh width
 mesh_h           = 18               # projectM warp mesh height
-# Working resolution of the visualizer framebuffer (320..7680). One texture
-# feeds every output and the lock surface, scaled by wallpaper.fill_mode — so
-# this is the sharpness/GPU-cost knob, not a per-output setting. Raise it
-# towards the mode of your largest output (and match that output's aspect
-# ratio to avoid cropping); cost grows with the pixel count.
-render_width     = 1280
-render_height    = 720
+render_width     = 1280             # shared framebuffer width (320..7680); sharpness vs GPU cost
+render_height    = 720              # shared framebuffer height (320..7680); match your largest output's aspect
 darken           = 0.7              # 0.0 = no overlay, 1.0 = fully black
 presets_dir      = ""               # "" = default XDG location
 audio_source     = ""               # PipeWire node target; "" = follow active sink (see allow_mic_fallback)
-# Privacy: when audio_source is empty and no audio is playing, the tap can
-# fall back to the default microphone so the visualizer keeps reacting to
-# ambient sound. This OPENS YOUR MICROPHONE. Off by default; opt in here.
-allow_mic_fallback = false
+allow_mic_fallback = false          # OPENS YOUR MICROPHONE: tap ambient sound when no audio is playing
 
 # ── Theme ─────────────────────────────────────────────────────────────────────
 
