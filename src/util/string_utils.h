@@ -412,7 +412,7 @@ namespace StringUtils {
       return tag.size() >= expected.size() && tagEquals(tag.substr(0, expected.size()), expected);
     };
     const auto isMarkupTag = [&tagEquals, &tagStartsWith](std::string_view tag) {
-      tag = trim(tag);
+      tag = trimRightView(trimLeftView(tag));
       return tagEquals(tag, "b")
           || tagEquals(tag, "/b")
           || tagEquals(tag, "i")
@@ -438,7 +438,8 @@ namespace StringUtils {
         if (close != std::string_view::npos) {
           const std::string_view tag = s.substr(i + 1, close - i - 1);
           if (isMarkupTag(tag)) {
-            if (tagEquals(trim(tag), "br") || tagEquals(trim(tag), "br/") || tagEquals(trim(tag), "br /")) {
+            const std::string_view trimmedTag = trimRightView(trimLeftView(tag));
+            if (tagEquals(trimmedTag, "br") || tagEquals(trimmedTag, "br/") || tagEquals(trimmedTag, "br /")) {
               out += '\n';
             }
             i = close + 1;
