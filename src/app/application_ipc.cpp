@@ -93,7 +93,6 @@
 #include "util/string_utils.h"
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <csignal>
 #include <cstdint>
@@ -567,8 +566,12 @@ void Application::initIpc() {
   m_osdOverlay.registerIpc(m_ipcService);
 
   if (m_brightnessService != nullptr) {
-    m_brightnessService->registerIpc(m_ipcService, [this]() {
-      m_brightnessOsd.suppressFor(std::chrono::milliseconds(250));
+    m_brightnessService->registerIpc(m_ipcService, [this](BrightnessService::BatchChangePhase phase) {
+      if (phase == BrightnessService::BatchChangePhase::Begin) {
+        m_brightnessOsd.beginBatch();
+      } else {
+        m_brightnessOsd.endBatch();
+      }
     });
   }
   if (m_keyboardBacklightService != nullptr) {
@@ -759,7 +762,7 @@ void Application::initIpc() {
   m_dock.registerIpc(m_ipcService);
   m_wallpaper.registerIpc(m_ipcService);
   greeter::registerIpc(
-      m_ipcService, m_configService, [this]() { return m_themeService.resolvedMode(); }, &m_compositorPlatform,
+      m_ipcService, m_configService, [this]() { return m_themeService.resolvedShellMode(); }, &m_compositorPlatform,
       [this]() { return m_logindService != nullptr; }
   );
   if (m_mprisService) {
