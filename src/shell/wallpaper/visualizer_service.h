@@ -39,11 +39,6 @@ public:
   void initialize(ProjectMRenderer* renderer, ConfigService* config, MprisService* mpris);
   void shutdown();
 
-  // MPRIS is initialized after the visualizer in application.cpp, so callers
-  // may attach it post-init via this setter. Cheap; just stores the pointer
-  // so onMprisChanged() has something to read.
-  void setMpris(MprisService* mpris) noexcept { m_mpris = mpris; }
-
   // Called when [wallpaper.live_paper] changes in TOML. Rescans the presets
   // directory if it changed; reschedules the rotation timer; loads the first
   // preset if none is mounted yet.
@@ -69,7 +64,6 @@ public:
   void setSessionLocked(bool locked);
 
   [[nodiscard]] bool enabled() const noexcept;
-  [[nodiscard]] const std::string& currentPreset() const noexcept { return m_currentPreset; }
 
 private:
   void rescanPresets();

@@ -52,7 +52,6 @@ void VisualizerService::setEnabled(bool /*enabled*/) {}
 void VisualizerService::toggleEnabled() {}
 void VisualizerService::setSessionLocked(bool /*locked*/) {}
 bool VisualizerService::enabled() const noexcept { return false; }
-std::vector<std::string> VisualizerService::resolveTextureSearchPaths() const { return {}; }
 
 // ── PipeWirePcmTap ───────────────────────────────────────────────────────────
 
