@@ -52,17 +52,6 @@ let
   inherit (builtins) head match readFile;
   version = head (match ".*version: '([0-9][^']+)'.*" (readFile ../meson.build));
 
-  # libprojectm 4.x links against desktop GL by default, but noctalia uses an
-  # EGL/GLESv2 share group. Toggle the upstream CMake ENABLE_GLES option so the
-  # library's GL paths match the contexts we hand it. Also patch the installed
-  # pkg-config file: upstream emits "-l:projectM-4" (GCC exact-filename syntax)
-  # whose literal filename does not exist (the real .so is "libprojectM-4.so"),
-  # so the linker can't resolve it. Rewrite to the conventional "-lprojectM-4".
-  #
-  # (The former ./patches/libprojectm-null-texture-descriptor.patch guarded
-  # TextureSamplerDescriptor::Empty() against a null m_texture; that null check
-  # is now upstream in the libprojectm version nixpkgs ships, so the patch was
-  # dropped.)
   libprojectm-gles = libprojectm.overrideAttrs (old: {
     pname = "libprojectm-gles";
     cmakeFlags = (old.cmakeFlags or [ ]) ++ [
@@ -92,78 +81,79 @@ let
 in
 lib.warnIf cudaSupport
   "noctalia: `cudaSupport` no longer has any effect (autoAddDriverRunpath is now always applied); this argument will be removed in the future."
-  stdenv.mkDerivation {
-  pname = "noctalia";
-  inherit version;
+  stdenv.mkDerivation
+  {
+    pname = "noctalia";
+    inherit version;
 
-  src = lib.cleanSource ./..;
+    src = lib.cleanSource ./..;
 
-  postFixup = ''
-    wrapProgram $out/bin/noctalia \
-      --prefix PATH : ${lib.makeBinPath [ git ]} \
-      --prefix XDG_DATA_DIRS : "${glib.getSchemaDataDirPath gsettings-desktop-schemas}"
+    postFixup = ''
+      wrapProgram $out/bin/noctalia \
+        --prefix PATH : ${lib.makeBinPath [ git ]} \
+        --prefix XDG_DATA_DIRS : "${glib.getSchemaDataDirPath gsettings-desktop-schemas}"
 
-    $out/bin/noctalia completions bash | install -D /dev/stdin $out/share/bash-completion/completions/noctalia
-    $out/bin/noctalia completions zsh  | install -D /dev/stdin $out/share/zsh/site-functions/_noctalia
-    $out/bin/noctalia completions fish | install -D /dev/stdin $out/share/fish/vendor_completions.d/noctalia.fish
-  '';
+      $out/bin/noctalia completions bash | install -D /dev/stdin $out/share/bash-completion/completions/noctalia
+      $out/bin/noctalia completions zsh  | install -D /dev/stdin $out/share/zsh/site-functions/_noctalia
+      $out/bin/noctalia completions fish | install -D /dev/stdin $out/share/fish/vendor_completions.d/noctalia.fish
+    '';
 
-  nativeBuildInputs = [
-    meson
-    ninja
-    pkg-config
-    wayland-scanner
-    jemalloc
-    makeWrapper
-    autoAddDriverRunpath
-  ];
+    nativeBuildInputs = [
+      meson
+      ninja
+      pkg-config
+      wayland-scanner
+      jemalloc
+      makeWrapper
+      autoAddDriverRunpath
+    ];
 
-  buildInputs = [
-    wayland
-    wayland-protocols
-    libGL
-    libglvnd
-    freetype
-    fontconfig
-    cairo
-    pango
-    harfbuzz
-    libxkbcommon
-    sdbus-cpp_2
-    systemd
-    pipewire
-    wireplumber
-    pam
-    curl
-    libwebp
-    libjxl
-    libsndfile
-    glib
-    polkit
-    librsvg
-    libprojectm-gles
-    libqalculate
-    libxml2
-    md4c
-    libsecret
-    libsodium
-    stb'
-    nlohmann_json
-    tomlplusplus
-    libical
-  ];
+    buildInputs = [
+      wayland
+      wayland-protocols
+      libGL
+      libglvnd
+      freetype
+      fontconfig
+      cairo
+      pango
+      harfbuzz
+      libxkbcommon
+      sdbus-cpp_2
+      systemd
+      pipewire
+      wireplumber
+      pam
+      curl
+      libwebp
+      libjxl
+      libsndfile
+      glib
+      polkit
+      librsvg
+      libprojectm-gles
+      libqalculate
+      libxml2
+      md4c
+      libsecret
+      libsodium
+      stb'
+      nlohmann_json
+      tomlplusplus
+      libical
+    ];
 
-  mesonBuildType = "release";
+    mesonBuildType = "release";
 
-  mesonFlags = [ "-Dtests=disabled" ];
+    mesonFlags = [ "-Dtests=disabled" ];
 
-  ninjaFlags = [ "-v" ];
+    ninjaFlags = [ "-v" ];
 
-  meta = with lib; {
-    description = "A sleek, customizable desktop shell crafted for Wayland.";
-    homepage = "https://github.com/noctalia-dev/noctalia";
-    license = licenses.mit;
-    platforms = platforms.linux;
-    mainProgram = "noctalia";
-  };
-}
+    meta = with lib; {
+      description = "A sleek, customizable desktop shell crafted for Wayland.";
+      homepage = "https://github.com/noctalia-dev/noctalia";
+      license = licenses.mit;
+      platforms = platforms.linux;
+      mainProgram = "noctalia";
+    };
+  }
