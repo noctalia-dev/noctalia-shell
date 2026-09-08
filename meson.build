@@ -98,28 +98,9 @@ tomlplusplus_dep    = dependency('tomlplusplus')
 libical_dep         = dependency('libical')
 pam_dep             = cc.find_library('pam')
 dl_dep              = cpp.find_library('dl', required: false)
-# libprojectM 4 drives the [wallpaper.live_paper] Milkdrop visualizer. The
-# feature is opt-in at compile time (`meson configure -Dlivepaper=enabled` to
-# hard-require it, `-Dlivepaper=disabled` to skip it). Nix users get this from
-# the libprojectm-gles overlay declared in nix/package.nix; other distros need
-# a GLES-enabled libprojectM build on the pkg-config path.
 livepaper_option    = get_option('livepaper')
 projectm_dep        = dependency('projectM-4', required: livepaper_option)
 
-# `dependency()` only proves that a .pc file exists, which is not enough here:
-# upstream's projectM-4.pc emits `-l:projectM-4` (GCC exact-filename syntax) for
-# a file that does not exist — the real library is `libprojectM-4.so` — so the
-# linker cannot resolve it. Distros shipping that .pc unpatched would satisfy
-# the check above and then fail when the noctalia binary itself is linked,
-# breaking the build for anyone who merely happens to have libprojectM
-# installed. Probe a real link so `auto` degrades to a clean "feature off"
-# instead, and `enabled` fails here with an actionable message rather than
-# thousands of lines later at link time.
-#
-# Note this cannot detect the *other* incompatibility: libprojectM built
-# against desktop GL rather than GLES links identically and only fails at
-# runtime, where ProjectMRenderer::initialize() reports it and the shell falls
-# back to the static wallpaper. See docs/livepaper.md.
 have_livepaper = false
 if projectm_dep.found()
   have_livepaper = cpp.links(
@@ -1044,12 +1025,7 @@ _noctalia_sources += files(
   'src/render/visualizer/livepaper_availability.cpp',
 )
 
-# Optional live-paper sources. The real implementations dispatch into
-# libprojectM and depend on a PipeWire raw PCM tap that only serves the
-# visualizer, so we compile them in only when the libprojectM dependency was
-# found. When the feature is OFF we still need the class symbols to satisfy
-# call sites in wallpaper.cpp / lock_screen.cpp (which already null-check the
-# live pointers and degrade quietly), so a stub TU provides empty bodies.
+# Optional live-paper sources.
 if have_livepaper
   _noctalia_sources += files(
     'src/pipewire/pipewire_pcm_tap.cpp',
