@@ -139,12 +139,6 @@ public:
   // returned texture aliases the image storage, so the producer's subsequent
   // renders are reflected without re-importing. Returns an invalid id on
   // failure or a null image.
-  //
-  // serial is the producer's generation counter for this image
-  // (ProjectMRenderer::eglImageSerial()). It is part of the cache key because a
-  // destroy/create round — a live_paper resolution change — can hand back the
-  // address that was just released, which the pointer alone cannot distinguish
-  // from the unchanged image.
   [[nodiscard]] virtual TextureId importLiveImage(void* eglImage, std::uint64_t serial) = 0;
   virtual void setScissor(RenderScissor scissor) = 0;
   virtual void disableScissor() = 0;

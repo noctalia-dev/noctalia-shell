@@ -28,15 +28,6 @@ public:
   ProjectMRenderer(const ProjectMRenderer&) = delete;
   ProjectMRenderer& operator=(const ProjectMRenderer&) = delete;
 
-  // Bind to the shared GL group and create the offscreen FBO + texture. Must
-  // be called exactly once before renderFrame(). pcmTap may be null at init
-  // time — set it later with setPcmTap(); the renderer simply feeds silence
-  // until a tap is attached.
-  // compositor is used to create a hidden, never-committed wl_surface that
-  // backs the producer's EGL window surface. libprojectM 4.1.x hard-codes its
-  // final composite to draw framebuffer 0, and the Wayland EGL platform has no
-  // pbuffer configs, so a (never-shown) window surface is the only way to give
-  // libprojectM a real default framebuffer.
   bool initialize(GlSharedContext& shared, wl_compositor* compositor, std::uint32_t width, std::uint32_t height);
   void shutdown();
 
@@ -66,8 +57,6 @@ public:
   void setMeshSize(int meshW, int meshH);
   void setFps(int fps);
 
-  // Load a specific Milkdrop preset (.milk / .prjm) with a soft cross-fade.
-  // Empty path is silently ignored — the existing preset keeps running.
   void loadPreset(const std::string& path);
 
   // Set the directories libprojectM scans for textures referenced by rand00..15
@@ -78,13 +67,10 @@ public:
   // Audio source. Renderer holds a non-owning pointer; null = silent.
   void setPcmTap(PipeWirePcmTap* tap) noexcept { m_pcmTap = tap; }
 
-  // Drive one frame of the visualizer. Pulls whatever PCM is buffered in the
-  // tap, feeds it to libprojectM, then renders into the internal FBO. Safe
-  // to call when libprojectM is not initialised — returns silently.
   void renderFrame();
 
 private:
-  struct GlState; // forward — defined in .cpp to keep EGL/GL types out of the header
+  struct GlState;
   void makeCurrentSaved(GlState& saved);
   static void restore(const GlState& saved);
   void destroyFbo();
@@ -92,7 +78,7 @@ private:
   void pumpPcm();
 
   GlSharedContext* m_shared = nullptr;
-  void* m_projectm = nullptr; // projectm_handle — opaque to keep header clean
+  void* m_projectm = nullptr;
 
   wl_compositor* m_compositor = nullptr;
 
@@ -104,10 +90,10 @@ private:
   // == its back buffer) and renderFrame() copies it into m_textureName. The
   // wl_surface is never assigned a role nor committed, so it is never shown.
   // All void* to keep wayland/EGL types out of the header.
-  void* m_wlSurface = nullptr;    // wl_surface*
-  void* m_wlEglWindow = nullptr;  // wl_egl_window*
-  void* m_eglSurface = nullptr;   // EGLSurface
-  void* m_eglImage = nullptr; // EGLImageKHR aliasing m_textureName for cross-context sharing
+  void* m_wlSurface = nullptr;        // wl_surface*
+  void* m_wlEglWindow = nullptr;      // wl_egl_window*
+  void* m_eglSurface = nullptr;       // EGLSurface
+  void* m_eglImage = nullptr;         // EGLImageKHR aliasing m_textureName for cross-context sharing
   std::uint64_t m_eglImageSerial = 0; // bumped per published image; see eglImageSerial()
 
   int m_meshW = 24;

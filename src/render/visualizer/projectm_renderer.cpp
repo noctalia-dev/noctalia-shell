@@ -9,13 +9,12 @@
 #include <GLES2/gl2.h>
 #include <algorithm>
 #include <cstdint>
-#include <wayland-client.h>
-#include <wayland-egl.h>
-
 #include <projectM-4/audio.h>
 #include <projectM-4/core.h>
 #include <projectM-4/parameters.h>
 #include <projectM-4/render_opengl.h>
+#include <wayland-client.h>
+#include <wayland-egl.h>
 
 namespace {
 
@@ -59,8 +58,9 @@ ProjectMRenderer::ProjectMRenderer() = default;
 
 ProjectMRenderer::~ProjectMRenderer() { shutdown(); }
 
-bool ProjectMRenderer::initialize(GlSharedContext& shared, wl_compositor* compositor, std::uint32_t width,
-                                  std::uint32_t height) {
+bool ProjectMRenderer::initialize(
+    GlSharedContext& shared, wl_compositor* compositor, std::uint32_t width, std::uint32_t height
+) {
   if (m_projectm != nullptr) {
     kLog.warn("initialize() called twice");
     return false;
@@ -98,8 +98,6 @@ bool ProjectMRenderer::initialize(GlSharedContext& shared, wl_compositor* compos
   projectm_set_window_size(handle, width, height);
   projectm_set_mesh_size(handle, static_cast<std::size_t>(m_meshW), static_cast<std::size_t>(m_meshH));
   projectm_set_fps(handle, m_fps);
-  // We drive preset rotation from VisualizerService — disable libprojectM's
-  // own internal rotation timer.
   projectm_set_preset_locked(handle, true);
 
   m_pcmScratch.assign(static_cast<std::size_t>(kMaxFramesPerPull) * PipeWirePcmTap::kMaxChannels, 0.0f);
@@ -147,8 +145,9 @@ void ProjectMRenderer::setMeshSize(int meshW, int meshH) {
   m_meshW = std::max(meshW, 4);
   m_meshH = std::max(meshH, 4);
   if (m_projectm != nullptr) {
-    projectm_set_mesh_size(static_cast<projectm_handle>(m_projectm), static_cast<std::size_t>(m_meshW),
-                           static_cast<std::size_t>(m_meshH));
+    projectm_set_mesh_size(
+        static_cast<projectm_handle>(m_projectm), static_cast<std::size_t>(m_meshW), static_cast<std::size_t>(m_meshH)
+    );
   }
 }
 
@@ -163,15 +162,6 @@ void ProjectMRenderer::loadPreset(const std::string& path) {
   if (m_projectm == nullptr || m_shared == nullptr || path.empty()) {
     return;
   }
-  // projectm_load_preset_file constructs the preset's GL objects *synchronously*
-  // — in particular FinalComposite's VAO + element buffer (libprojectM
-  // RenderItem::Init). VAOs are container objects and are NOT shared across an
-  // EGL share group, so the preset's VAO must be created in the very same
-  // context renderFrame() draws with (the shared surfaceless root context). If
-  // we load with the caller's context current instead, the VAO name is invalid
-  // when renderFrame() binds it, no element buffer is bound, and libprojectM's
-  // glDrawElements(..., nullptr) faults reading indices from a null offset.
-  // Hence the same make-current/restore dance as renderFrame().
   GlState prev{};
   makeCurrentSaved(prev);
   // Smooth = true: libprojectM cross-fades over its built-in transition window
@@ -189,8 +179,7 @@ void ProjectMRenderer::setTextureSearchPaths(const std::vector<std::string>& pat
   for (const auto& p : paths) {
     cstrs.push_back(p.c_str());
   }
-  projectm_set_texture_search_paths(static_cast<projectm_handle>(m_projectm), cstrs.data(),
-                                    cstrs.size());
+  projectm_set_texture_search_paths(static_cast<projectm_handle>(m_projectm), cstrs.data(), cstrs.size());
 }
 
 void ProjectMRenderer::renderFrame() {
@@ -208,26 +197,15 @@ void ProjectMRenderer::renderFrame() {
   glViewport(0, 0, static_cast<GLsizei>(m_width), static_cast<GLsizei>(m_height));
   projectm_opengl_render_frame(static_cast<projectm_handle>(m_projectm));
 
-  // Pull the back buffer into m_textureName, which the EGLImage aliases for
-  // cross-context sampling. GL_FRAMEBUFFER binds both read and draw to 0, so
-  // glCopyTexSubImage2D's source is the just-rendered frame. We never
-  // eglSwapBuffers — the surface is never presented, only read back.
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glBindTexture(GL_TEXTURE_2D, m_textureName);
-  glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, static_cast<GLsizei>(m_width),
-                      static_cast<GLsizei>(m_height));
+  glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, static_cast<GLsizei>(m_width), static_cast<GLsizei>(m_height));
   glBindTexture(GL_TEXTURE_2D, 0);
 
   // Finish this context's work before eglMakeCurrent (in restore()) releases
   // it. eglMakeCurrent only flushes, it does not wait; a hard finish keeps the
   // shared root context and the surface contexts that sample our texture from
   // racing on the FBO contents across the per-frame context handoff.
-  //
-  // NOTE: this is conservative defence, not the crash fix. The first-frame
-  // SIGSEGV was a context-ownership bug in loadPreset() (see above), not an
-  // async-marshalling race. This could likely be relaxed to glFlush, or
-  // dropped, with separate testing — left as glFinish for now because that is
-  // the configuration verified stable end-to-end.
   glFinish();
   restore(prev);
 }
@@ -250,28 +228,15 @@ void ProjectMRenderer::pumpPcm() {
   // libprojectM accepts mono or interleaved stereo. Downmix anything wider
   // (5.1, 7.1) to stereo by averaging extra channels into L/R; for mono we
   // pass through as-is.
-  //
-  // projectm_pcm_add_float's `count` is the number of samples PER CHANNEL
-  // (the frame count) — NOT the interleaved float count. Passing
-  // frames * channels tells projectM the buffer is twice as long as it is, so
-  // it ingests a frame of stale ring data for every real frame and the
-  // visualizer barely tracks the music. Always pass `frames`.
   const projectm_channels target = toProjectmChannels(channels);
   if (channels == 1 || channels == 2) {
-    projectm_pcm_add_float(static_cast<projectm_handle>(m_projectm), m_pcmScratch.data(),
-                           static_cast<unsigned int>(frames), target);
+    projectm_pcm_add_float(
+        static_cast<projectm_handle>(m_projectm), m_pcmScratch.data(), static_cast<unsigned int>(frames), target
+    );
     return;
   }
   // Downmix to stereo in place. Safe because the target stride (2) is smaller
   // than the source stride (channels).
-  //
-  // Each extra channel (centre, surrounds, LFE on 5.1/7.1) is summed into BOTH
-  // L and R with weight 1/channels, so a fully-correlated full-scale source on
-  // every channel never exceeds [-1, +1] on either output. L and R themselves
-  // contribute their original sample, which preserves the stereo image — we
-  // are intentionally NOT a normalized matrix downmix, just guaranteed not to
-  // clip. libprojectM uses this for its FFT/beat analysis; the absolute scale
-  // matters less than non-saturation.
   const float invChannels = 1.0f / static_cast<float>(channels);
   for (int i = 0; i < frames; ++i) {
     const float* src = m_pcmScratch.data() + static_cast<std::size_t>(i) * static_cast<std::size_t>(channels);
@@ -284,8 +249,9 @@ void ProjectMRenderer::pumpPcm() {
     m_pcmScratch[static_cast<std::size_t>(i) * 2] = l;
     m_pcmScratch[static_cast<std::size_t>(i) * 2 + 1] = r;
   }
-  projectm_pcm_add_float(static_cast<projectm_handle>(m_projectm), m_pcmScratch.data(),
-                         static_cast<unsigned int>(frames), PROJECTM_STEREO);
+  projectm_pcm_add_float(
+      static_cast<projectm_handle>(m_projectm), m_pcmScratch.data(), static_cast<unsigned int>(frames), PROJECTM_STEREO
+  );
 }
 
 void ProjectMRenderer::makeCurrentSaved(GlState& saved) {
@@ -298,10 +264,12 @@ void ProjectMRenderer::makeCurrentSaved(GlState& saved) {
   // createFbo() has run (the first makeCurrentSaved() in initialize()) there is
   // no surface yet, so fall back to surfaceless just to create GL objects.
   if (m_eglSurface != nullptr) {
-    if (eglMakeCurrent(m_shared->display(), static_cast<EGLSurface>(m_eglSurface),
-                       static_cast<EGLSurface>(m_eglSurface), m_shared->rootContext()) != EGL_TRUE) {
-      kLog.warn("eglMakeCurrent (producer surface) failed (EGL error 0x{:x})",
-                static_cast<unsigned>(eglGetError()));
+    if (eglMakeCurrent(
+            m_shared->display(), static_cast<EGLSurface>(m_eglSurface), static_cast<EGLSurface>(m_eglSurface),
+            m_shared->rootContext()
+        )
+        != EGL_TRUE) {
+      kLog.warn("eglMakeCurrent (producer surface) failed (EGL error 0x{:x})", static_cast<unsigned>(eglGetError()));
     }
     return;
   }
@@ -321,18 +289,15 @@ bool ProjectMRenderer::createFbo(std::uint32_t width, std::uint32_t height) {
     return false;
   }
   glBindTexture(GL_TEXTURE_2D, m_textureName);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, static_cast<GLsizei>(width), static_cast<GLsizei>(height), 0, GL_RGBA,
-               GL_UNSIGNED_BYTE, nullptr);
+  glTexImage2D(
+      GL_TEXTURE_2D, 0, GL_RGBA, static_cast<GLsizei>(width), static_cast<GLsizei>(height), 0, GL_RGBA,
+      GL_UNSIGNED_BYTE, nullptr
+  );
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-  // libprojectM 4.1.x forces its final composite to draw framebuffer 0, and
-  // the Wayland EGL platform exposes no pbuffer configs, so the producer needs
-  // a real window surface. Back it with a private wl_surface that is never
-  // assigned a role nor committed — the compositor therefore never shows it.
-  // renderFrame() copies its back buffer into m_textureName afterwards.
   auto* surface = wl_compositor_create_surface(m_compositor);
   if (surface == nullptr) {
     kLog.warn("wl_compositor_create_surface failed");
@@ -348,12 +313,11 @@ bool ProjectMRenderer::createFbo(std::uint32_t width, std::uint32_t height) {
     m_textureName = 0;
     return false;
   }
-  EGLSurface eglSurface =
-      eglCreateWindowSurface(m_shared->display(), m_shared->config(),
-                             reinterpret_cast<EGLNativeWindowType>(eglWindow), nullptr);
+  EGLSurface eglSurface = eglCreateWindowSurface(
+      m_shared->display(), m_shared->config(), reinterpret_cast<EGLNativeWindowType>(eglWindow), nullptr
+  );
   if (eglSurface == EGL_NO_SURFACE) {
-    kLog.warn("eglCreateWindowSurface (producer) failed (EGL error 0x{:x})",
-              static_cast<unsigned>(eglGetError()));
+    kLog.warn("eglCreateWindowSurface (producer) failed (EGL error 0x{:x})", static_cast<unsigned>(eglGetError()));
     wl_egl_window_destroy(eglWindow);
     wl_surface_destroy(surface);
     glDeleteTextures(1, &m_textureName);
@@ -373,12 +337,15 @@ bool ProjectMRenderer::createFbo(std::uint32_t width, std::uint32_t height) {
   auto* createImg = eglCreateImageKHR_p();
   if (createImg != nullptr && m_shared != nullptr) {
     const EGLint imgAttrs[] = {EGL_GL_TEXTURE_LEVEL_KHR, 0, EGL_NONE};
-    EGLImageKHR img =
-        createImg(m_shared->display(), m_shared->rootContext(), EGL_GL_TEXTURE_2D_KHR,
-                  reinterpret_cast<EGLClientBuffer>(static_cast<std::uintptr_t>(m_textureName)), imgAttrs);
+    EGLImageKHR img = createImg(
+        m_shared->display(), m_shared->rootContext(), EGL_GL_TEXTURE_2D_KHR,
+        reinterpret_cast<EGLClientBuffer>(static_cast<std::uintptr_t>(m_textureName)), imgAttrs
+    );
     if (img == EGL_NO_IMAGE_KHR) {
-      kLog.warn("eglCreateImageKHR failed (EGL error 0x{:x}); live paper will not be visible",
-                static_cast<unsigned>(eglGetError()));
+      kLog.warn(
+          "eglCreateImageKHR failed (EGL error 0x{:x}); live paper will not be visible",
+          static_cast<unsigned>(eglGetError())
+      );
       m_eglImage = nullptr;
     } else {
       m_eglImage = img;
@@ -388,9 +355,6 @@ bool ProjectMRenderer::createFbo(std::uint32_t width, std::uint32_t height) {
     m_eglImage = nullptr;
   }
 
-  // Publish the new image under a fresh serial. Consumers cache their alias
-  // texture keyed on (pointer, serial) because EGL is free to hand back the
-  // address we just released in destroyFbo() — see eglImageSerial().
   ++m_eglImageSerial;
 
   m_width = width;

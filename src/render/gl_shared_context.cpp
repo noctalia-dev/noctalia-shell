@@ -137,7 +137,7 @@ void GlSharedContext::initialize(wl_display* display, bool createSharedContext) 
         );
       }
       m_clientVersion = 2;
-      kLog.info("EGL GLES3 unavailable ({}); falling back to GLES2 — live_paper visualizer will be disabled", e.what());
+      kLog.info("EGL GLES3 unavailable ({}); falling back to GLES2 - live_paper visualizer will be disabled", e.what());
     }
     kLog.info("initialized EGL {}.{} with shared root context (GLES{})", major, minor, m_clientVersion);
   } else {
