@@ -38,6 +38,7 @@ Direct project dependencies are listed below; transitive dependencies are owned 
 | Images | `Wuffs` (vendored), `stb_image_resize2`, `stb_image_write`, `libwebp`, `libjxl`, `libjxl_threads`, `librsvg` |
 | IPC and service runtime | `sdbus-c++`, `glib-2.0`, `gobject-2.0`, `gio-2.0` |
 | Audio | `libpipewire-0.3`, `wireplumber-0.5`, `libsndfile` |
+| Live paper visualizer | `libprojectM 4` (optional, GLES build; see [PACKAGING.md](PACKAGING.md#live-paper--libprojectm)) |
 | Authentication | `PAM`, `polkit-agent-1`, `polkit-gobject-1` |
 | Credentials and encryption | `libsecret-1`, `libsodium` |
 | HTTP | `libcurl` |
@@ -194,6 +195,7 @@ src/
     programs/       GLES shader programs
     scene/          Scene graph nodes and pointer input dispatch
     text/           Cairo/Pango text and glyph rendering
+    visualizer/     Optional libprojectM live paper visualizer (stubbed out when not compiled in)
   scripting/        Luau plugin runtime, manifests, registry, source management, bindings
   shell/
     backdrop/       Backdrop layer surfaces

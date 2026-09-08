@@ -467,6 +467,19 @@ location = "https://example.invalid/bad"
     c.wallpaper.monitorOverrides = {
         {"DP-1", true, colorSpecFromConfigString("#00ff00"), std::string("/srv/wp1"), std::nullopt, std::nullopt},
     };
+    // Every live_paper field set off-default so the read inverse would catch a
+    // mismatched read/write key or a lossy codec in livePaperSchema().
+    c.wallpaper.livePaper.enabled = true;
+    c.wallpaper.livePaper.intervalSeconds = 45;
+    c.wallpaper.livePaper.fps = 60;
+    c.wallpaper.livePaper.meshW = 32;
+    c.wallpaper.livePaper.meshH = 24;
+    c.wallpaper.livePaper.renderWidth = 1920;
+    c.wallpaper.livePaper.renderHeight = 1080;
+    c.wallpaper.livePaper.darken = 0.4f;
+    c.wallpaper.livePaper.presetsDir = "/srv/presets"; // absolute: expandUserPath leaves it unchanged
+    c.wallpaper.livePaper.audioSource = "alsa_output.pci-0000_00_1f.3.analog-stereo.monitor";
+    c.wallpaper.livePaper.allowMicFallback = true;
     c.accessibility.uiScale = 1.25f;
     c.shell.buttonBorders = false;
     c.shell.fontFamily = "Inter";
@@ -620,6 +633,70 @@ location = "https://example.invalid/bad"
       if (s.clipboardHistoryMaxEntries != 10000) {
         fail("shell.clipboard_history_max_entries clamp: expected 10000");
       }
+    }
+
+    // live_paper mesh/fps/render_size floors and ceilings. These are GPU-cost
+    // knobs a user can type by hand, so an out-of-range value must land inside
+    // the range libprojectM is actually driven with rather than reaching it.
+    // Driven through wallpaperSchema() because livePaperSchema() is file-local.
+    {
+      auto t = toml::parse(R"(
+[live_paper]
+fps = 0
+mesh_w = 2
+render_width = 100
+darken = 1.5
+)");
+      WallpaperConfig w{};
+      Diagnostics d;
+      readInto(t, w, wallpaperSchema(), "wallpaper", d);
+      if (w.livePaper.fps != 1) {
+        fail("wallpaper.live_paper.fps floor: expected 1");
+      }
+      if (w.livePaper.meshW != 4) {
+        fail("wallpaper.live_paper.mesh_w floor: expected 4");
+      }
+      if (w.livePaper.renderWidth != 320) {
+        fail("wallpaper.live_paper.render_width floor: expected 320");
+      }
+      if (w.livePaper.darken != 1.0f) {
+        fail("wallpaper.live_paper.darken clamp: expected 1.0");
+      }
+    }
+    {
+      auto t = toml::parse(R"(
+[live_paper]
+fps = 1000
+mesh_h = 4096
+render_height = 100000
+)");
+      WallpaperConfig w{};
+      Diagnostics d;
+      readInto(t, w, wallpaperSchema(), "wallpaper", d);
+      if (w.livePaper.fps != 240) {
+        fail("wallpaper.live_paper.fps ceiling: expected 240");
+      }
+      if (w.livePaper.meshH != 256) {
+        fail("wallpaper.live_paper.mesh_h ceiling: expected 256");
+      }
+      if (w.livePaper.renderHeight != 7680) {
+        fail("wallpaper.live_paper.render_height ceiling: expected 7680");
+      }
+    }
+    // interval_seconds = 0 is meaningful (no timed rotation), so the range floor
+    // must not push it up the way the fps floor does.
+    {
+      auto t = toml::parse(R"(
+[live_paper]
+interval_seconds = 0
+)");
+      WallpaperConfig w{};
+      Diagnostics d;
+      readInto(t, w, wallpaperSchema(), "wallpaper", d);
+      if (w.livePaper.intervalSeconds != 0) {
+        fail("wallpaper.live_paper.interval_seconds: 0 must survive as no-rotation");
+      }
+    }
     }
   }
 

@@ -81,6 +81,49 @@ When automation is enabled, Noctalia picks one image from the resolved browse fo
 `order = "random"` chooses a random image each cycle.
 `order = "alphabetical"` sorts paths case-insensitively and advances to the next image each cycle (wrapping at the end).
 
+## Live Paper
+
+Replaces the static wallpaper with a [projectM](https://github.com/projectM-visualizer/projectm) (Milkdrop) audio-reactive visualizer on every output and on the lock screen. Disabled by default.
+
+```toml
+[wallpaper.live_paper]
+enabled            = false
+interval_seconds   = 120    # seconds between preset changes; 0 = no rotation
+fps                = 30     # 1 - 240
+mesh_w             = 24     # projectM warp mesh width (4 - 256)
+mesh_h             = 18     # projectM warp mesh height (4 - 256)
+render_width       = 1280   # shared framebuffer width (320 - 7680)
+render_height      = 720    # shared framebuffer height (320 - 7680)
+darken             = 0.7    # 0.0 = no overlay, 1.0 = fully black
+presets_dir        = ""     # empty = $XDG_DATA_HOME/waylivepaper/presets
+audio_source       = ""     # PipeWire node target; empty = follow the active sink
+allow_mic_fallback = false  # opens your microphone - see below
+```
+
+Live paper is **optional at build time**. It needs a GLES-enabled libprojectM 4, which many distributions do not package in a usable form, so builds without it simply omit the feature. The Settings entry says which case applies: *unavailable: this build was compiled without libprojectM*, or *unavailable: the visualizer needs a GLES 3 capable GPU driver and failed to start*. When the visualizer cannot start, the shell falls back to the static wallpaper - nothing else changes. Packagers and people building from source should read [`BUILDING.md`](https://github.com/noctalia-dev/noctalia-shell/blob/main/BUILDING.md).
+
+### Presets
+
+**Presets are not shipped.** Point `presets_dir` at a folder of Milkdrop presets, or drop them in `$XDG_DATA_HOME/waylivepaper/presets` (`~/.local/share/waylivepaper/presets`) and leave `presets_dir` empty. Files ending in `.milk` and `.prjm` are picked up; subdirectories are scanned too. With no presets found, the visualizer stays on the static wallpaper.
+
+Presets rotate every `interval_seconds`, and also when the MPRIS track changes, so a new song brings a new preset without waiting for the timer. Set `interval_seconds = 0` to keep whichever preset is mounted and rotate on track changes only.
+
+### Resolution and cost
+
+One offscreen framebuffer is rendered at `render_width` x `render_height` and shared by every output and the lock surface, each scaling it with its own `fill_mode`. It is a quality-versus-GPU-cost knob rather than a per-monitor setting: raise it toward your largest output's mode for a sharper result, lower it to cut fill-rate cost on weaker GPUs. `fps` and the `mesh_w` / `mesh_h` warp mesh trade detail for cost the same way.
+
+`darken` blends a black overlay over the visualizer, which usually helps desktop icons and widgets stay readable against a busy preset.
+
+### Audio and privacy
+
+By default the visualizer reacts to whatever is playing: it taps the active output sink's monitor. Set `audio_source` to a PipeWire node name to pin it to one source instead.
+
+`allow_mic_fallback` is **off by default and opens your microphone when enabled**. It only applies when `audio_source` is empty and nothing is playing on the active sink, in which case the tap falls back to the default input so the visualizer keeps reacting to ambient sound. Leave it `false` unless you want that.
+
+### IPC
+
+`livepaper-toggle`, `livepaper-enable`, and `livepaper-disable` switch the visualizer on and off and persist the change to `settings.toml`; `livepaper-next` jumps to the next preset. See [Media & UI IPC](/noctalia/ipc/media-and-ui/#wallpaper).
+
 ## Favorites
 
 There is no separate Settings page for favorites. The wallpaper panel manages image favorites through tile stars, and advanced users can also declare favorites with `[[wallpaper.favorite]]` in Noctalia config.

@@ -85,6 +85,10 @@ Supported JSON fields:
 | Get wallpaper (one monitor) | <IpcCommand command="wallpaper-get <connector>" /> | Print the effective wallpaper path for the monitor named by **connector** (e.g. `DP-1`). |
 | Set wallpaper (all monitors) | <IpcCommand command="wallpaper-set <path>" /> | Set every connected monitor and the default wallpaper, persisted to `settings.toml` (per-monitor entries plus `wallpaper.default.path`). |
 | Set wallpaper (one monitor) | <IpcCommand command="wallpaper-set <connector> <path>" /> | Set only the monitor named by **connector** (e.g. `DP-1`). Remaining tokens are joined as the path. Other monitors are unchanged. |
+| Toggle live paper | <IpcCommand command="livepaper-toggle" /> | Turn the live paper visualizer on or off, persisted to `settings.toml`. No effect on builds without libprojectM. |
+| Enable live paper | <IpcCommand command="livepaper-enable" /> | Turn the live paper visualizer on, persisted to `settings.toml`. |
+| Disable live paper | <IpcCommand command="livepaper-disable" /> | Turn the live paper visualizer off, persisted to `settings.toml`. |
+| Next live paper preset | <IpcCommand command="livepaper-next" /> | Advance to the next Milkdrop preset immediately, without waiting for `interval_seconds`. |
 
 Wallpaper paths accept an image path (`~` expanded) or `color:#RRGGBB` / `color:#RRGGBBAA`. Non-color paths must exist at call time.
 
