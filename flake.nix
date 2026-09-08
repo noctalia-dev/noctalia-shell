@@ -44,13 +44,6 @@
         rec {
           default = pkgs.callPackage ./nix/package.nix { };
 
-          # Trimmed Milkdrop presets pack for the optional livepaper
-          # visualizer. nix/filter-presets.py rejects .milk files whose code
-          # paints overly bright frames or rapid strobes. Exposed as its own
-          # output so it can be built and staged independently of a full
-          # home-manager rollout (e.g. `nix build .#presets`).
-          presets = presets-photosensitive-filtered.packages.${pkgs.stdenv.hostPlatform.system}.default;
-
           # DEPRECATED: identical to `default`; kept for compat, warns on use.
           cuda = warn "noctalia: the `.#cuda` package output is deprecated and now identical to `.#default` (autoAddDriverRunpath is always applied); switch to `.#default`. This alias will be removed in the future." default;
         }
