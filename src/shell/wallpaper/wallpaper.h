@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/timer_manager.h"
 #include "config/config_types.h"
+#include "core/timer_manager.h"
 #include "shell/wallpaper/wallpaper_shuffle_state.h"
 #include "ui/signal.h"
 
@@ -46,10 +46,7 @@ public:
       noctalia::theme::ThemeService* themeService = nullptr
   );
 
-  // Optional live-paper plumbing. Both pointers are non-owning. Pass nulls
-  // to keep the static-image-only behaviour.
   void setVisualizer(ProjectMRenderer* renderer, VisualizerService* service);
-
 
   void onOutputChange();
   // Mark an output as driven by an external wallpaper source (e.g. an mpvpaper plugin):

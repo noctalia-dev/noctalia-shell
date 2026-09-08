@@ -47,22 +47,6 @@ namespace {
   // is the portable, correct thing for the libprojectM visualizer in this
   // share group. GLES3 is a strict superset of GLES2 so the ES2-targeted
   // surface backends are unaffected.
-  //
-  // Older Adreno 3xx/4xx, older Mali-T, and legacy NVIDIA Wayland drivers
-  // refuse a CLIENT_VERSION=3 context. We MUST NOT make those users' shells
-  // fail to start over an opt-in (and OFF-by-default) feature, so on failure
-  // we fall back to CLIENT_VERSION=2 — the visualizer will then fail to
-  // initialize and the shell continues with static wallpapers only.
-  //
-  // NOTE: on Mesa this is effectively defensive — Mesa hands back a 3.2
-  // context with working VAOs even for an ES2 request. It is NOT what fixed
-  // the projectM first-frame crash; that was a context-ownership bug in
-  // ProjectMRenderer::loadPreset (see the comment there).
-  constexpr EGLint kContextAttributesGles3[] = {
-      EGL_CONTEXT_CLIENT_VERSION,
-      3,
-      EGL_NONE,
-  };
   constexpr EGLint kContextAttributesGles2[] = {
       EGL_CONTEXT_CLIENT_VERSION,
       2,
@@ -131,31 +115,29 @@ void GlSharedContext::initialize(wl_display* display, bool createSharedContext) 
 
   m_sharedContextEnabled = createSharedContext;
   if (createSharedContext) {
-    // Use the same attribute path as child contexts so the share group is
-    // uniform — mixing robust/non-robust contexts causes EGL_BAD_MATCH on
-    // strict EGL implementations. createContext() handles the robust→plain
-    // fallback internally when shareContext is EGL_NO_CONTEXT.
     try {
       m_rootContext = createContext(EGL_NO_CONTEXT, "root");
       m_clientVersion = 3;
     } catch (const std::exception& e) {
       // GLES3 unavailable; rebuild attributes for GLES2 so that subsequent
       // child context creation stays consistent with the root.
-      m_contextAttributes.assign(kContextAttributesGles2,
-                                 kContextAttributesGles2 + sizeof(kContextAttributesGles2) / sizeof(EGLint));
+      m_contextAttributes.assign(
+          kContextAttributesGles2, kContextAttributesGles2 + sizeof(kContextAttributesGles2) / sizeof(EGLint)
+      );
       m_contextAttributesRobust = false;
       m_resetNotificationEnabled = false;
       m_videoMemoryPurgeNotificationEnabled = false;
       m_rootContext = createContextWithCurrentAttributes(EGL_NO_CONTEXT);
       if (m_rootContext == EGL_NO_CONTEXT) {
         throw std::runtime_error(
-            std::format("eglCreateContext (root, GLES2 fallback) failed (EGL error 0x{:04x})",
-                        static_cast<unsigned>(eglGetError()))
+            std::format(
+                "eglCreateContext (root, GLES2 fallback) failed (EGL error 0x{:04x})",
+                static_cast<unsigned>(eglGetError())
+            )
         );
       }
       m_clientVersion = 2;
-      kLog.info("EGL GLES3 unavailable ({}); falling back to GLES2 — live_paper visualizer will be disabled",
-                e.what());
+      kLog.info("EGL GLES3 unavailable ({}); falling back to GLES2 — live_paper visualizer will be disabled", e.what());
     }
     kLog.info("initialized EGL {}.{} with shared root context (GLES{})", major, minor, m_clientVersion);
   } else {

@@ -47,19 +47,18 @@
 #include "launcher/wallpaper_provider.h"
 #include "launcher/window_provider.h"
 #include "notification/notifications.h"
+#include "pipewire/pipewire_pcm_tap.h"
 #include "pipewire/pipewire_poll_source.h"
 #include "pipewire/pipewire_service.h"
 #include "pipewire/pipewire_spectrum.h"
 #include "pipewire/pipewire_spectrum_poll_source.h"
 #include "pipewire/sound_player.h"
-#include "pipewire/pipewire_pcm_tap.h"
 #include "render/animation/motion_service.h"
 #include "render/backend/render_backend.h"
-#include "render/visualizer/livepaper_availability.h"
-#include "render/visualizer/projectm_renderer.h"
-#include "shell/wallpaper/visualizer_service.h"
 #include "render/core/texture_manager.h"
 #include "render/text/font_weight_catalog.h"
+#include "render/visualizer/livepaper_availability.h"
+#include "render/visualizer/projectm_renderer.h"
 #include "scripting/plugin_ipc.h"
 #include "scripting/plugin_manifest.h"
 #include "scripting/plugin_panel_shell.h"
@@ -79,6 +78,7 @@
 #include "shell/tooltip/tooltip_manager.h"
 #include "shell/tray/tray_drawer_panel.h"
 #include "shell/wallpaper/panel/wallpaper_panel.h"
+#include "shell/wallpaper/visualizer_service.h"
 #include "shell/wallpaper/wallpaper_paths.h"
 #include "system/brightness_poll_source.h"
 #include "system/brightness_service.h"
@@ -139,12 +139,6 @@ void Application::initUiRenderSurfacesAndSettings() {
   // Optional live-paper plumbing. ProjectMRenderer renders libprojectM into a
   // hidden window surface in the shared EGL group at the working resolution
   // from [wallpaper.live_paper] (render_width/render_height, 720p by default)
-  // — one texture feeds every output and the wallpaper's fill_mode handles the
-  // scaling, so this trades GPU fill-rate for sharpness on large/high-DPI
-  // outputs. A later config reload re-applies it via
-  // VisualizerService::applyConfigToRenderer(). The texture is created up
-  // front so any output that turns on live_paper later can pick it up without
-  // renegotiating GL.
   //
   // Requires GLES3 (libprojectM 4.x uses VAOs which are core in GLES3 and only
   // an extension in GLES2). On hardware where the GlSharedContext fell back to
@@ -154,9 +148,10 @@ void Application::initUiRenderSurfacesAndSettings() {
   if (m_glShared.clientVersion() >= 3) {
     const auto& livePaperCfg = m_configService.config().wallpaper.livePaper;
     m_projectMRenderer = std::make_unique<ProjectMRenderer>();
-    if (!m_projectMRenderer->initialize(m_glShared, m_wayland.compositor(),
-                                        static_cast<std::uint32_t>(livePaperCfg.renderWidth),
-                                        static_cast<std::uint32_t>(livePaperCfg.renderHeight))) {
+    if (!m_projectMRenderer->initialize(
+            m_glShared, m_wayland.compositor(), static_cast<std::uint32_t>(livePaperCfg.renderWidth),
+            static_cast<std::uint32_t>(livePaperCfg.renderHeight)
+        )) {
       kLog.warn("live_paper visualizer unavailable: ProjectMRenderer::initialize failed");
       m_projectMRenderer.reset();
     }
@@ -180,8 +175,10 @@ void Application::initUiRenderSurfacesAndSettings() {
   // (and say why) instead of offering a switch that cannot do anything.
   noctalia::livepaper::setRendererReady(m_projectMRenderer != nullptr);
   if (m_configService.config().wallpaper.livePaper.enabled && !noctalia::livepaper::rendererReady()) {
-    kLog.warn("wallpaper.live_paper.enabled is set but the visualizer is unavailable{}",
-              noctalia::livepaper::compiledIn() ? "" : " (built without libprojectM)");
+    kLog.warn(
+        "wallpaper.live_paper.enabled is set but the visualizer is unavailable{}",
+        noctalia::livepaper::compiledIn() ? "" : " (built without libprojectM)"
+    );
   }
 
   m_wallpaper.initialize(m_wayland, &m_configService, &m_renderContext, &m_sharedTextureCache, &m_themeService);
@@ -193,26 +190,25 @@ void Application::initUiRenderSurfacesAndSettings() {
     // advance was effectively dead code.
     m_visualizerService->initialize(m_projectMRenderer.get(), &m_configService, m_mprisService.get());
     m_wallpaper.setVisualizer(m_projectMRenderer.get(), m_visualizerService.get());
-    m_configService.addReloadCallback(
-        [this,
-         lastAudioSource = m_configService.config().wallpaper.livePaper.audioSource,
-         lastMicFallback = m_configService.config().wallpaper.livePaper.allowMicFallback]() mutable {
-          if (m_visualizerService != nullptr) {
-            m_visualizerService->onConfigChanged();
-          }
-          if (m_pipewirePcmTap == nullptr) {
-            return;
-          }
-          const auto& lp = m_configService.config().wallpaper.livePaper;
-          if (lp.allowMicFallback != lastMicFallback) {
-            m_pipewirePcmTap->setMicFallbackAllowed(lp.allowMicFallback);
-            lastMicFallback = lp.allowMicFallback;
-          }
-          if (lp.audioSource != lastAudioSource) {
-            m_pipewirePcmTap->start(lp.audioSource);
-            lastAudioSource = lp.audioSource;
-          }
-        });
+    m_configService.addReloadCallback([this, lastAudioSource = m_configService.config().wallpaper.livePaper.audioSource,
+                                       lastMicFallback =
+                                           m_configService.config().wallpaper.livePaper.allowMicFallback]() mutable {
+      if (m_visualizerService != nullptr) {
+        m_visualizerService->onConfigChanged();
+      }
+      if (m_pipewirePcmTap == nullptr) {
+        return;
+      }
+      const auto& lp = m_configService.config().wallpaper.livePaper;
+      if (lp.allowMicFallback != lastMicFallback) {
+        m_pipewirePcmTap->setMicFallbackAllowed(lp.allowMicFallback);
+        lastMicFallback = lp.allowMicFallback;
+      }
+      if (lp.audioSource != lastAudioSource) {
+        m_pipewirePcmTap->start(lp.audioSource);
+        lastAudioSource = lp.audioSource;
+      }
+    });
   }
   m_backdrop.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
   m_settingsWindow.initialize(

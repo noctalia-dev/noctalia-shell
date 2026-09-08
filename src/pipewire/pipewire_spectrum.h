@@ -44,16 +44,8 @@ public:
   [[nodiscard]] const std::vector<float>& values(ListenerId id) const noexcept;
   [[nodiscard]] bool idle() const noexcept { return m_idle; }
 
-  // The node the spectrum — and therefore the bar's audio-visualizer widget —
-  // analyses: the explicitly configured target, or the default sink. The
-  // live-paper PCM tap follows this so the projectM visualizer reacts to
-  // exactly the audio the widget displays.
-  //
-  // LIFETIME: the returned AudioNode* aliases an entry in
-  // PipeWireService::state().sinks / .sources. That vector is replaced on
-  // every audio-state publish (`m_state = std::move(next)`), so the pointer
-  // is valid ONLY until the next pw_loop pump. Callers must extract any id
-  // or string fields synchronously before yielding back to the loop.
+  // The live-paper PCM tap follows the other widgets audio sink so the
+  // projectM visualizer reacts to exactly the audio the widget displays.
   [[nodiscard]] std::uint32_t resolvedTargetNodeId() const noexcept;
   [[nodiscard]] const AudioNode* resolvedTargetNode() const noexcept;
 

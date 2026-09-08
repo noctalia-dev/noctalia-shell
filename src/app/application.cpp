@@ -55,12 +55,11 @@
 #include "pipewire/pipewire_spectrum_poll_source.h"
 #include "pipewire/sound_player.h"
 #include "pipewire/wireplumber_mixer.h"
-#include "render/visualizer/projectm_renderer.h"
-#include "shell/wallpaper/visualizer_service.h"
 #include "render/animation/motion_service.h"
 #include "render/backend/render_backend.h"
 #include "render/core/texture_manager.h"
 #include "render/text/font_weight_catalog.h"
+#include "render/visualizer/projectm_renderer.h"
 #include "scripting/plugin_ipc.h"
 #include "scripting/plugin_manifest.h"
 #include "scripting/plugin_panel_shell.h"
@@ -80,6 +79,7 @@
 #include "shell/tooltip/tooltip_manager.h"
 #include "shell/tray/tray_drawer_panel.h"
 #include "shell/wallpaper/panel/wallpaper_panel.h"
+#include "shell/wallpaper/visualizer_service.h"
 #include "shell/wallpaper/wallpaper_paths.h"
 #include "system/brightness_poll_source.h"
 #include "system/brightness_service.h"
@@ -184,19 +184,8 @@ Application::Application()
 
 Application::~Application() {
 #ifdef NOCTALIA_HAVE_LIVEPAPER
-  // Tear down the live-paper plumbing before the implicit member destruction
-  // begins. The unique_ptr<ProjectMRenderer> is declared above m_glShared
-  // (members destroy in reverse declaration order), so without this explicit
-  // reset() the renderer's destructor would run AFTER the GlSharedContext is
-  // already gone and dereference dangling EGL state from
-  // ProjectMRenderer::shutdown(). Service first because it holds a non-owning
-  // pointer to the renderer.
   m_visualizerService.reset();
   m_projectMRenderer.reset();
-  // PCM tap also depends on m_pipewireService which is declared earlier; this
-  // is correct via the implicit teardown, but resetting alongside the rest of
-  // the live-paper plumbing keeps the shutdown sequence symmetric with
-  // initUi().
   m_pipewirePcmTap.reset();
 #endif
 

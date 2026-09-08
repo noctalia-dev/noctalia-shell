@@ -858,8 +858,6 @@ void Wallpaper::registerIpc(IpcService& ipc) {
 
   // ── live_paper handlers ─────────────────────────────────────────────────
   // No-ops (with a clear error) when the visualizer service isn't available
-  // — either libprojectM wasn't initialized or the build was started before
-  // the visualizer integration was active.
   auto requireService = [this]() -> VisualizerService* { return m_visualizerService; };
 
   ipc.bind(noctalia::cli::msg::livepaperNext, [requireService](const std::string&) -> std::string {
@@ -1659,10 +1657,9 @@ void Wallpaper::updateRendererState(WallpaperInstance& instance) {
     // for its dimensions / non-zero source gate.
     wallpaperNode->setLiveImage(m_visualizer->eglImage(), m_visualizer->eglImageSerial());
     wallpaperNode->setSources(
-        WallpaperSourceKind::Image, vizTex.id, instance.currentColor, WallpaperSourceKind::Image,
-        vizTex.id, instance.nextColor, static_cast<float>(vizTex.width),
-        static_cast<float>(vizTex.height), static_cast<float>(vizTex.width),
-        static_cast<float>(vizTex.height)
+        WallpaperSourceKind::Image, vizTex.id, instance.currentColor, WallpaperSourceKind::Image, vizTex.id,
+        instance.nextColor, static_cast<float>(vizTex.width), static_cast<float>(vizTex.height),
+        static_cast<float>(vizTex.width), static_cast<float>(vizTex.height)
     );
   } else {
     wallpaperNode->setLiveImage(nullptr);
