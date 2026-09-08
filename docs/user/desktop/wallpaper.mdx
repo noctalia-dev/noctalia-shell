@@ -104,7 +104,13 @@ Live paper is **optional at build time**. It needs a GLES-enabled libprojectM 4,
 
 ### Presets
 
-**Presets are not shipped.** Point `presets_dir` at a folder of Milkdrop presets, or drop them in `$XDG_DATA_HOME/waylivepaper/presets` (`~/.local/share/waylivepaper/presets`) and leave `presets_dir` empty. Files ending in `.milk` and `.prjm` are picked up; subdirectories are scanned too. With no presets found, the visualizer stays on the static wallpaper.
+Point `presets_dir` at a folder of Milkdrop presets, or drop them in `$XDG_DATA_HOME/waylivepaper/presets` (`~/.local/share/waylivepaper/presets`) and leave `presets_dir` empty. Files ending in `.milk` and `.prjm` are picked up; subdirectories are scanned too. With no presets found, the visualizer stays on the static wallpaper.
+
+Most builds **do not ship presets** - you supply your own. The exception is the flake's Home Manager module, which symlinks a pre-built pack into `$XDG_DATA_HOME/waylivepaper/presets` as soon as you set `settings.wallpaper.live_paper.enabled`, so enabling the visualizer is a single switch. That pack is `presets-cream-of-the-crop` with the brightest and most strobe-heavy presets removed. Set `wallpaper.live_paper.defaultPresets = false` to manage presets yourself.
+
+:::caution[Photosensitivity]
+Milkdrop presets can flash and strobe rapidly. The pack staged by the Home Manager module is filtered with that in mind, but preset packs you supply yourself are not filtered, and no filtering is applied at runtime. If you are sensitive to flashing imagery, review presets before use, or raise `darken` to damp the output.
+:::
 
 Presets rotate every `interval_seconds`, and also when the MPRIS track changes, so a new song brings a new preset without waiting for the timer. Set `interval_seconds = 0` to keep whichever preset is mounted and rotate on track changes only.
 
