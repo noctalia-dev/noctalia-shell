@@ -143,6 +143,27 @@ event cache, may instead read one storage master key from an explicitly configur
 it is used automatically when detected. Use Meson's `-Djemalloc=enabled` or `-Djemalloc=disabled` option to require or
 disable it explicitly.
 
+### Live paper visualizer (optional, libprojectM)
+
+The `[wallpaper.live_paper]` Milkdrop visualizer needs **libprojectM 4** on the pkg-config path and is **not** in any
+of the dependency commands above, because distro packages of it usually do not work for this purpose. The Meson
+`livepaper` option defaults to `auto`, so a build without libprojectM succeeds and simply omits the feature — the
+settings entry then explains that the build has no visualizer. Use `-Dlivepaper=enabled` to make a missing or unusable
+libprojectM a configure error instead, or `-Dlivepaper=disabled` to skip it outright.
+
+Two things commonly go wrong with a distro-provided libprojectM:
+
+- **Desktop GL instead of GLES.** libprojectM 4 builds against desktop GL by default, while Noctalia hands it an
+  EGL/GLESv2 share group. Such a build links fine and only fails at runtime, where the renderer refuses to start and
+  the shell falls back to the static wallpaper. Build libprojectM with CMake `-DENABLE_GLES=ON` to avoid this.
+- **A broken pkg-config file.** Upstream's `projectM-4.pc` emits `-l:projectM-4`, an exact-filename flag naming a file
+  that does not exist (the library is `libprojectM-4.so`). Meson now link-tests libprojectM during configure, so this
+  is reported there rather than at final link. Fix the `.pc` by replacing `-l:projectM-4` with `-lprojectM-4`.
+
+Nix users get a correctly built libprojectM automatically from the `libprojectm-gles` overlay in
+[`nix/package.nix`](nix/package.nix). See [docs/livepaper.md](docs/livepaper.md) for the feature itself, and
+[PACKAGING.md](PACKAGING.md) for the packaging view.
+
 Sanitizer runtime packages are only needed for ASan/UBSan builds configured with `just configure asan`.
 
 The sources are built as C++23, which requires GCC 13+ or Clang 16+. Current rolling and recent stable distros (Arch,

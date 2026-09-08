@@ -103,12 +103,46 @@ dl_dep              = cpp.find_library('dl', required: false)
 # hard-require it, `-Dlivepaper=disabled` to skip it). Nix users get this from
 # the libprojectm-gles overlay declared in nix/package.nix; other distros need
 # a GLES-enabled libprojectM build on the pkg-config path.
-projectm_dep        = dependency('projectM-4', required: get_option('livepaper'))
-have_livepaper      = projectm_dep.found()
+livepaper_option    = get_option('livepaper')
+projectm_dep        = dependency('projectM-4', required: livepaper_option)
+
+# `dependency()` only proves that a .pc file exists, which is not enough here:
+# upstream's projectM-4.pc emits `-l:projectM-4` (GCC exact-filename syntax) for
+# a file that does not exist — the real library is `libprojectM-4.so` — so the
+# linker cannot resolve it. Distros shipping that .pc unpatched would satisfy
+# the check above and then fail when the noctalia binary itself is linked,
+# breaking the build for anyone who merely happens to have libprojectM
+# installed. Probe a real link so `auto` degrades to a clean "feature off"
+# instead, and `enabled` fails here with an actionable message rather than
+# thousands of lines later at link time.
+#
+# Note this cannot detect the *other* incompatibility: libprojectM built
+# against desktop GL rather than GLES links identically and only fails at
+# runtime, where ProjectMRenderer::initialize() reports it and the shell falls
+# back to the static wallpaper. See docs/livepaper.md.
+have_livepaper = false
+if projectm_dep.found()
+  have_livepaper = cpp.links(
+    '''#include <projectM-4/core.h>
+       int main() { projectm_destroy(projectm_create()); return 0; }''',
+    dependencies: projectm_dep,
+    name: 'libprojectM 4 links',
+  )
+  if not have_livepaper and livepaper_option.enabled()
+    error(
+      'libprojectM 4 was found via pkg-config but does not link.\n' +
+      'This is usually the upstream projectM-4.pc emitting "-l:projectM-4",\n' +
+      'a literal filename that does not exist (the library is libprojectM-4.so).\n' +
+      'Fix the .pc file (replace "-l:projectM-4" with "-lprojectM-4"), or build\n' +
+      'the visualizer out with -Dlivepaper=disabled. See PACKAGING.md.',
+    )
+  endif
+endif
+
 if have_livepaper
   message('live_paper visualizer: enabled (libprojectM found)')
 else
-  message('live_paper visualizer: disabled (libprojectM not found or feature off)')
+  message('live_paper visualizer: disabled (libprojectM not found, unusable, or feature off)')
 endif
 
 jemalloc_option = get_option('jemalloc')

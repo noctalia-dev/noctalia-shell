@@ -182,11 +182,20 @@ music.
 ## Build-time gate
 
 The feature is **opt-in at compile time** via the meson `livepaper` feature
-option (default: `auto`). With `auto` the feature is enabled iff a
-GLES-enabled libprojectM 4 is found on the `pkg-config` path; otherwise the
-build silently drops the feature. To force-enable (and fail the configure
-when libprojectM is missing) use `-Dlivepaper=enabled`; to skip it entirely
-even if libprojectM is installed use `-Dlivepaper=disabled`.
+option (default: `auto`). With `auto` the feature is enabled iff libprojectM 4
+is found on the `pkg-config` path **and** actually links; otherwise the build
+drops the feature (meson prints which). To force-enable (and fail the configure
+when libprojectM is missing or unusable) use `-Dlivepaper=enabled`; to skip it
+entirely even if libprojectM is installed use `-Dlivepaper=disabled`.
+
+The link probe exists because a *found* libprojectM is not necessarily a usable
+one: upstream's `projectM-4.pc` emits `-l:projectM-4`, an exact-filename flag
+naming a file that does not exist (`libprojectM-4.so` is the real library), so
+a bare `dependency()` check would pass and the final link would then fail.
+Whether the library was built for **GLES** rather than desktop GL is *not*
+detectable at configure time — that mismatch links cleanly and surfaces at
+runtime instead, where `ProjectMRenderer::initialize()` fails and
+`livepaper::rendererReady()` stays false. See [PACKAGING.md](../PACKAGING.md).
 
 When the feature is compiled out, a stub TU (`livepaper_stub.cpp`) provides
 empty implementations of `ProjectMRenderer`, `VisualizerService`, and
