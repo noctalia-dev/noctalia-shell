@@ -697,7 +697,6 @@ interval_seconds = 0
         fail("wallpaper.live_paper.interval_seconds: 0 must survive as no-rotation");
       }
     }
-    }
   }
 
   void checkMonitorFontScaleChangeSet() {
