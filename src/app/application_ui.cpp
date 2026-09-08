@@ -55,6 +55,7 @@
 #include "pipewire/pipewire_pcm_tap.h"
 #include "render/animation/motion_service.h"
 #include "render/backend/render_backend.h"
+#include "render/visualizer/livepaper_availability.h"
 #include "render/visualizer/projectm_renderer.h"
 #include "shell/wallpaper/visualizer_service.h"
 #include "render/core/texture_manager.h"
@@ -175,6 +176,13 @@ void Application::initUiRenderSurfacesAndSettings() {
 #else
   kLog.info("live_paper visualizer not compiled in");
 #endif
+  // Publish the outcome so the settings UI can disable the live_paper toggle
+  // (and say why) instead of offering a switch that cannot do anything.
+  noctalia::livepaper::setRendererReady(m_projectMRenderer != nullptr);
+  if (m_configService.config().wallpaper.livePaper.enabled && !noctalia::livepaper::rendererReady()) {
+    kLog.warn("wallpaper.live_paper.enabled is set but the visualizer is unavailable{}",
+              noctalia::livepaper::compiledIn() ? "" : " (built without libprojectM)");
+  }
 
   m_wallpaper.initialize(m_wayland, &m_configService, &m_renderContext, &m_sharedTextureCache, &m_themeService);
   if (m_visualizerService != nullptr) {

@@ -12,6 +12,7 @@
 #include "i18n/i18n.h"
 #include "ipc/ipc_service.h"
 #include "render/render_context.h"
+#include "render/visualizer/livepaper_availability.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "shell/bar/widget_action.h"
@@ -747,6 +748,8 @@ settings::RegistryEnvironment SettingsWindow::buildRegistryEnvironment() const {
   env.screencopySupported = m_wayland != nullptr && m_wayland->hasScreencopy();
   env.niriOverviewTypeToLaunchSupported = (m_wayland != nullptr && compositors::isNiri());
   env.ddcutilAvailable = (m_dependencies != nullptr && m_dependencies->hasDdcutil());
+  env.livePaperCompiledIn = noctalia::livepaper::compiledIn();
+  env.livePaperAvailable = noctalia::livepaper::rendererReady();
   env.systemdUserManaged = process::runningUnderSystemdUserManager();
   env.gammaControlAvailable = (m_wayland != nullptr && m_wayland->hasGammaControl());
   env.greeterSyncAvailable =

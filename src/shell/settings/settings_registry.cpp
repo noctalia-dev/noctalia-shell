@@ -827,6 +827,22 @@ namespace settings {
         ToggleSetting{cfg.wallpaper.automation.recursive}, "subdirectories", true
     ));
 
+    // Live paper (projectM/Milkdrop visualizer). Only the master toggle is
+    // surfaced here; the tuning knobs (fps, mesh, render size, presets_dir,
+    // audio_source, ...) stay config-file-only. The toggle is rendered
+    // disabled with an explanatory subtitle when the visualizer cannot run —
+    // either the build has no libprojectM, or it does but the renderer failed
+    // to come up (GLES2-only driver, projectM init failure).
+    entries.push_back(makeEntry(
+        SettingsSection::Wallpaper, "live-paper", tr("settings.schema.wallpaper.live-paper.label"),
+        env.livePaperAvailable    ? tr("settings.schema.wallpaper.live-paper.description")
+            : env.livePaperCompiledIn ? tr("settings.schema.wallpaper.live-paper.unavailable-runtime")
+                                      : tr("settings.schema.wallpaper.live-paper.unavailable-build"),
+        {"wallpaper", "live_paper", "enabled"},
+        ToggleSetting{.checked = cfg.wallpaper.livePaper.enabled, .enabled = env.livePaperAvailable},
+        "visualizer projectm milkdrop audio music reactive"
+    ));
+
     // Templates
     const auto builtInTemplatesOn =
         SettingVisibility{[](const Config& c) { return c.theme.templates.enableBuiltinTemplates; }};

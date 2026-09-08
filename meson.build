@@ -1004,6 +1004,12 @@ if sanitize
   _noctalia_sources += files('src/core/lsan_suppressions.cpp')
 endif
 
+# The live-paper availability flags are read by the settings registry in both
+# build variants, so this TU compiles unconditionally.
+_noctalia_sources += files(
+  'src/render/visualizer/livepaper_availability.cpp',
+)
+
 # Optional live-paper sources. The real implementations dispatch into
 # libprojectM and depend on a PipeWire raw PCM tap that only serves the
 # visualizer, so we compile them in only when the libprojectM dependency was

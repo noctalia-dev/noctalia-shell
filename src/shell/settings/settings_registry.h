@@ -300,6 +300,8 @@ namespace settings {
     bool niriOverviewTypeToLaunchSupported = false; // show niri-only type-to-launch integration
     bool screencopySupported = false;               // lockscreen blurred desktop + screenshot features
     bool ddcutilAvailable = false;                  // disable ddcutil toggle when ddcutil is not on PATH
+    bool livePaperCompiledIn = false;               // build linked libprojectM (meson `livepaper` feature)
+    bool livePaperAvailable = false;                // visualizer actually came up; false disables the toggle
     bool systemdUserManaged = false;                // disable systemd app launching when the shell is not a user unit
     bool gammaControlAvailable = false;             // hide night-light entries when gamma control is unavailable
     bool greeterSyncAvailable = false;              // hide greeter appearance sync when greeter is not installed

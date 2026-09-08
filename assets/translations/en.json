@@ -1231,6 +1231,7 @@
         "launcher": "Launcher",
         "layout": "Layout",
         "lifecycle": "Lifecycle",
+        "live-paper": "Live Paper",
         "location": "Location",
         "lock-screen": "Lock Screen",
         "media": "Media",
@@ -3169,6 +3170,12 @@
         "fill-mode": {
           "description": "How wallpapers fit the screen",
           "label": "Fill Mode"
+        },
+        "live-paper": {
+          "description": "Replace the wallpaper with an audio-reactive projectM (Milkdrop) visualizer",
+          "label": "Live Paper",
+          "unavailable-build": "Unavailable: this build was compiled without libprojectM",
+          "unavailable-runtime": "Unavailable: the visualizer needs a GLES 3 capable GPU driver and failed to start"
         },
         "monitor-directory": {
           "label": "Wallpaper Directory"
