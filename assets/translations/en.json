@@ -28,6 +28,7 @@
   },
   "bar": {
     "annotate": {
+      "capture-new-region": "Capture new region (discards the current edit)",
       "close": "Close without delivering (Esc)",
       "color-black": "Black",
       "color-blue": "Blue",
@@ -38,7 +39,10 @@
       "color-white": "White",
       "color-yellow": "Yellow",
       "copy": "Copy the annotated image (Ctrl+C)",
-      "cursor": "Show the pointer captured with the screen (p)",
+      "cursor": "Show captured pointer (P)",
+      "cursor-capture-failed": "Pointer toggle unavailable: the compositor could not provide a separate cursor image",
+      "cursor-live": "Freeze the screen first to change the captured pointer (F)",
+      "cursor-not-captured": "Pointer toggle unavailable: this compositor does not support separate cursor capture",
       "done": "Apply the screenshot settings (Enter)",
       "fill-off": "Shape fill: off",
       "fill-on": "Shape fill: on",
@@ -1320,7 +1324,9 @@
         "providers": "Providers",
         "screen-corners": "Screen Corners",
         "screen-time": "Screen Time",
-        "screenshot": "Screenshot",
+        "screenshot-annotation": "Annotation",
+        "screenshot-capture": "Capture",
+        "screenshot-output": "Output",
         "security": "Security",
         "session-panel": "Session Panel",
         "shape": "Shape",
@@ -1354,6 +1360,7 @@
         "plugins": "Plugins",
         "popups": "Popups",
         "power": "Power",
+        "screenshot": "Screenshot",
         "security": "Security",
         "services": "Services",
         "shell": "Shell",
@@ -3097,50 +3104,57 @@
           "label": "Reset Screen Time Data"
         },
         "screenshot-annotate": {
-          "description": "Open the annotation editor on every screenshot; Done applies the save, clipboard, and pipe settings",
-          "label": "Annotate Before Delivering"
+          "description": "Open screenshots in the annotation editor before applying the output actions",
+          "label": "Edit Before Saving or Copying"
+        },
+        "screenshot-close-on-copy": {
+          "description": "Close after a successful copy from the editor, including when opened directly",
+          "label": "Close Editor After Copying"
         },
         "screenshot-confirm-region": {
-          "description": "After drawing a region, keep the overlay open until you confirm with Enter or Space",
-          "label": "Confirm Region"
+          "description": "Wait for Enter or Space after selecting a region",
+          "label": "Confirm Region Selection"
         },
         "screenshot-copy-to-clipboard": {
-          "description": "Place the captured PNG on the clipboard selection",
+          "description": "Copy the screenshot as a PNG image, ready to paste into another app",
           "label": "Copy to Clipboard"
         },
         "screenshot-directory": {
-          "description": "Folder for saved PNG files; leave empty to use the standard XDG Pictures directory",
-          "label": "Output Directory",
+          "description": "Folder for saved PNG files, including the editor's Save action; leave empty to use the standard Pictures folder",
+          "label": "Save Folder",
           "placeholder": "XDG Pictures directory"
         },
         "screenshot-filename-pattern": {
-          "description": "strftime pattern without extension (.png is added); use %s for unix epoch",
+          "description": "Filename format for all saved screenshots, including the editor's Save action; uses strftime tokens without the .png extension",
           "label": "Filename Pattern"
         },
         "screenshot-freeze-screen": {
-          "description": "Capture the desktop before region selection so moving content stays still",
-          "label": "Freeze Screen"
+          "description": "Keep the desktop still while choosing a region",
+          "label": "Freeze During Region Selection"
+        },
+        "screenshot-output": {
+          "description": "Actions applied after capture, or when you choose Done in the annotation editor."
         },
         "screenshot-pipe-command": {
-          "description": "Command run as /bin/sh -lc with the PNG on stdin; for annotators or uploaders (for example: swappy -f - or satty -f -)",
-          "label": "Pipe Command",
+          "description": "Shell command that receives the PNG image on standard input, for example an external editor or uploader",
+          "label": "Command",
           "placeholder": "swappy -f -"
         },
         "screenshot-pipe-to-command": {
-          "description": "Send the captured PNG to a shell command on stdin",
-          "label": "Pipe to Command"
+          "description": "Run a shell command with the PNG image on standard input",
+          "label": "Run Command"
         },
         "screenshot-remember-last-region": {
-          "description": "Pre-select the last region (including after cancel) on the next region screenshot",
+          "description": "Pre-select the previous region on the next capture, including after cancelling",
           "label": "Remember Last Region"
         },
         "screenshot-save-to-file": {
-          "description": "Write screenshots as PNG files to the output directory",
+          "description": "Save the screenshot as a PNG file in the save folder",
           "label": "Save to File"
         },
         "screenshot-show-cursor": {
-          "description": "Include the mouse pointer in screenshots",
-          "label": "Show Cursor"
+          "description": "Show the mouse pointer initially; change it per capture when the compositor supports separate cursor capture",
+          "label": "Include Mouse Pointer"
         },
         "settings-window-translucent": {
           "description": "Make the Settings background translucent for compositor effects",

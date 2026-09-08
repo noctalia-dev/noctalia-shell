@@ -1,9 +1,8 @@
 #pragma once
 
 #include "capture/annotation_overlay.h"
-#include "capture/screencopy_capture.h"
+#include "capture/screenshot_capture.h"
 #include "capture/screenshot_region_overlay.h"
-#include "core/timer_manager.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -99,7 +98,7 @@ private:
     struct Piece {
       wl_output* output = nullptr;
       LogicalRect localRegion{};
-      ScreencopyImage image;
+      capture::ScreenshotImage image;
     };
     std::vector<Piece> pieces;
     std::size_t next = 0;
@@ -107,11 +106,8 @@ private:
 
   enum class FreezeTarget : std::uint8_t { Region, Annotation };
 
-  // One screencopy request. The annotator needs each output twice, once with the cursor
-  // composited and once without, so the cursor toggle costs no extra capture.
   struct FreezeRequest {
     wl_output* output = nullptr;
-    bool overlayCursor = false;
   };
 
   // Delivery policy captured before the annotator opened, applied when the user hits Done.
@@ -129,13 +125,14 @@ private:
   void startFullscreenOverlay(RenderContext& renderContext);
   void beginFreezeCapture();
   void startNextFreezeCapture();
-  void onFreezeFrameCaptured(FreezeRequest request, std::optional<ScreencopyImage> image, const std::string& error);
+  void
+  onFreezeFrameCaptured(FreezeRequest request, std::optional<capture::ScreenshotImage> image, const std::string& error);
   void finishFreezeCapture();
   void abortFreezeCapture(const std::string& message);
   void cancelRegionCapture();
   void ensureAnnotationOverlay();
   void beginImageAnnotation(
-      ScreencopyImage image, const OutputOptions& options, std::optional<std::filesystem::path> destPath
+      capture::ScreenshotImage image, const OutputOptions& options, std::optional<std::filesystem::path> destPath
   );
   [[nodiscard]] capture::AnnotationToolState loadAnnotationToolState() const;
   void persistAnnotationToolState(std::string_view key, std::string_view value);
@@ -145,7 +142,8 @@ private:
   void completeFullscreenSelection(wl_output* output, const OutputOptions& options);
   void startNextGlobalRegionCapture();
   void onGlobalRegionFrameCaptured(
-      wl_output* output, LogicalRect localRegion, std::optional<ScreencopyImage> image, const std::string& error
+      wl_output* output, LogicalRect localRegion, std::optional<capture::ScreenshotImage> image,
+      const std::string& error
   );
   void finishGlobalRegionBatch();
   void cancelGlobalRegionBatch();
@@ -153,18 +151,19 @@ private:
   void captureAllOutputs(const OutputOptions& options);
   void startNextAllOutputsCapture();
   void onAllOutputsFrameCaptured(
-      wl_output* output, const std::string& label, std::optional<ScreencopyImage> image, const std::string& error
+      wl_output* output, const std::string& label, std::optional<capture::ScreenshotImage> image,
+      const std::string& error
   );
   void finishAllOutputsBatch();
   void cancelAllOutputsBatch();
   void deliverCaptureResult(
-      ScreencopyImage image, const OutputOptions& options, std::optional<std::filesystem::path> destPath
+      capture::ScreenshotImage image, const OutputOptions& options, std::optional<std::filesystem::path> destPath
   );
-  void
+  bool
   finishDelivery(ScreencopyImage image, const OutputOptions& options, std::optional<std::filesystem::path> destPath);
   void onCaptureComplete(
-      std::optional<ScreencopyImage> image, const std::string& error, OutputOptions options,
-      std::optional<std::filesystem::path> destPath, wl_output* output
+      std::optional<capture::ScreenshotImage> image, const std::string& error, OutputOptions options,
+      std::optional<std::filesystem::path> destPath
   );
   [[nodiscard]] wl_output* preferredCaptureOutput() const;
   [[nodiscard]] std::filesystem::path outputDirectory(const OutputOptions& options) const;
@@ -180,7 +179,7 @@ private:
   NotificationManager& m_notifications;
   ConfigService& m_configService;
   ClipboardService* m_clipboard = nullptr;
-  ScreencopyCapture m_capture;
+  ScreenshotCapture m_capture;
   std::unique_ptr<capture::ScreenshotRegionOverlay> m_regionOverlay;
   std::vector<PendingCapture> m_captureQueue;
   std::unique_ptr<AllOutputsBatch> m_allOutputsBatch;
@@ -190,10 +189,8 @@ private:
   bool m_regionFullscreenPick = false;
   std::vector<capture::FrozenScreenshot> m_frozenScreenshots;
   std::unique_ptr<capture::AnnotationOverlay> m_annotationOverlay;
-  std::vector<capture::AnnotationOverlay::FrozenPair> m_frozenPairs;
   std::vector<FreezeRequest> m_pendingFreezeCaptures;
   std::optional<PendingDelivery> m_pendingDelivery;
   FreezeTarget m_freezeTarget = FreezeTarget::Region;
   bool m_freezeCaptureActive = false;
-  Timer m_freezeCaptureTimeout;
 };

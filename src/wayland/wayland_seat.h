@@ -87,6 +87,7 @@ public:
 
   [[nodiscard]] std::uint32_t lastSerial() const noexcept { return m_lastSerial; }
   [[nodiscard]] wl_seat* seat() const noexcept { return m_seat; }
+  [[nodiscard]] wl_pointer* pointer() const noexcept { return m_pointer; }
 
   // Key repeat — driven by KeyRepeatPollSource
   [[nodiscard]] int repeatPollTimeoutMs() const;

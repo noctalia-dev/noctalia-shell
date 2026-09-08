@@ -1,7 +1,7 @@
 #pragma once
 
 #include "capture/annotation_document.h"
-#include "capture/screencopy_capture.h"
+#include "capture/screenshot_image.h"
 
 #include <array>
 #include <cstdint>
@@ -55,16 +55,11 @@ namespace capture {
   public:
     using ExportCallback = std::function<void(ScreencopyImage image, AnnotationExport action)>;
     using FreezeCallback = std::function<void()>;
+    using CaptureRegionCallback = std::function<void()>;
     using ClosedCallback = std::function<void()>;
     using FailureCallback = std::function<void(const std::string& message)>;
+    using FeedbackCallback = std::function<void(const std::string& message)>;
     using StateSetter = std::function<void(std::string_view key, std::string_view value)>;
-
-    // Per output, the same frame captured without and with the cursor overlay.
-    struct FrozenPair {
-      wl_output* output = nullptr;
-      ScreencopyImage plain;
-      ScreencopyImage cursor;
-    };
 
     AnnotationOverlay();
     ~AnnotationOverlay();
@@ -72,19 +67,22 @@ namespace capture {
     void initialize(WaylandConnection& wayland, RenderContext* renderContext);
     void setExportCallback(ExportCallback callback);
     void setFreezeCallback(FreezeCallback callback);
+    void setCaptureRegionCallback(CaptureRegionCallback callback);
     void setClosedCallback(ClosedCallback callback);
     void setFailureCallback(FailureCallback callback);
+    void setFeedbackCallback(FeedbackCallback callback);
     void setStateSetter(StateSetter setter);
 
     void setToolState(AnnotationToolState state);
     [[nodiscard]] const AnnotationToolState& toolState() const noexcept { return m_tools; }
 
     // Empty vector selects Live, a non-empty one Frozen.
-    void setFrozenScreenshots(std::vector<FrozenPair> frozen);
+    void setFrozenScreenshots(std::vector<FrozenScreenshot> frozen);
     void setCursorVisible(bool visible);
+    [[nodiscard]] bool cursorVisible() const noexcept;
 
     void begin();
-    void beginImage(ScreencopyImage image, wl_output* target);
+    void beginImage(ScreenshotImage image, wl_output* target);
     // Drops the surfaces so a screencopy frame cannot contain the overlay; documents survive.
     void hideForCapture();
     void resumeAfterCapture();
@@ -120,6 +118,8 @@ namespace capture {
     void foldIntoCommitted(Instance& instance, const Annotation& annotation);
     void abortWithError(const std::string& message);
 
+    [[nodiscard]] const ScreenshotImage* screenshot(const Instance& instance) const;
+    [[nodiscard]] const char* cursorTooltipKey(const Instance& instance) const;
     [[nodiscard]] const ScreencopyImage* background(const Instance& instance) const;
     [[nodiscard]] AnnotationDocument& documentFor(const Instance& instance);
     [[nodiscard]] Instance* instanceForSurface(const void* surface);
@@ -146,7 +146,8 @@ namespace capture {
     void redo();
     void requestExport(AnnotationExport action);
     void requestFreeze();
-    void toggleCursor();
+    void requestCaptureRegion();
+    void toggleCursor(Instance* instance = nullptr);
     void closeOverlay();
     void persistToolState();
 
@@ -158,14 +159,16 @@ namespace capture {
     RenderContext* m_renderContext = nullptr;
     ExportCallback m_onExport;
     FreezeCallback m_onFreeze;
+    CaptureRegionCallback m_onCaptureRegion;
     ClosedCallback m_onClosed;
     FailureCallback m_onFailure;
+    FeedbackCallback m_onFeedback;
     StateSetter m_stateSetter;
 
     std::vector<std::unique_ptr<Instance>> m_instances;
     std::unordered_map<wl_output*, AnnotationDocument> m_documents;
-    std::vector<FrozenPair> m_frozen;
-    ScreencopyImage m_image;
+    std::vector<FrozenScreenshot> m_frozen;
+    ScreenshotImage m_image;
     wl_output* m_imageOutput = nullptr;
 
     AnnotationMode m_mode = AnnotationMode::Live;

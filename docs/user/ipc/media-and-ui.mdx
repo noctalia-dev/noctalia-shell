@@ -124,7 +124,15 @@ Requires compositor support for `wlr-screencopy-unstable-v1`. Uses the global `[
 
 In picker mode, choose a connector from the top bar on any screen, or click the desktop to capture the monitor under the cursor. Errors list available connector names when the selector is unknown.
 
-Annotation tool keys (no modifier): **`m`** move, **`b`** brush, **`h`** highlighter, **`l`** line, **`a`** arrow, **`s`** rectangle, **`o`** circle, **`t`** text, **`n`** numbering, **`u`** blur, **`e`** eraser, **`c`** crop, **`f`** freeze (live overlay), **`p`** toggle the frozen pointer, **`[`** and **`]`** change the current tool's size. **`Ctrl+Z`** undoes, **`Ctrl+Shift+Z`** and **`Ctrl+Y`** redo, **`[keybinds].copy`** copies, **`[keybinds].save`** saves.
+Annotation tool keys (no modifier): **`m`** move, **`b`** brush, **`h`** highlighter, **`l`** line, **`a`** arrow, **`s`** rectangle, **`o`** circle, **`t`** text, **`n`** numbering, **`u`** blur, **`e`** eraser, **`c`** crop, **`f`** freeze (live overlay), **`p`** toggle the captured pointer, **`[`** and **`]`** change the current tool's size. **`Ctrl+Z`** undoes, **`Ctrl+Shift+Z`** and **`Ctrl+Y`** redo, **`[keybinds].copy`** copies, **`[keybinds].save`** saves.
+
+The pointer button and **P** work the same in region, fullscreen, and frozen-screen editing. `[shell.screenshot].show_cursor` sets the initial choice; toggling does not change that setting. Only the pointer recorded inside the captured area can appear. Noctalia captures the cursor separately through `ext-image-copy-capture-v1` and composites it over the same cursor-free background for both choices. When separate cursor capture is unsupported or fails, the ordinary screenshot keeps the configured pointer choice, the button is disabled with an explanatory tooltip, and **P** shows the same explanation. In live annotation, freeze with **F** first.
+
+`[shell.screenshot].close_on_copy` defaults to `true`: a successful **Copy** or **Ctrl+C** (including a custom **`[keybinds].copy`** binding) closes the editor. Set it to `false` to keep editing after copying. Failed copies and **Save** leave the editor open.
+
+**Capture new region** in the toolbar discards the current edit, captures a fresh desktop region without the annotation overlay, and opens it in the editor with the same pointer control and remembered tool preferences. Starting from a captured image preserves the editor's current pointer choice. It is available in live, frozen, and image modes, regardless of `[shell.screenshot].annotate`. Cancelling region selection closes the capture.
+
+Captured images have an inset **Outline** color-role border to distinguish the canvas from its surroundings. The border does not change the image size or appear in copied or saved images.
 
 The toolbar carries a grab handle on its left edge: drag it to move the bar out of the way. The position is remembered for later sessions and clamped to the output, so a bar dragged off a large monitor stays reachable on a smaller one. Every control has a tooltip naming its shortcut. **S**, **M**, and **L** set the current tool's size to half, one, or twice its default weight, and the adjustments button next to them reveals the fine stepper (`-`, the current pixel size, `+`) for anything in between; fine values are kept, not snapped back to the nearest preset.
 

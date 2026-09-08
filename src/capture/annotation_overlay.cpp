@@ -323,11 +323,12 @@ namespace capture {
     int deviceWidth = 0;
     int deviceHeight = 0;
     float scale = 1.0F;
-    bool backdropShowsCursor = false;
+    const ScreencopyImage* backdropImage = nullptr;
     bool pointerInside = false;
     // Toolbar glyph state, so a mark only moves (and forces a relayout) when it really changed.
     std::optional<std::size_t> markedSwatch;
     bool fillGlyphOn = false;
+    const char* cursorTooltip = nullptr;
   };
 
   AnnotationOverlay::AnnotationOverlay() = default;
@@ -343,9 +344,15 @@ namespace capture {
 
   void AnnotationOverlay::setFreezeCallback(FreezeCallback callback) { m_onFreeze = std::move(callback); }
 
+  void AnnotationOverlay::setCaptureRegionCallback(CaptureRegionCallback callback) {
+    m_onCaptureRegion = std::move(callback);
+  }
+
   void AnnotationOverlay::setClosedCallback(ClosedCallback callback) { m_onClosed = std::move(callback); }
 
   void AnnotationOverlay::setFailureCallback(FailureCallback callback) { m_onFailure = std::move(callback); }
+
+  void AnnotationOverlay::setFeedbackCallback(FeedbackCallback callback) { m_onFeedback = std::move(callback); }
 
   void AnnotationOverlay::setStateSetter(StateSetter setter) { m_stateSetter = std::move(setter); }
 
@@ -366,7 +373,7 @@ namespace capture {
     }
   }
 
-  void AnnotationOverlay::setFrozenScreenshots(std::vector<FrozenPair> frozen) {
+  void AnnotationOverlay::setFrozenScreenshots(std::vector<FrozenScreenshot> frozen) {
     m_frozen = std::move(frozen);
     m_mode = m_frozen.empty() ? AnnotationMode::Live : AnnotationMode::Frozen;
     if (m_mode == AnnotationMode::Live
@@ -377,20 +384,41 @@ namespace capture {
 
   void AnnotationOverlay::setCursorVisible(bool visible) { m_cursorVisible = visible; }
 
+  bool AnnotationOverlay::cursorVisible() const noexcept {
+    if (m_mode == AnnotationMode::Image) {
+      return m_image.canToggleCursor() ? m_cursorVisible : m_image.cursorVisible;
+    }
+    if (m_mode == AnnotationMode::Frozen && !m_instances.empty()) {
+      const Instance* target = m_instances.front().get();
+      for (const auto& inst : m_instances) {
+        if (inst != nullptr && inst->pointerInside) {
+          target = inst.get();
+          break;
+        }
+      }
+      if (target != nullptr) {
+        if (const ScreenshotImage* image = screenshot(*target); image != nullptr) {
+          return image->canToggleCursor() ? m_cursorVisible : image->cursorVisible;
+        }
+      }
+    }
+    return m_cursorVisible;
+  }
+
   void AnnotationOverlay::begin() {
     if (m_wayland == nullptr || m_renderContext == nullptr) {
       return;
     }
     destroySurfaces();
-    m_image = ScreencopyImage{};
+    m_image = ScreenshotImage{};
     m_imageOutput = nullptr;
     m_active = true;
     ensureSurfaces();
     requestFullRefresh();
   }
 
-  void AnnotationOverlay::beginImage(ScreencopyImage image, wl_output* target) {
-    if (m_wayland == nullptr || m_renderContext == nullptr || image.width <= 0 || image.height <= 0) {
+  void AnnotationOverlay::beginImage(ScreenshotImage image, wl_output* target) {
+    if (m_wayland == nullptr || m_renderContext == nullptr || image.image.width <= 0 || image.image.height <= 0) {
       return;
     }
     destroySurfaces();
@@ -398,6 +426,9 @@ namespace capture {
     m_frozen.clear();
     m_mode = AnnotationMode::Image;
     m_image = std::move(image);
+    if (!m_image.canToggleCursor()) {
+      m_cursorVisible = m_image.cursorVisible;
+    }
     m_imageOutput =
         target != nullptr ? target : (m_wayland->outputs().empty() ? nullptr : m_wayland->outputs().front().output);
     if (m_imageOutput == nullptr) {
@@ -433,7 +464,7 @@ namespace capture {
     destroySurfaces();
     m_documents.clear();
     m_frozen.clear();
-    m_image = ScreencopyImage{};
+    m_image = ScreenshotImage{};
     m_imageOutput = nullptr;
     m_mode = AnnotationMode::Live;
     if (wasActive) {
@@ -582,22 +613,51 @@ namespace capture {
     clearBlurCache();
   }
 
-  const ScreencopyImage* AnnotationOverlay::background(const Instance& instance) const {
+  const ScreenshotImage* AnnotationOverlay::screenshot(const Instance& instance) const {
     switch (m_mode) {
     case AnnotationMode::Live:
       return nullptr;
     case AnnotationMode::Image:
-      return m_image.width > 0 ? &m_image : nullptr;
+      return m_image.image.width > 0 ? &m_image : nullptr;
     case AnnotationMode::Frozen:
       break;
     }
-    for (const auto& pair : m_frozen) {
-      if (pair.output == instance.output) {
-        const ScreencopyImage& chosen = m_cursorVisible ? pair.cursor : pair.plain;
-        return chosen.rgba.empty() ? nullptr : &chosen;
+    for (const auto& frozen : m_frozen) {
+      if (frozen.output == instance.output) {
+        return &frozen.image;
       }
     }
     return nullptr;
+  }
+
+  const ScreencopyImage* AnnotationOverlay::background(const Instance& instance) const {
+    const ScreenshotImage* image = screenshot(instance);
+    if (image == nullptr) {
+      return nullptr;
+    }
+    const ScreencopyImage& chosen = image->imageForCursor(m_cursorVisible);
+    return chosen.rgba.empty() ? nullptr : &chosen;
+  }
+
+  const char* AnnotationOverlay::cursorTooltipKey(const Instance& instance) const {
+    if (m_mode == AnnotationMode::Live) {
+      return "bar.annotate.cursor-live";
+    }
+    const ScreenshotImage* image = screenshot(instance);
+    if (image == nullptr) {
+      return "bar.annotate.cursor-not-captured";
+    }
+    if (image->canToggleCursor()) {
+      return "bar.annotate.cursor";
+    }
+    switch (image->cursorStatus) {
+    case CursorToggleStatus::CaptureFailed:
+      return "bar.annotate.cursor-capture-failed";
+    case CursorToggleStatus::Available:
+    case CursorToggleStatus::NotCaptured:
+      return "bar.annotate.cursor-not-captured";
+    }
+    return "bar.annotate.cursor-not-captured";
   }
 
   AnnotationDocument& AnnotationOverlay::documentFor(const Instance& instance) {
@@ -684,8 +744,8 @@ namespace capture {
     const double areaTop = Style::spaceMd + toolbarHeight + Style::spaceLg;
     const double availableWidth = std::max(1.0, surfaceW - (2.0 * Style::spaceLg));
     const double availableHeight = std::max(1.0, surfaceH - areaTop - Style::spaceLg);
-    const auto imageWidth = static_cast<double>(m_image.width);
-    const auto imageHeight = static_cast<double>(m_image.height);
+    const auto imageWidth = static_cast<double>(m_image.image.width);
+    const auto imageHeight = static_cast<double>(m_image.image.height);
     const double fitScale =
         std::max({0.1, static_cast<double>(inst.scale), imageWidth / availableWidth, imageHeight / availableHeight});
     const double displayWidth = imageWidth / fitScale;
@@ -698,8 +758,8 @@ namespace capture {
         .height = displayHeight,
     };
     inst.canvasScale = fitScale;
-    inst.deviceWidth = m_image.width;
-    inst.deviceHeight = m_image.height;
+    inst.deviceWidth = m_image.image.width;
+    inst.deviceHeight = m_image.image.height;
   }
 
   void AnnotationOverlay::buildScene(Instance& inst) {
@@ -729,6 +789,7 @@ namespace capture {
     inst.toolButtons.fill(nullptr);
     inst.swatchButtons.fill(nullptr);
     inst.fillButton = inst.freezeButton = inst.cursorButton = nullptr;
+    inst.cursorTooltip = nullptr;
     inst.undoButton = inst.redoButton = inst.copyButton = inst.saveButton = inst.doneButton = nullptr;
     inst.exportSeparator = nullptr;
     inst.activePainted = AnnotationRect{};
@@ -769,7 +830,7 @@ namespace capture {
     if (bg != nullptr) {
       inst.backgroundSurface = frozenToCairo(*bg);
     }
-    inst.backdropShowsCursor = m_cursorVisible;
+    inst.backdropImage = bg;
 
     const auto canvasX = static_cast<float>(inst.canvasRect.x);
     const auto canvasY = static_cast<float>(inst.canvasRect.y);
@@ -820,6 +881,21 @@ namespace capture {
     inst.committedLayer = makeLayer(inst.committedTexture);
     inst.activeLayer = makeLayer(inst.activeTexture);
 
+    if (m_mode == AnnotationMode::Image) {
+      // Box borders paint inward without changing the canvas or exported pixels.
+      canvas->addChild(
+          ui::box({
+              .fill = fixedColorSpec(rgba(0.0F, 0.0F, 0.0F, 0.0F)),
+              .border = colorSpecFromRole(ColorRole::Outline),
+              .borderWidth = Style::borderWidth,
+              .radius = 0.0F,
+              .width = canvasW,
+              .height = canvasH,
+              .configure = [canvasX, canvasY](Box& box) { box.setPosition(canvasX, canvasY); },
+          })
+      );
+    }
+
     const auto makeDimStrip = [&]() {
       auto strip = ui::box({
           // Fixed black scrim so the cropped-away area darkens under every theme.
@@ -869,9 +945,11 @@ namespace capture {
     });
     // Toolbar tooltips are xdg_popups parented to this layer surface, and they must die
     // before it does; destroySurfaces() force-destroys them.
-    inst.inputDispatcher.setHoverChangeCallback([instPtr](InputArea* /*old*/, InputArea* next) {
+    inst.inputDispatcher.setHoverChangeCallback([this, instPtr](InputArea* /*old*/, InputArea* next) {
       if (instPtr->surface != nullptr) {
-        TooltipManager::instance().onHoverChange(next, instPtr->surface->layerSurface(), instPtr->output);
+        TooltipManager::instance().onHoverChange(
+            m_toolbarDragging ? nullptr : next, instPtr->surface->layerSurface(), instPtr->output
+        );
       }
     });
     inst.inputDispatcher.setFocus(inst.canvas);
@@ -925,8 +1003,8 @@ namespace capture {
     AnnotationDocument& doc = documentFor(inst);
 
     // Toggling the cursor swaps the whole backdrop, and Blur samples it, so both re-upload.
-    if (m_mode == AnnotationMode::Frozen && inst.backdropShowsCursor != m_cursorVisible) {
-      const ScreencopyImage* bg = background(inst);
+    const ScreencopyImage* bg = background(inst);
+    if (bg != inst.backdropImage) {
       if (bg != nullptr && inst.backdrop != nullptr) {
         inst.backdrop->clear(renderer);
         if (!inst.backdrop->setSourceRaw(
@@ -944,8 +1022,9 @@ namespace capture {
         inst.backgroundSurface = frozenToCairo(*bg);
         clearBlurCache();
         inst.committedNeedsFullRedraw = true;
+        inst.pendingActiveFullRedraw = true;
       }
-      inst.backdropShowsCursor = m_cursorVisible;
+      inst.backdropImage = bg;
     }
 
     const bool gestureHere = m_gestureActive && m_gestureInstance == &inst;
@@ -1029,7 +1108,17 @@ namespace capture {
 
     addSeparator();
     inst.freezeButton = addGhostButton("snowflake", "bar.annotate.freeze", [this]() { requestFreeze(); });
-    inst.cursorButton = addGhostButton("pointer", "bar.annotate.cursor", [this]() { toggleCursor(); });
+    inst.cursorButton = addGhostButton("pointer", "bar.annotate.cursor", [this, instPtr]() { toggleCursor(instPtr); });
+    if (const ScreenshotImage* image = screenshot(inst);
+        image != nullptr && !image->canToggleCursor() && image->cursorVisible) {
+      // Keep the captured-on state visible even when this capture cannot be toggled.
+      auto palette = Button::defaultPalette(ButtonVariant::Ghost);
+      if (palette.selected.has_value()) {
+        palette.disabled.bg = palette.selected->bg;
+        palette.disabled.border = palette.selected->border;
+      }
+      inst.cursorButton->setCustomPalette(palette);
+    }
     inst.fillButton = addGhostButton("paint-off", "bar.annotate.fill-off", [this]() { toggleFill(); });
     addSeparator();
 
@@ -1094,6 +1183,7 @@ namespace capture {
             .onClick = [this]() { requestExport(AnnotationExport::Done); },
         })
     ));
+    addGhostButton("screenshot", "bar.annotate.capture-new-region", [this]() { requestCaptureRegion(); });
     addGhostButton("x", "bar.annotate.close", [this]() { closeOverlay(); });
 
     inst.toolbar = toolbar.get();
@@ -1131,9 +1221,25 @@ namespace capture {
     }
 
     show(inst.freezeButton, m_mode == AnnotationMode::Live);
-    show(inst.cursorButton, m_mode == AnnotationMode::Frozen);
     if (inst.cursorButton != nullptr) {
-      inst.cursorButton->setSelected(m_cursorVisible);
+      const ScreenshotImage* image = screenshot(inst);
+      const bool available = image != nullptr && image->canToggleCursor();
+      inst.cursorButton->setSelected(image != nullptr && (available ? m_cursorVisible : image->cursorVisible));
+      inst.cursorButton->setEnabled(available);
+      const char* tooltip = cursorTooltipKey(inst);
+      if (inst.cursorTooltip != tooltip) {
+        inst.cursorButton->setTooltip(i18n::tr(tooltip));
+        inst.cursorTooltip = tooltip;
+      }
+      // Keep disabled controls hoverable. Button guards activation; consume the press
+      // rather than letting it fall through to the annotation canvas underneath.
+      if (InputArea* area = inst.cursorButton->inputArea(); area != nullptr) {
+        area->setEnabled(true);
+        area->setFocusable(available);
+        area->setCursorShape(
+            available ? WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER : WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT
+        );
+      }
     }
     show(inst.fillButton, shapeTool);
     if (inst.fillButton != nullptr) {
@@ -1278,6 +1384,7 @@ namespace capture {
       return;
     }
     m_toolbarDragging = true;
+    TooltipManager::instance().forceDestroy();
     m_toolbarGrabX = static_cast<float>(m_pointerX) - inst.toolbar->x();
     m_toolbarGrabY = static_cast<float>(m_pointerY) - inst.toolbar->y();
   }
@@ -2204,11 +2311,34 @@ namespace capture {
     DeferredCall::callLater([onFreeze]() { onFreeze(); });
   }
 
-  void AnnotationOverlay::toggleCursor() {
-    commitPendingText();
-    if (!m_active || m_mode != AnnotationMode::Frozen) {
+  void AnnotationOverlay::requestCaptureRegion() {
+    if (!m_active || !m_onCaptureRegion) {
       return;
     }
+    CaptureRegionCallback onCaptureRegion = m_onCaptureRegion;
+    DeferredCall::callLater([onCaptureRegion]() { onCaptureRegion(); });
+  }
+
+  void AnnotationOverlay::toggleCursor(Instance* instance) {
+    if (!m_active) {
+      return;
+    }
+    if (instance == nullptr) {
+      instance = exportTarget();
+    }
+    if (instance == nullptr) {
+      return;
+    }
+    const ScreenshotImage* image = screenshot(*instance);
+    if (image == nullptr || !image->canToggleCursor()) {
+      if (m_onFeedback) {
+        const std::string message = i18n::tr(cursorTooltipKey(*instance));
+        FeedbackCallback onFeedback = m_onFeedback;
+        DeferredCall::callLater([onFeedback, message]() { onFeedback(message); });
+      }
+      return;
+    }
+    commitPendingText();
     m_cursorVisible = !m_cursorVisible;
     requestRedrawAll();
   }
