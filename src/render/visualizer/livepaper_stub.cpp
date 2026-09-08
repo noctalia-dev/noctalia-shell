@@ -24,8 +24,9 @@
 ProjectMRenderer::ProjectMRenderer() = default;
 ProjectMRenderer::~ProjectMRenderer() = default;
 
-bool ProjectMRenderer::initialize(GlSharedContext& /*shared*/, wl_compositor* /*compositor*/,
-                                  std::uint32_t /*width*/, std::uint32_t /*height*/) {
+bool ProjectMRenderer::initialize(
+    GlSharedContext& /*shared*/, wl_compositor* /*compositor*/, std::uint32_t /*width*/, std::uint32_t /*height*/
+) {
   return false;
 }
 void ProjectMRenderer::shutdown() {}
@@ -42,8 +43,8 @@ void ProjectMRenderer::renderFrame() {}
 VisualizerService::VisualizerService() = default;
 VisualizerService::~VisualizerService() = default;
 
-void VisualizerService::initialize(ProjectMRenderer* /*renderer*/, ConfigService* /*config*/,
-                                   MprisService* /*mpris*/) {}
+void VisualizerService::initialize(ProjectMRenderer* /*renderer*/, ConfigService* /*config*/, MprisService* /*mpris*/) {
+}
 void VisualizerService::shutdown() {}
 void VisualizerService::onConfigChanged() {}
 void VisualizerService::onMprisChanged() {}

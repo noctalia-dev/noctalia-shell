@@ -28,4 +28,4 @@ namespace noctalia::livepaper {
   [[nodiscard]] bool rendererReady() noexcept;
   void setRendererReady(bool ready) noexcept;
 
-}
+} // namespace noctalia::livepaper

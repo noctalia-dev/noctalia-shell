@@ -10,4 +10,4 @@ namespace noctalia::livepaper {
 
   void setRendererReady(bool ready) noexcept { g_rendererReady = ready; }
 
-}
+} // namespace noctalia::livepaper
