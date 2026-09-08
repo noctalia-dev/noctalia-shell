@@ -215,22 +215,16 @@ std::unique_ptr<Flex> MediaTab::create() {
       .configure = [scale, opacity = panelCardOpacity()](Flex& card) { applySectionCardStyle(card, scale, opacity); },
   });
 
-  auto nowHeader = ui::row(
+  
+      auto nowHeader = ui::row(
       {.align = FlexAlign::Center,
-       .justify = FlexJustify::SpaceBetween,
+       .justify = FlexJustify::End,
        .gap = Style::spaceSm * scale,
-       .minHeight = Style::controlHeightSm * scale},
-      ui::label({
-          .text = i18n::tr("control-center.media.now-playing"),
-          .fontSize = Style::fontSizeTitle * scale,
-          .fontWeight = FontWeight::Bold,
-          .color = colorSpecFromRole(ColorRole::OnSurface),
-          .flexGrow = 1.0F,
-      }),
-      ui::button({
+       .minHeight = Style::controlHeightSm * scale},      
+       ui::button({
           .out = &m_playerMenuButton,
           .glyph = "headphones",
-          .glyphSize = Style::fontSizeBody * scale,
+          .glyphSize = 20.0F * scale,
           .enabled = false,
           .variant = ButtonVariant::Ghost,
           .minWidth = Style::controlHeightSm * scale,
@@ -287,10 +281,13 @@ std::unique_ptr<Flex> MediaTab::create() {
           ui::label({
               .out = &m_trackTitle,
               .text = i18n::tr("control-center.media.nothing-playing"),
-              .fontSize = Style::fontSizeTitle * scale,
-              .fontWeight = FontWeight::Bold,
+              .fontSize = 14.0F * scale,
+              .fontWeight = FontWeight::SemiBold,
               .color = colorSpecFromRole(ColorRole::Primary),
-          }),
+              .maxLines = 1,
+              .autoScroll = true,
+              .autoScrollSpeed = 30.0F * scale,
+      }),
           ui::label({
               .out = &m_trackArtist,
               .text = i18n::tr("control-center.media.start-playback"),
@@ -574,7 +571,7 @@ void MediaTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
   }
 
   if (m_trackTitle != nullptr) {
-    m_trackTitle->setMaxWidth(mediaWidth);
+   m_trackTitle->setMaxWidth(mediaWidth * 0.70F);
   }
   if (m_trackArtist != nullptr) {
     m_trackArtist->setMaxWidth(mediaWidth);
@@ -953,17 +950,9 @@ void MediaTab::refresh(Renderer& renderer) {
       m_pendingSeekUs = -1;
     }
 
-    const auto truncateTrackTitle = [](const std::string& text) {
-      constexpr std::size_t kMaxChars = 25;
-      if (StringUtils::truncateUtf8CodePoints(text, kMaxChars).size() == text.size()) {
-        return text;
-      }
-      return StringUtils::truncateUtf8CodePoints(text, kMaxChars) + "...";
-    };
-
     const std::string trackTitle = player.title.empty()
         ? player.identity
-        : truncateTrackTitle(player.title);
+        : player.title;
     m_trackTitle->setText(trackTitle);
     m_trackArtist->setText(joinArtists(player.artists).empty() ? player.identity : joinArtists(player.artists));
 
