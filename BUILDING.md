@@ -161,8 +161,8 @@ Two things commonly go wrong with a distro-provided libprojectM:
   is reported there rather than at final link. Fix the `.pc` by replacing `-l:projectM-4` with `-lprojectM-4`.
 
 Nix users get a correctly built libprojectM automatically from the `libprojectm-gles` overlay in
-[`nix/package.nix`](nix/package.nix). See [docs/livepaper.md](docs/livepaper.md) for the feature itself, and
-[PACKAGING.md](PACKAGING.md) for the packaging view.
+[`nix/package.nix`](nix/package.nix). See [the Live Paper user documentation](docs/user/desktop/wallpaper.mdx)
+for the feature itself, and [PACKAGING.md](PACKAGING.md) for the packaging view.
 
 Sanitizer runtime packages are only needed for ASan/UBSan builds configured with `just configure asan`.
 
