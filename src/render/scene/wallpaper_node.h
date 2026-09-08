@@ -149,7 +149,7 @@ private:
   WallpaperFillMode m_fillMode = WallpaperFillMode::Crop;
   Color m_fillColor = rgba(0.0F, 0.0F, 0.0F, 1.0F);
   TransitionParams m_params;
-  void* m_liveImage = nullptr;          // EGLImageKHR for the live-paper visualizer source
-  std::uint64_t m_liveImageSerial = 0;  // generation of m_liveImage; see setLiveImage()
+  void* m_liveImage = nullptr;         // EGLImageKHR for the live-paper visualizer source
+  std::uint64_t m_liveImageSerial = 0; // generation of m_liveImage; see setLiveImage()
   WallpaperSpanParams m_span;
 };

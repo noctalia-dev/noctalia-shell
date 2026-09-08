@@ -1,7 +1,6 @@
 #pragma once
 
 #include "auth/pam_authenticator.h"
-#include "core/timer_manager.h"
 #include "capture/screencopy_capture.h"
 #include "core/timer_manager.h"
 

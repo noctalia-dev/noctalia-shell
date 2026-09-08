@@ -19,12 +19,9 @@
 
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
+#include <cstdint>
 #include <optional>
-
-#include <cstdint>
 #include <unordered_map>
-
-#include <cstdint>
 
 class GlesRenderBackend final : public RenderBackend {
 public:

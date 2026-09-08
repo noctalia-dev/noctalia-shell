@@ -1661,8 +1661,10 @@ void LockSurface::applyWallpaperTexture() {
   if (m_livePaperTexture.valid()) {
     m_wallpaperTexture = {};
     m_wallpaper->setLiveImage(m_livePaperImage, m_livePaperImageSerial);
-    m_wallpaper->setTextures(m_livePaperTexture.id, {}, static_cast<float>(m_livePaperTexture.width),
-                             static_cast<float>(m_livePaperTexture.height), 0.0F, 0.0F);
+    m_wallpaper->setTextures(
+        m_livePaperTexture.id, {}, static_cast<float>(m_livePaperTexture.width),
+        static_cast<float>(m_livePaperTexture.height), 0.0F, 0.0F
+    );
     m_wallpaper->setTransition(WallpaperTransition::Fade, 0.0F, TransitionParams{});
     m_wallpaper->setFillMode(m_wallpaperFillMode);
     m_wallpaper->setFillColor(m_wallpaperFillColor);
@@ -1747,9 +1749,11 @@ void LockSurface::applyWallpaperTexture() {
 }
 
 void LockSurface::setLivePaperTexture(TextureHandle tex, void* eglImage, std::uint64_t serial) {
-  if (m_livePaperTexture.id == tex.id && m_livePaperTexture.width == tex.width &&
-      m_livePaperTexture.height == tex.height && m_livePaperImage == eglImage &&
-      m_livePaperImageSerial == serial) {
+  if (m_livePaperTexture.id == tex.id
+      && m_livePaperTexture.width == tex.width
+      && m_livePaperTexture.height == tex.height
+      && m_livePaperImage == eglImage
+      && m_livePaperImageSerial == serial) {
     return;
   }
   m_livePaperTexture = tex;
@@ -1840,7 +1844,6 @@ void LockSurface::applyBlurredDesktopTexture() {
   m_captureDirty = false;
   m_wallpaperDirty = false;
 }
-
 
 void LockSurface::onGpuResourcesInvalidated() {
   releaseCaptureTextures();

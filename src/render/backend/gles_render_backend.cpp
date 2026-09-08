@@ -592,7 +592,6 @@ TextureId GlesRenderBackend::importLiveImage(void* eglImage, std::uint64_t seria
   return TextureId{tex};
 }
 
-
 void GlesRenderBackend::drawFullscreenQuad(const ShaderProgram& program) {
   const GLint posAttr = glGetAttribLocation(program.id(), "a_position");
   if (posAttr < 0) {
