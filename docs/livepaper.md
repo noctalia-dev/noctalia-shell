@@ -20,13 +20,13 @@ Wayland + EGL/GLES v5 stack.
 private hidden Wayland window surface, drives one libprojectM frame,
 copies the result into a texture, and restores the caller's context. The
 wallpaper / lock surfaces (each a different context in the share group)
-sample that texture through an **EGLImage** — see the two sections below
+sample that texture through an **EGLImage** - see the two sections below
 for why neither a plain shared texture name nor a private FBO works.
 
 ## Critical: load presets with the shared context current
 
 Every `projectm_*` call that touches GL **must** run with the shared
-surfaceless root context current — `initialize()` (`projectm_create`),
+surfaceless root context current - `initialize()` (`projectm_create`),
 `renderFrame()` (`projectm_opengl_render_frame`), **and `loadPreset()`
 (`projectm_load_preset_file`)**. `loadPreset()` originally omitted the
 `makeCurrentSaved()` / `restore()` guard, which caused a deterministic
@@ -42,7 +42,7 @@ Wallpaper::onVisualizerTick
 ```
 
 Why: libprojectM builds each preset's GL objects **synchronously**
-inside `projectm_load_preset_file()` — `FinalComposite`'s VAO and its
+inside `projectm_load_preset_file()` - `FinalComposite`'s VAO and its
 element buffer (`RenderItem::Init` → `InitVertexAttrib`). **VAOs are
 container objects and are not shared across an EGL share group.** If the
 preset is loaded with the caller's context (a surface backend, or none)
@@ -100,7 +100,7 @@ compositor never shows it), wraps it in a `wl_egl_window` + EGLSurface,
 and `renderFrame()` makes the root context current *with* that surface.
 libprojectM's hard-coded FBO-0 composite then lands in its back buffer,
 which `glCopyTexSubImage2D` pulls into `m_textureName`. We never
-`eglSwapBuffers` — the surface is only ever read back.
+`eglSwapBuffers` - the surface is only ever read back.
 
 ## Critical: cross-context sampling needs an EGLImage
 
@@ -138,8 +138,8 @@ sibling of the bar's spectrum analyser. In its default *follow* mode
 (empty `audio_source`) it mirrors the bar's audio-visualizer widget:
 
 - While `PipeWireSpectrum` reports audio (the widget is visible) the tap
-  captures the very node the spectrum analyses — normally the default
-  sink's monitor — so the visualizer reacts to the same sound the widget
+  captures the very node the spectrum analyses - normally the default
+  sink's monitor - so the visualizer reacts to the same sound the widget
   shows.
 - Once the spectrum goes idle (~1 s of silence, widget hidden) the tap
   has nothing to tap. **By default it stays unbound and the visualizer
@@ -152,7 +152,7 @@ follow mode with the prototype's original behaviour: when no audio is
 playing, the tap falls back to the **default source (microphone)** so
 the visualizer keeps reacting to ambient sound. The opt-in shape exists
 because the fallback stream is intentionally **not**
-`PW_KEY_NODE_PASSIVE` — it activates the microphone whenever follow mode
+`PW_KEY_NODE_PASSIVE` - it activates the microphone whenever follow mode
 goes idle, which on a system without an xdg-desktop-portal mic gate is
 not otherwise obvious to the user. The stream is visible in
 `pavucontrol` / `wpctl status` as **"Noctalia LivePaper"**.
@@ -164,8 +164,8 @@ keeps the silence detection alive even when no audio-visualizer widget
 is on the bar.
 
 Source (mic / line-in) captures additionally run through an automatic
-gain control — a peak envelope with fast attack and slow release feeding
-a capped makeup gain — so quiet ambient sound still drives libprojectM's
+gain control - a peak envelope with fast attack and slow release feeding
+a capped makeup gain - so quiet ambient sound still drives libprojectM's
 beat/FFT analysis. Sink-monitor captures keep their native dynamics
 (they already arrive at program level). See the `kAgc*` constants in
 `pipewire_pcm_tap.cpp`.
@@ -175,7 +175,7 @@ mode and the mic-fallback gate entirely (the user named the node).
 
 A subtlety in the renderer: `projectm_pcm_add_float`'s `count` argument
 is **samples per channel** (the frame count), not the interleaved float
-count — feeding `frames * channels` makes libprojectM ingest a frame of
+count - feeding `frames * channels` makes libprojectM ingest a frame of
 stale ring data for every real one and the visualizer barely tracks the
 music.
 
@@ -193,7 +193,7 @@ one: upstream's `projectM-4.pc` emits `-l:projectM-4`, an exact-filename flag
 naming a file that does not exist (`libprojectM-4.so` is the real library), so
 a bare `dependency()` check would pass and the final link would then fail.
 Whether the library was built for **GLES** rather than desktop GL is *not*
-detectable at configure time — that mismatch links cleanly and surfaces at
+detectable at configure time - that mismatch links cleanly and surfaces at
 runtime instead, where `ProjectMRenderer::initialize()` fails and
 `livepaper::rendererReady()` stays false. See [PACKAGING.md](../PACKAGING.md).
 
@@ -210,7 +210,7 @@ and only an extension in GLES2. `GlSharedContext` therefore requests
 `EGL_CONTEXT_CLIENT_VERSION = 3` and remembers which version it actually got
 (`clientVersion()`). On hardware where GLES3 context creation fails (older
 Adreno 3xx/4xx, older Mali-T, some legacy NVIDIA Wayland EGL) the shared
-context falls back to GLES2 and the visualizer simply refuses to initialize —
+context falls back to GLES2 and the visualizer simply refuses to initialize -
 the rest of the shell runs normally with the static wallpaper path. The
 visualizer is opt-in and off by default, so users on legacy GPUs do not need
 to do anything.
@@ -224,7 +224,7 @@ instance with the wallpaper; a hypothetical SIGSEGV inside libprojectM while
 loading a preset would terminate the shell, which terminates the
 `ext-session-lock-v1` client, which most compositors interpret as a forced
 unlock without authentication. Holding the preset constant for the duration
-of the lock keeps the failure surface to "the wallpaper-time preset" — by
+of the lock keeps the failure surface to "the wallpaper-time preset" - by
 that point the user has already authenticated past it once.
 
 ## Runtime configuration
@@ -236,8 +236,8 @@ preset interval, …). See `example.toml`.
 `render_width` / `render_height` (default `1280x720`, clamped to
 320..7680) set the working resolution of the offscreen framebuffer the
 visualizer renders into. There is exactly one such framebuffer for the
-whole shell — every output and the lock surface sample the same texture and
-scale it with `wallpaper.fill_mode` — so it is a global sharpness-vs-fill-rate
+whole shell - every output and the lock surface sample the same texture and
+scale it with `wallpaper.fill_mode` - so it is a global sharpness-vs-fill-rate
 knob, not a per-output mode. On a large or high-DPI output the 720p default
 is a visible upscale; raise it towards that output's mode, and pick an aspect
 ratio matching it so `fill_mode` does not crop. Changing it at runtime is
@@ -253,7 +253,7 @@ IPC handlers: `livepaper-next`, `livepaper-toggle`, `livepaper-enable`,
 The filtered presets pack lives in a separate flake,
 `presets-photosensitive-filtered` (a `flake.nix` input). It drops `.milk`
 presets that paint excessively bright frames or rapid strobes, and exposes
-the result as its `default` package — build it directly with:
+the result as its `default` package - build it directly with:
 
 ```
 nix build <presets-photosensitive-filtered-flake>
@@ -261,11 +261,11 @@ nix build <presets-photosensitive-filtered-flake>
 
 home-manager options (`programs.noctalia.wallpaper.live_paper`):
 
-- **`defaultPresets`** — symlink the bundled, filtered presets pack into
+- **`defaultPresets`** - symlink the bundled, filtered presets pack into
   `$XDG_DATA_HOME/waylivepaper/presets`. Defaults to **`true` whenever
   `settings.wallpaper.live_paper.enabled` is set**, so enabling the
   visualizer is a single switch. Set `false` to manage presets yourself.
-- **`presetsSource`** — directory to symlink instead of the bundled
+- **`presetsSource`** - directory to symlink instead of the bundled
   pack. Defaults to the filtered pack from the
   `presets-photosensitive-filtered` flake input.
 
@@ -284,5 +284,5 @@ programs.noctalia = {
 The systemd user service runs noctalia from a pinned nix store path
 (the consumer's flake input). After pulling a new noctalia commit the
 input must be bumped and `home-manager switch` re-run for the running
-service to pick it up — restarting the service alone keeps the old
+service to pick it up - restarting the service alone keeps the old
 pinned binary.

@@ -147,7 +147,7 @@ disable it explicitly.
 
 The `[wallpaper.live_paper]` Milkdrop visualizer needs **libprojectM 4** on the pkg-config path and is **not** in any
 of the dependency commands above, because distro packages of it usually do not work for this purpose. The Meson
-`livepaper` option defaults to `auto`, so a build without libprojectM succeeds and simply omits the feature — the
+`livepaper` option defaults to `auto`, so a build without libprojectM succeeds and simply omits the feature - the
 settings entry then explains that the build has no visualizer. Use `-Dlivepaper=enabled` to make a missing or unusable
 libprojectM a configure error instead, or `-Dlivepaper=disabled` to skip it outright.
 

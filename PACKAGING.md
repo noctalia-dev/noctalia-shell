@@ -97,7 +97,7 @@ support.
 - `jemalloc`: recommended on glibc; Meson feature option `-Djemalloc=auto|enabled|disabled`.
   Only used on glibc builds.
 - `livepaper`: optional Milkdrop visualizer, `-Dlivepaper=auto|enabled|disabled`
-  (default `auto`). Off unless a **usable** libprojectM 4 is found — see
+  (default `auto`). Off unless a **usable** libprojectM 4 is found - see
   [Live paper / libprojectM](#live-paper--libprojectm). Leaving it `auto` is
   safe: the package builds either way.
 
@@ -169,14 +169,14 @@ stock distro package often does not:
 
 1. **Built for GLES.** libprojectM 4 targets desktop GL by default; Noctalia
    hands it an EGL/GLESv2 share group. Build with CMake `-DENABLE_GLES=ON`.
-   This is *not* detectable at configure time — a desktop-GL build links fine
+   This is *not* detectable at configure time - a desktop-GL build links fine
    and only fails at runtime, where the renderer refuses to start and the shell
    falls back to the static wallpaper.
 2. **A working pkg-config file.** Upstream's `projectM-4.pc` emits
    `-l:projectM-4`, an exact-filename flag naming a file that does not exist
    (the library is `libprojectM-4.so`). Meson link-tests libprojectM during
    configure, so an unpatched `.pc` makes `auto` drop the feature and
-   `-Dlivepaper=enabled` fail with an explanatory error — neither breaks the
+   `-Dlivepaper=enabled` fail with an explanatory error - neither breaks the
    build, but neither ships the visualizer either. Patch the `.pc` to
    `-lprojectM-4`.
 
@@ -185,7 +185,7 @@ dependency lookups; a lowercase symlink alongside the canonical name avoids a
 spurious "not found". `nix/package.nix` applies all three fixes and is a
 working reference.
 
-Presets are not shipped and are not required — the visualizer is off by default
+Presets are not shipped and are not required - the visualizer is off by default
 at runtime. Users supply Milkdrop presets themselves; the shell reads them from
 `$XDG_DATA_HOME/waylivepaper/presets`.
 
