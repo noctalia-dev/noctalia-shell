@@ -139,11 +139,6 @@ void Application::initUiRenderSurfacesAndSettings() {
   // Optional live-paper plumbing. ProjectMRenderer renders libprojectM into a
   // hidden window surface in the shared EGL group at the working resolution
   // from [wallpaper.live_paper] (render_width/render_height, 720p by default)
-  //
-  // Requires GLES3 (libprojectM 4.x uses VAOs which are core in GLES3 and only
-  // an extension in GLES2). On hardware where the GlSharedContext fell back to
-  // GLES2 we silently skip the visualizer — the shell still runs, just without
-  // live_paper.
 #ifdef NOCTALIA_HAVE_LIVEPAPER
   if (m_glShared.clientVersion() >= 3) {
     const auto& livePaperCfg = m_configService.config().wallpaper.livePaper;
@@ -427,8 +422,6 @@ void Application::initLockScreenAndSession() {
         m_idleManager.setSessionLocked(false);
         m_screenTimeService.setSessionLocked(false);
         m_hookManager.fire(HookKind::SessionUnlocked);
-        // Lock aborted before engage (e.g. compositor finished the lock object) — still release
-        // so PrepareForSleep is not stuck on the delay inhibit.
         releaseSleepDelayInhibitIfPending();
         requestAllSurfacesRedraw();
         if (m_logindService != nullptr) {

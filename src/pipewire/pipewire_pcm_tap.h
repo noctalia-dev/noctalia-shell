@@ -17,9 +17,7 @@ struct AudioNode;
 // Lifecycle:
 //   - start("")    → follows the bar's audio-visualizer widget: taps the sink
 //                    the spectrum analyses while it reports audio, then the
-//                    default source (mic) once the spectrum goes idle —
-//                    BUT only when setMicFallbackAllowed(true) (off by default;
-//                    opening the user's mic is a privacy-relevant decision)
+//                    default source (mic) once the spectrum goes idle
 //   - start(name)  → opens a capture stream against a specific PipeWire node
 //                    regardless of allow-mic-fallback (the user named it)
 //   - stop()       → tears the stream down (so an idle session uses no CPU)
@@ -47,11 +45,6 @@ public:
   void stop();
   void handleAudioStateChanged();
 
-  // Toggle the privacy-relevant mic fallback. When false (the default),
-  // follow mode (`start("")`) refuses to fall back to the default source
-  // and instead leaves the tap unbound while no sink is producing audio —
-  // the visualizer runs silent until playback resumes. Re-applies on the
-  // next state change; call before/around start() in practice.
   void setMicFallbackAllowed(bool allowed);
 
   // Pop up to maxFrames interleaved float frames into out. The number of
@@ -63,8 +56,6 @@ public:
   [[nodiscard]] int sampleRate() const noexcept { return m_sampleRate.load(std::memory_order_acquire); }
   [[nodiscard]] bool isRunning() const noexcept;
 
-  // Upper bound on channel count the tap will deliver — consumers can use it
-  // to size scratch buffers without guessing.
   static constexpr int kMaxChannels = 8;
 
 private:
@@ -77,8 +68,6 @@ private:
   void resetRing(int channels, int sampleRate);
   void feedSamples(const float* interleaved, int frameCount, int channels);
 
-  // Ring buffer capacity — interleaved float frames. ~340 ms at 48 kHz stereo;
-  // a 30 FPS visualizer pulling ~1600 frames per tick has plenty of slack.
   static constexpr std::size_t kRingFrames = 1u << 15; // 32 768 frames
 
   PipeWireService& m_service;
@@ -88,7 +77,7 @@ private:
   std::string m_explicitTarget; // "" → follow the spectrum / widget
   std::string m_boundTarget;
   std::uint32_t m_boundNodeId = 0;
-  bool m_started = false; // start() called and not since stop()ped
+  bool m_started = false;            // start() called and not since stop()ped
   bool m_micFallbackAllowed = false; // privacy gate; see setMicFallbackAllowed
 
   // Automatic gain control. Set true on (re)bind (main thread, while no RT
@@ -98,9 +87,6 @@ private:
   bool m_agcActive = false;
   float m_agcEnvelope = 0.0f;
 
-  // m_ring holds kRingFrames * kMaxChannels floats. Real channel count is
-  // m_channels and may be smaller — we still stride by kMaxChannels for
-  // simplicity so format changes don't reallocate.
   std::vector<float> m_ring;
   std::atomic<std::size_t> m_writeFrames{0}; // monotonically increasing
   std::atomic<std::size_t> m_readFrames{0};

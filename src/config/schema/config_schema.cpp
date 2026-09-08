@@ -822,7 +822,6 @@ namespace noctalia::config::schema {
       return s;
     }
 
-    // [wallpaper.live_paper] — projectM/Milkdrop visualizer wallpaper. The
     // home-module stages presets at $XDG_DATA_HOME/waylivepaper/presets;
     // presets_dir overrides that location.
     const Schema<LivePaperConfig>& livePaperSchema() {

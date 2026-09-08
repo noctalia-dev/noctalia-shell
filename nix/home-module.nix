@@ -124,7 +124,7 @@ in
           `$XDG_DATA_HOME/waylivepaper/presets` when `defaultPresets` is
           enabled. The flake's `homeModules.default` wires this to the
           pre-built pack from the `presets-photosensitive-filtered`
-          flake input — the `presets-cream-of-the-crop` pack with overly
+          flake input - the `presets-cream-of-the-crop` pack with overly
           bright / strobing presets dropped. Consumers who import this
           module file directly without going through `homeModules.default`
           must set this themselves; leaving it `null` (the bare default)

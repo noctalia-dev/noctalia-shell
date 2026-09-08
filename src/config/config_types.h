@@ -527,8 +527,7 @@ struct LivePaperConfig {
   std::string audioSource; // PipeWire node target; "" = follow active sink, fall back to mic if allowMicFallback
   // Privacy gate. When audioSource is empty and the active sink's monitor
   // stops producing audio, the tap can fall back to the default source
-  // (microphone) so the visualizer keeps reacting to ambient sound. This
-  // opens the user's mic — defaults to OFF; opt in explicitly.
+  // (microphone) so the visualizer keeps reacting to ambient sound.
   bool allowMicFallback = false;
 
   bool operator==(const LivePaperConfig&) const = default;

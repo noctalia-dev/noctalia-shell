@@ -120,9 +120,6 @@ std::vector<std::string> VisualizerService::resolveTextureSearchPaths() const {
   if (std::filesystem::is_directory(texturesPath, ec)) {
     paths.push_back(texturesPath.string());
   }
-  // Also include the presets directory itself — some packs bundle image
-  // textures alongside .milk files (libprojectM filters by extension, so
-  // preset files are not accidentally treated as textures).
   if (std::filesystem::is_directory(presetsPath, ec)) {
     paths.push_back(dir);
   }
@@ -141,9 +138,6 @@ void VisualizerService::onMprisChanged() {
     return; // metadata refresh, not an actual new track
   }
   m_lastSeenTrackId = active->trackId;
-  // First observation after init is initial discovery, not a user-initiated
-  // track change — record the id without bumping the preset. Instance-scoped
-  // so shutdown() / initialize() correctly re-arms it.
   if (!m_seenFirstTrack) {
     m_seenFirstTrack = true;
     return;
@@ -170,7 +164,6 @@ void VisualizerService::advancePreset() {
   if (m_renderer == nullptr || m_presets.empty()) {
     return;
   }
-  // Pin the running preset while the session is locked — see setSessionLocked.
   if (m_sessionLocked) {
     return;
   }
@@ -228,18 +221,13 @@ void VisualizerService::rescanPresets() {
   // here or silently duplicate presets in the rotation. We still skip files
   // that aren't readable rather than aborting the whole scan.
   for (auto it = std::filesystem::recursive_directory_iterator(
-           root, std::filesystem::directory_options::skip_permission_denied, ec);
+           root, std::filesystem::directory_options::skip_permission_denied, ec
+       );
        it != std::filesystem::recursive_directory_iterator(); it.increment(ec)) {
     if (ec) {
       kLog.warn("recursive scan error at {}: {}", it->path().string(), ec.message());
       continue;
     }
-    // Use symlink_status() — i.e. DON'T follow file symlinks either. We
-    // already skip directory symlinks via directory_options, but a
-    // malicious preset pack could include `.milk` symlinks pointing at
-    // arbitrary readable paths. is_regular_file() on the entry would
-    // follow them; checking the link's own status keeps the scanner
-    // strictly inside the presets dir.
     if (!std::filesystem::is_regular_file(it->symlink_status(ec)) || ec) {
       continue;
     }
@@ -268,7 +256,6 @@ std::string VisualizerService::pickRandomPreset() {
   if (m_presets.empty()) {
     return {};
   }
-  // thread_local is fine — service runs on the main thread only.
   static thread_local std::mt19937 rng{std::random_device{}()};
   std::uniform_int_distribution<std::size_t> dist(0, m_presets.size() - 1);
   return m_presets[dist(rng)];

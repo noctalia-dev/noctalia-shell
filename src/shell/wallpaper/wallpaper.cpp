@@ -542,11 +542,6 @@ void Wallpaper::reload() {
     inst->surface->requestRedraw();
   }
 
-  // Live-paper visualizer config (interval, fps, presets_dir, …) is owned by
-  // VisualizerService, which has its own ConfigService reload subscription
-  // (registered in Application::initUi). All we need to do here is resync our
-  // own tick cadence — the service has already applied any fps/mesh changes
-  // to the renderer by the time this runs.
   syncVisualizerTimer();
 }
 

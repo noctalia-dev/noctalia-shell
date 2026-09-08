@@ -130,9 +130,6 @@ void LockScreen::syncVisualizerTimer() {
 }
 
 void LockScreen::onVisualizerTick() {
-  // The Wallpaper subsystem owns the global renderFrame() schedule — it pumps
-  // libprojectM and updates the shared texture. Here we only need to ask each
-  // lock surface to redraw so it picks up the new texture contents.
   for (auto& inst : m_instances) {
     if (inst.surface != nullptr) {
       inst.surface->invalidateLivePaper();
@@ -387,9 +384,8 @@ void LockScreen::onPointerEvent(const PointerEvent& event) {
     m_pointerSurface = event.surface;
   } else if (event.type == PointerEvent::Type::Leave && event.surface == m_pointerSurface) {
     m_pointerSurface = nullptr;
-  } else if (
-      (event.type == PointerEvent::Type::Button || event.type == PointerEvent::Type::Axis) && event.surface != nullptr
-  ) {
+  } else if ((event.type == PointerEvent::Type::Button || event.type == PointerEvent::Type::Axis)
+             && event.surface != nullptr) {
     m_pointerSurface = event.surface;
   }
 
@@ -513,9 +509,9 @@ void LockScreen::handleLocked(void* data, ext_session_lock_v1* /*lock*/) {
     instance.surface->setLockedState(true);
     instance.surface->setOnLogin([self]() { self->tryAuthenticate(); });
     if (self->m_visualizer != nullptr && self->livePaperActive()) {
-      instance.surface->setLivePaperTexture(self->m_visualizer->textureHandle(),
-                                            self->m_visualizer->eglImage(),
-                                            self->m_visualizer->eglImageSerial());
+      instance.surface->setLivePaperTexture(
+          self->m_visualizer->textureHandle(), self->m_visualizer->eglImage(), self->m_visualizer->eglImageSerial()
+      );
     }
   }
   self->syncVisualizerTimer();
@@ -529,7 +525,6 @@ void LockScreen::handleLocked(void* data, ext_session_lock_v1* /*lock*/) {
       DeferredCall::callLater(std::move(pending));
     }
   });
-
 
   self->updatePromptOnSurfaces();
   self->updateIndicatorsOnSurfaces();
@@ -783,8 +778,9 @@ void LockScreen::createInstance(const WaylandOutput& output) {
     surface->setWallpaperFillColor(resolveWallpaperFillColor(m_configService->config().wallpaper));
   }
   if (livePaperActive()) {
-    surface->setLivePaperTexture(m_visualizer->textureHandle(), m_visualizer->eglImage(),
-                                 m_visualizer->eglImageSerial());
+    surface->setLivePaperTexture(
+        m_visualizer->textureHandle(), m_visualizer->eglImage(), m_visualizer->eglImageSerial()
+    );
   }
   if (auto captureIt = m_desktopCaptures.find(output.output); captureIt != m_desktopCaptures.end()) {
     surface->setDesktopCapture(std::move(captureIt->second));
