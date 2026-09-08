@@ -947,6 +947,14 @@ namespace capture {
     // before it does; destroySurfaces() force-destroys them.
     inst.inputDispatcher.setHoverChangeCallback([this, instPtr](InputArea* /*old*/, InputArea* next) {
       if (instPtr->surface != nullptr) {
+        if (next != nullptr && instPtr->toolbar != nullptr) {
+          // Open toward the roomier half of the output so the popup stays clear of the movable toolbar.
+          const float toolbarCenterY = instPtr->toolbar->y() + (instPtr->toolbar->height() * 0.5F);
+          const float surfaceCenterY = static_cast<float>(instPtr->surface->height()) * 0.5F;
+          next->setTooltipPlacement(
+              toolbarCenterY <= surfaceCenterY ? TooltipPlacement::Below : TooltipPlacement::Above
+          );
+        }
         TooltipManager::instance().onHoverChange(
             m_toolbarDragging ? nullptr : next, instPtr->surface->layerSurface(), instPtr->output
         );
