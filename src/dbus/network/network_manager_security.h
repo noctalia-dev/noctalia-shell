@@ -38,8 +38,10 @@ namespace network_manager_security {
   // Pure OWE / OWE-TM only. Ignored when SAE, PSK, or 802.1X is also advertised so
   // transitional APs still prompt for a password / EAP credentials.
   [[nodiscard]] constexpr bool supportsOwe(std::uint32_t rsnFlags) noexcept {
-    constexpr std::uint32_t kPassworded = kNm80211ApSecKeyMgmtPsk | kNm80211ApSecKeyMgmt8021X
-                                        | kNm80211ApSecKeyMgmtSae | kNm80211ApSecKeyMgmtEapSuiteB192;
+    constexpr std::uint32_t kPassworded = kNm80211ApSecKeyMgmtPsk
+        | kNm80211ApSecKeyMgmt8021X
+        | kNm80211ApSecKeyMgmtSae
+        | kNm80211ApSecKeyMgmtEapSuiteB192;
     if ((rsnFlags & kPassworded) != 0U) {
       return false;
     }
