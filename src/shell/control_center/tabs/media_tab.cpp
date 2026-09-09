@@ -310,14 +310,9 @@ std::unique_ptr<Flex> MediaTab::create() {
        .justify = FlexJustify::SpaceBetween,
    });
 
-  progressTimes->addChild(
-      ui::label({
-          .out = &m_progressCurrentTime,
-          .text = "00:00",
-          .fontSize = Style::fontSizeCaption * scale,
-          .color = colorSpecFromRole(ColorRole::Secondary),
-      })
-  );
+  if (m_progressCurrentTime != nullptr) {
+  m_progressCurrentTime->setText("00:00");
+}
 
   progressTimes->addChild(
       ui::label({
