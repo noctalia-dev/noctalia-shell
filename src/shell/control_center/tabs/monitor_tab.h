@@ -8,6 +8,7 @@
 #include <vector>
 
 class BrightnessService;
+class Button;
 class ConfigService;
 class Flex;
 class Glyph;
@@ -21,6 +22,7 @@ public:
   MonitorTab(BrightnessService* brightness, ConfigService* config);
 
   std::unique_ptr<Flex> create() override;
+  std::unique_ptr<Flex> createHeaderActions() override;
   void setActive(bool active) override;
   void onClose() override;
   [[nodiscard]] bool dragging() const noexcept;
@@ -52,6 +54,7 @@ private:
   Flex* m_emptyState = nullptr;
   ScrollView* m_cardsScroll = nullptr;
   Flex* m_cardsLayout = nullptr;
+  Button* m_rescanButton = nullptr;
   std::vector<DisplayCard> m_cards;
   std::string m_lastDisplayListKey;
 
