@@ -1,54 +1,30 @@
-#include "util/string_utils.h"
 #include "shell/control_center/tabs/media_tab.h"
 
-#include "util/string_utils.h"
 #include "config/config_service.h"
-#include "util/string_utils.h"
 #include "core/deferred_call.h"
-#include "util/string_utils.h"
 #include "core/log.h"
-#include "util/string_utils.h"
 #include "dbus/mpris/mpris_art.h"
-#include "util/string_utils.h"
 #include "dbus/mpris/mpris_service.h"
-#include "util/string_utils.h"
 #include "i18n/i18n.h"
-#include "util/string_utils.h"
 #include "net/http_client.h"
-#include "util/string_utils.h"
 #include "pipewire/pipewire_spectrum.h"
-#include "util/string_utils.h"
 #include "render/core/renderer.h"
-#include "util/string_utils.h"
 #include "render/render_context.h"
-#include "util/string_utils.h"
 #include "render/scene/node.h"
-#include "util/string_utils.h"
 #include "shell/control_center/tab.h"
-#include "util/string_utils.h"
 #include "shell/panel/panel_manager.h"
-#include "util/string_utils.h"
 #include "ui/builders.h"
-#include "util/string_utils.h"
 #include "ui/controls/context_menu.h"
-#include "util/string_utils.h"
 #include "ui/controls/context_menu_popup.h"
+#include "util/string_utils.h"
 
-#include "util/string_utils.h"
 #include <algorithm>
-#include "util/string_utils.h"
 #include <chrono>
-#include "util/string_utils.h"
 #include <cmath>
-#include "util/string_utils.h"
 #include <format>
-#include "util/string_utils.h"
 #include <memory>
-#include "util/string_utils.h"
 #include <string>
-#include "util/string_utils.h"
 #include <string_view>
-#include "util/string_utils.h"
 #include <vector>
 
 using namespace control_center;
@@ -215,13 +191,12 @@ std::unique_ptr<Flex> MediaTab::create() {
       .configure = [scale, opacity = panelCardOpacity()](Flex& card) { applySectionCardStyle(card, scale, opacity); },
   });
 
-  
-      auto nowHeader = ui::row(
+  auto nowHeader = ui::row(
       {.align = FlexAlign::Center,
        .justify = FlexJustify::End,
        .gap = Style::spaceSm * scale,
-       .minHeight = Style::controlHeightSm * scale},      
-       ui::button({
+       .minHeight = Style::controlHeightSm * scale},
+      ui::button({
           .out = &m_playerMenuButton,
           .glyph = "headphones",
           .glyphSize = 20.0F * scale,
@@ -287,7 +262,7 @@ std::unique_ptr<Flex> MediaTab::create() {
               .maxLines = 1,
               .autoScroll = true,
               .autoScrollSpeed = 30.0F * scale,
-      }),
+          }),
           ui::label({
               .out = &m_trackArtist,
               .text = i18n::tr("control-center.media.start-playback"),
@@ -304,26 +279,32 @@ std::unique_ptr<Flex> MediaTab::create() {
       )
   );
 
+  auto progressTimes = ui::row({
+    .align = FlexAlign::Center,
+    .justify = FlexJustify::SpaceBetween,
+});
 
-   auto progressTimes = ui::row({
-       .align = FlexAlign::Center,
-       .justify = FlexJustify::SpaceBetween,
-   });
+progressTimes->addChild(
+    ui::label({
+        .out = &m_progressCurrentTime,
+        .text = "00:00",
+        .fontSize = Style::fontSizeCaption * scale,
+        .color = colorSpecFromRole(ColorRole::Secondary),
+    })
+);
 
-  if (m_progressCurrentTime != nullptr) {
-  m_progressCurrentTime->setText("00:00");
-}
+progressTimes->addChild(
+    ui::label({
+        .out = &m_progressTotalTime,
+        .text = "00:00",
+        .fontSize = Style::fontSizeCaption * scale,
+        .color = colorSpecFromRole(ColorRole::Secondary),
+    })
+);
 
-  progressTimes->addChild(
-      ui::label({
-          .out = &m_progressTotalTime,
-          .text = "00:00",
-          .fontSize = Style::fontSizeCaption * scale,
-          .color = colorSpecFromRole(ColorRole::Secondary),
-      })
-  );
+mediaStack->addChild(std::move(progressTimes));
 
-  mediaStack->addChild(std::move(progressTimes));
+  
 
   mediaStack->addChild(
       ui::slider({
@@ -360,9 +341,6 @@ std::unique_ptr<Flex> MediaTab::create() {
               },
       })
   );
-
-
-
 
   auto controls = ui::row({
       .align = FlexAlign::Center,
@@ -566,7 +544,7 @@ void MediaTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
   }
 
   if (m_trackTitle != nullptr) {
-   m_trackTitle->setMaxWidth(mediaWidth * 0.70F);
+    m_trackTitle->setMaxWidth(mediaWidth * 0.70F);
   }
   if (m_trackArtist != nullptr) {
     m_trackArtist->setMaxWidth(mediaWidth);
@@ -739,7 +717,6 @@ void MediaTab::onClose() {
     m_playerMenuPopup->close();
   }
 
-
   m_playerMenuOpen = false;
   m_trackTitle = nullptr;
   m_trackArtist = nullptr;
@@ -765,7 +742,6 @@ void MediaTab::onClose() {
   m_positionTrackSignature.clear();
   m_nextRealtimeUpdateAt = {};
   m_lastRealtimeMprisPollAt = {};
-
 }
 
 bool MediaTab::dismissTransientUi() {
@@ -945,9 +921,7 @@ void MediaTab::refresh(Renderer& renderer) {
       m_pendingSeekUs = -1;
     }
 
-    const std::string trackTitle = player.title.empty()
-        ? player.identity
-        : player.title;
+    const std::string trackTitle = player.title.empty() ? player.identity : player.title;
     m_trackTitle->setText(trackTitle);
     m_trackArtist->setText(joinArtists(player.artists).empty() ? player.identity : joinArtists(player.artists));
 
@@ -1012,9 +986,9 @@ void MediaTab::refresh(Renderer& renderer) {
 
     std::int64_t trackLengthUs = player.lengthUs;
     if (trackLengthUs > 0) {
-        m_lastTrackLengthUs = trackLengthUs;
+      m_lastTrackLengthUs = trackLengthUs;
     } else if (m_lastTrackLengthUs > 0 && sameDisplayedTrack) {
-        trackLengthUs = m_lastTrackLengthUs;
+      trackLengthUs = m_lastTrackLengthUs;
     }
 
     auto formatTime = [](std::int64_t microseconds) -> std::string {
@@ -1024,7 +998,6 @@ void MediaTab::refresh(Renderer& renderer) {
 
       return std::format("{:02}:{:02}", minutes, seconds);
     };
-
 
     if (m_trackAlbum != nullptr) {
       m_trackAlbum->setText(player.album);
@@ -1040,7 +1013,6 @@ void MediaTab::refresh(Renderer& renderer) {
     }
 
     m_progressSlider->setPlayingEffect(player.playbackStatus == "Playing");
-
 
     const bool progressInteracting = m_progressSlider->dragging() || seekPending || withinProgressSettle;
     const bool progressEnabled = player.canSeek && (trackLengthUs > 0 || progressInteracting);
@@ -1089,18 +1061,18 @@ void MediaTab::refresh(Renderer& renderer) {
   m_positionSampleAt = {};
   m_trackTitle->setText(i18n::tr("control-center.media.nothing-playing"));
   m_trackArtist->setText(i18n::tr("control-center.media.start-playback"));
-if (m_trackAlbum != nullptr) {
+  if (m_trackAlbum != nullptr) {
     m_trackAlbum->setText("");
     m_trackAlbum->setVisible(false);
-}
+  }
 
-if (m_progressCurrentTime != nullptr) {
+  if (m_progressCurrentTime != nullptr) {
     m_progressCurrentTime->setText("00:00");
-}
+  }
 
-if (m_progressTotalTime != nullptr) {
+  if (m_progressTotalTime != nullptr) {
     m_progressTotalTime->setText("00:00");
-}
+  }
 
   clearArt(renderer);
   m_lastArtPath.clear();
