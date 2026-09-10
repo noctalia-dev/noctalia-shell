@@ -325,7 +325,6 @@ namespace scripting {
   }
 
   void PluginManager::ensureEnabledMaterialized(const PluginsConfig& plugins) const {
-    std::error_code ec;
     for (const auto& source : plugins.sources) {
       if (source.kind != PluginSourceKind::Git || !source.enabled) {
         continue;
@@ -334,15 +333,11 @@ namespace scripting {
       if (repoRoot.empty()) {
         continue;
       }
-      // Even with the repo present, catalog reads and exports lazy-fetch blobs from the
-      // blobless clone (network-bound), so reconciliation always runs off the main
-      // thread; the registry rescan + bar rebuild marshal back when an export lands.
-      const bool cloneFirst = !std::filesystem::exists(repoRoot / ".git", ec);
-      if (cloneFirst) {
-        // Source repo is gone (state dir wiped) or its first clone never completed.
-        std::filesystem::create_directories(repoRoot.parent_path(), ec);
-      }
-      spawnMaterializeEnabled(source, repoRoot, plugins.enabled, cloneFirst);
+      // Preparing the cache clones when it is missing, and catalog reads and exports
+      // lazy-fetch blobs from the blobless clone (network-bound), so reconciliation
+      // always runs off the main thread; the registry rescan + bar rebuild marshal back
+      // when an export lands.
+      spawnMaterializeEnabled(source, repoRoot, plugins.enabled);
     }
   }
 
@@ -408,24 +403,20 @@ namespace scripting {
   }
 
   void PluginManager::spawnMaterializeEnabled(
-      PluginSourceConfig source, std::filesystem::path repoRoot, std::vector<std::string> enabled, bool cloneFirst
+      PluginSourceConfig source, std::filesystem::path repoRoot, std::vector<std::string> enabled
   ) const {
     // `this` is an Application member and outlives the worker; the registry rescan and
     // bar rebuild marshal back to the main thread via DeferredCall.
-    std::thread([this, source = std::move(source), repoRoot = std::move(repoRoot), enabled = std::move(enabled),
-                 cloneFirst]() mutable {
+    std::thread([this, source = std::move(source), repoRoot = std::move(repoRoot),
+                 enabled = std::move(enabled)]() mutable {
       auto sourceLock = plugin_source_locks::acquire(source.name);
-      if (cloneFirst) {
-        kLog.info("re-cloning missing plugin source '{}'", source.name);
-        const auto cloned = plugin_git::cloneBlobless(source.location, repoRoot);
-        if (!cloned) {
-          if (cloned.timedOut) {
-            kLog.warn("plugin source '{}': clone timed out", source.name);
-          } else {
-            kLog.warn("plugin source '{}': clone failed with exit code {}", source.name, cloned.exitCode);
-          }
-          return; // offline / unreachable — list/enable will retry
+      if (const auto prepared = plugin_git::ensureRepo(repoRoot, source.location); !prepared) {
+        if (prepared.timedOut) {
+          kLog.warn("plugin source '{}': preparing the source cache timed out", source.name);
+        } else {
+          kLog.warn("plugin source '{}': cannot prepare source cache: {}", source.name, prepared.err);
         }
+        return; // offline / unreachable; list/enable will retry
       }
       if (!materializeEnabledFromRepo(source, repoRoot, enabled)) {
         return; // nothing exported; the startup registry scan already reflects disk state
@@ -509,15 +500,19 @@ namespace scripting {
           error = "source '" + offering->source.name + "' did not resolve a catalog revision";
         } else {
           auto sourceLock = plugin_source_locks::acquire(offering->source.name);
-          logHeldBack(offering->source, offering->entry);
-          auto materialized = materializeGitPlugin(
-              offering->source, plugin_paths::gitRepoRoot(offering->source), offering->entry.resolvedRevision, id, true
-          );
-          ok = materialized && materialized.manifest.id == id;
-          incompatible = materialized.incompatible;
-          timedOut = materialized.timedOut;
-          pluginApiVersion = materialized.pluginApiVersion;
-          error = std::move(materialized.error);
+          const auto repoRoot = plugin_paths::gitRepoRoot(offering->source);
+          if (const auto prepared = plugin_git::ensureRepo(repoRoot, offering->source.location); !prepared) {
+            error = "cannot prepare source cache: " + prepared.err;
+          } else {
+            logHeldBack(offering->source, offering->entry);
+            auto materialized =
+                materializeGitPlugin(offering->source, repoRoot, offering->entry.resolvedRevision, id, true);
+            ok = materialized && materialized.manifest.id == id;
+            incompatible = materialized.incompatible;
+            timedOut = materialized.timedOut;
+            pluginApiVersion = materialized.pluginApiVersion;
+            error = std::move(materialized.error);
+          }
         }
       } else if (offering.has_value()) {
         const auto manifest = parsePluginManifest(sourceRootFor(offering->source) / subdir / "plugin.toml", &error);
@@ -584,6 +579,26 @@ namespace scripting {
   }
 
   bool PluginManager::isEnabling(std::string_view pluginId) const { return m_enabling.contains(std::string(pluginId)); }
+
+  bool PluginManager::isMaterialized(std::string_view pluginId) const {
+    const auto subdir = pluginSubdirFromId(pluginId);
+    if (!subdir.has_value()) {
+      return false;
+    }
+    std::error_code ec;
+    const auto hasManifest = [&](const std::filesystem::path& root) {
+      return !root.empty() && std::filesystem::exists(root / *subdir / "plugin.toml", ec);
+    };
+    for (const auto& source : m_config.config().plugins.sources) {
+      if (!source.enabled) {
+        continue;
+      }
+      if (hasManifest(sourceRootFor(source))) {
+        return true;
+      }
+    }
+    return hasManifest(plugin_paths::localSourceRoot());
+  }
 
   void PluginManager::disable(std::string_view pluginId) {
     kLog.info("disabling plugin '{}'", pluginId);
@@ -733,10 +748,17 @@ namespace scripting {
 
   void PluginManager::update(std::string sourceName) {
     const auto source = findSource(sourceName);
-    if (!source.has_value() || source->kind != PluginSourceKind::Git) {
-      return; // path / unknown sources are externally owned
+    if (!source.has_value()) {
+      return; // unknown source
     }
-    const std::filesystem::path repoRoot = plugin_paths::gitRepoRoot(*source);
+    updateSource(*source);
+  }
+
+  void PluginManager::updateSource(const PluginSourceConfig& source) {
+    if (source.kind != PluginSourceKind::Git) {
+      return; // path sources are externally owned
+    }
+    const std::filesystem::path repoRoot = plugin_paths::gitRepoRoot(source);
     if (repoRoot.empty()) {
       return;
     }
@@ -754,9 +776,15 @@ namespace scripting {
 
     // The whole git sequence runs off-thread; only the final registry rescan marshals
     // back to the main thread. `this` is an Application member, so it outlives the worker.
-    std::thread([this, source = *source, repoRoot, sourceName = std::move(sourceName),
-                 enabled = std::move(enabled)]() mutable {
+    const std::string sourceName = source.name;
+    std::thread([this, source, repoRoot, sourceName, enabled = std::move(enabled)]() mutable {
       auto sourceLock = plugin_source_locks::acquire(source.name);
+      if (const auto prepared = plugin_git::ensureRepo(repoRoot, source.location); !prepared) {
+        DeferredCall::callLater([sourceName, err = prepared.err]() {
+          kLog.warn("update '{}': cannot prepare source cache: {}", sourceName, err);
+        });
+        return;
+      }
       const auto fetched = plugin_git::fetch(repoRoot);
       if (!fetched) {
         DeferredCall::callLater([sourceName, err = fetched.err]() {
@@ -921,21 +949,25 @@ namespace scripting {
         continue; // nothing cloned yet; discoverCatalog clones on first browse
       }
       auto sourceLock = plugin_source_locks::acquire(source.name);
+      if (const auto prepared = plugin_git::ensureRepo(repoRoot, source.location); !prepared) {
+        kLog.warn("browse fetch '{}': cannot prepare source cache: {}", source.name, prepared.err);
+        continue;
+      }
       if (const auto fetched = plugin_git::fetch(repoRoot); !fetched) {
         kLog.warn("browse fetch '{}' failed: {}", source.name, fetched.err);
       }
     }
   }
 
-  void PluginManager::updateAll() {
+  void PluginManager::updateAutoUpdateScope(PluginAutoUpdateMode mode) {
     for (const auto& source : m_config.config().plugins.sources) {
-      if (source.kind == PluginSourceKind::Git && source.enabled) {
-        update(source.name);
+      if (sourceInAutoUpdateScope(source, mode)) {
+        updateSource(source);
       }
     }
   }
 
-  void PluginManager::setAutoUpdateEnabled(bool enabled) { m_config.setPluginsAutoUpdate(enabled); }
+  void PluginManager::setAutoUpdateMode(PluginAutoUpdateMode mode) { m_config.setPluginsAutoUpdate(mode); }
 
   void PluginManager::removeSource(std::string sourceName) {
     if (isDefaultPluginSourceName(sourceName)) {

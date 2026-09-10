@@ -3,22 +3,24 @@
 // The schema is now the single source for both serialize (config_export::serialize →
 // writeTable) and parse (parseConfigTable → readInto), so there is no legacy code
 // to compare against. What still earns its keep:
-//   - read inverse — readInto(writeTable(x)) == x for every section: the schema's
+//   - read inverse: readInto(writeTable(x)) == x for every section: the schema's
 //                    read and write are mutual inverses (catches a field whose read
 //                    key != write key, or a lossy codec).
-//   - bar golden   — config_export::serialize(probe)["bar"] stays byte-identical to a captured
+//   - bar golden: config_export::serialize(probe)["bar"] stays byte-identical to a captured
 //                    reference (locks the resolve-and-flatten monitor-override emit).
-//   - clamp goldens — pin parse-time range behavior.
+//   - clamp goldens: pin parse-time range behavior.
 
 #include "config/config_export.h"
 #include "config/config_types.h"
 #include "config/schema/config_schema.h"
 #include "config/schema/config_sections.h"
 #include "config/schema/engine.h"
+#include "config/schema/ranges.h"
 #include "core/input/key_chord.h"
 #include "core/toml.h"
 #include "scripting/plugin_id.h"
 
+#include <algorithm>
 #include <optional>
 #include <print>
 #include <set>
@@ -201,9 +203,9 @@ location = "https://example.invalid/bad"
     bar.reserveSpace = false;
     bar.layer = "overlay";
     bar.thickness = 44;
-    bar.backgroundOpacity = 0.85f;
+    bar.backgroundOpacity = 0.85F;
     bar.border = colorSpecFromConfigString("#123456");
-    bar.borderWidth = 2.0f;
+    bar.borderWidth = 2.0F;
     bar.radius = 18;
     bar.radiusTopLeft = 4;
     bar.radiusTopRight = 6;
@@ -228,8 +230,9 @@ location = "https://example.invalid/bad"
     bar.shadow = false;
     bar.contactShadow = true;
     bar.panelOverlap = 2;
-    bar.capsuleThickness = 0.5f;
-    bar.scale = 2.0f;
+    bar.capsuleThickness = 0.5F;
+    bar.scale = 2.0F;
+    bar.fontScale = 1.5F;
     bar.fontWeight = 600;
     bar.fontFamily = "Inter";
     bar.startWidgets = {"launcher"};
@@ -240,9 +243,9 @@ location = "https://example.invalid/bad"
     bar.widgetCapsuleForeground = colorSpecFromConfigString("#fedcba");
     bar.widgetColor = colorSpecFromConfigString("#0a0b0c");
     bar.widgetIconColor = colorSpecFromConfigString("#0c0b0a");
-    bar.widgetCapsulePadding = 16.0f;
+    bar.widgetCapsulePadding = 16.0F;
     bar.widgetCapsuleRadius = 12.0;
-    bar.widgetCapsuleOpacity = 0.9f;
+    bar.widgetCapsuleOpacity = 0.9F;
     bar.widgetCapsuleBorderSpecified = true;
     bar.widgetCapsuleBorder = colorSpecFromConfigString("#111213");
     bar.hoverHighlight = false;
@@ -253,9 +256,9 @@ location = "https://example.invalid/bad"
     group.borderSpecified = true;
     group.border = colorSpecFromConfigString("#333435");
     group.foreground = colorSpecFromConfigString("#444546");
-    group.padding = 20.0f;
-    group.radius = 14.0f;
-    group.opacity = 0.8f;
+    group.padding = 20.0F;
+    group.radius = 14.0F;
+    group.opacity = 0.8F;
     group.accordion = true;
     group.accordionDirection = BarAccordionDirection::Start;
     group.widgetSpacing = 10;
@@ -271,9 +274,9 @@ location = "https://example.invalid/bad"
     ovr.reserveSpace = true;
     ovr.layer = "top";
     ovr.thickness = 50;
-    ovr.backgroundOpacity = 0.7f;
+    ovr.backgroundOpacity = 0.7F;
     ovr.border = colorSpecFromConfigString("#a1a2a3");
-    ovr.borderWidth = 3.0f;
+    ovr.borderWidth = 3.0F;
     ovr.radius = 22;
     ovr.radiusTopLeft = 1;
     ovr.radiusTopRight = 2;
@@ -292,8 +295,9 @@ location = "https://example.invalid/bad"
     ovr.shadow = true;
     ovr.contactShadow = false;
     ovr.panelOverlap = -1;
-    ovr.capsuleThickness = 0.25f;
-    ovr.scale = 1.5f;
+    ovr.capsuleThickness = 0.25F;
+    ovr.scale = 1.5F;
+    ovr.fontScale = 1.5F;
     ovr.fontFamily = "Fira Sans";
     ovr.startWidgets = std::vector<std::string>{"tray"};
     ovr.centerWidgets = std::vector<std::string>{"media"};
@@ -313,9 +317,9 @@ location = "https://example.invalid/bad"
     ogroup.borderSpecified = true;
     ogroup.border = colorSpecFromConfigString("#0f0e0d");
     ogroup.foreground = colorSpecFromConfigString("#0c0b0a");
-    ogroup.padding = 18.0f;
-    ogroup.radius = 9.0f;
-    ogroup.opacity = 0.6f;
+    ogroup.padding = 18.0F;
+    ogroup.radius = 9.0F;
+    ogroup.opacity = 0.6F;
     ovr.widgetCapsuleGroups = std::vector<BarCapsuleGroupStyle>{ogroup};
     ovr.widgetCapsulePadding = 24.0;
     ovr.widgetCapsuleRadius = 30.0;
@@ -328,34 +332,34 @@ location = "https://example.invalid/bad"
   // checks exercise real serialization rather than all-defaults.
   Config makeProbe() {
     Config c;
-    c.audio = AudioConfig{true, true, 0.73f, "change.ogg", "notify.ogg"};
+    c.audio = AudioConfig{true, true, 0.73F, "change.ogg", "notify.ogg"};
     c.weather = WeatherConfig{false, false, 17, "imperial"};
     c.osd.position = "bottom_left";
     c.osd.positionVertical = "top_right";
     c.osd.orientation = "vertical";
-    c.osd.scale = 1.4f;
-    c.osd.backgroundOpacity = 0.42f;
+    c.osd.scale = 1.4F;
+    c.osd.backgroundOpacity = 0.42F;
     c.osd.border = false;
     c.osd.offsetX = 33;
     c.osd.offsetY = 11;
     c.osd.monitors = {"DP-1", "HDMI-A-1"};
     c.osd.kinds.lockKeys = false;
     c.osd.kinds.keyboardLayout = false;
-    c.backdrop = BackdropConfig{true, 0.8f, 0.2f};
+    c.backdrop = BackdropConfig{true, 0.8F, 0.2F};
     c.lockscreen = LockscreenConfig{
         .lockBeforeSuspend = false,
         .blurredDesktop = true,
-        .blurIntensity = 0.6f,
-        .tintIntensity = 0.25f,
+        .blurIntensity = 0.6F,
+        .tintIntensity = 0.25F,
         .monitors = {"DP-1"}
     };
     c.system.monitor.enabled = false;
     c.system.monitor.cpuTempSensorPath = "/sys/class/hwmon/hwmon3/temp1_input";
-    c.system.monitor.cpuPollSeconds = 5.0f;
-    c.system.monitor.gpuPollSeconds = 4.0f;
-    c.system.monitor.memoryPollSeconds = 6.0f;
-    c.system.monitor.networkPollSeconds = 7.0f;
-    c.system.monitor.diskPollSeconds = 12.0f;
+    c.system.monitor.cpuPollSeconds = 5.0F;
+    c.system.monitor.gpuPollSeconds = 4.0F;
+    c.system.monitor.memoryPollSeconds = 6.0F;
+    c.system.monitor.networkPollSeconds = 7.0F;
+    c.system.monitor.diskPollSeconds = 12.0F;
     c.nightlight = NightLightConfig{true, true, 6000, 3500}; // gap satisfied
     c.location.autoLocate = true;
     c.location.address = "Berlin";
@@ -370,8 +374,8 @@ location = "https://example.invalid/bad"
         .showActions = false,
         .position = "bottom_left",
         .layer = "overlay",
-        .scale = 1.3f,
-        .backgroundOpacity = 0.5f,
+        .scale = 1.3F,
+        .backgroundOpacity = 0.5F,
         .border = false,
         .offsetX = 12,
         .offsetY = 6,
@@ -393,7 +397,7 @@ location = "https://example.invalid/bad"
     c.dock.position = DockEdge::Left;
     c.dock.iconSize = 40;
     c.dock.border = colorSpecFromRole(ColorRole::Primary);
-    c.dock.borderWidth = 1.5f;
+    c.dock.borderWidth = 1.5F;
     c.dock.radius = 20;
     c.dock.radiusTopLeft = 10;
     c.dock.radiusTopRight = 12;
@@ -405,8 +409,8 @@ location = "https://example.invalid/bad"
     c.brightness.enableDdcutil = true;
     c.brightness.ddcutilIgnoreMmids = {"ABC123"};
     c.brightness.monitorOverrides = {
-        {"DP-1", BrightnessBackendPreference::Ddcutil},
-        {"eDP-1", std::nullopt},
+        {"DP-1", BrightnessBackendPreference::Ddcutil, std::nullopt, 7},
+        {"eDP-1", std::nullopt, "intel_backlight", std::nullopt},
     };
     c.battery.warningThreshold = 15;
     c.battery.deviceThresholds = {{"BAT0", 10}, {"hidpp:1", 25}};
@@ -414,11 +418,11 @@ location = "https://example.invalid/bad"
     c.controlCenter.sidebarSectionMode = ControlCenterSidebarMode::None;
     c.controlCenter.calendarTab.showEventsCard = false;
     c.controlCenter.calendarTab.showWeekNumbers = true;
-    c.controlCenter.calendarTab.eventDateFormat = "%Y-%m-%d";
-    c.controlCenter.calendarTab.eventTimeFormat = "%I:%M %p";
     c.controlCenter.shortcuts = {{"wifi"}, {"bluetooth"}};
     c.calendar.enabled = true;
     c.calendar.refreshMinutes = 30;
+    c.calendar.eventDateFormat = "%Y-%m-%d";
+    c.calendar.eventTimeFormat = "%I:%M %p";
     c.calendar.accounts = {
         {"acc1", "google", "Work", "#ff0000", "", "", "", {}},
         {"acc2",
@@ -446,17 +450,17 @@ location = "https://example.invalid/bad"
     c.keybinds.save = defaultKeybindSet(KeybindAction::Save);
     c.hooks.commands[0] = {"notify-send hi"};
     c.hooks.commands[2] = {"cmd-a", "cmd-b"};
-    c.idle.preActionFadeSeconds = 3.0f;
+    c.idle.preActionFadeSeconds = 3.0F;
     // Explicit normalized actions so normalizeIdleBehaviorAction is a no-op on read.
     c.idle.behaviors = {
         {"dim", true, 60, "lock", "", "", true},
-        {"off", false, 300, "screen_off", "", "", true},
+        {"off", false, 300, "screen_off", "", "", true, 30},
     };
     c.wallpaper.enabled = false;
     c.wallpaper.fillColor = colorSpecFromConfigString("#ff8800");
     c.wallpaper.transitions = {WallpaperTransition::Wipe, WallpaperTransition::Zoom};
-    c.wallpaper.transitionDurationMs = 2000.0f;
-    c.wallpaper.edgeSmoothness = 0.5f;
+    c.wallpaper.transitionDurationMs = 2000.0F;
+    c.wallpaper.edgeSmoothness = 0.5F;
     c.wallpaper.directory = "/srv/wallpapers"; // absolute: expandUserPath leaves it unchanged
     c.wallpaper.automation.enabled = true;
     c.wallpaper.automation.intervalSeconds = 30;
@@ -464,7 +468,7 @@ location = "https://example.invalid/bad"
     c.wallpaper.monitorOverrides = {
         {"DP-1", true, colorSpecFromConfigString("#00ff00"), std::string("/srv/wp1"), std::nullopt, std::nullopt},
     };
-    c.accessibility.uiScale = 1.25f;
+    c.accessibility.uiScale = 1.25F;
     c.shell.buttonBorders = false;
     c.shell.fontFamily = "Inter";
     c.shell.lang = "en_US";
@@ -476,7 +480,7 @@ location = "https://example.invalid/bad"
     c.storage.keyFile = "/run/agenix/noctalia-storage-key";
     c.shell.avatarPath = "/home/u/face.png";
     c.shell.settingsWindowTranslucent = true;
-    c.shell.animation.speed = 1.5f;
+    c.shell.animation.speed = 1.5F;
     c.shell.shadow.direction = ShadowDirection::UpLeft;
     c.shell.panel.transparencyMode = PanelTransparencyMode::Glass;
     c.shell.panel.floatingLayer = "top";
@@ -522,6 +526,7 @@ location = "https://example.invalid/bad"
     c.theme.source = PaletteSource::Wallpaper;
     c.theme.builtinPalette = "Tokyo";
     c.theme.mode = ThemeMode::Light;
+    c.theme.shellMode = ShellThemeMode::Auto;
     c.theme.templates.enableBuiltinTemplates = false;
     c.theme.templates.builtinIds = {"a", "b"};
     c.theme.templates.customColors = {
@@ -543,7 +548,7 @@ location = "https://example.invalid/bad"
             3,
         },
     };
-    c.accessibility.uiScale = 1.25f;
+    c.accessibility.uiScale = 1.25F;
     c.accessibility.highContrast = true;
 
     c.hotCorners.enabled = true;
@@ -558,7 +563,7 @@ location = "https://example.invalid/bad"
          .location = "https://github.com/noctalia-dev/official-plugins"},
     };
     c.plugins.enabled = {"noctalia/notes"};
-    c.plugins.autoUpdate = false; // non-default (default is true) so the round-trip exercises it
+    c.plugins.autoUpdate = PluginAutoUpdateMode::None; // non-default (default is All) so the round-trip exercises it
 
     c.bars = {makeProbeBar()};
     return c;
@@ -571,7 +576,7 @@ location = "https://example.invalid/bad"
       AudioConfig a{};
       Diagnostics d;
       readInto(t, a, audioSchema(), "audio", d);
-      if (a.soundVolume != 1.0f) {
+      if (a.soundVolume != 1.0F) {
         fail("audio.sound_volume clamp: expected 1.0");
       }
     }
@@ -592,8 +597,18 @@ location = "https://example.invalid/bad"
       OsdConfig o{};
       Diagnostics d;
       readInto(t, o, osdSchema(), "osd", d);
-      if (o.scale != 0.5f) {
+      if (o.scale != 0.5F) {
         fail("osd.scale clamp: expected 0.5");
+      }
+    }
+    // Bar font_scale uses the same lower bound exposed by the Settings slider.
+    {
+      auto t = toml::parse("font_scale = 0.1");
+      BarConfig b{};
+      Diagnostics d;
+      readInto(t, b, barFieldsSchema(), "bar", d);
+      if (b.fontScale != *kBarFontScaleRange.min) {
+        fail("bar.font_scale clamp: expected 0.2");
       }
     }
     // Clipboard history count accepts large text-heavy histories but still has
@@ -606,6 +621,146 @@ location = "https://example.invalid/bad"
       if (s.clipboardHistoryMaxEntries != 10000) {
         fail("shell.clipboard_history_max_entries clamp: expected 10000");
       }
+    }
+  }
+
+  void checkMonitorFontScaleChangeSet() {
+    Config before;
+    BarConfig bar;
+    bar.name = "default";
+    BarMonitorOverride monitor;
+    monitor.match = "DP-1";
+    bar.monitorOverrides.push_back(monitor);
+    before.bars.push_back(bar);
+
+    Config after = before;
+    after.bars.front().monitorOverrides.front().fontScale = 1.5F;
+    if (!computeConfigChangeSet(before, after).bars) {
+      fail("monitor font_scale override did not mark bars changed");
+    }
+  }
+
+  std::pair<PluginsConfig, Diagnostics> parsePlugins(std::string_view config) {
+    PluginsConfig plugins;
+    Diagnostics diagnostics;
+    const toml::table root = toml::parse(config);
+    readInto(root, plugins, pluginsSchema(), "plugins", diagnostics);
+    return {std::move(plugins), std::move(diagnostics)};
+  }
+
+  void checkPluginAutoUpdateMode() {
+    const auto erroredOnAutoUpdate = [](const Diagnostics& diag) {
+      return std::ranges::any_of(diag.entries, [](const auto& entry) {
+        return entry.severity == Diagnostics::Severity::Error && entry.path == "plugins.auto_update";
+      });
+    };
+
+    // Cases: config snippet, expected mode
+    const auto cases = {
+        std::pair{"auto_update = \"all\"", PluginAutoUpdateMode::All},
+        std::pair{"auto_update = \"official\"", PluginAutoUpdateMode::Official},
+        std::pair{"auto_update = \"none\"", PluginAutoUpdateMode::None},
+    };
+    for (const auto& [text, expected] : cases) {
+      const auto [plugins, diag] = parsePlugins(text);
+      if (plugins.autoUpdate != expected || diag.hasErrors()) {
+        fail(
+            std::string("plugins.auto_update: '")
+            + text
+            + "' should parse to "
+            + std::string(enumToKey(kPluginAutoUpdateModes, expected))
+        );
+      }
+    }
+    // Unknown strings, unsupported types, and the legacy boolean form error
+    // and leave the default in place.
+    for (const auto text :
+         {"auto_update = \"sometimes\"", "auto_update = 1.5", "auto_update = true", "auto_update = false"}) {
+      const auto [plugins, diag] = parsePlugins(text);
+      if (plugins.autoUpdate != PluginAutoUpdateMode::All || !erroredOnAutoUpdate(diag)) {
+        fail(std::string("plugins.auto_update: '") + text + "' should error and keep the default");
+      }
+    }
+  }
+
+  void checkAutoUpdateScopeSelection() {
+    // The official scope matches by name AND location: a user-added source that
+    // reuses the "official" name is not the official source.
+    const std::vector<PluginSourceConfig> sources = {
+        defaultPluginSources()[0], // the official source
+        {.kind = PluginSourceKind::Git,
+         .name = "community",
+         .location = "https://github.com/noctalia-dev/community-plugins"},
+        {.kind = PluginSourceKind::Git,
+         .name = "disabled",
+         .location = "https://example.invalid/disabled",
+         .enabled = false},
+        {.kind = PluginSourceKind::Path, .name = "local", .location = "/tmp/plugins"},
+    };
+    const auto expectLocations = [](std::string_view fixtureName, const std::vector<PluginSourceConfig>& fixture,
+                                    PluginAutoUpdateMode mode, std::vector<std::string_view> locations) {
+      std::vector<std::string_view> selected;
+      for (const auto& source : fixture) {
+        if (sourceInAutoUpdateScope(source, mode)) {
+          selected.push_back(source.location);
+        }
+      }
+      if (!std::ranges::equal(selected, locations)) {
+        fail(
+            "auto-update scope ("
+            + std::string(fixtureName)
+            + "): unexpected sources selected for "
+            + std::string(enumToKey(kPluginAutoUpdateModes, mode))
+        );
+      }
+    };
+    expectLocations("defaults", sources, PluginAutoUpdateMode::None, {});
+    expectLocations(
+        "defaults", sources, PluginAutoUpdateMode::Official, {"https://github.com/noctalia-dev/official-plugins"}
+    );
+    // Every enabled git source; disabled and path sources stay out.
+    expectLocations(
+        "defaults", sources, PluginAutoUpdateMode::All,
+        {"https://github.com/noctalia-dev/official-plugins", "https://github.com/noctalia-dev/community-plugins"}
+    );
+    // A single source reusing the "official" name with an untrusted location is
+    // legal config (names must be unique, locations need not), but the location
+    // check must keep it out of the official scope.
+    const std::vector<PluginSourceConfig> untrustedOfficial = {
+        {.kind = PluginSourceKind::Git, .name = "official", .location = "https://example.invalid/untrusted"},
+        {.kind = PluginSourceKind::Git,
+         .name = "community",
+         .location = "https://github.com/noctalia-dev/community-plugins"},
+    };
+    expectLocations("untrustedOfficial", untrustedOfficial, PluginAutoUpdateMode::Official, {});
+    expectLocations(
+        "untrustedOfficial", untrustedOfficial, PluginAutoUpdateMode::All,
+        {"https://example.invalid/untrusted", "https://github.com/noctalia-dev/community-plugins"}
+    );
+  }
+
+  void checkDuplicatePluginSourceRejection() {
+    const auto erroredOnSource = [](const Diagnostics& diag) {
+      return std::ranges::any_of(diag.entries, [](const auto& entry) {
+        return entry.severity == Diagnostics::Severity::Error && entry.path == "plugins.source";
+      });
+    };
+    // Legit official source first: the duplicate is dropped, the legit entry kept.
+    const auto [legitPlugins, legitDiag] = parsePlugins(R"(
+[[source]]
+name = "official"
+kind = "git"
+location = "https://github.com/noctalia-dev/official-plugins"
+
+[[source]]
+name = "official"
+kind = "git"
+location = "https://example.invalid/untrusted"
+)");
+    if (!erroredOnSource(legitDiag)
+        || legitPlugins.sources.size() != 1
+        || legitPlugins.sources[0].location != "https://github.com/noctalia-dev/official-plugins") {
+      fail("plugins.source: duplicate names must error and keep the first entry");
     }
   }
 
@@ -849,6 +1004,7 @@ contact_shadow = true
 enabled = false
 end = [ "battery" ]
 font_family = "Inter"
+font_scale = 1.5
 font_weight = 600
 hover_highlight = false
 icon_color = "#0C0B0A"
@@ -906,6 +1062,7 @@ widget_spacing = 8
     enabled = true
     end = [ "volume" ]
     font_family = "Fira Sans"
+    font_scale = 1.5
     font_weight = 600
     hover_highlight = true
     icon_color = "#E3E2E1"
@@ -1021,14 +1178,14 @@ widget_spacing = 8
 
   // Every schema-backed section must round-trip, AND the probe must actually populate
   // it. Iterating the section registry rather than a hand-written list means a new
-  // section is covered the moment it is declared — and fails here until its probe
+  // section is covered the moment it is declared, and fails here until its probe
   // values are filled in.
   {
     const Config defaults;
     for (const SectionSpec& spec : sections()) {
       const std::string name(spec.name);
       if (spec.sectionEqual(probe, defaults)) {
-        fail(name + ": makeProbe leaves this section at its defaults — populate it, or the round-trip is vacuous");
+        fail(name + ": makeProbe leaves this section at its defaults; populate it, or the round-trip is vacuous");
         continue;
       }
       const auto* sectionTbl = serialized[spec.name].as_table();
@@ -1067,6 +1224,10 @@ widget_spacing = 8
   checkStorageKeySourceValidation();
   checkPanelFloatingLayerValidation();
   checkClamps();
+  checkMonitorFontScaleChangeSet();
+  checkPluginAutoUpdateMode();
+  checkAutoUpdateScopeSelection();
+  checkDuplicatePluginSourceRejection();
   checkCustomColorFallback();
   checkTemplateConfigCustomColorsExport();
 

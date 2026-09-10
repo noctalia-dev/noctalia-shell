@@ -105,7 +105,7 @@ PluginWidget::PluginWidget(
     scripting::PluginRuntimeContext context, std::string barName, std::string outputName, bool enableScroll
 )
     : m_entryId(std::move(context.entryId)), m_sourcePath(std::move(context.sourcePath)),
-      m_pluginDir(m_sourcePath.parent_path()), m_barName(std::move(barName)), m_outputName(std::move(outputName)),
+      m_pluginDir(std::move(context.pluginDir)), m_barName(std::move(barName)), m_outputName(std::move(outputName)),
       m_scriptApi(context.scriptApi), m_settings(std::move(context.settings)), m_fileWatcher(context.fileWatcher),
       m_platform(context.platform), m_clipboard(context.clipboard), m_httpClient(context.httpClient),
       m_audioSpectrum(context.audioSpectrum), m_mpris(context.mpris), m_timerPhase(nextTimerPhase()),
@@ -223,7 +223,7 @@ void PluginWidget::create() {
   flex->addChild(
       ui::label({
           .out = &m_label,
-          .fontSize = Style::fontSizeBody * m_contentScale,
+          .fontSize = Style::fontSizeBody * fontScale(),
           .fontWeight = labelFontWeight(),
           .fontFamily = labelFontFamily(),
           .visible = false,
@@ -245,7 +245,7 @@ void PluginWidget::create() {
   m_reconciler.setCallbackSink([this](const ui::UiTreeReconciler::ControlCallback& callback) {
     if (m_runtime != nullptr) {
       (void)m_runtime->enqueueCallStrings(
-          callback.fn, callback.arg1, callback.arg2, makeScriptSnapshot(), callback.coalesce
+          callback.fn, callback.arg1, callback.arg2, makeScriptSnapshot(), callback.coalesce, callback.coalesceKey
       );
     }
   });
@@ -335,6 +335,7 @@ void PluginWidget::doLayout(Renderer& renderer, float containerWidth, float cont
   if (m_tree.has_value() && m_uiHost != nullptr) {
     m_uiHost->setDirection(m_isVertical ? FlexDirection::Vertical : FlexDirection::Horizontal);
     m_reconciler.setScale(contentScale());
+    m_reconciler.setFontScale(fontScaleMultiplier());
     m_reconciler.setTextDefaults(labelFontFamily(), labelFontWeight());
     (void)m_reconciler.reconcile(*m_uiHost, *m_tree, renderer);
     m_uiHost->layout(renderer);

@@ -6,6 +6,7 @@
 #include "calendar/google_client.h"
 #include "calendar/google_oauth.h"
 #include "config/config_types.h"
+#include "core/inotify/inotify.h"
 #include "security/storage_key_provider.h"
 
 #include <chrono>
@@ -14,6 +15,8 @@
 #include <functional>
 #include <map>
 #include <optional>
+#include <poll.h>
+#include <set>
 #include <span>
 #include <string>
 #include <vector>
@@ -63,6 +66,7 @@ public:
       ConfigService& configService, HttpClient& httpClient, security::SecretStore& secretStore,
       security::StorageKeyProvider& storageKeyProvider, NotificationManager* notifications = nullptr
   );
+  ~CalendarService();
 
   void initialize();
   [[nodiscard]] ChangeCallbackId addChangeCallback(ChangeCallback callback);
@@ -71,6 +75,8 @@ public:
 
   [[nodiscard]] int pollTimeoutMs() const;
   void tick();
+  void addPollFds(std::vector<pollfd>& fds);
+  void dispatchPoll(const std::vector<pollfd>& fds, std::size_t startIdx);
 
   [[nodiscard]] bool enabled() const noexcept { return m_activeConfig.enabled; }
   [[nodiscard]] bool hasData() const noexcept { return m_snapshot.valid; }
@@ -96,6 +102,10 @@ public:
   [[nodiscard]] bool googleAccountNeedsReconnect(const std::string& accountId) const {
     return m_credentials.refreshTokenMissing(accountId);
   }
+  [[nodiscard]] bool googleAccountCredentialLocked(const std::string& accountId) const {
+    return m_credentials.refreshTokenLocked(accountId);
+  }
+  [[nodiscard]] bool hasMissingRefreshTokens() const { return m_credentials.anyRefreshTokenMissing(); }
   [[nodiscard]] CachePersistenceState cachePersistenceState() const noexcept { return m_cachePersistenceState; }
   [[nodiscard]] bool cacheMigrationPending() const noexcept { return m_cacheMigrationPending; }
   [[nodiscard]] bool hasEncryptedCache() const;
@@ -123,11 +133,14 @@ private:
       const CalendarConfig::Account& account, calendar::CalendarCredentialStore::LookupCallback callback
   );
   void fetchIcs(const CalendarConfig::Account& account);
+  void fetchVdir(const CalendarConfig::Account& account);
+  void updateVdirWatches();
   void fetchGoogle(const CalendarConfig::Account& account);
   void refreshGoogleToken(const std::string& accountId, std::function<void(bool ok, std::string accessToken)> cb);
   void googleFetchWithToken(const std::string& accountId, const std::string& accessToken, bool allowRefreshRetry);
   void pollConnect();
   void notifyGoogleConnectFailure(const std::string& body) const;
+  void notifyGoogleCredentialLocked() const;
   void initializeCredentials();
   [[nodiscard]] calendar::CredentialMigration credentialMigration();
   void storeGoogleTokens(
@@ -174,6 +187,15 @@ private:
   CachePersistenceState m_cachePersistenceState = CachePersistenceState::Opening;
   bool m_cacheMigrationPending = false;
   std::size_t m_pendingAccounts = 0;
+  bool m_googleCredentialLockedNotificationShown = false;
   ConnectFlow m_connect;
   calendar::CalDavClient m_caldav;
+  Inotify m_vdirInotify;
+  std::map<std::filesystem::path, int> m_watchedVdirPaths;
+  std::map<int, std::filesystem::path> m_watchedVdirWds;
+  std::chrono::steady_clock::time_point m_vdirDebounceUntil;
+  bool m_vdirDebouncePending = false;
+  struct VdirWorker;
+  std::shared_ptr<VdirWorker> m_vdirWorker;
+  std::map<std::string, std::vector<std::filesystem::path>> m_discoveredVdirPathsByAccount;
 };

@@ -471,6 +471,21 @@ namespace scripting {
           if (const auto* openNearClick = (*entryTable)["open_near_click"].as_boolean()) {
             entry.panelOpenNearClickDefault = openNearClick->get();
           }
+          if ((*entryTable)["layer"]) {
+            if (manifest.pluginApiVersion < kPanelLayerPluginApiVersion) {
+              error = "panel entry '"
+                  + entry.id
+                  + "': layer requires plugin_api >= "
+                  + std::to_string(kPanelLayerPluginApiVersion);
+              return false;
+            }
+            const auto* layer = (*entryTable)["layer"].as_string();
+            if (layer == nullptr || !isValidPanelLayer(layer->get())) {
+              error = "panel entry '" + entry.id + R"(': layer must be "top" or "overlay")";
+              return false;
+            }
+            entry.panelLayerDefault = layer->get();
+          }
           if ((*entryTable)["dismiss_on_outside_click"]) {
             if (manifest.pluginApiVersion < kPanelDismissOnOutsideClickPluginApiVersion) {
               error = "panel entry '"
@@ -666,6 +681,28 @@ namespace scripting {
     }
     return {};
   }
+  bool isValidPluginVersion(std::string_view version) {
+    std::size_t componentStart = 0;
+    for (std::size_t componentIndex = 0; componentIndex < 3; ++componentIndex) {
+      const bool isLast = componentIndex == 2;
+      const std::size_t separator = version.find('.', componentStart);
+      if ((isLast && separator != std::string_view::npos) || (!isLast && separator == std::string_view::npos)) {
+        return false;
+      }
+
+      const std::string_view component =
+          version.substr(componentStart, isLast ? std::string_view::npos : separator - componentStart);
+      if (component.empty()
+          || (component.size() > 1 && component.front() == '0')
+          || !std::ranges::all_of(component, [](char ch) { return ch >= '0' && ch <= '9'; })) {
+        return false;
+      }
+      if (!isLast) {
+        componentStart = separator + 1;
+      }
+    }
+    return true;
+  }
 
   std::unordered_map<std::string, WidgetSettingValue>
   seedEntrySettings(const PluginEntry& entry, const std::unordered_map<std::string, WidgetSettingValue>& overrides) {
@@ -708,6 +745,13 @@ namespace scripting {
     if (manifest.name.empty()) {
       return fail("missing mandatory key 'name'");
     }
+    if (!root.contains("version")) {
+      return fail("missing mandatory key 'version'");
+    }
+    manifest.version = tableString(root, "version");
+    if (!isValidPluginVersion(manifest.version)) {
+      return fail("invalid 'version' (expected MAJOR.MINOR.PATCH)");
+    }
     if (!root.contains("plugin_api")) {
       return fail("missing mandatory key 'plugin_api'");
     }
@@ -719,7 +763,6 @@ namespace scripting {
     }
     manifest.pluginApiVersion = static_cast<std::uint32_t>(*pluginApiVersion);
 
-    manifest.version = tableString(root, "version");
     manifest.author = tableString(root, "author");
     manifest.license = tableString(root, "license", "MIT");
     manifest.deprecated = tableBool(root, "deprecated", false);

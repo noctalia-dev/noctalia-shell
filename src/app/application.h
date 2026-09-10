@@ -115,6 +115,7 @@ class INetworkService;
 class IwdSecretAgent;
 class LogindService;
 class MainLoop;
+class ModemManagerService;
 class MprisService;
 class NetworkSecretAgent;
 class NotificationDBusHost;
@@ -188,8 +189,8 @@ private:
   void reloadDmenuProviders();
   // (Re)register plugin-backed panels from the enabled plugin set.
   void reloadPluginPanels();
-  // When [plugins].auto_update is on, pull every git source. Run once at startup and on
-  // a 6h repeating timer so long-lived sessions pick up new plugin versions.
+  // When [plugins].auto_update is on, pull git sources per the configured mode. Run once at
+  // startup and on a 6h repeating timer so long-lived sessions pick up new plugin versions.
   void runPluginAutoUpdate();
   void startTrayService();
   void syncNotificationDaemon();
@@ -275,6 +276,7 @@ private:
   std::unique_ptr<UPowerService> m_upowerService;
   std::unique_ptr<BluetoothService> m_bluetoothService;
   std::unique_ptr<BluetoothAgent> m_bluetoothAgent;
+  std::unique_ptr<ModemManagerService> m_modemManagerService;
   Timer m_bluetoothResumeTimer;
   std::unique_ptr<PolkitAgent> m_polkitAgent;
   std::optional<bool> m_notificationDaemonEnabled;

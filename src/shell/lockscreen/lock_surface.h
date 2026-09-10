@@ -77,6 +77,7 @@ public:
   void onPointerEvent(const PointerEvent& event);
   void onKeyboardEvent(const KeyboardEvent& event);
   [[nodiscard]] wl_output* output() const noexcept { return m_output; }
+  void syncOutputScale(std::int32_t bufferScale, std::uint32_t configuredScaleNumerator);
   [[nodiscard]] bool hasDesktopCapture() const noexcept;
   [[nodiscard]] Node* widgetLayer() noexcept { return m_widgetLayer; }
   void setOutputKey(std::string outputKey) { m_outputKey = std::move(outputKey); }
@@ -120,6 +121,7 @@ private:
 
   ext_session_lock_surface_v1* m_lockSurface = nullptr;
   wl_output* m_output = nullptr;
+  bool m_receivedConfigure = false;
   ConfigService* m_config = nullptr;
   // Declared before m_root so it outlives the scene: ~Node cancels its animations through this manager.
   AnimationManager m_animations;

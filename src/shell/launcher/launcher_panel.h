@@ -47,7 +47,6 @@ public:
   void onIconThemeChanged() override;
 
   void clearUsage();
-  // Drops persisted usage data when sort-by-usage is off (including after config reload).
   void syncUsageTrackingState();
 
   // Invoked after a terminal close when the activation copied text and the provider
@@ -98,6 +97,9 @@ private:
   [[nodiscard]] bool shouldUseAppGrid() const;
   void refreshLauncherAppIconColorization();
   void updateLauncherGridMetrics(Renderer& renderer);
+  void updatePinnedApplicationState();
+  void applyPinnedApplicationOrder();
+  void reorderPinnedApplication(std::string_view sourcePath, std::string_view targetPath);
   [[nodiscard]] bool shouldTrackUsage() const;
 
   std::vector<std::unique_ptr<LauncherProvider>> m_providers;
@@ -129,6 +131,7 @@ private:
   std::size_t m_selectedIndex = 0;
   bool m_categoryFilterVisible = true;
   bool m_launcherShowIcons = true;
+  bool m_launcherShowAppOriginIndicator = true;
   bool m_launcherCompact = false;
   bool m_launcherAppGrid = false;
   bool m_usingAppGrid = false;

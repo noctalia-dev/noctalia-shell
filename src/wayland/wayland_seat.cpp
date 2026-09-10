@@ -55,6 +55,7 @@ namespace {
   };
 
   constexpr Logger kLog("seat");
+
   constexpr float kAxisValue120PerStep = 120.0F;
   // libinput reports one wheel detent as 15 degrees of rotation.
   constexpr float kLegacyWheelAxisUnitsPerStep = 15.0F;
@@ -102,6 +103,13 @@ void WaylandSeat::setCursorShape(std::uint32_t serial, std::uint32_t shape) {
   if (effectiveSerial == 0) {
     return;
   }
+  // Repeated set_shape on the same enter serial makes Hyprland bounce pointer
+  // enter/leave, which blinks settings hover/focus (#4005).
+  if (effectiveSerial == m_lastCursorShapeSerial && shape == m_lastCursorShape) {
+    return;
+  }
+  m_lastCursorShapeSerial = effectiveSerial;
+  m_lastCursorShape = shape;
   wp_cursor_shape_device_v1_set_shape(m_cursorShapeDevice, effectiveSerial, shape);
 }
 
@@ -117,6 +125,8 @@ void WaylandSeat::forgetSurface(wl_surface* surface) noexcept {
     }
     m_lastPointerSurface = nullptr;
     m_pointerEnterSerial = 0;
+    m_lastCursorShape = 0;
+    m_lastCursorShapeSerial = 0;
     m_hasPointerPosition = false;
   }
   if (m_lastKeyboardSurface == surface) {
@@ -269,6 +279,8 @@ void WaylandSeat::handlePointerLeave(void* data, wl_pointer* /*pointer*/, std::u
   self->m_lastInputSource = InputSource::Pointer;
   self->m_lastPointerSurface = surface;
   self->m_pointerEnterSerial = 0;
+  self->m_lastCursorShape = 0;
+  self->m_lastCursorShapeSerial = 0;
   self->m_hasPointerPosition = false;
   self->m_pendingPointerEvents.push_back(
       PointerEvent{
@@ -453,6 +465,7 @@ void WaylandSeat::handleTouchDown(
           .sx = self->m_lastPointerX,
           .sy = self->m_lastPointerY,
           .time = time,
+          .touch = true,
       }
   );
   self->m_pendingTouchEvents.push_back(
@@ -465,6 +478,7 @@ void WaylandSeat::handleTouchDown(
           .time = time,
           .button = BTN_LEFT,
           .pressed = true,
+          .touch = true,
       }
   );
 }
@@ -488,6 +502,7 @@ void WaylandSeat::handleTouchUp(
           .time = time,
           .button = BTN_LEFT,
           .pressed = false,
+          .touch = true,
       }
   );
   self->m_pendingTouchEvents.push_back(
@@ -495,6 +510,7 @@ void WaylandSeat::handleTouchUp(
           .type = PointerEvent::Type::Leave,
           .serial = serial,
           .surface = surface,
+          .touch = true,
       }
   );
   self->m_activeTouchId = -1;
@@ -519,6 +535,7 @@ void WaylandSeat::handleTouchMotion(
           .sx = self->m_lastPointerX,
           .sy = self->m_lastPointerY,
           .time = time,
+          .touch = true,
       }
   );
 }
@@ -564,18 +581,9 @@ void WaylandSeat::handleTouchCancel(void* data, wl_touch* /*touch*/) {
     self->bumpUserActivity();
     self->m_pointerEventCallback(
         PointerEvent{
-            .type = PointerEvent::Type::Button,
-            .surface = surface,
-            .sx = self->m_lastPointerX,
-            .sy = self->m_lastPointerY,
-            .button = BTN_LEFT,
-            .pressed = false,
-        }
-    );
-    self->m_pointerEventCallback(
-        PointerEvent{
             .type = PointerEvent::Type::Leave,
             .surface = surface,
+            .touch = true,
         }
     );
   }
@@ -681,15 +689,7 @@ void WaylandSeat::handleKeyboardKey(
   auto sym = static_cast<std::uint32_t>(xkb_state_key_get_one_sym(self->m_xkbState, xkbKeycode));
   auto utf32 = static_cast<std::uint32_t>(xkb_state_key_get_utf32(self->m_xkbState, xkbKeycode));
 
-  std::uint32_t mods = 0;
-  if (xkb_state_mod_name_is_active(self->m_xkbState, XKB_MOD_NAME_SHIFT, XKB_STATE_MODS_EFFECTIVE) > 0)
-    mods |= KeyMod::Shift;
-  if (xkb_state_mod_name_is_active(self->m_xkbState, XKB_MOD_NAME_CTRL, XKB_STATE_MODS_EFFECTIVE) > 0)
-    mods |= KeyMod::Ctrl;
-  if (xkb_state_mod_name_is_active(self->m_xkbState, XKB_MOD_NAME_ALT, XKB_STATE_MODS_EFFECTIVE) > 0)
-    mods |= KeyMod::Alt;
-  if (xkb_state_mod_name_is_active(self->m_xkbState, XKB_MOD_NAME_LOGO, XKB_STATE_MODS_EFFECTIVE) > 0)
-    mods |= KeyMod::Super;
+  const std::uint32_t mods = self->keyboardModifiers();
 
   const bool pressed = (state == WL_KEYBOARD_KEY_STATE_PRESSED);
 
@@ -862,6 +862,22 @@ std::vector<std::string> WaylandSeat::layoutNames() const {
   }
 
   return layouts;
+}
+
+std::uint32_t WaylandSeat::keyboardModifiers() const noexcept {
+  if (m_xkbState == nullptr) {
+    return 0;
+  }
+  std::uint32_t mods = 0;
+  if (xkb_state_mod_name_is_active(m_xkbState, XKB_MOD_NAME_SHIFT, XKB_STATE_MODS_EFFECTIVE) > 0)
+    mods |= KeyMod::Shift;
+  if (xkb_state_mod_name_is_active(m_xkbState, XKB_MOD_NAME_CTRL, XKB_STATE_MODS_EFFECTIVE) > 0)
+    mods |= KeyMod::Ctrl;
+  if (xkb_state_mod_name_is_active(m_xkbState, XKB_MOD_NAME_ALT, XKB_STATE_MODS_EFFECTIVE) > 0)
+    mods |= KeyMod::Alt;
+  if (xkb_state_mod_name_is_active(m_xkbState, XKB_MOD_NAME_LOGO, XKB_STATE_MODS_EFFECTIVE) > 0)
+    mods |= KeyMod::Super;
+  return mods;
 }
 
 WaylandSeat::LockKeysState WaylandSeat::lockKeysState() const {

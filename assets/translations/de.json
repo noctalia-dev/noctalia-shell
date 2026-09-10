@@ -54,7 +54,7 @@
         "scroll-short": "S"
       },
       "media": {
-        "nothing-playing": "Nichts wird wiedergegeben",
+        "nothing-playing": "Nichts wird abgespielt",
         "playing": "Wird wiedergegeben"
       },
       "network": {
@@ -93,6 +93,7 @@
       },
       "sysmon": {
         "cpu": "CPU",
+        "cpu-freq": "CPU-Frequenz",
         "cpu-temp": "CPU-Temperatur",
         "disk": "Festplatte",
         "disk-free": "Freier Speicher",
@@ -183,8 +184,9 @@
     "audio": {
       "application-volumes": "Anwendungslautstärken",
       "choose-effects-profile": "Wähle ein Profil",
+      "default-device": "Standardgerät",
       "effects-profile": "Effekte",
-      "input-device-prefix": "Input",
+      "input-device-prefix": "Eingabe",
       "no-application-audio": "Kein Anwendungsaudio",
       "no-application-audio-body": "Derzeit sind keine Wiedergabestreams von Anwendungen verfügbar.",
       "no-input-devices": "Keine Eingabegeräte",
@@ -193,7 +195,7 @@
       "no-output-devices": "Keine Ausgabegeräte",
       "no-output-devices-body": "Derzeit sind keine Wiedergabegeräte verfügbar.",
       "no-output-selected": "Kein Ausgabegerät ausgewählt",
-      "output-device-prefix": "Output",
+      "output-device-prefix": "Ausgabe",
       "unavailable-body": "PipeWire ist nicht aktiv.",
       "unavailable-title": "Audio nicht verfügbar"
     },
@@ -243,7 +245,7 @@
       "media": {
         "idle": "Inaktiv",
         "no-active-player": "Kein aktiver Player",
-        "nothing-playing": "Nichts wird wiedergegeben",
+        "nothing-playing": "Nichts wird abgespielt",
         "paused": "Pausiert",
         "playback-unavailable": "Wiedergabe nicht verfügbar",
         "playing": "Wiedergabe läuft",
@@ -262,7 +264,7 @@
     },
     "media": {
       "active-player": "Aktiver Player",
-      "nothing-playing": "Nichts wird wiedergegeben",
+      "nothing-playing": "Nichts wird abgespielt",
       "now-playing": "Aktuelle Wiedergabe",
       "start-playback": "Wiedergabe in einer MPRIS-App starten"
     },
@@ -304,6 +306,22 @@
     },
     "power": {
       "battery": "Akku",
+      "charging": {
+        "configured": "Konfiguriert: {limits}",
+        "display-only": "Nur anzeigen",
+        "error-denied": "Autorisierung wurde verweigert. Ladeschwellenwerte wurden nicht geändert.",
+        "error-failed": "Ladeschwellenwerte konnten nicht geändert werden.",
+        "externally-managed": "Von einem anderen Tool festgelegt. Konfiguriere UPower zur Verwaltung der Ladeschwellenwerte.",
+        "firmware-managed": "Laden wird von der System-Firmware verwaltet",
+        "full-charge": "Kann bis 100% laden",
+        "starts": "Startet unter {start}%",
+        "starts-stops": "Startet unter {start}% · Stoppt bei {end}%",
+        "stops": "Stoppt bei {end}%",
+        "title": "Akkuladung",
+        "unreadable": "Nicht verfügbar",
+        "unsupported": "Ladeschwellenwerte werden nicht unterstützt",
+        "use-thresholds": "Ladeschwellenwerte verwenden"
+      },
       "design-capacity": "Der Nennkapazität",
       "health": "Akkuzustand",
       "performance-inhibited": "Leistung nicht verfügbar",
@@ -518,6 +536,7 @@
         "opacity": "Deckkraft",
         "primary-color": "Primärfarbe",
         "reset-defaults": "Auf Standardeinstellungen zurücksetzen",
+        "reversed": "Umgekehrt",
         "ring-opacity": "Ring-Deckkraft",
         "rotation-speed": "Rotationsgeschwindigkeit",
         "scroll-step": "Scroll-Schritt",
@@ -526,6 +545,7 @@
         "shadow": "Schatten",
         "show-caps-lock": "Caps-Lock-Warnung",
         "show-device": "Gerät anzeigen",
+        "show-events": "Ereignisse anzeigen",
         "show-forecast": "Vorhersage anzeigen",
         "show-keyboard-layout": "Tastaturlayout",
         "show-label": "Beschriftung anzeigen",
@@ -536,13 +556,16 @@
         "show-unlock-hint": "Entsperrhinweis",
         "show-vpn-label": "VPN-Beschriftung anzeigen",
         "show-weather": "Wetter",
+        "show-week-numbers": "Wochennummern anzeigen",
         "show-when-idle": "Bei Inaktivität anzeigen",
         "stat": "Statistik",
+        "stat-cpu-freq": "CPU-Frequenz",
         "stat-cpu-temp": "CPU-Temperatur",
         "stat-cpu-usage": "CPU-Auslastung",
         "stat-gpu-temp": "GPU-Temperatur",
         "stat-gpu-usage": "GPU-Auslastung",
         "stat-gpu-vram": "GPU VRAM",
+        "stat-gpu-vram-used": "Genutzter GPU-VRAM",
         "stat-net-rx": "Net Rx",
         "stat-net-tx": "Net Tx",
         "stat-none": "Nichts",
@@ -573,9 +596,11 @@
         "grid": "Gitter"
       },
       "title": "Desktop-Widgets",
+      "title-lockscreen": "Sperrbildschirm-Widgets",
       "types": {
         "audio-visualizer": "Audio-Visualizer",
         "button": "Button",
+        "calendar": "Kalendar",
         "clock": "Uhr",
         "fancy-audio-visualizer": "Schicker Audio-Visualizer",
         "label": "Beschriftung",
@@ -588,7 +613,7 @@
       }
     },
     "media": {
-      "nothing-playing": "Nichts wird wiedergegeben"
+      "nothing-playing": "Nichts wird abgespielt"
     },
     "volume": {
       "mic": "Mikrofon",
@@ -643,12 +668,22 @@
     },
     "context-menu": {
       "open": "Öffnen",
+      "pin": "An Launcher anheften",
       "pin-to-dock": "An Dock anheften",
+      "unpin": "Von Launcher lösen",
       "unpin-from-dock": "Von Dock lösen"
     },
     "empty": {
       "no-results": "Keine Ergebnisse gefunden",
       "type-to-search": "Zum Suchen eingeben…"
+    },
+    "origins": {
+      "appimage": "AppImage",
+      "flatpak": "Flatpak",
+      "nix": "Nix",
+      "snap": "Snap",
+      "system": "System",
+      "user": "Benutzer"
     },
     "providers": {
       "applications": {
@@ -717,6 +752,8 @@
       "battery-low-body": "{device}: {percent}% verbleibend",
       "battery-low-title": "Akkustand niedrig",
       "calendar": "Kalender",
+      "calendar-credential-locked-body": "Entsperre den vom Secret Service verwendeten Schlüsselbund und versuche es dann in den Einstellungen erneut. Mit GNOME Keyring mache einen automatisch entsperrten Schlüsselbund wie Login zum Standard.",
+      "calendar-credential-locked-title": "Kalender-Schlüsselbund ist gesperrt",
       "calendar-google-connect-browser-failed": "Es konnte kein Browser für die Google-Autorisierung gestartet werden. Überprüfe deinen Standardbrowser oder die xdg-open-Konfiguration.",
       "calendar-google-connect-credential-store-failed": "Autorisierung abgeschlossen, aber das Refresh-Token konnte nicht gespeichert werden. Entsperre oder starte den Secret Service, dann verbinde dich erneut.",
       "calendar-google-connect-expired": "Die Google-Autorisierung ist vor Abschluss der Anmeldung abgelaufen. Starte die Verbindung erneut.",
@@ -727,7 +764,7 @@
       "calendar-google-connect-start-failed": "Die Google-Autorisierung konnte nicht gestartet werden. Überprüfe deine Netzwerkverbindung und versuche es erneut.",
       "calendar-google-connect-start-http": "Die Google-Autorisierung konnte nicht gestartet werden. Der OAuth-Broker gab HTTP {status} zurück.",
       "calendar-google-connect-timeout": "Bei der Google-Autorisierung ist eine Zeitüberschreitung aufgetreten. Starte die Verbindung erneut, wenn du bereit bist, dich anzumelden.",
-      "config-migration-body": "Veraltete Konfiguration wird im Arbeitsspeicher migriert, einschließlich {path}. Aktualisiere die Quellkonfiguration; die Einstellungen und noctalia config validate zeigen den erforderlichen Ersatz.",
+      "config-migration-body": "Aktualisiere {path} in der Quelldatei. Noctalia wendet diesen Ersatz nur vorübergehend an. Führe noctalia config validate aus, um alle erforderlichen Änderungen aufzulisten.",
       "config-migration-title": "Konfigurationsupdate erforderlich",
       "dbus-disabled": "DBus-Benachrichtigungen deaktiviert",
       "desktop-widgets-editor": "Widget-Editor",
@@ -877,10 +914,11 @@
       "calendars-label": "Kalender",
       "color-label": "Farbe",
       "credential-source-file": "Passwortdatei",
-      "credential-source-keyring": "Keyring",
+      "credential-source-keyring": "Schlüsselbund",
       "credential-source-label": "Anmeldedatenspeicher",
       "delete-error": "Kalenderkonto konnte nicht gelöscht werden.",
       "edit-title": "Kalenderkonto bearbeiten",
+      "ics-url-label": "ICS-URL",
       "id-label": "Konto-ID",
       "invalid": "Überprüfe die hervorgehobenen Kalenderkontofelder.",
       "name-label": "Anzeigename",
@@ -894,13 +932,14 @@
       "provider": {
         "custom": "CalDAV",
         "google": "Google",
-        "icloud": "iCloud"
+        "icloud": "iCloud",
+        "ics": "ICS-URL"
       },
       "provider-label": "Anbieter",
       "save": "Speichern",
       "save-connect": "Speichern und verbinden",
       "save-error": "Kalenderkonto konnte nicht gespeichert werden.",
-      "secret-cleanup-error": "Das Konto konnte nicht gespeichert werden und die Keyring-Anmeldedaten konnten nicht wiederhergestellt oder bereinigt werden. Versuche es erneut nach dem Entsperren des Secret Service.",
+      "secret-cleanup-error": "Das Konto konnte nicht gespeichert werden und die Schlüsselbund-Anmeldedaten konnten nicht wiederhergestellt oder bereinigt werden. Versuche es erneut nach dem Entsperren des Secret Service.",
       "secret-service-cancelled": "Die Secret-Service-Anfrage wurde abgebrochen. Versuche es erneut, wenn du bereit bist, ihn zu entsperren.",
       "secret-service-error": "Auf Kalender-Anmeldedaten im Secret Service konnte nicht zugegriffen werden. Versuche die Operation erneut.",
       "secret-service-locked": "Kalender-Anmeldedaten sind gesperrt oder der Zugriff wurde verweigert. Entsperre den Secret Service und versuche es erneut.",
@@ -1129,6 +1168,7 @@
           "suspend": "Energiesparen"
         },
         "kind-section-label": "Aktion",
+        "locked-timeout-label": "Timeout bei Sperrung (Sekunden, 0 = deaktiviert)",
         "name-label": "Name",
         "name-placeholder": "idle-behavior",
         "resume-command-label": "Fortsetzen-Befehl",
@@ -1191,6 +1231,7 @@
         "monitor-thresholds": "Hervorhebungsschwellenwerte",
         "monitors": "Monitore",
         "motion": "Bewegung",
+        "navigation": "Navigation",
         "network": "Netzwerk",
         "night-light": "Nachtlicht",
         "notifications": "Benachrichtigungen",
@@ -1251,7 +1292,9 @@
         "add-title": "Benachrichtigungsfilter hinzufügen",
         "allow-permanent": "Dauerhaft erlauben",
         "allowed-urgencies-label": "Erlaubte Dringlichkeiten",
+        "bypass-dnd": "Nicht stören umgehen",
         "flag": {
+          "dnd-bypass": "DND umgehen",
           "history": "Verlauf",
           "permanent": "dauerhaft",
           "sound": "Ton",
@@ -1350,6 +1393,13 @@
       },
       "panel-position": {
         "auto": "Leiste folgen"
+      },
+      "plugins": {
+        "auto-update": {
+          "all": "Alle Quellen",
+          "none": "Keine",
+          "official": "Nur offizielle"
+        }
       },
       "screen-position": {
         "bottom-center": "Unten mittig",
@@ -1459,8 +1509,6 @@
         "held-back": "ältere Version",
         "held-back-hint": "v{version} benötigt Plugin-API {required}; diese Noctalia-Version unterstützt bis zu {current}. Aktualisiere Noctalia, um es zu erhalten.",
         "incompatible-plugin-api": "inkompatible Plugin-API",
-        "loading": "Plugins werden geladen…",
-        "refreshing": "Plugins werden aktualisiert…",
         "remove": "Plugin entfernen",
         "requires": "Erfordert: {dependencies}",
         "title": "Plugins",
@@ -1502,6 +1550,7 @@
       },
       "store": {
         "add": "Zu Noctalia hinzufügen",
+        "back-to-catalog": "Zurück zum Plugin-Katalog",
         "categories": "Kategorien",
         "category-all": "Alle",
         "empty": "Keine Plugins gefunden",
@@ -1588,7 +1637,7 @@
           "description": "Deckkraft des globalen Oberflächenschattens"
         },
         "global-shadow-direction": {
-          "description": "Richtung, aus der der Schatten von Oberflächen geworfen wird"
+          "description": "Richtung, in die der Schatten von Oberflächen fällt"
         },
         "input-borders": {
           "description": "Zeichne Umrisse um Textfelder und andere Eingabeelemente in der gesamten Shell",
@@ -1737,6 +1786,10 @@
           "description": "Schriftart für die Widgets dieser Leiste; leer lassen, um die globale Schriftart zu übernehmen (eine widget-spezifische Schriftart überschreibt dies)",
           "label": "Schriftart"
         },
+        "font-scale": {
+          "description": "Skalierungsfaktor für Text aller Widgets auf dieser Leiste; wird mit dem font_scale des jeweiligen Widgets multipliziert",
+          "label": "Schriftskalierung"
+        },
         "font-weight": {
           "description": "Standard-Schriftstärke für Widget-Beschriftungen auf dieser Leiste",
           "label": "Schriftstärke"
@@ -1763,7 +1816,7 @@
           "description": "Schiebe Fenster vom Leistenrand weg"
         },
         "shadow": {
-          "description": "Werfe den globalen Oberflächenschatten von der Leiste"
+          "description": "Aktiviere den globalen Oberflächenschatten für die Leiste"
         },
         "show-on-workspace-switch": {
           "description": "Zeige die Leiste kurz, wenn sich der aktive Arbeitsbereich ändert",
@@ -1974,7 +2027,7 @@
           "description": "Schiebe Fenster vom Dock-Rand weg"
         },
         "shadow": {
-          "description": "Werfe den globalen Oberflächenschatten vom Dock"
+          "description": "Aktiviere den globalen Oberflächenschatten für das Dock"
         },
         "show-dots": {
           "description": "Zeige Punkte für laufende Fenster unter Dock-Icons an",
@@ -2272,6 +2325,10 @@
           "description": "Abstand in Pixeln zwischen einem schwebenden oder losgelösten Panel und der Leistenkante",
           "label": "Schwebender Abstand"
         },
+        "home-session-button": {
+          "description": "Zeige den Sitzungsaktionen-Button im Start-Tab-Header an",
+          "label": "Header-Sitzungsbutton anzeigen"
+        },
         "home-shortcuts": {
           "description": "Wähle bis zu sechs Shortcuts für den Start-Tab",
           "label": "Start-Shortcuts"
@@ -2280,9 +2337,17 @@
           "description": "Zeige Textbeschriftungen unter Shortcut-Icons im Start-Tab an",
           "label": "Shortcut-Beschriftungen anzeigen"
         },
+        "launcher-app-actions": {
+          "description": "Zeige App-Aktionseinträge neben Apps in den Ergebnissen an",
+          "label": "App-Aktionen anzeigen"
+        },
         "launcher-app-grid": {
           "description": "Zeige ein Raster von App-Icons mit Beschriftungen darunter, wenn die Ergebnisse ausschließlich Apps sind",
           "label": "App-Rasteransicht"
+        },
+        "launcher-app-origin-indicator": {
+          "description": "Zeige Paketherkunft-Indikatoren bei App-Ergebnissen an",
+          "label": "App-Herkunft-Indikatoren anzeigen"
         },
         "launcher-auto-paste": {
           "description": "Füge nach Rechner-, Emoji- und anderen Kopier-Aktivierungen automatisch in das fokussierte Fenster ein (gleiche Tastenkürzel wie beim Zwischenablage-Auto-Paste)",
@@ -2319,6 +2384,10 @@
         "launcher-global-windows": {
           "description": "Zeige offene Fenster auch in der unpräfixierten Suche",
           "label": "Fenster in globaler Suche"
+        },
+        "launcher-pinned-apps": {
+          "description": "Desktop-Entry-IDs von Apps, die im Launcher angeheftet sind; sie erscheinen zuerst, wenn der Launcher geöffnet wird",
+          "label": "Angeheftete Apps"
         },
         "launcher-prefix-calculator": {
           "description": "Trigger-Präfix für Rechnerberechnungen",
@@ -2438,7 +2507,7 @@
           "label": "Position"
         },
         "shadow": {
-          "description": "Werfe den globalen Oberflächenschatten von Panel-Oberflächen"
+          "description": "Aktiviere den globalen Oberflächenschatten für Panel-Oberflächen"
         },
         "transparency-mode": {
           "description": "Panel-Glasstil, einschließlich Deckkraft schwebender Panels und Kartentransluzenz",
@@ -2474,7 +2543,7 @@
         },
         "calendar-add": {
           "button": "Konto hinzufügen",
-          "description": "Füge iCloud-, CalDAV- oder Google-Konten hinzu",
+          "description": "Füge iCloud-, CalDAV-, Google-Konten oder eine ICS-URL hinzu",
           "label": "Kalenderkonten"
         },
         "calendar-credentials": {
@@ -2490,7 +2559,9 @@
         "calendar-edit": {
           "button": "Bearbeiten",
           "button-reconnect": "Neu verbinden",
+          "button-retry": "Erneut versuchen",
           "description": "Aktualisiere dieses Kalenderkonto",
+          "description-locked": "Das Refresh-Token befindet sich in einem gesperrten Schlüsselbund; entsperre den Schlüsselbund und versuche es erneut",
           "description-reconnect": "Google-Autorisierung fehlt; verbinde dieses Konto neu"
         },
         "calendar-event-date-format": {
@@ -2621,6 +2692,7 @@
             "label": "Netzwerk-Abfrageintervall"
           },
           "stats": {
+            "cpu-freq": "CPU-Frequenz",
             "cpu-temp": "CPU-Temperatur",
             "cpu-usage": "CPU-Auslastung",
             "disk-free": "Freier Speicher",
@@ -2941,9 +3013,9 @@
           "label": "In Zwischenablage kopieren"
         },
         "screenshot-directory": {
-          "description": "Ordner für gespeicherte PNG-Dateien; leer lassen, um ~/Pictures zu verwenden",
+          "description": "Ordner für gespeicherte PNG-Dateien; leer lassen, um das Standard-XDG-Bilderverzeichnis zu verwenden",
           "label": "Ausgabeverzeichnis",
-          "placeholder": "~/Pictures"
+          "placeholder": "XDG-Bilderverzeichnis"
         },
         "screenshot-filename-pattern": {
           "description": "strftime-Muster ohne Dateiendung (.png wird hinzugefügt); verwende %s für Unix-Epoche",
@@ -3045,7 +3117,7 @@
           "label": "Unterordner einschließen"
         },
         "directory": {
-          "description": "Ordner mit Hintergrundbildern",
+          "description": "Ordner mit Hintergrundbildern; leer lassen, um das Standard-XDG-Bilderverzeichnis zu verwenden",
           "label": "Hintergrundbildverzeichnis"
         },
         "directory-dark": {
@@ -3203,6 +3275,7 @@
         "both": "Beide",
         "compact": "Kompakt",
         "count": "Zähler",
+        "cpu-freq": "CPU-Frequenz",
         "cpu-temp": "CPU-Temperatur",
         "cpu-usage": "CPU-Auslastung",
         "disk-free": "Freier Speicher",
@@ -3217,6 +3290,7 @@
         "gpu-temp": "GPU-Temperatur",
         "gpu-usage": "GPU-Auslastung",
         "gpu-vram": "GPU VRAM",
+        "gpu-vram-used": "Genutzter GPU-VRAM",
         "graph": "Graph",
         "graphic": "Grafik",
         "hidden": "Versteckt",
@@ -3413,6 +3487,10 @@
           "description": "Schriftart für dieses Widget; leer lassen, um die Schriftart der Leiste zu übernehmen",
           "label": "Schriftart"
         },
+        "font-scale": {
+          "description": "Skalierungsmultiplikator für Text in diesem Widget, unabhängig von der Gesamtskalierung des Widgets",
+          "label": "Schriftskalierung"
+        },
         "font-weight": {
           "description": "Standard übernimmt die Schriftstärke der Leiste",
           "label": "Schriftstärke"
@@ -3463,6 +3541,10 @@
           "description": "Blende inaktive Privatsphäre-Icons aus und versteckt das Widget, wenn nichts aktiv ist",
           "label": "Inaktive ausblenden"
         },
+        "hide-passive": {
+          "description": "Blende Tray-Elemente aus, deren StatusNotifierItem-Status „Passive“ ist",
+          "label": "Passive Elemente ausblenden"
+        },
         "hide-when-empty": {
           "description": "Blende Arbeitsbereichs-Pills aus, wenn keine Fenster geöffnet sind",
           "label": "Ausblenden, wenn leer",
@@ -3471,6 +3553,10 @@
         "hide-when-full": {
           "description": "Blende das Akku-Widget aus, wenn der Akku vollständig geladen ist",
           "label": "Ausblenden, wenn voll"
+        },
+        "hide-when-inactive": {
+          "description": "Blende das Mikrofon-Widget aus, während keine Anwendung Audio aufnimmt",
+          "label": "Ausblenden, wenn inaktiv"
         },
         "hide-when-no-connected-device": {
           "description": "Blende das Bluetooth-Widget aus, wenn kein Gerät verbunden ist",
@@ -3508,6 +3594,10 @@
           "description": "Überschreibt die Widget-Farbe nur für Icons; feste Hex-Farben werden ebenfalls unterstützt",
           "label": "Icon-Farbe"
         },
+        "icon-scale": {
+          "description": "Skalierung der Taskleisten-App-Icons relativ zu ihrer Standardgröße",
+          "label": "Icon-Skalierung"
+        },
         "icon-size": {
           "description": "Icon-Größe in Pixeln",
           "label": "Icon-Größe"
@@ -3536,6 +3626,10 @@
         "interface": {
           "description": "Netzwerkschnittstelle zum Überwachen; leer lassen, um die Gesamtsumme über alle Schnittstellen zu verwenden",
           "label": "Schnittstelle"
+        },
+        "item-spacing": {
+          "description": "Abstand zwischen Privatsphäre-Indikator-Icons in Pixeln",
+          "label": "Icon-Abstand"
         },
         "label": {
           "description": "Optionaler statischer Text, der auf diesem Button angezeigt wird",
@@ -3573,7 +3667,7 @@
         "max-label-chars": {
           "description": "Maximale Anzahl der angezeigten Zeichen für Arbeitsbereichsnamen",
           "label": "Maximale Beschriftungszeichen",
-          "workspaces-description": "Maximale Zeichenanzahl für Beschriftungen von Arbeitsbereichsnamen"
+          "workspaces-description": "Maximale Zeichenanzahl für nicht-numerische Arbeitsbereichsbeschriftungen"
         },
         "max-length": {
           "description": "Maximale Widget-Länge in Pixeln",
@@ -3639,6 +3733,10 @@
           "description": "Deckkraft von angehefteten Apps, die derzeit nicht ausgeführt werden",
           "label": "Deckkraft angehefteter Apps"
         },
+        "reversed": {
+          "description": "Kehre die Reihenfolge der Balken von niedrigen zu hohen Frequenzen um",
+          "label": "Umgekehrt"
+        },
         "scale": {
           "description": "Skaliere dieses Widget relativ zur Inhaltsskala der Leiste",
           "label": "Skalierung"
@@ -3661,6 +3759,10 @@
         },
         "show-all-outputs": {
           "description": "Zeige Fenster von allen Monitoren in diesem Widget an",
+          "label": "Alle Monitore anzeigen"
+        },
+        "show-all-workspaces": {
+          "description": "Zeige Arbeitsbereiche von allen Monitoren auf diesem Widget an",
           "label": "Alle Monitore anzeigen"
         },
         "show-caps-lock": {
@@ -3690,6 +3792,10 @@
         "show-num-lock": {
           "description": "Zeige den Num-Lock-Status an",
           "label": "Num Lock anzeigen"
+        },
+        "show-progress": {
+          "description": "Fülle den Widget-Hintergrund, um den Wiedergabefortschritt anzuzeigen",
+          "label": "Wiedergabefortschritt anzeigen"
         },
         "show-scroll-lock": {
           "description": "Zeige den Scroll-Lock-Status an",
@@ -3842,7 +3948,7 @@
       "export-config": "Konfiguration exportieren…",
       "export-config-saved": "Konfigurationsexport gespeichert.",
       "filter-overridden": "Überschrieben",
-      "legacy-config-warning": "Veraltete Konfiguration wird im Arbeitsspeicher migriert: {issue}. Führe noctalia config validate aus, um alle erforderlichen Änderungen zu sehen.",
+      "legacy-config-warning": "Veraltete Einstellung: {issue}. Bearbeite diesen Quelleintrag; Noctalia wendet den Ersatz nur vorübergehend an. Führe noctalia config validate aus, um alle erforderlichen Änderungen aufzulisten.",
       "native-title": "Noctalia-Einstellungen",
       "no-results": "Keine Einstellungen gefunden",
       "no-results-hint": "Versuche einen anderen Einstellungsnamen oder Konfigurationsschlüssel.",

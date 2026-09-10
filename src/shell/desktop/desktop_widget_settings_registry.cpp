@@ -211,7 +211,7 @@ namespace desktop_settings {
   std::vector<WidgetSettingSpec> desktopWidgetSettingSpecs(std::string_view type) {
     if (auto pluginEntry = resolvePluginDesktopWidget(type)) {
       scripting::PluginTranslationCatalog translations;
-      translations.load(pluginEntry->sourcePath.parent_path());
+      translations.load(pluginEntry->pluginDir);
       return settings::manifestSettingSpecs(pluginEntry->entry->settings, &translations);
     }
 
@@ -222,6 +222,7 @@ namespace desktop_settings {
         {"gpu_temp", "desktop-widgets.editor.settings.stat-gpu-temp"},
         {"gpu_usage", "desktop-widgets.editor.settings.stat-gpu-usage"},
         {"gpu_vram", "desktop-widgets.editor.settings.stat-gpu-vram"},
+        {"gpu_vram_used", "desktop-widgets.editor.settings.stat-gpu-vram-used"},
         {"ram_pct", "desktop-widgets.editor.settings.stat-ram-pct"},
         {"swap_pct", "desktop-widgets.editor.settings.stat-swap-pct"},
         {"net_rx", "desktop-widgets.editor.settings.stat-net-rx"},
@@ -257,7 +258,7 @@ namespace desktop_settings {
       auto format = stringSpec("format", "{:%H:%M}");
       format.visibleWhen = digitalOnly;
       add(std::move(format));
-      auto centerText = boolSpec("center_text", false);
+      auto centerText = boolSpec("center_text", true);
       centerText.visibleWhen = digitalOnly;
       add(std::move(centerText));
       auto timezone = stringSpec("timezone", "");
@@ -276,6 +277,7 @@ namespace desktop_settings {
     } else if (type == "audio_visualizer") {
       add(intSpec("bands", 32, 4.0, 128.0, 4.0));
       add(boolSpec("mirrored", true));
+      add(boolSpec("reversed", false));
       add(boolSpec("centered", true));
       add(boolSpec("show_when_idle", true));
       add(colorSpec("color_1", "primary"));

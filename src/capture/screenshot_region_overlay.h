@@ -1,6 +1,6 @@
 #pragma once
 
-#include "capture/screencopy_capture.h"
+#include "capture/screenshot_image.h"
 
 #include <functional>
 #include <memory>
@@ -15,10 +15,18 @@ struct PointerEvent;
 namespace capture {
 
   enum class ConfirmAction { None, ForceClipboard, ForceSave };
-
-  struct FrozenScreenshot {
-    wl_output* output = nullptr;
-    ScreencopyImage image;
+  enum class DragMode {
+    None,
+    NewSelection,
+    TopEdge,
+    BottomEdge,
+    LeftEdge,
+    RightEdge,
+    TopLeftCorner,
+    TopRightCorner,
+    BottomLeftCorner,
+    BottomRightCorner,
+    Move
   };
 
   class ScreenshotRegionOverlay {
@@ -52,6 +60,12 @@ namespace capture {
 
   private:
     struct Instance;
+
+    DragMode m_dragMode = DragMode::None;
+    double m_moveOffsetX = 0.0;
+    double m_moveOffsetY = 0.0;
+    double m_cursorGlobalX = 0.0;
+    double m_cursorGlobalY = 0.0;
 
     void ensureSurfaces();
     void destroySurfaces();

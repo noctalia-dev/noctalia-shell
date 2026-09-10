@@ -16,6 +16,7 @@
 #include "render/text/font_weight_catalog.h"
 #include "scripting/plugin_registry.h"
 #include "shell/settings/settings_content_plugins.h"
+#include "shell/settings/settings_dialog_presenter.h"
 #include "shell/tooltip/tooltip_manager.h"
 #include "system/dependency_service.h"
 #include "ui/controls/box.h"
@@ -56,9 +57,21 @@ namespace {
   constexpr float kWindowMinWidth = 1020.0F;
   constexpr float kWindowMinHeight = 500.0F;
 
-  // How many frames to wait for the settings window to gain keyboard focus before opening a pending
-  // editor sheet anyway (bounded so a never-focused window can't spin redraws forever).
-  constexpr int kPendingEditorOpenFrameBudget = 240;
+  // min_size hints are orientation-aware: portrait outputs constrain width, so the hint
+  // follows the same 66% short-edge budget as the default open size instead of 1020.
+  [[nodiscard]] std::pair<float, float> settingsWindowMinSize(float outputW, float outputH, float scale) {
+    float minW = kWindowMinWidth * scale;
+    float minH = kWindowMinHeight * scale;
+    if (outputW <= 0.0F || outputH <= 0.0F) {
+      return {minW, minH};
+    }
+    if (outputW < outputH) {
+      minW = std::min(minW, outputW * kWindowOutputFraction);
+    }
+    minW = std::min(minW, outputW);
+    minH = std::min(minH, outputH);
+    return {minW, minH};
+  }
 
   // Build the {"bar", name, <lane>} path the widget inspector expects, resolving which lane the widget
   // currently lives in (the inspector keys off the bar name at index 1 and the lane at the tail).
@@ -151,6 +164,8 @@ namespace {
 
 } // namespace
 
+SettingsWindow::SettingsWindow() = default;
+
 SettingsWindow::~SettingsWindow() { destroyWindow(); }
 
 void SettingsWindow::initialize(
@@ -166,6 +181,53 @@ void SettingsWindow::initialize(
   m_upower = upower;
   m_accounts = accounts;
   m_showAdvanced = m_config != nullptr ? m_config->config().shell.settingsShowAdvanced : false;
+  m_modalHost.initialize(
+      m_inputDispatcher,
+      [this]() {
+        if (m_surface != nullptr) {
+          m_surface->requestLayout();
+        }
+      },
+      [this]() {
+        if (m_surface != nullptr) {
+          m_surface->requestUpdateOnly();
+        }
+      }
+  );
+}
+
+void SettingsWindow::initializeDialogPresenter(
+    ColorPickerDialogPresenter& colorFallback, GlyphPickerDialogPresenter& glyphFallback,
+    FileDialogPresenter& fileFallback, ThumbnailService& thumbnails
+) {
+  m_dialogPresenter = std::make_unique<settings::SettingsDialogPresenter>();
+  m_dialogPresenter->initialize(
+      m_modalHost, m_animations, thumbnails, colorFallback, glyphFallback, fileFallback,
+      [this]() { return shouldUseModalDialogs(); }, [this]() { return uiScale(); },
+      [this]() { dismissOpenSelectDropdown(); }
+  );
+}
+
+void SettingsWindow::shutdownDialogPresenter() {
+  if (m_dialogPresenter != nullptr) {
+    m_dialogPresenter->shutdown();
+  }
+}
+
+ColorPickerDialogPresenter* SettingsWindow::colorPickerDialogPresenter() noexcept { return m_dialogPresenter.get(); }
+
+GlyphPickerDialogPresenter* SettingsWindow::glyphPickerDialogPresenter() noexcept { return m_dialogPresenter.get(); }
+
+FileDialogPresenter* SettingsWindow::fileDialogPresenter() noexcept { return m_dialogPresenter.get(); }
+
+bool SettingsWindow::shouldUseModalDialogs() const noexcept {
+  if (!isOpen() || m_wayland == nullptr) {
+    return false;
+  }
+  wl_surface* source = m_wayland->lastInputSource() == WaylandSeat::InputSource::Keyboard
+      ? m_wayland->lastKeyboardSurface()
+      : m_wayland->lastPointerSurface();
+  return source != nullptr && ownsKeyboardSurface(source);
 }
 
 float SettingsWindow::uiScale() const {
@@ -205,16 +267,7 @@ bool SettingsWindow::ownsKeyboardSurface(wl_surface* surface) const noexcept {
   if (m_widgetAddPopup != nullptr && m_widgetAddPopup->wlSurface() == surface) {
     return true;
   }
-  if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->wlSurface() == surface) {
-    return true;
-  }
   if (m_searchPickerPopup != nullptr && m_searchPickerPopup->wlSurface() == surface) {
-    return true;
-  }
-  if (m_editorSheetPopup != nullptr && m_editorSheetPopup->wlSurface() == surface) {
-    return true;
-  }
-  if (m_editorSheetPopup != nullptr && m_editorSheetPopup->ownsSelectDropdownSurface(surface)) {
     return true;
   }
   return m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen() && m_selectPopup->wlSurface() == surface;
@@ -264,22 +317,10 @@ std::optional<LayerPopupParentContext> SettingsWindow::topmostPopupParentContext
         m_searchPickerPopup->height()
     );
   }
-  if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen()) {
-    return makeContext(
-        m_configExportDialogPopup->wlSurface(), m_configExportDialogPopup->xdgSurface(),
-        m_configExportDialogPopup->width(), m_configExportDialogPopup->height()
-    );
-  }
   if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen()) {
     return makeContext(
         m_widgetAddPopup->wlSurface(), m_widgetAddPopup->xdgSurface(), m_widgetAddPopup->width(),
         m_widgetAddPopup->height()
-    );
-  }
-  if (m_editorSheetPopup != nullptr && m_editorSheetPopup->isOpen()) {
-    return makeContext(
-        m_editorSheetPopup->wlSurface(), m_editorSheetPopup->xdgSurface(), m_editorSheetPopup->width(),
-        m_editorSheetPopup->height()
     );
   }
   return makeContext(m_surface->wlSurface(), m_surface->xdgSurface(), m_surface->width(), m_surface->height());
@@ -327,22 +368,10 @@ std::optional<LayerPopupParentContext> SettingsWindow::popupParentContextForSurf
         m_widgetAddPopup->height()
     );
   }
-  if (m_configExportDialogPopup != nullptr && surface == m_configExportDialogPopup->wlSurface()) {
-    return makeContext(
-        m_configExportDialogPopup->wlSurface(), m_configExportDialogPopup->xdgSurface(),
-        m_configExportDialogPopup->width(), m_configExportDialogPopup->height()
-    );
-  }
   if (m_searchPickerPopup != nullptr && surface == m_searchPickerPopup->wlSurface()) {
     return makeContext(
         m_searchPickerPopup->wlSurface(), m_searchPickerPopup->xdgSurface(), m_searchPickerPopup->width(),
         m_searchPickerPopup->height()
-    );
-  }
-  if (m_editorSheetPopup != nullptr && surface == m_editorSheetPopup->wlSurface()) {
-    return makeContext(
-        m_editorSheetPopup->wlSurface(), m_editorSheetPopup->xdgSurface(), m_editorSheetPopup->width(),
-        m_editorSheetPopup->height()
     );
   }
   if (m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen() && surface == m_selectPopup->wlSurface()) {
@@ -397,6 +426,13 @@ void SettingsWindow::open(std::string context) {
 
   m_surface->setClosedCallback([this]() { destroyWindow(); });
 
+  m_surface->setOutputChangedCallback([this](wl_output* currentOutput) {
+    m_output = currentOutput;
+    if (currentOutput != nullptr && m_surface != nullptr) {
+      m_surface->requestLayout();
+    }
+  });
+
   m_surface->setConfigureCallback([this](std::uint32_t /*width*/, std::uint32_t /*height*/) {
     if (m_surface != nullptr) {
       m_surface->requestLayout();
@@ -410,13 +446,14 @@ void SettingsWindow::open(std::string context) {
   m_surface->setUpdateCallback([]() {});
 
   const float scale = uiScale();
-  const float minWidthF = kWindowMinWidth * scale;
-  const float minHeightF = kWindowMinHeight * scale;
   float desiredWidth = kWindowWidth * scale;
   float desiredHeight = kWindowHeight * scale;
+  float minWidthF = kWindowMinWidth * scale;
+  float minHeightF = kWindowMinHeight * scale;
   if (const WaylandOutput* info = m_wayland->findOutputByWl(output); info != nullptr && info->hasUsableGeometry()) {
     const auto outputW = static_cast<float>(info->effectiveLogicalWidth());
     const auto outputH = static_cast<float>(info->effectiveLogicalHeight());
+    std::tie(minWidthF, minHeightF) = settingsWindowMinSize(outputW, outputH, scale);
     if (outputW >= outputH) {
       desiredHeight = util::clampOrdered(outputH * kWindowOutputFraction, std::min(minHeightF, outputH), outputH);
       desiredWidth = util::clampOrdered(desiredHeight * kGoldenRatio, std::min(minWidthF, outputW), outputW);
@@ -444,6 +481,8 @@ void SettingsWindow::open(std::string context) {
     m_surface.reset();
     return;
   }
+  m_minWidthHint = minWidth;
+  m_minHeightHint = minHeight;
   m_pointerInside = false;
   m_lastSceneWidth = 0;
   m_lastSceneHeight = 0;
@@ -457,7 +496,6 @@ void SettingsWindow::openToBarWidget(std::string barName, std::string widgetName
   m_selectedBarName = std::move(barName);
   m_selectedMonitorOverride.clear();
   m_pendingOpenWidgetInspectorName = std::move(widgetName);
-  m_pendingEditorOpenFrames = kPendingEditorOpenFrameBudget;
   m_contentScrollState.offset = 0.0F;
   m_sidebarScrollState.offset = 0.0F;
 
@@ -479,7 +517,6 @@ bool SettingsWindow::openToPlugin(std::string pluginId) {
   m_searchQuery.clear();
   m_selectedSection = "plugins";
   m_pendingOpenPluginSettingsId = std::move(pluginId);
-  m_pendingEditorOpenFrames = kPendingEditorOpenFrameBudget;
   m_contentScrollState.offset = 0.0F;
   m_sidebarScrollState.offset = 0.0F;
 
@@ -498,6 +535,21 @@ void SettingsWindow::close() {
   destroyWindow();
 }
 
+void SettingsWindow::closeForWidgetEditor() {
+  if (!isOpen()) {
+    return;
+  }
+  m_reopenAfterWidgetEditorSection = m_selectedSection;
+  DeferredCall::callLater([this]() { close(); });
+}
+
+void SettingsWindow::reopenAfterWidgetEditor() {
+  if (m_reopenAfterWidgetEditorSection.empty()) {
+    return;
+  }
+  open(std::exchange(m_reopenAfterWidgetEditorSection, {}));
+}
+
 void SettingsWindow::dismissOpenSelectDropdown() {
   if (m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen()) {
     m_selectPopup->closeSelectDropdown();
@@ -505,6 +557,10 @@ void SettingsWindow::dismissOpenSelectDropdown() {
 }
 
 void SettingsWindow::destroyWindow() {
+  m_modalHost.closeAll();
+  m_configExportDialogModal.reset();
+  m_editorSheetModal.reset();
+  m_modalHost.detach();
   if (m_surface != nullptr) {
     // Drop stale pointer coords before tearing down the scene. Otherwise the next open
     // replays hover at the last click (often the close button) and paints it hovered.
@@ -517,6 +573,8 @@ void SettingsWindow::destroyWindow() {
   m_headerRow = nullptr;
   m_filterRow = nullptr;
   m_contentContainer = nullptr;
+  m_pageTitleRow = nullptr;
+  m_groupJumpRow = nullptr;
   m_contentScrollView = nullptr;
   m_sidebarScrollView = nullptr;
   m_sidebarNav = nullptr;
@@ -529,17 +587,9 @@ void SettingsWindow::destroyWindow() {
     m_widgetAddPopup->close();
     m_widgetAddPopup.reset();
   }
-  if (m_configExportDialogPopup != nullptr) {
-    m_configExportDialogPopup->close();
-    m_configExportDialogPopup.reset();
-  }
   if (m_searchPickerPopup != nullptr) {
     m_searchPickerPopup->close();
     m_searchPickerPopup.reset();
-  }
-  if (m_editorSheetPopup != nullptr) {
-    m_editorSheetPopup->close();
-    m_editorSheetPopup.reset();
   }
   if (m_selectPopup != nullptr) {
     m_selectPopup->closeSelectDropdown();
@@ -548,6 +598,8 @@ void SettingsWindow::destroyWindow() {
   m_surface.reset();
   m_pointerInside = false;
   m_output = nullptr;
+  m_minWidthHint = 0;
+  m_minHeightHint = 0;
   m_lastSceneWidth = 0;
   m_lastSceneHeight = 0;
   m_settingsRegistry.clear();
@@ -586,6 +638,7 @@ void SettingsWindow::destroyWindow() {
   m_showOverriddenOnly = false;
   m_sidebarScrollState = {};
   m_contentScrollState = {};
+  m_expandedSettingGroups.clear();
 
   // Plugin-store thumbnails are the only async textures this window holds; drop the
   // zero-ref residents once the scene (and with it every Image) is gone.
@@ -594,7 +647,7 @@ void SettingsWindow::destroyWindow() {
   }
 }
 
-void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
+void SettingsWindow::prepareFrame(bool needsUpdate, bool needsLayout) {
   if (m_renderContext == nullptr || m_surface == nullptr) {
     return;
   }
@@ -610,6 +663,10 @@ void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
   m_renderContext->makeCurrent(m_surface->renderTarget());
   Renderer& renderer = m_surface->renderTarget().renderer();
   logSettingsProfile("prepareFrame makeCurrent", phaseProfileWatch);
+  if (needsUpdate && m_modalHost.isOpen()) {
+    UiPhaseScope updatePhase(UiPhase::Update);
+    m_modalHost.update(renderer);
+  }
 
   // Rebuild the entire scene only on first build or when something explicitly
   // requested it (config change, nav click, etc.). Pure size changes — which
@@ -620,6 +677,32 @@ void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
   const bool firstBuild = m_sceneRoot == nullptr;
   const bool sizeChanged = !firstBuild && (m_lastSceneWidth != width || m_lastSceneHeight != height);
   const bool needRebuild = firstBuild || m_rebuildRequested;
+
+  const float scale = uiScale();
+  float minWidthF = kWindowMinWidth * scale;
+  float minHeightF = kWindowMinHeight * scale;
+  wl_output* currentOutput = nullptr;
+  if (m_wayland != nullptr && m_surface != nullptr) {
+    currentOutput = m_wayland->outputForSurface(m_surface->wlSurface());
+  }
+  if (currentOutput == nullptr) {
+    currentOutput = m_output;
+  }
+  if (const WaylandOutput* info = m_wayland->findOutputByWl(currentOutput);
+      info != nullptr && info->hasUsableGeometry()) {
+    std::tie(minWidthF, minHeightF) = settingsWindowMinSize(
+        static_cast<float>(info->effectiveLogicalWidth()), static_cast<float>(info->effectiveLogicalHeight()), scale
+    );
+  }
+  const auto newMinW = static_cast<std::uint32_t>(std::round(minWidthF));
+  const auto newMinH = static_cast<std::uint32_t>(std::round(minHeightF));
+  if (newMinW != m_minWidthHint || newMinH != m_minHeightHint) {
+    phaseProfileWatch.reset();
+    m_surface->setMinSize(newMinW, newMinH);
+    m_minWidthHint = newMinW;
+    m_minHeightHint = newMinH;
+    logSettingsProfile("prepareFrame updateMinSize", phaseProfileWatch);
+  }
 
   if (needRebuild) {
     phaseProfileWatch.reset();
@@ -640,13 +723,6 @@ void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
     m_contentRebuildRequested = false;
     m_settingsRegistryRefreshRequested = false;
     m_filterRowRefreshRequested = false;
-    phaseProfileWatch.reset();
-    const float scale = uiScale();
-    const auto newMinW = static_cast<std::uint32_t>(std::round(kWindowMinWidth * scale));
-    const auto newMinH = static_cast<std::uint32_t>(std::round(kWindowMinHeight * scale));
-    m_surface->setMinSize(newMinW, newMinH);
-    m_surface->clampToMinSize(newMinW, newMinH);
-    logSettingsProfile("prepareFrame updateMinSize", phaseProfileWatch);
   } else if ((m_contentRebuildRequested || sizeChanged || needsLayout) && m_sceneRoot != nullptr) {
     phaseProfileWatch.reset();
     UiPhaseScope layoutPhase(UiPhase::Layout);
@@ -659,6 +735,7 @@ void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
     if (m_mainContainer != nullptr) {
       m_mainContainer->setSize(w, h);
     }
+    m_modalHost.resize(w, h);
     if (m_contentRebuildRequested) {
       m_inputDispatcher.stashTabFocus();
       if (m_settingsRegistryRefreshRequested) {
@@ -697,21 +774,6 @@ void SettingsWindow::maybeOpenPendingEditor() {
   if (!pending || m_surface == nullptr || m_wayland == nullptr || m_config == nullptr) {
     return;
   }
-  // A grab popup needs an input serial this window owns. Right after a bar middle-click (or an IPC
-  // call) the latest serial still belongs to another surface; wait until this window holds keyboard
-  // focus (whose enter refreshes the serial) so the compositor accepts the sheet's grab instead of
-  // dismissing it.
-  const bool focused = m_wayland->lastKeyboardSurface() == m_surface->wlSurface();
-  if (!focused && m_pendingEditorOpenFrames > 0) {
-    --m_pendingEditorOpenFrames;
-    m_surface->requestRedraw();
-    return;
-  }
-  // A bar middle-click or IPC call gives us no press serial the settings surface owns, so the
-  // compositor rejects an xdg_popup grab. Open the sheet without a grab — the window holds keyboard
-  // focus and routes input to it. Dialog sheets dismiss via Escape / close only (not outside click).
-  m_pendingEditorSheetNoGrab = true;
-
   if (!m_pendingOpenPluginSettingsId.empty()) {
     std::string pluginId = std::move(m_pendingOpenPluginSettingsId);
     m_pendingOpenPluginSettingsId.clear();
@@ -779,8 +841,8 @@ void SettingsWindow::scheduleDeferredRebuild() {
       }
     }
     m_surface->requestLayout();
-    if ((sceneRebuild || rebuildEditorSheet) && m_editorSheetPopup != nullptr && m_editorSheetPopup->isOpen()) {
-      m_editorSheetPopup->rebuildBody();
+    if ((sceneRebuild || rebuildEditorSheet) && m_editorSheetModal != nullptr && m_editorSheetModal->isOpen()) {
+      m_editorSheetModal->rebuildBody();
     }
   });
 }
@@ -847,8 +909,8 @@ void SettingsWindow::clearTransientSettingsState() {
   if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen()) {
     m_widgetAddPopup->close();
   }
-  if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen()) {
-    m_configExportDialogPopup->close();
+  if (m_configExportDialogModal != nullptr && m_configExportDialogModal->isOpen()) {
+    m_configExportDialogModal->close();
   }
   if (m_searchPickerPopup != nullptr && m_searchPickerPopup->isOpen()) {
     m_searchPickerPopup->close();
@@ -871,25 +933,6 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
     m_widgetAddPopup->close();
     return true;
   }
-  if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->onPointerEvent(event)) {
-    return true;
-  }
-  // Dialog: block settings-parent input while open; dismiss only via Escape / close.
-  // Events for other shell surfaces must not be swallowed here — Application still
-  // needs to forward them to the bar, dock, notifications, etc.
-  if (m_configExportDialogPopup != nullptr
-      && m_configExportDialogPopup->isOpen()
-      && !m_configExportDialogPopup->isInitializing()) {
-    if (!ownsKeyboardSurface(event.surface)) {
-      return false;
-    }
-    // Keep m_pointerInside honest while the parent is inert behind the dialog.
-    if (event.type == PointerEvent::Type::Leave && event.surface == m_surface->wlSurface()) {
-      m_pointerInside = false;
-      m_inputDispatcher.pointerLeave();
-    }
-    return true;
-  }
   if (m_searchPickerPopup != nullptr && m_searchPickerPopup->onPointerEvent(event)) {
     return true;
   }
@@ -901,23 +944,6 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
     m_searchPickerPopup->close();
     return true;
   }
-  if (m_editorSheetPopup != nullptr && m_editorSheetPopup->onPointerEvent(event)) {
-    return true;
-  }
-  // Dialog sheet: block settings-parent input while open; dismiss only via Escape / close.
-  // Events for other shell surfaces must not be swallowed here — Application still
-  // needs to forward them to the bar, dock, notifications, etc.
-  if (m_editorSheetPopup != nullptr && m_editorSheetPopup->isOpen() && !m_editorSheetPopup->isInitializing()) {
-    if (!ownsKeyboardSurface(event.surface)) {
-      return false;
-    }
-    if (event.type == PointerEvent::Type::Leave && event.surface == m_surface->wlSurface()) {
-      m_pointerInside = false;
-      m_inputDispatcher.pointerLeave();
-    }
-    return true;
-  }
-
   if (m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen()) {
     if (m_selectPopup->onPointerEvent(event)) {
       return true;
@@ -982,7 +1008,8 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
         break;
       }
       m_inputDispatcher.pointerButton(
-          static_cast<float>(event.sx), static_cast<float>(event.sy), event.button, pressed
+          static_cast<float>(event.sx), static_cast<float>(event.sy), event.button, pressed, event.serial, event.time,
+          event.touch
       );
       consumed = m_pointerInside;
     }
@@ -1024,17 +1051,6 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  if (m_configExportDialogPopup != nullptr
-      && m_configExportDialogPopup->isOpen()
-      && !m_configExportDialogPopup->isInitializing()) {
-    if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
-      m_configExportDialogPopup->close();
-      return;
-    }
-    m_configExportDialogPopup->onKeyboardEvent(event);
-    return;
-  }
-
   if (m_searchPickerPopup != nullptr && m_searchPickerPopup->isOpen() && !m_searchPickerPopup->isInitializing()) {
     if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
       m_searchPickerPopup->close();
@@ -1044,21 +1060,12 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  if (m_editorSheetPopup != nullptr && m_editorSheetPopup->isOpen() && !m_editorSheetPopup->isInitializing()) {
-    if (m_editorSheetPopup->isSelectDropdownOpen()) {
-      m_editorSheetPopup->onKeyboardEvent(event);
-      return;
-    }
-    if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
-      m_editorSheetPopup->requestClose();
-      return;
-    }
-    m_editorSheetPopup->onKeyboardEvent(event);
+  if (m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen()) {
+    m_selectPopup->onKeyboardEvent(event);
     return;
   }
 
-  if (m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen()) {
-    m_selectPopup->onKeyboardEvent(event);
+  if (m_modalHost.onKeyboardEvent(event)) {
     return;
   }
 
@@ -1172,11 +1179,11 @@ void SettingsWindow::requestRedraw() {
     if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen()) {
       m_widgetAddPopup->requestRedraw();
     }
-    if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen()) {
-      m_configExportDialogPopup->requestRedraw();
+    if (m_configExportDialogModal != nullptr && m_configExportDialogModal->isOpen()) {
+      m_configExportDialogModal->requestRedraw();
     }
-    if (m_editorSheetPopup != nullptr && m_editorSheetPopup->isOpen()) {
-      m_editorSheetPopup->requestRedraw();
+    if (m_editorSheetModal != nullptr && m_editorSheetModal->isOpen()) {
+      m_editorSheetModal->requestRedraw();
     }
     m_surface->requestRedraw();
   }
@@ -1188,11 +1195,11 @@ void SettingsWindow::onFontChanged() {
     if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen()) {
       m_widgetAddPopup->requestLayout();
     }
-    if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen()) {
-      m_configExportDialogPopup->requestLayout();
+    if (m_configExportDialogModal != nullptr && m_configExportDialogModal->isOpen()) {
+      m_configExportDialogModal->requestLayout();
     }
-    if (m_editorSheetPopup != nullptr && m_editorSheetPopup->isOpen()) {
-      m_editorSheetPopup->requestLayout();
+    if (m_editorSheetModal != nullptr && m_editorSheetModal->isOpen()) {
+      m_editorSheetModal->requestLayout();
     }
     requestSceneRebuild();
   }
@@ -1203,7 +1210,11 @@ void SettingsWindow::onExternalOptionsChanged() { requestSceneRebuild(); }
 void SettingsWindow::onPluginsChanged() {
   markPluginListDirty();
   if (isOpen() && m_selectedSection == "plugins") {
-    requestContentRebuild();
+    // The plugin store's body shows install progress, so it needs the rebuild; any other
+    // editor sheet would just lose its focus for an unrelated plugin event.
+    requestContentRebuild(
+        /*refreshRegistry=*/false, /*refreshFilterRow=*/false, /*rebuildEditorSheet=*/m_pluginStoreSheetOpen
+    );
   }
 }
 

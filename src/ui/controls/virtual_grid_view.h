@@ -1,9 +1,11 @@
 #pragma once
 
 #include "render/scene/node.h"
+#include "shell/tooltip/tooltip_content.h"
 #include "ui/controls/flex.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -12,6 +14,7 @@
 
 class InputArea;
 class ScrollView;
+struct ScrollViewState;
 
 // Adapter that drives a VirtualGridView from an external data source.
 //
@@ -44,12 +47,32 @@ public:
   // Optional tooltip for the item under the pointer.
   [[nodiscard]] virtual std::string itemTooltip(std::size_t /*index*/) const { return {}; }
 
+  // Optional bounds, relative to a cell, for anchoring an item's tooltip.
+  [[nodiscard]] virtual std::optional<TooltipAnchorInsets>
+  itemTooltipAnchorInsets(std::size_t /*index*/, float /*cellWidth*/, float /*cellHeight*/) const {
+    return std::nullopt;
+  }
+
   // Return true when an overlay consumed the press.
   virtual bool onPointerPress(
       std::size_t /*index*/, float /*cellLocalX*/, float /*cellLocalY*/, float /*cellWidth*/, float /*cellHeight*/
   ) {
     return false;
   }
+
+  // Called while an adapter-consumed primary-button press is held. Returns true
+  // when the adapter changed tile state and needs the visible pool rebound.
+  virtual bool onPointerDrag(
+      std::optional<std::size_t> /*index*/, float /*localX*/, float /*localY*/, float /*cellWidth*/,
+      float /*cellHeight*/
+  ) {
+    return false;
+  }
+
+  // Called when an adapter-consumed primary-button press is released. Returns
+  // true when the visible pool needs rebinding.
+  virtual bool onPointerRelease(std::optional<std::size_t> /*index*/) { return false; }
+  virtual void onPointerCancel() {}
 
   [[nodiscard]] virtual bool overlayHitTest(
       std::size_t /*index*/, float /*cellLocalX*/, float /*cellLocalY*/, float /*cellWidth*/, float /*cellHeight*/
@@ -72,6 +95,8 @@ public:
 
   // Adapter is non-owning and must outlive the grid.
   void setAdapter(VirtualGridAdapter* adapter);
+  // State is non-owning and must outlive the grid.
+  void bindScrollState(ScrollViewState* state);
 
   // Notify the grid that the adapter's item count or contents changed.
   void notifyDataChanged();
@@ -85,6 +110,11 @@ public:
   void setColumnGap(float gap);
   void setRowGap(float gap);
   void setOverscanRows(std::size_t rows);
+  // wp_cursor_shape value applied while the pointer is over a cell (0 = inherit).
+  void setItemCursorShape(std::uint32_t shape);
+  // Content scale of the hosting surface: sets the scrollbar geometry scale and the pointer
+  // travel threshold that separates a click from a drag on an adapter-consumed press.
+  void setScale(float scale);
 
   void scrollToIndex(std::size_t index);
   void setSelectedIndex(std::optional<std::size_t> index);
@@ -114,11 +144,15 @@ private:
   void onPointerMotion(float localX, float localY);
   void onPointerLeave();
   void onPointerPress(float localX, float localY);
+  void onPointerRelease(float localX, float localY);
   void onPoolTooltipMotion(std::size_t slot, float localX, float localY);
   void onPoolTooltipLeave(std::size_t slot);
   void onSecondaryPointerPress(float localX, float localY);
   [[nodiscard]] std::optional<std::size_t> indexAt(float localX, float localY) const noexcept;
   void cellLocalAt(float localX, float localY, std::size_t index, float& cellLocalX, float& cellLocalY) const noexcept;
+  [[nodiscard]] std::size_t visualCol(std::size_t col) const noexcept {
+    return Style::rtl() ? m_layoutColumns - 1 - col : col;
+  }
   void setOverlayHoveredForIndex(std::size_t index, bool hovered);
 
   ScrollView* m_scroll = nullptr;
@@ -140,6 +174,8 @@ private:
   float m_columnGap = 4.0F;
   float m_rowGap = 4.0F;
   std::size_t m_overscanRows = 2;
+  std::uint32_t m_itemCursorShape = 0;
+  float m_scale = 1.0F;
 
   std::optional<std::size_t> m_selectedIndex;
   std::optional<std::size_t> m_hoveredIndex;
@@ -157,4 +193,11 @@ private:
   std::size_t m_itemCount = 0;
   bool m_pendingScrollToIndex = false;
   std::size_t m_pendingScrollIndex = 0;
+  bool m_adapterPointerCapture = false;
+  // Press point of the captured press, and whether the pointer has travelled
+  // far enough since for the gesture to count as a drag. Only meaningful while
+  // m_adapterPointerCapture holds, and both are set when capture begins.
+  float m_pressLocalX = 0.0F;
+  float m_pressLocalY = 0.0F;
+  bool m_dragThresholdPassed = false;
 };

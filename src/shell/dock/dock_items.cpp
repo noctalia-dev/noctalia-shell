@@ -382,7 +382,7 @@ namespace shell::dock {
   std::unique_ptr<Flex> makeDockItemRow(const DockConfig& cfg, bool vertical) {
     const auto mainPad = static_cast<float>(cfg.mainAxisPadding);
     const auto crossPad = static_cast<float>(cfg.crossAxisPadding);
-    return ui::flex(
+    auto row = ui::flex(
         vertical ? FlexDirection::Vertical : FlexDirection::Horizontal,
         {
             .align = FlexAlign::Center,
@@ -391,6 +391,8 @@ namespace shell::dock {
             .paddingH = vertical ? crossPad : mainPad,
         }
     );
+    row->setMirrorInRtl(false);
+    return row;
   }
 
   void handleItemClick(DockInstance& instance, const DockItemAction& action, DockItemClickContext& context);
@@ -857,7 +859,7 @@ namespace shell::dock {
           Box* dotNode = item.dotIndicators[dotIndex];
           const bool visible = dotIndex < dotCount;
           dotNode->setVisible(visible);
-          dotNode->setFill(colorSpecFromRole(ColorRole::Secondary));
+          dotNode->setFill(colorSpecFromRole(model.active ? ColorRole::Primary : ColorRole::Secondary));
           if (visible) {
             const float main = groupStart + static_cast<float>(dotIndex) * (dot + kDotGap);
             if (verticalDots) {

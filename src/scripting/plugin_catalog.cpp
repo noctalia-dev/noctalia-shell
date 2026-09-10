@@ -102,8 +102,11 @@ namespace scripting {
             .version = tableString(*row, "version"),
             .revision = tableString(*row, "rev"),
         };
-        if (release.version.empty()) {
-          kLog.warn("catalog row '{}' release for plugin API {} missing 'version'", id, release.pluginApiVersion);
+        if (!isValidPluginVersion(release.version)) {
+          kLog.warn(
+              "catalog row '{}' release for plugin API {} has invalid 'version'; expected MAJOR.MINOR.PATCH", id,
+              release.pluginApiVersion
+          );
           continue;
         }
         if (!isCommitSha(release.revision)) {
@@ -237,6 +240,10 @@ namespace scripting {
         kLog.warn("catalog row '{}' missing mandatory key 'name'", e.id);
         continue;
       }
+      if (!isValidPluginVersion(e.version)) {
+        kLog.warn("catalog row '{}' has invalid mandatory key 'version'; expected MAJOR.MINOR.PATCH", e.id);
+        continue;
+      }
       const auto pluginApiVersion = tablePluginApiVersion(*tbl);
       if (!pluginApiVersion.has_value()) {
         kLog.warn("catalog row '{}' has invalid mandatory key 'plugin_api'; expected a positive integer", e.id);
@@ -285,15 +292,19 @@ namespace scripting {
     auto sourceLock = plugin_source_locks::acquire(source.name);
     const bool localOnly = access == CatalogAccess::LocalOnly;
     std::error_code ec;
-    if (!std::filesystem::exists(dest / ".git", ec)) {
-      if (localOnly) {
+    if (localOnly) {
+      // Local-only reads never touch the remote, so they need a checkout, not a
+      // prepared one.
+      if (!std::filesystem::exists(dest / ".git", ec)) {
         return {.ok = false, .error = "source '" + source.name + "' is not cloned yet", .entries = {}, .revision = {}};
       }
-      std::filesystem::create_directories(dest.parent_path(), ec);
-      auto cloned = plugin_git::cloneBlobless(source.location, dest);
-      if (!cloned) {
-        return {.ok = false, .error = "clone failed: " + cloned.err, .entries = {}, .revision = {}};
-      }
+    } else if (const auto prepared = plugin_git::ensureRepo(dest, source.location); !prepared) {
+      return {
+          .ok = false,
+          .error = "cannot prepare cache for source '" + source.name + "': " + prepared.err,
+          .entries = {},
+          .revision = {}
+      };
     }
     // Browse the freshest catalog: when a prior fetch left FETCH_HEAD ahead of the
     // applied HEAD, read the catalog there so newly published plugins are listed.

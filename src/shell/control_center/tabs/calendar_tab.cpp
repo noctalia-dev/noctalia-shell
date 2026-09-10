@@ -11,6 +11,7 @@
 #include "shell/control_center/tab.h"
 #include "shell/panel/panel_button_style.h"
 #include "shell/panel/panel_manager.h"
+#include "system/desktop_entry_launch.h"
 #include "time/time_format.h"
 #include "ui/builders.h"
 #include "ui/controls/button.h"
@@ -19,9 +20,9 @@
 #include "ui/controls/scroll_view.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <memory>
-#include <string_view>
 #include <wayland-client-protocol.h>
 
 namespace {
@@ -129,7 +130,7 @@ std::unique_ptr<Flex> CalendarTab::create() {
       {.out = &m_previousSlot, .align = FlexAlign::Center, .justify = FlexJustify::Center},
       ui::button({
           .out = &m_previousButton,
-          .glyph = "chevron-left",
+          .glyph = Style::rtl() ? "chevron-right" : "chevron-left",
           .variant = ButtonVariant::Ghost,
           .minWidth = kCalendarNavButtonSize * scale,
           .minHeight = kCalendarNavButtonSize * scale,
@@ -154,7 +155,7 @@ std::unique_ptr<Flex> CalendarTab::create() {
       {.out = &m_nextSlot, .align = FlexAlign::Center, .justify = FlexJustify::Center},
       ui::button({
           .out = &m_nextButton,
-          .glyph = "chevron-right",
+          .glyph = Style::rtl() ? "chevron-left" : "chevron-right",
           .variant = ButtonVariant::Ghost,
           .minWidth = kCalendarNavButtonSize * scale,
           .minHeight = kCalendarNavButtonSize * scale,
@@ -201,6 +202,7 @@ std::unique_ptr<Flex> CalendarTab::create() {
       }),
       ui::scrollView({
           .out = &m_eventsScroll,
+          .contentScale = scale,
           .fillWidth = true,
           .fillHeight = true,
           .flexGrow = 1.0F,
@@ -306,9 +308,16 @@ void CalendarTab::doUpdate(Renderer& renderer) {
 
 void CalendarTab::setActive(bool active) {
   if (!active) {
+    m_eventFadeTimer.stop();
     return;
   }
   focusToday();
+  if (!m_eventFadeTimer.active()) {
+    m_eventFadeTimer.startRepeating(std::chrono::minutes{1}, [this]() {
+      m_eventsDirty = true;
+      PanelManager::instance().refresh();
+    });
+  }
 }
 
 void CalendarTab::focusToday() {
@@ -324,6 +333,7 @@ void CalendarTab::focusToday() {
 }
 
 void CalendarTab::onClose() {
+  m_eventFadeTimer.stop();
   cancelMonthSlide();
   m_rootLayout = nullptr;
   m_calendarArea = nullptr;
@@ -560,17 +570,24 @@ void CalendarTab::rebuild() {
               .weekDividerWidth = weekDividerWidth,
               .weekDaysGap = m_showWeekNumbers ? kCalendarGridGap * scale : 0.0F,
           },
-      .onDateSelected = [this](calendar_view::Date date, int monthShift) {
-        m_selectedYear = date.year;
-        m_selectedMonth = date.month;
-        m_selectedDay = date.day;
-        m_eventsDirty = true;
-        if (monthShift != 0) {
-          changeMonthBy(monthShift);
-        } else {
-          PanelManager::instance().refresh();
-        }
-      },
+      .onDateSelected =
+          [this](calendar_view::Date date, int monthShift) {
+            m_selectedYear = date.year;
+            m_selectedMonth = date.month;
+            m_selectedDay = date.day;
+            m_eventsDirty = true;
+            if (monthShift != 0) {
+              changeMonthBy(monthShift);
+            } else {
+              PanelManager::instance().refresh();
+            }
+          },
+      .onDateRightClicked =
+          [](calendar_view::Date) {
+            if (desktop_entry_launch::launchDefaultForMimeType("text/calendar")) {
+              PanelManager::instance().closePanel();
+            }
+          },
   });
 
   if (m_gridViewport != nullptr) {
@@ -580,23 +597,18 @@ void CalendarTab::rebuild() {
 }
 
 void CalendarTab::rebuildEventList(float scale) {
-  if (m_eventsScroll == nullptr) {
+  if (m_eventsScroll == nullptr || m_config == nullptr) {
     return;
   }
-  std::string_view eventDateFormat = "%A %e %B";
-  std::string_view eventTimeFormat = "%H:%M";
-  if (m_config != nullptr) {
-    eventDateFormat = m_config->config().controlCenter.calendarTab.eventDateFormat;
-    eventTimeFormat = m_config->config().controlCenter.calendarTab.eventTimeFormat;
-  }
+  const auto& calendarConfig = m_config->config().calendar;
   calendar_view::rebuildEventList({
       .scroll = *m_eventsScroll,
       .title = m_eventsTitle,
       .snapshot = m_calendar != nullptr ? &m_calendar->snapshot() : nullptr,
       .selected = {.year = m_selectedYear, .month = m_selectedMonth, .day = m_selectedDay},
       .scale = scale,
-      .dateFormat = eventDateFormat,
-      .timeFormat = eventTimeFormat,
+      .dateFormat = calendarConfig.eventDateFormat,
+      .timeFormat = calendarConfig.eventTimeFormat,
       .state = &m_eventListState,
       .requestRedraw = []() { PanelManager::instance().requestRedraw(); },
   });

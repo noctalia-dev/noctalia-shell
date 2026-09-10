@@ -117,11 +117,15 @@ namespace scripting {
     double panelHeight = 0.0;
     bool panelWidthFill = false;
     bool panelHeightFill = false;
-    // Host-standard shell placement settings (see plugin_panel_shell.*). Parsed from
-    // optional [[panel]] keys; injected settings use "{id}_placement" etc.
+    // Host-standard shell settings (see plugin_panel_shell.*). Optional
+    // [[panel]] keys provide defaults; injected settings use "{id}_placement",
+    // "{id}_layer", and the corresponding canonical suffixes.
     std::string panelPlacementDefault = "floating";
     std::string panelPositionDefault = "auto";
     bool panelOpenNearClickDefault = false;
+    // The floating layer setting defaults to Top to preserve existing plugin
+    // behavior. An attached panel always follows its host bar's layer.
+    std::string panelLayerDefault = "top";
     // false: keep open on outside click (auth prompts)
     bool panelDismissOnOutsideClick = true;
     // Keyboard focus policy: "on_demand" (focus on click), "exclusive" (focus on
@@ -140,9 +144,9 @@ namespace scripting {
   };
 
   struct PluginManifest {
-    std::string id;   // "author/plugin"
-    std::string name; // mandatory display name
-    std::string version;
+    std::string id;                     // "author/plugin"
+    std::string name;                   // mandatory display name
+    std::string version;                // mandatory MAJOR.MINOR.PATCH
     std::uint32_t pluginApiVersion = 0; // mandatory
     std::string author;
     std::string license = "MIT";
@@ -162,6 +166,8 @@ namespace scripting {
 
   // The TOML array-table name for each entry kind (e.g. "widget" -> [[widget]]).
   [[nodiscard]] std::string_view pluginEntryTableName(PluginEntryKind kind);
+  // Canonical plugin version: three non-negative decimal components without leading zeros.
+  [[nodiscard]] bool isValidPluginVersion(std::string_view version);
 
   // Build the runtime settings for an instance: every declared field seeded with
   // its manifest default, then overlaid by the instance's configured values.
@@ -186,8 +192,7 @@ namespace scripting {
   );
 
   // Parse a plugin.toml. Returns nullopt and sets `error` on a hard failure:
-  // unreadable file, TOML parse error, or a missing mandatory `id` / `name` / `plugin_api`.
-  // Entry ids are validated for uniqueness within the plugin.
+  // unreadable file, TOML parse error, invalid mandatory metadata, or invalid entries/settings.
   [[nodiscard]] std::optional<PluginManifest>
   parsePluginManifest(const std::filesystem::path& manifestPath, std::string* error);
 

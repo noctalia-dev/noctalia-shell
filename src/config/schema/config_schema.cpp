@@ -104,7 +104,7 @@ namespace noctalia::config::schema {
 
   namespace {
     // Poll-second floats are stored verbatim here; the [1,120]/disabled clamping
-    // happens at consumption, not at parse time — so no Range is attached.
+    // happens at consumption, not at parse time; so no Range is attached.
     const Schema<SystemConfig::MonitorConfig>& systemMonitorSchema() {
       static const Schema<SystemConfig::MonitorConfig> s = {
           field(&SystemConfig::MonitorConfig::enabled, "enabled"),
@@ -227,6 +227,7 @@ namespace noctalia::config::schema {
         field(&NotificationFilterConfig::showToast, "show_toast"),
         field(&NotificationFilterConfig::saveHistory, "save_history"),
         field(&NotificationFilterConfig::playSound, "play_sound"),
+        field(&NotificationFilterConfig::bypassDnd, "bypass_dnd"),
         field(&NotificationFilterConfig::allowPermanent, "allow_permanent"),
         field(&NotificationFilterConfig::overrideDuration, "override_duration"),
         field(&NotificationFilterConfig::allowedUrgencies, "allowed_urgencies"),
@@ -256,6 +257,7 @@ namespace noctalia::config::schema {
         field(&NotificationConfig::offsetY, "offset_y"),
         field(&NotificationConfig::monitors, "monitors"),
         field(&NotificationConfig::collapseOnDismiss, "collapse_on_dismiss"),
+        field(&NotificationConfig::keepDismissedInHistory, "keep_dismissed_in_history"),
         field(&NotificationConfig::historyRetentionHours, "history_retention_hours", Range<std::int64_t>{0, 8760}),
         field(&NotificationConfig::maxVisible, "max_visible", Range<std::int64_t>{0, 20}),
         custom<NotificationConfig>(
@@ -420,19 +422,8 @@ namespace noctalia::config::schema {
       static const Schema<BrightnessMonitorOverride> s = {
           field(&BrightnessMonitorOverride::match, "match"),
           optionalEnumField(&BrightnessMonitorOverride::backend, "backend", kBrightnessBackendPreferences),
-          custom<BrightnessMonitorOverride>(
-              "backlight_device",
-              [](const toml::table& tbl, BrightnessMonitorOverride& out, std::string_view, Diagnostics&) {
-                if (auto v = tbl["backlight_device"].value<std::string>()) {
-                  out.backlightDevice = *v;
-                }
-              },
-              [](toml::table& tbl, const BrightnessMonitorOverride& in) {
-                if (in.backlightDevice.has_value()) {
-                  tbl.insert_or_assign("backlight_device", *in.backlightDevice);
-                }
-              }
-          ),
+          field(&BrightnessMonitorOverride::backlightDevice, "backlight_device"),
+          field(&BrightnessMonitorOverride::ddcBus, "ddc_bus"),
       };
       return s;
     }
@@ -484,8 +475,6 @@ namespace noctalia::config::schema {
       static const Schema<ControlCenterConfig::CalendarTabConfig> s = {
           field(&ControlCenterConfig::CalendarTabConfig::showEventsCard, "show_events_card"),
           field(&ControlCenterConfig::CalendarTabConfig::showWeekNumbers, "show_week_numbers"),
-          field(&ControlCenterConfig::CalendarTabConfig::eventDateFormat, "event_date_format"),
-          field(&ControlCenterConfig::CalendarTabConfig::eventTimeFormat, "event_time_format"),
       };
       return s;
     }
@@ -535,7 +524,27 @@ namespace noctalia::config::schema {
             [](const PluginSourceConfig& src) { return isValidPluginSourceName(src.name); }
         ),
         field(&PluginsConfig::enabled, "enabled"),
-        field(&PluginsConfig::autoUpdate, "auto_update"),
+        // auto_update accepts only "all"|"official"|"none"
+        custom<PluginsConfig>(
+            "auto_update",
+            [](const toml::table& tbl, PluginsConfig& out, std::string_view parentPath, Diagnostics& diag) {
+              if (auto v = tbl["auto_update"].value<std::string>()) {
+                const std::string trimmed = StringUtils::trim(*v);
+                if (auto parsed = enumFromKey(kPluginAutoUpdateModes, trimmed)) {
+                  out.autoUpdate = *parsed;
+                } else {
+                  diag.error(
+                      joinPath(parentPath, "auto_update"), "unknown value \"" + *v + "\"; expected all|official|none"
+                  );
+                }
+              } else if (tbl.contains("auto_update")) {
+                diag.error(joinPath(parentPath, "auto_update"), "expected all|official|none");
+              }
+            },
+            [](toml::table& tbl, const PluginsConfig& in) {
+              tbl.insert_or_assign("auto_update", std::string(enumToKey(kPluginAutoUpdateModes, in.autoUpdate)));
+            }
+        ),
         finalize<PluginsConfig>([](PluginsConfig& plugins, std::string_view parentPath, Diagnostics& diag) {
           for (auto it = plugins.enabled.begin(); it != plugins.enabled.end();) {
             if (scripting::isValidPluginId(*it)) {
@@ -544,6 +553,19 @@ namespace noctalia::config::schema {
             }
             diag.warn(joinPath(parentPath, "enabled"), "invalid plugin id \"" + *it + "\"; expected author/plugin");
             it = plugins.enabled.erase(it);
+          }
+          // Duplicate names would share one checkout on disk: keep the first, error on the rest.
+          std::unordered_set<std::string> seen;
+          for (auto it = plugins.sources.begin(); it != plugins.sources.end();) {
+            if (seen.insert(it->name).second) {
+              ++it;
+              continue;
+            }
+            diag.error(
+                joinPath(parentPath, "source"),
+                "duplicate plugin source name \"" + it->name + "\"; source names must be unique"
+            );
+            it = plugins.sources.erase(it);
           }
         }),
     };
@@ -589,8 +611,27 @@ namespace noctalia::config::schema {
               }
           ),
           pathStringField(&CalendarConfig::Account::passwordFile, "password_file"),
+          pathStringField(&CalendarConfig::Account::path, "path"),
           finalize<CalendarConfig::Account>([](CalendarConfig::Account& out, std::string_view parentPath,
                                                Diagnostics& diag) {
+            if (out.type == "vdir") {
+              if (out.credentialSource != CalendarCredentialSource::SecretService) {
+                diag.error(joinPath(parentPath, "credential_source"), "credential_source is only valid for caldav");
+              }
+              if (!out.passwordFile.empty()) {
+                diag.error(joinPath(parentPath, "password_file"), "password_file is only valid for caldav");
+              }
+              if (!out.username.empty()) {
+                diag.error(joinPath(parentPath, "username"), "username is only valid for caldav");
+              }
+              if (!out.provider.empty()) {
+                diag.error(joinPath(parentPath, "provider"), "provider is only valid for caldav");
+              }
+              if (!out.serverUrl.empty()) {
+                diag.error(joinPath(parentPath, "server_url"), "server_url is not used for vdir accounts (use path)");
+              }
+              return;
+            }
             if (out.type == "ics") {
               if (out.serverUrl.empty()) {
                 diag.error(joinPath(parentPath, "server_url"), "ics accounts require server_url (.ics file URL)");
@@ -863,6 +904,7 @@ namespace noctalia::config::schema {
       static const Schema<IdleBehaviorConfig> s = {
           field(&IdleBehaviorConfig::enabled, "enabled"),
           field(&IdleBehaviorConfig::timeoutSeconds, "timeout"),
+          field(&IdleBehaviorConfig::lockedTimeoutSeconds, "locked_timeout"),
           // action is trimmed on read.
           custom<IdleBehaviorConfig>(
               "action",
@@ -1130,6 +1172,7 @@ namespace noctalia::config::schema {
           field(&UserTemplate::postHook, "post_hook"),
           field(&UserTemplate::postAction, "post_action"),
           field(&UserTemplate::index, "index"),
+          field(&UserTemplate::hookAsync, "hook_async"),
       };
       return s;
     }
@@ -1184,6 +1227,7 @@ namespace noctalia::config::schema {
         field(&ThemeConfig::customPalette, "custom_palette"),
         field(&ThemeConfig::wallpaperScheme, "wallpaper_scheme"),
         enumField(&ThemeConfig::mode, "mode", kThemeModes),
+        enumField(&ThemeConfig::shellMode, "shell_mode", kShellThemeModes),
         field(&ThemeConfig::pureBlackDark, "pure_black_dark"),
         subTable(&ThemeConfig::templates, "templates", templatesSchema()),
     };
@@ -1321,9 +1365,12 @@ namespace noctalia::config::schema {
       static const Schema<ShellConfig::LauncherConfig> s = {
           field(&ShellConfig::LauncherConfig::categories, "categories"),
           field(&ShellConfig::LauncherConfig::showIcons, "show_icons"),
+          field(&ShellConfig::LauncherConfig::showAppOriginIndicator, "show_app_origin_indicator"),
           field(&ShellConfig::LauncherConfig::compact, "compact"),
           field(&ShellConfig::LauncherConfig::appGrid, "app_grid"),
+          field(&ShellConfig::LauncherConfig::showAppActions, "show_app_actions"),
           field(&ShellConfig::LauncherConfig::sortByUsage, "sort_by_usage"),
+          field(&ShellConfig::LauncherConfig::pinned, "pinned"),
           field(&ShellConfig::LauncherConfig::fetchExchangeRates, "fetch_exchange_rates"),
           field(&ShellConfig::LauncherConfig::providerPrefix, "provider_prefix"),
           enumField(&ShellConfig::LauncherConfig::autoPaste, "auto_paste", kClipboardAutoPasteModes),
@@ -1342,6 +1389,13 @@ namespace noctalia::config::schema {
     const Schema<ShellConfig::KeyboardLayoutConfig>& shellKeyboardLayoutSchema() {
       static const Schema<ShellConfig::KeyboardLayoutConfig> s = {
           field(&ShellConfig::KeyboardLayoutConfig::customLabels, "custom_labels"),
+      };
+      return s;
+    }
+
+    const Schema<ShellConfig::WindowSwitcherConfig>& shellWindowSwitcherSchema() {
+      static const Schema<ShellConfig::WindowSwitcherConfig> s = {
+          field(&ShellConfig::WindowSwitcherConfig::mru, "mru"),
       };
       return s;
     }
@@ -1371,6 +1425,8 @@ namespace noctalia::config::schema {
           field(&ShellConfig::ScreenshotConfig::confirmRegion, "confirm_region"),
           field(&ShellConfig::ScreenshotConfig::rememberLastRegion, "remember_last_region"),
           field(&ShellConfig::ScreenshotConfig::showCursor, "show_cursor"),
+          field(&ShellConfig::ScreenshotConfig::annotate, "annotate"),
+          field(&ShellConfig::ScreenshotConfig::closeOnCopy, "close_on_copy"),
           field(&ShellConfig::ScreenshotConfig::pipeToCommand, "pipe_to_command"),
           field(&ShellConfig::ScreenshotConfig::pipeCommand, "pipe_command"),
           field(&ShellConfig::ScreenshotConfig::directory, "directory"),
@@ -1535,6 +1591,7 @@ namespace noctalia::config::schema {
         subTable(&ShellConfig::panel, "panel", shellPanelSchema()),
         subTable(&ShellConfig::launcher, "launcher", shellLauncherSchema()),
         subTable(&ShellConfig::keyboardLayout, "keyboard_layout", shellKeyboardLayoutSchema()),
+        subTable(&ShellConfig::windowSwitcher, "window_switcher", shellWindowSwitcherSchema()),
         subTable(&ShellConfig::screenCorners, "screen_corners", shellScreenCornersSchema()),
         subTable(&ShellConfig::mpris, "mpris", shellMprisSchema()),
         subTable(&ShellConfig::screenshot, "screenshot", shellScreenshotSchema()),
@@ -1621,6 +1678,8 @@ namespace noctalia::config::schema {
     static const Schema<CalendarConfig> s = {
         field(&CalendarConfig::enabled, "enabled"),
         field(&CalendarConfig::refreshMinutes, "refresh_minutes", kRefreshMinutesRange),
+        field(&CalendarConfig::eventDateFormat, "event_date_format"),
+        field(&CalendarConfig::eventTimeFormat, "event_time_format"),
         namedMap<CalendarConfig, CalendarConfig::Account>(
             &CalendarConfig::accounts, "account", calendarAccountSchema(),
             [](CalendarConfig::Account& a, std::string_view id) { a.id = std::string(id); },
@@ -1713,8 +1772,8 @@ namespace noctalia::config::schema {
         return true;
       }
       static const std::unordered_set<std::string> kWidgetKeys = {
-          "id",         "type",     "output", "cx",     "cy",      "box_width",
-          "box_height", "rotation", "flip_x", "flip_y", "enabled", "settings",
+          "id",        "type",       "output",   "cx",     "cy",     "placement_width", "placement_height",
+          "box_width", "box_height", "rotation", "flip_x", "flip_y", "enabled",         "settings",
       };
       if (!kWidgetKeys.contains(path[3])) {
         return false;
@@ -1756,7 +1815,7 @@ namespace noctalia::config::schema {
       return true;
     }
 
-    // [plugin_settings."author/plugin"].<key> — open schema; keys validate against
+    // [plugin_settings."author/plugin"].<key>, open schema; keys validate against
     // the manifest in config_validate's validatePluginSettings, not here.
     if (section == "plugin_settings") {
       return path.size() <= 3;
@@ -1774,7 +1833,7 @@ namespace noctalia::config::schema {
 
   namespace {
     // Clamp ranges shared by the concrete BarConfig fields and the parallel
-    // optional BarMonitorOverride fields — declared once so the two schemas can't
+    // optional BarMonitorOverride fields, declared once so the two schemas can't
     // drift apart.
     constexpr Range<std::int64_t> kBarThicknessRange{10, 300};
     constexpr Range<std::int64_t> kBarRadiusRange{0, 500};
@@ -1886,7 +1945,7 @@ namespace noctalia::config::schema {
 
   namespace {
     // optional<ColorSpec>, emitted only when set, read when present. Unlike
-    // colorSpecField it does NOT treat an empty string as nullopt — it matches the
+    // colorSpecField it does NOT treat an empty string as nullopt; it matches the
     // legacy bar/capsule_group reads (which parse whatever string is present).
     template <typename Struct>
     Field<Struct> optionalColorField(std::optional<ColorSpec> Struct::* member, std::string_view key) {
@@ -1945,24 +2004,8 @@ namespace noctalia::config::schema {
       );
     }
 
-    template <typename Struct>
-    Field<Struct> optionalStringField(std::optional<std::string> Struct::* member, std::string_view key) {
-      return custom<Struct>(
-          key,
-          [member, key](const toml::table& tbl, Struct& out, std::string_view, Diagnostics&) {
-            if (auto v = tbl[key].value<std::string>()) {
-              out.*member = *v;
-            }
-          },
-          [member, key](toml::table& tbl, const Struct& in) {
-            if ((in.*member).has_value()) {
-              tbl.insert_or_assign(key, *(in.*member));
-            }
-          }
-      );
-    }
-
-    // Like optionalStringField but trims; a present-but-empty value stays unset so it inherits the parent.
+    // Like field(std::optional<std::string>…) but trims; a present-but-empty value stays unset so it inherits the
+    // parent.
     template <typename Struct>
     Field<Struct> optionalTrimmedStringField(std::optional<std::string> Struct::* member, std::string_view key) {
       return custom<Struct>(
@@ -2191,6 +2234,7 @@ namespace noctalia::config::schema {
         field(&BarConfig::panelOverlap, "panel_overlap", kBarPanelOverlapRange),
         field(&BarConfig::capsuleThickness, "capsule_thickness", kBarCapsuleThicknessRange),
         field(&BarConfig::scale, "scale", kBarScaleRange),
+        field(&BarConfig::fontScale, "font_scale", kBarFontScaleRange),
         field(&BarConfig::fontWeight, "font_weight"),
         optionalTrimmedStringField(&BarConfig::fontFamily, "font_family"),
         field(&BarConfig::startWidgets, "start"),
@@ -2219,7 +2263,7 @@ namespace noctalia::config::schema {
   const Schema<BarMonitorOverride>& barMonitorOverrideSchema() {
     static const Schema<BarMonitorOverride> s = {
         field(&BarMonitorOverride::match, "match"),
-        optionalStringField(&BarMonitorOverride::position, "position"),
+        field(&BarMonitorOverride::position, "position"),
         optionalBoolField(&BarMonitorOverride::enabled, "enabled"),
         optionalBoolField(&BarMonitorOverride::autoHide, "auto_hide"),
         optionalBoolField(&BarMonitorOverride::smartAutoHide, "smart_auto_hide"),
@@ -2259,6 +2303,7 @@ namespace noctalia::config::schema {
         optionalIntField(&BarMonitorOverride::padding, "padding"),
         optionalIntField(&BarMonitorOverride::widgetSpacing, "widget_spacing"),
         optionalFloatField(&BarMonitorOverride::scale, "scale", kBarScaleRange),
+        optionalFloatField(&BarMonitorOverride::fontScale, "font_scale", kBarFontScaleRange),
         optionalBoolField(&BarMonitorOverride::shadow, "shadow"),
         optionalBoolField(&BarMonitorOverride::contactShadow, "contact_shadow"),
         optionalIntField(&BarMonitorOverride::panelOverlap, "panel_overlap", kBarPanelOverlapRange),

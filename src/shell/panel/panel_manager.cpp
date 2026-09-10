@@ -113,6 +113,37 @@ namespace {
     };
   }
 
+  std::int32_t anchoredSurfaceOrigin(
+      std::uint32_t anchor, std::uint32_t startAnchor, std::uint32_t endAnchor, std::int32_t startMargin,
+      std::int32_t endMargin, std::int32_t outputExtent, std::int32_t surfaceExtent
+  ) {
+    const bool anchoredStart = (anchor & startAnchor) != 0;
+    const bool anchoredEnd = (anchor & endAnchor) != 0;
+    if (anchoredStart != anchoredEnd) {
+      return anchoredStart ? startMargin : outputExtent - surfaceExtent - endMargin;
+    }
+    return (outputExtent - surfaceExtent) / 2;
+  }
+
+  InputRect panelInputRectForSurface(
+      std::uint32_t anchor, std::int32_t marginTop, std::int32_t marginRight, std::int32_t marginBottom,
+      std::int32_t marginLeft, std::int32_t outputWidth, std::int32_t outputHeight, std::uint32_t surfaceWidth,
+      std::uint32_t surfaceHeight, std::int32_t insetX, std::int32_t insetY, std::uint32_t panelWidth,
+      std::uint32_t panelHeight
+  ) {
+    const auto resolvedSurfaceWidth = static_cast<std::int32_t>(surfaceWidth);
+    const auto resolvedSurfaceHeight = static_cast<std::int32_t>(surfaceHeight);
+    const auto surfaceX = anchoredSurfaceOrigin(
+        anchor, LayerShellAnchor::Left, LayerShellAnchor::Right, marginLeft, marginRight, outputWidth,
+        resolvedSurfaceWidth
+    );
+    const auto surfaceY = anchoredSurfaceOrigin(
+        anchor, LayerShellAnchor::Top, LayerShellAnchor::Bottom, marginTop, marginBottom, outputHeight,
+        resolvedSurfaceHeight
+    );
+    return InputRect{surfaceX + insetX, surfaceY + insetY, static_cast<int>(panelWidth), static_cast<int>(panelHeight)};
+  }
+
   InputRect boundsForPanelTrace(const std::vector<InputRect>& rects) {
     if (rects.empty()) {
       return {};
@@ -332,6 +363,7 @@ namespace {
 PanelManager::PanelManager() { s_instance = this; }
 
 PanelManager::~PanelManager() {
+  m_persistentHost.setPanelClosedCallback(nullptr);
   if (s_instance == this) {
     s_instance = nullptr;
   }
@@ -431,6 +463,11 @@ void PanelManager::setFocusGrabBarSurfacesProvider(std::function<std::vector<wl_
 
 void PanelManager::setPanelClosedCallback(std::function<void()> callback) {
   m_panelClosedCallback = std::move(callback);
+  m_persistentHost.setPanelClosedCallback([this]() {
+    if (m_panelClosedCallback) {
+      m_panelClosedCallback();
+    }
+  });
 }
 
 void PanelManager::setPanelOpenedCallback(std::function<void()> callback) {
@@ -603,12 +640,18 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     return static_cast<std::int32_t>(std::clamp(desired, static_cast<float>(padding), static_cast<float>(maxValue)));
   };
 
-  PanelPlacement activePlacement = m_activePanel->panelPlacement();
-  const bool fillWidth = m_activePanel->fillsWidth();
-  const bool fillHeight = m_activePanel->fillsHeight();
-  if ((fillWidth || fillHeight) && activePlacement != PanelPlacement::Floating) {
-    kLog.warn("panel manager: \"{}\" uses fill sizing, which requires floating placement — opening floating", panelId);
-    activePlacement = PanelPlacement::Floating;
+  const PanelPlacement activePlacement = m_activePanel->panelPlacement();
+  // Fill sizing is floating-only (see Panel::fillsWidth): every other placement sizes the
+  // surface from the panel's preferred extent.
+  const bool floatingPlacement = activePlacement == PanelPlacement::Floating;
+  const bool fillWidth = m_activePanel->fillsWidth() && floatingPlacement;
+  const bool fillHeight = m_activePanel->fillsHeight() && floatingPlacement;
+  if (!floatingPlacement && (m_activePanel->fillsWidth() || m_activePanel->fillsHeight())) {
+    kLog.warn(
+        "panel manager: \"{}\" uses fill sizing, which only applies to floating placement; opening at its preferred "
+        "size",
+        panelId
+    );
   }
   m_panelFillWidth = fillWidth;
   m_panelFillHeight = fillHeight;
@@ -738,6 +781,12 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     }
   }
 
+  InputRect detachedPanelInputRect = panelInputRectForSurface(
+      standaloneAnchor, standaloneMarginTop, standaloneMarginRight, standaloneMarginBottom, standaloneMarginLeft,
+      outputWidth, outputHeight, detachedSurfaceWidth, detachedSurfaceHeight, detachedShadowBleed.left,
+      detachedShadowBleed.up, panelWidth, panelHeight
+  );
+
   // Single-bar detached panels are placed relative to the bar's config edge. Honor
   // other surfaces' exclusive zones (exclusive_zone = 0 below) and anchor to the
   // bar's reserved edge so the panel tracks the bar's real on-screen position;
@@ -782,6 +831,8 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     requestedSurfaceWidth = 0;
     fallbackSurfaceWidth =
         static_cast<std::uint32_t>(std::max(1, outputWidth - standaloneMarginLeft - standaloneMarginRight));
+    detachedPanelInputRect.x = screenPadding;
+    detachedPanelInputRect.width = std::max(1, outputWidth - screenPadding * 2);
   }
   if (fillHeight) {
     standaloneAnchor |= LayerShellAnchor::Top | LayerShellAnchor::Bottom;
@@ -790,6 +841,8 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     requestedSurfaceHeight = 0;
     fallbackSurfaceHeight =
         static_cast<std::uint32_t>(std::max(1, outputHeight - standaloneMarginTop - standaloneMarginBottom));
+    detachedPanelInputRect.y = screenPadding;
+    detachedPanelInputRect.height = std::max(1, outputHeight - screenPadding * 2);
   }
 
   const bool useAttachedPlacement = activePlacement == PanelPlacement::Attached
@@ -817,8 +870,6 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
   const PanelKeyboardPlan attachedKeyboardPlan =
       resolvePanelKeyboardPlan(m_activePanel->keyboardMode(), hasFocusGrab, hasFocusGrab && wantsOutsideDismiss, true);
 
-  // Map shields BEFORE the panel surface is created or committed.
-  // Within a single layer, wlroots stacks surfaces by mapping order.
   if (wantsOutsideDismiss) {
     activateClickShield(panelLayer);
   }
@@ -875,6 +926,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_panelInsetY = 0;
     m_panelVisualWidth = 0;
     m_panelVisualHeight = 0;
+    m_panelOutputInputRect.reset();
     m_panelFillWidth = false;
     m_panelFillHeight = false;
     m_detachedBleedRight = 0;
@@ -1088,6 +1140,10 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_layerSurface = layerSurfaceUnique.get();
     m_surface = std::move(layerSurfaceUnique);
     configureSurfaceCallbacks(*m_surface);
+    if (wantsOutsideDismiss) {
+      m_panelOutputInputRect = InputRect{visualX, visualY, static_cast<int>(panelWidth), static_cast<int>(panelHeight)};
+      m_clickShield.setPanelInputRect(request.output, *m_panelOutputInputRect);
+    }
 
     m_inTransition = true;
     const bool ok = m_layerSurface->initialize(request.output);
@@ -1169,6 +1225,10 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
   m_attachedPanelGeometry.reset();
   m_attachedToBar = false;
   configureSurfaceCallbacks(*m_surface);
+  if (wantsOutsideDismiss) {
+    m_panelOutputInputRect = detachedPanelInputRect;
+    m_clickShield.setPanelInputRect(request.output, *m_panelOutputInputRect);
+  }
 
   // Guard against re-entrancy: initialize can process queued Wayland events.
   m_inTransition = true;
@@ -1334,6 +1394,7 @@ void PanelManager::destroyPanel() {
   m_inputDispatcher.setSceneRoot(nullptr);
   // Hover leave only fades tooltips asynchronously. Destroy them (and any
   // open context menu) before the layer surface — xdg_popup must die first.
+  TooltipManager::instance().restoreBarTooltipsForPanel(m_activePanelId);
   TooltipManager::instance().forceDestroy();
   if (m_activePopup != nullptr) {
     m_activePopup->close();
@@ -1363,6 +1424,7 @@ void PanelManager::destroyPanel() {
   m_panelInsetY = 0;
   m_panelVisualWidth = 0;
   m_panelVisualHeight = 0;
+  m_panelOutputInputRect.reset();
   m_panelFillWidth = false;
   m_panelFillHeight = false;
   m_detachedBleedRight = 0;
@@ -1437,6 +1499,18 @@ void PanelManager::togglePanel(const std::string& panelId) {
 }
 
 bool PanelManager::onPointerEvent(const PointerEvent& event) {
+  // A context menu may belong to a persistent plugin panel, for which the
+  // ordinary single-panel host is closed. Route the grabbing popup first.
+  if (m_activePopup != nullptr) {
+    if (m_activePopup->onPointerEvent(event)) {
+      return true;
+    }
+    if (event.type == PointerEvent::Type::Button && event.pressed) {
+      m_activePopup->close();
+      return true;
+    }
+  }
+
   // Persistent panels own separate surfaces; the host claims only its own.
   if (m_persistentHost.onPointerEvent(event)) {
     return true;
@@ -1451,16 +1525,6 @@ bool PanelManager::onPointerEvent(const PointerEvent& event) {
     }
     if (event.type == PointerEvent::Type::Button && event.pressed) {
       m_selectPopup->closeSelectDropdown();
-      return true;
-    }
-  }
-
-  if (m_activePopup != nullptr) {
-    if (m_activePopup->onPointerEvent(event)) {
-      return true;
-    }
-    if (event.type == PointerEvent::Type::Button && event.pressed) {
-      m_activePopup->close();
       return true;
     }
   }
@@ -1515,7 +1579,8 @@ bool PanelManager::onPointerEvent(const PointerEvent& event) {
         }
       }
       m_inputDispatcher.pointerButton(
-          static_cast<float>(event.sx), static_cast<float>(event.sy), event.button, pressed
+          static_cast<float>(event.sx), static_cast<float>(event.sy), event.button, pressed, event.serial, event.time,
+          event.touch
       );
     }
     break;
@@ -1626,12 +1691,45 @@ void PanelManager::relayoutActivePanelPreferredSize() {
   const std::uint32_t surfaceHeight =
       shell::panel_surface::surfaceExtent(panelHeight, detachedShadowBleed.up, detachedShadowBleed.down);
 
-  m_panelVisualWidth = panelWidth;
-  m_panelVisualHeight = panelHeight;
-
   const std::string panelPosition = resolvePanelPosition(m_config, m_activePanelId);
   const bool useCenterScreenLayout =
       m_activePanel->panelPlacement() == PanelPlacement::Floating && panelPosition == "center";
+  if (m_panelOutputInputRect.has_value()) {
+    InputRect rect = *m_panelOutputInputRect;
+    const std::uint32_t anchor = m_layerSurface->anchor();
+    if (!m_panelFillWidth) {
+      const auto widthDelta = static_cast<std::int32_t>(panelWidth) - static_cast<std::int32_t>(m_panelVisualWidth);
+      const bool anchoredLeft = (anchor & LayerShellAnchor::Left) != 0;
+      const bool anchoredRight = (anchor & LayerShellAnchor::Right) != 0;
+      if (useCenterScreenLayout && outputWidth > 0) {
+        rect.x = (outputWidth - static_cast<std::int32_t>(panelWidth)) / 2;
+      } else if (anchoredRight && !anchoredLeft) {
+        rect.x -= widthDelta;
+      } else if (anchoredLeft == anchoredRight) {
+        rect.x -= widthDelta / 2;
+      }
+      rect.width = static_cast<int>(panelWidth);
+    }
+    if (!m_panelFillHeight) {
+      const auto heightDelta = static_cast<std::int32_t>(panelHeight) - static_cast<std::int32_t>(m_panelVisualHeight);
+      const bool anchoredTop = (anchor & LayerShellAnchor::Top) != 0;
+      const bool anchoredBottom = (anchor & LayerShellAnchor::Bottom) != 0;
+      if (useCenterScreenLayout && outputHeight > 0) {
+        rect.y = (outputHeight - static_cast<std::int32_t>(panelHeight)) / 2;
+      } else if (anchoredBottom && !anchoredTop) {
+        rect.y -= heightDelta;
+      } else if (anchoredTop == anchoredBottom) {
+        rect.y -= heightDelta / 2;
+      }
+      rect.height = static_cast<int>(panelHeight);
+    }
+    m_panelOutputInputRect = rect;
+    m_clickShield.setPanelInputRect(m_output, rect);
+  }
+
+  m_panelVisualWidth = panelWidth;
+  m_panelVisualHeight = panelHeight;
+
   if (useCenterScreenLayout && outputWidth > 0 && outputHeight > 0) {
     const std::int32_t marginLeft =
         (outputWidth - static_cast<std::int32_t>(panelWidth)) / 2 - detachedShadowBleed.left;
@@ -1723,7 +1821,21 @@ void PanelManager::requestFrameTick() {
 
 void PanelManager::close() { closePanel(); }
 
-void PanelManager::setActivePopup(ContextMenuPopup* popup) { m_activePopup = popup; }
+void PanelManager::configureContextMenuPopup(ContextMenuPopup& popup) const {
+  if (m_config != nullptr) {
+    popup.setShadowConfig(m_config->config().shell.shadow);
+  }
+}
+
+void PanelManager::setActivePopup(ContextMenuPopup* popup) {
+  if (m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen()) {
+    m_selectPopup->closeSelectDropdown();
+  }
+  if (m_activePopup != nullptr && m_activePopup != popup) {
+    m_activePopup->close();
+  }
+  m_activePopup = popup;
+}
 
 void PanelManager::clearActivePopup() { m_activePopup = nullptr; }
 
@@ -1795,6 +1907,17 @@ std::optional<LayerPopupParentContext> PanelManager::fallbackPopupParentContext(
     return std::nullopt;
   }
   return context;
+}
+
+std::optional<LayerPopupParentContext>
+PanelManager::popupParentContextForPanel(std::string_view panelId) const noexcept {
+  if (m_persistentHost.hasPanel(panelId)) {
+    return m_persistentHost.popupParentContext(panelId);
+  }
+  if (panelId != m_activePanelId) {
+    return std::nullopt;
+  }
+  return fallbackPopupParentContext();
 }
 
 void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {
@@ -2639,8 +2762,8 @@ void PanelManager::registerIpc(IpcService& ipc) {
     return error;
   };
 
-  ipc.registerHandler(
-      "panel-toggle",
+  ipc.bind(
+      noctalia::cli::msg::panelToggle,
       [this, parseOpenArgs, unknownPanelError](const std::string& args) -> std::string {
         std::string panelId;
         std::string context;
@@ -2657,13 +2780,11 @@ void PanelManager::registerIpc(IpcService& ipc) {
           togglePanel(panelId, PanelOpenRequest{.context = context});
         }
         return "ok\n";
-      },
-      "<id> [context]", "Toggle a panel by id, optionally with context (e.g. launcher /emo, control-center audio)"
+      }
   );
 
-  ipc.registerHandler(
-      "panel-open",
-      [this, parseOpenArgs, unknownPanelError](const std::string& args) -> std::string {
+  ipc.bind(
+      noctalia::cli::msg::panelOpen, [this, parseOpenArgs, unknownPanelError](const std::string& args) -> std::string {
         std::string panelId;
         std::string context;
         if (auto error = parseOpenArgs(args, "panel-open", panelId, context)) {
@@ -2684,32 +2805,27 @@ void PanelManager::registerIpc(IpcService& ipc) {
         // Output left unset: openPanel resolves it (focus source, else compositor probe).
         openPanel(panelId, PanelOpenRequest{.context = context});
         return "ok\n";
-      },
-      "<id> [context]", "Open a panel by id, optionally with context (e.g. launcher /emo, control-center audio)"
+      }
   );
 
-  ipc.registerHandler(
-      "panel-close",
-      [this, unknownPanelError](const std::string& args) -> std::string {
-        const std::string panelId = StringUtils::trim(args);
-        if (!panelId.empty() && StringUtils::splitWhitespace(panelId).size() != 1) {
-          return "error: panel-close accepts at most one panel id\n";
-        }
-        if (!panelId.empty() && !m_panels.contains(panelId) && !m_persistentHost.hasPanel(panelId)) {
-          return unknownPanelError(panelId);
-        }
+  ipc.bind(noctalia::cli::msg::panelClose, [this, unknownPanelError](const std::string& args) -> std::string {
+    const std::string panelId = StringUtils::trim(args);
+    if (!panelId.empty() && StringUtils::splitWhitespace(panelId).size() != 1) {
+      return "error: panel-close accepts at most one panel id\n";
+    }
+    if (!panelId.empty() && !m_panels.contains(panelId) && !m_persistentHost.hasPanel(panelId)) {
+      return unknownPanelError(panelId);
+    }
 
-        if (!panelId.empty() && m_persistentHost.hasPanel(panelId)) {
-          m_persistentHost.close(panelId);
-          return "ok\n";
-        }
-        if (panelId.empty() || isOpenPanel(panelId)) {
-          closePanel();
-        }
-        return "ok\n";
-      },
-      "[id]", "Close the active panel, or close the named panel if it is active"
-  );
+    if (!panelId.empty() && m_persistentHost.hasPanel(panelId)) {
+      m_persistentHost.close(panelId);
+      return "ok\n";
+    }
+    if (panelId.empty() || isOpenPanel(panelId)) {
+      closePanel();
+    }
+    return "ok\n";
+  });
 
   const auto rejectSettingsArgs = [](const std::string& args, std::string_view command) -> std::optional<std::string> {
     if (StringUtils::trim(args).empty()) {
@@ -2718,89 +2834,69 @@ void PanelManager::registerIpc(IpcService& ipc) {
     return std::format("error: {} accepts no arguments\n", command);
   };
 
-  ipc.registerHandler(
-      "settings-open",
-      [this](const std::string& args) -> std::string {
-        openSettingsWindow(std::string(StringUtils::trimLeftView(args)));
-        return "ok\n";
-      },
-      "[context]", "Open the settings window, or focus it if already open, optionally at a specific section"
-  );
+  ipc.bind(noctalia::cli::msg::settingsOpen, [this](const std::string& args) -> std::string {
+    openSettingsWindow(std::string(StringUtils::trimLeftView(args)));
+    return "ok\n";
+  });
 
-  ipc.registerHandler(
-      "settings-open-widget",
-      [this, &ipc](const std::string& args) -> std::string {
-        const auto parts = noctalia::ipc::splitWords(args);
-        std::string barName;
-        std::string widgetName;
-        if (parts.size() == 2) {
-          barName = parts[0];
-          widgetName = parts[1];
-        } else if (parts.empty()) {
-          // Invoked from a bar widget gesture: the widget is the implicit target.
-          const auto& context = ipc.invocationContext();
-          if (!context.has_value() || context->widgetName.empty()) {
-            return "error: settings-open-widget needs <bar-name> <widget-name> unless invoked from a bar widget\n";
-          }
-          barName = context->barName;
-          widgetName = context->widgetName;
-        } else {
-          return "error: settings-open-widget takes either no arguments or <bar-name> <widget-name>\n";
-        }
+  ipc.bind(noctalia::cli::msg::settingsOpenWidget, [this, &ipc](const std::string& args) -> std::string {
+    const auto parts = noctalia::ipc::splitWords(args);
+    std::string barName;
+    std::string widgetName;
+    if (parts.size() == 2) {
+      barName = parts[0];
+      widgetName = parts[1];
+    } else if (parts.empty()) {
+      // Invoked from a bar widget gesture: the widget is the implicit target.
+      const auto& context = ipc.invocationContext();
+      if (!context.has_value() || context->widgetName.empty()) {
+        return "error: settings-open-widget needs <bar-name> <widget-name> unless invoked from a bar widget\n";
+      }
+      barName = context->barName;
+      widgetName = context->widgetName;
+    } else {
+      return "error: settings-open-widget takes either no arguments or <bar-name> <widget-name>\n";
+    }
 
-        if (!m_openWidgetSettings) {
-          return "error: settings window unavailable\n";
-        }
-        if (isOpen()) {
-          closePanel();
-        }
-        m_openWidgetSettings(std::move(barName), std::move(widgetName));
-        return "ok\n";
-      },
-      "[bar-name widget-name]", "Open the settings window at a bar widget; from a widget gesture, targets that widget"
-  );
+    if (!m_openWidgetSettings) {
+      return "error: settings window unavailable\n";
+    }
+    if (isOpen()) {
+      closePanel();
+    }
+    m_openWidgetSettings(std::move(barName), std::move(widgetName));
+    return "ok\n";
+  });
 
-  ipc.registerHandler(
-      "settings-open-plugin",
-      [this](const std::string& args) -> std::string {
-        const auto parts = noctalia::ipc::splitWords(args);
-        if (parts.size() != 1) {
-          return "error: settings-open-plugin takes <plugin-id> (e.g. noctalia/notes)\n";
-        }
-        const std::string& pluginId = parts[0];
-        if (!scripting::isValidPluginId(pluginId)) {
-          return std::format("error: \"{}\" is not a plugin id (expected author/plugin)\n", pluginId);
-        }
+  ipc.bind(noctalia::cli::msg::settingsOpenPlugin, [this](const std::string& args) -> std::string {
+    const auto parts = noctalia::ipc::splitWords(args);
+    if (parts.size() != 1) {
+      return "error: settings-open-plugin takes <plugin-id> (e.g. noctalia/notes)\n";
+    }
+    const std::string& pluginId = parts[0];
+    if (!scripting::isValidPluginId(pluginId)) {
+      return std::format("error: \"{}\" is not a plugin id (expected author/plugin)\n", pluginId);
+    }
 
-        if (!m_openPluginSettings) {
-          return "error: settings window unavailable\n";
-        }
-        if (!openPluginSettings(pluginId)) {
-          return std::format("error: plugin \"{}\" is not enabled or has no settings\n", pluginId);
-        }
-        return "ok\n";
-      },
-      "<plugin-id>", "Open the settings window at a plugin's settings (e.g. noctalia/notes)"
-  );
+    if (!m_openPluginSettings) {
+      return "error: settings window unavailable\n";
+    }
+    if (!openPluginSettings(pluginId)) {
+      return std::format("error: plugin \"{}\" is not enabled or has no settings\n", pluginId);
+    }
+    return "ok\n";
+  });
 
-  ipc.registerHandler(
-      "settings-close",
-      [this, rejectSettingsArgs](const std::string& args) -> std::string {
-        if (auto error = rejectSettingsArgs(args, "settings-close")) {
-          return *error;
-        }
-        closeSettingsWindow();
-        return "ok\n";
-      },
-      "", "Close the settings window"
-  );
+  ipc.bind(noctalia::cli::msg::settingsClose, [this, rejectSettingsArgs](const std::string& args) -> std::string {
+    if (auto error = rejectSettingsArgs(args, "settings-close")) {
+      return *error;
+    }
+    closeSettingsWindow();
+    return "ok\n";
+  });
 
-  ipc.registerHandler(
-      "settings-toggle",
-      [this](const std::string& args) -> std::string {
-        toggleSettingsWindow(std::string(StringUtils::trimLeftView(args)));
-        return "ok\n";
-      },
-      "[context]", "Toggle the settings window, optionally at a specific section"
-  );
+  ipc.bind(noctalia::cli::msg::settingsToggle, [this](const std::string& args) -> std::string {
+    toggleSettingsWindow(std::string(StringUtils::trimLeftView(args)));
+    return "ok\n";
+  });
 }

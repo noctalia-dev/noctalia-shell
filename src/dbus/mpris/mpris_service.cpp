@@ -277,14 +277,6 @@ namespace {
     return normalized;
   }
 
-  std::string logicalTrackSignature(const MprisPlayerInfo& info) {
-    const std::string canonicalSourceUrl = canonicalTrackSourceUrl(info.sourceUrl);
-    if (!canonicalSourceUrl.empty()) {
-      return std::format("{}\n{}", info.trackId, canonicalSourceUrl);
-    }
-    return std::format("{}\n{}\n{}\n{}", info.trackId, info.title, joinedArtists(info.artists), info.album);
-  }
-
   std::map<std::string, sdbus::Variant> to_dbus_player(const MprisPlayerInfo& info) {
     std::map<std::string, sdbus::Variant> player;
     player["bus_name"] = sdbus::Variant(info.busName);
@@ -353,6 +345,14 @@ namespace {
   std::string normalizeFilterToken(std::string_view value) { return StringUtils::toLower(StringUtils::trim(value)); }
 
 } // namespace
+
+std::string logicalTrackSignature(const MprisPlayerInfo& info) {
+  const std::string canonicalSourceUrl = canonicalTrackSourceUrl(info.sourceUrl);
+  if (!canonicalSourceUrl.empty()) {
+    return std::format("{}\n{}", info.trackId, canonicalSourceUrl);
+  }
+  return std::format("{}\n{}\n{}\n{}", info.trackId, info.title, joinedArtists(info.artists), info.album);
+}
 
 MprisService::MprisService(SessionBus& bus)
     : m_bus(bus), m_dbusProxy(sdbus::createProxy(bus.connection(), kDbusName, kDbusPath)) {
@@ -686,46 +686,42 @@ void MprisService::refreshPlayers() {
 }
 
 void MprisService::registerIpc(IpcService& ipc) {
-  ipc.registerCycleHandler(
-      "media",
-      [this](const std::string& args) -> std::string {
-        const auto parts = noctalia::ipc::splitWords(args);
-        if (parts.size() != 1) {
-          return "error: media requires exactly one action "
-                 "<next|previous|toggle|play|pause|stop|next-player|previous-player>\n";
-        }
+  ipc.bindCycle(noctalia::cli::msg::media, [this](const std::string& args) -> std::string {
+    const auto parts = noctalia::ipc::splitWords(args);
+    if (parts.size() != 1) {
+      return "error: media requires exactly one action "
+             "<next|previous|toggle|play|pause|stop|next-player|previous-player>\n";
+    }
 
-        const std::string& action = parts[0];
-        if (action == "next") {
-          return nextActive() ? "ok\n" : "error: no active player or Next unsupported\n";
-        }
-        if (action == "previous") {
-          return previousActive() ? "ok\n" : "error: no active player or Previous unsupported\n";
-        }
-        if (action == "toggle" || action == "playPause" || action == "play-pause") {
-          return playPauseActive() ? "ok\n" : "error: no active player or PlayPause unsupported\n";
-        }
-        if (action == "play") {
-          return playActive() ? "ok\n" : "error: no active player or Play unsupported\n";
-        }
-        if (action == "pause") {
-          return pauseActive() ? "ok\n" : "error: no active player or Pause unsupported\n";
-        }
-        if (action == "stop") {
-          return stopActive() ? "ok\n" : "error: no active player or Stop unsupported\n";
-        }
-        if (action == "next-player") {
-          return cycleActivePlayer(1) ? "ok\n" : "error: no media players available\n";
-        }
-        if (action == "previous-player") {
-          return cycleActivePlayer(-1) ? "ok\n" : "error: no media players available\n";
-        }
+    const std::string& action = parts[0];
+    if (action == "next") {
+      return nextActive() ? "ok\n" : "error: no active player or Next unsupported\n";
+    }
+    if (action == "previous") {
+      return previousActive() ? "ok\n" : "error: no active player or Previous unsupported\n";
+    }
+    if (action == "toggle" || action == "playPause" || action == "play-pause") {
+      return playPauseActive() ? "ok\n" : "error: no active player or PlayPause unsupported\n";
+    }
+    if (action == "play") {
+      return playActive() ? "ok\n" : "error: no active player or Play unsupported\n";
+    }
+    if (action == "pause") {
+      return pauseActive() ? "ok\n" : "error: no active player or Pause unsupported\n";
+    }
+    if (action == "stop") {
+      return stopActive() ? "ok\n" : "error: no active player or Stop unsupported\n";
+    }
+    if (action == "next-player") {
+      return cycleActivePlayer(1) ? "ok\n" : "error: no media players available\n";
+    }
+    if (action == "previous-player") {
+      return cycleActivePlayer(-1) ? "ok\n" : "error: no media players available\n";
+    }
 
-        return "error: invalid media action (use next, previous, toggle, play, pause, stop, next-player, "
-               "previous-player)\n";
-      },
-      "<next|previous|toggle|play|pause|stop|next-player|previous-player>", "Control active media playback"
-  );
+    return "error: invalid media action (use next, previous, toggle, play, pause, stop, next-player, "
+           "previous-player)\n";
+  });
 }
 
 std::function<void(std::optional<sdbus::Error>)>
@@ -1656,6 +1652,21 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
 
             const auto last_it = m_lastPropertiesUpdate.find(busName);
             if (last_it != m_lastPropertiesUpdate.end() && now - last_it->second < kPropertiesDebounceWindow) {
+              // Debounce bursts to one trailing refresh at the window end.
+              auto& timerId = m_propertiesRefreshTimers[busName];
+              if (!TimerManager::instance().active(timerId)) {
+                const std::weak_ptr<void> aliveGuard = m_aliveGuard;
+                const auto remaining =
+                    std::chrono::ceil<std::chrono::milliseconds>(kPropertiesDebounceWindow - (now - last_it->second));
+                timerId = TimerManager::instance().start(timerId, remaining, [this, aliveGuard, busName]() {
+                  if (aliveGuard.expired()) {
+                    return;
+                  }
+                  m_propertiesRefreshTimers.erase(busName);
+                  m_lastPropertiesUpdate[busName] = std::chrono::steady_clock::now();
+                  addOrRefreshPlayer(busName);
+                });
+              }
               return;
             }
             m_lastPropertiesUpdate[busName] = now;
@@ -2084,6 +2095,7 @@ void MprisService::applyPlayerSnapshot(
     const bool significantChanged = trackChanged
         || previous_info.identity != merged.identity
         || previous_info.playbackStatus != merged.playbackStatus
+        || previous_info.volume != merged.volume
         || previous_info.loopStatus != merged.loopStatus
         || previous_info.shuffle != merged.shuffle
         || previous_info.canGoPrevious != merged.canGoPrevious
@@ -2140,6 +2152,10 @@ void MprisService::clearPlayerState(const std::string& busName) {
   if (auto it = m_positionResyncTimers.find(busName); it != m_positionResyncTimers.end()) {
     TimerManager::instance().cancel(it->second);
     m_positionResyncTimers.erase(it);
+  }
+  if (auto it = m_propertiesRefreshTimers.find(busName); it != m_propertiesRefreshTimers.end()) {
+    TimerManager::instance().cancel(it->second);
+    m_propertiesRefreshTimers.erase(it);
   }
   m_pendingPositionSignalRefresh.erase(busName);
   m_hasAuthoritativePositionSample.erase(busName);

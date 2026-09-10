@@ -25,6 +25,10 @@ namespace {
     }
   }
 
+  bool hasIssuePath(const noctalia::config::LegacyConfigIssues& issues, std::string_view path) {
+    return std::ranges::any_of(issues, [path](const auto& issue) { return issue.path == path; });
+  }
+
   void checkNegativeRadiusMigration() {
     toml::table root = toml::parse(R"(
 [bar.main]
@@ -57,7 +61,10 @@ radius = -7
         "monitor concave flag was not set"
     );
     expect(root["dock"]["radius"].value<std::int64_t>() == -7, "dock radius was incorrectly migrated");
-    expect(issues.size() == 2, "expected one issue for the bar and one for its monitor override");
+    expect(issues.size() == 3, "expected one migration issue per negative radius");
+    expect(hasIssuePath(issues, "bar.main.radius"), "base radius issue did not identify its source key");
+    expect(hasIssuePath(issues, "bar.main.radius_top_left"), "corner radius issue did not identify its source key");
+    expect(hasIssuePath(issues, "bar.main.monitor.dp1.radius"), "monitor radius issue did not identify its source key");
 
     noctalia::config::LegacyConfigIssues secondPassIssues;
     noctalia::config::normalizeLegacyConfig(root, secondPassIssues);
@@ -92,6 +99,7 @@ sunrise = "07:30"
         "a times-only location did not opt into custom scheduling"
     );
     expect(issues.size() == 1, "times-only location did not report a legacy issue");
+    expect(issues.front().path == "location.sunset", "custom schedule issue did not identify a source key");
 
     noctalia::config::LegacyConfigIssues secondPassIssues;
     noctalia::config::normalizeLegacyConfig(legacy, secondPassIssues);
@@ -138,6 +146,10 @@ middle_click_opens_widget_settings = true
         "an enabled middle_click_opens_widget_settings was not dropped"
     );
     expect(enabled["bar"].as_table() == nullptr, "an enabled config gained a spurious bar actions table");
+    expect(
+        enabledIssues.size() == 1 && enabledIssues.front().path == "shell.middle_click_opens_widget_settings",
+        "enabled widget action issue did not identify the removed source key"
+    );
 
     // A disabled config has to keep behaving the same, which now means unbinding the gesture.
     toml::table disabled = toml::parse(R"(
@@ -162,6 +174,10 @@ position = "bottom"
           "a disabled config did not unbind middle on every bar"
       );
     }
+    expect(
+        disabledIssues.size() == 1 && disabledIssues.front().path == "shell.middle_click_opens_widget_settings",
+        "disabled widget action reported generated bar actions instead of the source key"
+    );
 
     // With no [bar] table the built-in default bar is still in play, so it must be seeded.
     toml::table noBars = toml::parse(R"(
@@ -542,7 +558,10 @@ show_label = false
         config["widget"]["clock"]["display"].value<std::string>() == std::optional<std::string>{"text"},
         "another widget type was migrated as sysmon"
     );
-    expect(issues.size() == 5, "expected one migration issue per sysmon widget");
+    expect(issues.size() == 11, "expected one migration issue per legacy sysmon key");
+    expect(hasIssuePath(issues, "widget.gauge.display"), "sysmon display issue did not identify its source key");
+    expect(hasIssuePath(issues, "widget.gauge.show_label"), "sysmon label issue did not identify its source key");
+    expect(hasIssuePath(issues, "widget.gauge.show_icon"), "sysmon glyph issue did not identify its source key");
 
     noctalia::config::LegacyConfigIssues secondPassIssues;
     noctalia::config::normalizeLegacyConfig(config, secondPassIssues);
@@ -733,6 +752,100 @@ German = "Clock"
     expect(secondPassIssues.empty(), "keyboard layout custom_labels normalization was not idempotent");
   }
 
+  void checkPluginAutoUpdateModeMigration() {
+    for (const bool enabled : {true, false}) {
+      toml::table config = toml::parse(std::format("[plugins]\nauto_update = {}", enabled));
+      noctalia::config::LegacyConfigIssues issues;
+      noctalia::config::normalizeLegacyConfig(config, issues);
+
+      const std::string_view expected = enabled ? "all" : "none";
+      expect(
+          config["plugins"]["auto_update"].value<std::string_view>() == expected,
+          "legacy plugin auto-update boolean was not converted to its matching scope"
+      );
+      expect(
+          issues.size() == 1 && hasIssuePath(issues, "plugins.auto_update"),
+          "plugin auto-update migration did not identify its source key"
+      );
+    }
+
+    toml::table sidecar = toml::parse("config_version = 12\n[plugins]\nauto_update = false");
+    noctalia::config::schema::Diagnostics diagnostics;
+    const int applied = noctalia::config::applyPendingConfigMigrations(sidecar, 12, diagnostics);
+    expect(applied == noctalia::config::currentConfigVersion(), "plugin auto-update sidecar migration was not applied");
+    expect(
+        sidecar["plugins"]["auto_update"].value<std::string_view>() == std::optional<std::string_view>{"none"},
+        "plugin auto-update sidecar migration did not preserve false as none"
+    );
+  }
+
+  void checkCalendarEventFormatsMigration() {
+    toml::table sidecar = toml::parse(R"(
+config_version = 13
+[control_center.calendar]
+event_date_format = "%Y-%m-%d"
+event_time_format = "%I:%M %p"
+)");
+    noctalia::config::schema::Diagnostics diagnostics;
+    const int applied = noctalia::config::applyPendingConfigMigrations(sidecar, 13, diagnostics);
+    expect(applied == noctalia::config::currentConfigVersion(), "calendar event format migration was not applied");
+    expect(
+        sidecar["calendar"]["event_date_format"].value<std::string_view>()
+            == std::optional<std::string_view>{"%Y-%m-%d"},
+        "calendar event date format was not moved"
+    );
+    expect(
+        sidecar["calendar"]["event_time_format"].value<std::string_view>()
+            == std::optional<std::string_view>{"%I:%M %p"},
+        "calendar event time format was not moved"
+    );
+    const auto* legacyCalendar = sidecar["control_center"]["calendar"].as_table();
+    expect(
+        legacyCalendar != nullptr
+            && legacyCalendar->get("event_date_format") == nullptr
+            && legacyCalendar->get("event_time_format") == nullptr,
+        "legacy calendar event formats were not removed"
+    );
+
+    toml::table legacyConfig = toml::parse(R"(
+[control_center.calendar]
+event_date_format = "%d.%m.%Y"
+event_time_format = "%H:%M"
+)");
+    noctalia::config::LegacyConfigIssues issues;
+    noctalia::config::normalizeLegacyConfig(legacyConfig, issues);
+    expect(
+        legacyConfig["calendar"]["event_date_format"].value<std::string_view>()
+            == std::optional<std::string_view>{"%d.%m.%Y"},
+        "hand-written calendar event date format was not normalized"
+    );
+    expect(
+        issues.size() == 2
+            && hasIssuePath(issues, "control_center.calendar.event_date_format")
+            && hasIssuePath(issues, "control_center.calendar.event_time_format"),
+        "hand-written calendar event formats did not produce migration issues"
+    );
+
+    toml::table conflict = toml::parse(R"(
+config_version = 13
+[calendar]
+event_date_format = "%d"
+[control_center.calendar]
+event_date_format = "%A"
+event_time_format = "%H:%M"
+)");
+    noctalia::config::schema::Diagnostics conflictDiagnostics;
+    (void)noctalia::config::applyPendingConfigMigrations(conflict, 13, conflictDiagnostics);
+    expect(
+        conflict["calendar"]["event_date_format"].value<std::string_view>() == std::optional<std::string_view>{"%d"},
+        "calendar event format migration overwrote the canonical date format"
+    );
+    expect(
+        conflict["calendar"]["event_time_format"].value<std::string_view>() == std::optional<std::string_view>{"%H:%M"},
+        "calendar event format migration did not move a non-conflicting value"
+    );
+  }
+
   void checkVersionGating() {
     toml::table legacy = toml::parse(R"(
 [bar.main]
@@ -878,10 +991,12 @@ int main() {
   checkRemainingWidgetGesturesMigration();
   checkCustomButtonCommandsMigration();
   checkDeadZoneActionsMigration();
+  checkCalendarEventFormatsMigration();
   checkSysmonPresentationMigration();
   checkKeyboardLayoutShowGlyphMigration();
   checkKeyboardLayoutCustomLabelsMigration();
   checkWorkspacesDisplayMigration();
+  checkPluginAutoUpdateModeMigration();
   checkVersionGating();
   checkReminderFingerprint();
   checkRegistryOrdering();

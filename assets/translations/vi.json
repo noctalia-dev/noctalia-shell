@@ -93,6 +93,7 @@
       },
       "sysmon": {
         "cpu": "CPU",
+        "cpu-freq": "Tần số CPU",
         "cpu-temp": "Nhiệt độ CPU",
         "disk": "Ổ đĩa",
         "disk-free": "Dung lượng ổ đĩa trống",
@@ -304,6 +305,21 @@
     },
     "power": {
       "battery": "Pin",
+      "charging": {
+        "display-only": "Chỉ hiển thị",
+        "error-denied": "Xác minh đã bị từ chối. Mức sạc đã chưa được thay đổi.",
+        "error-failed": "Mức sạc không thể bị thay đổi",
+        "externally-managed": "Đã được đặt bởi một công cụ khác. Vui lòng chỉnh UPower để thay đổi mức sạc.",
+        "firmware-managed": "Phần mềm hệ thống đang quản lí sạc.",
+        "full-charge": "Có thể sạc tới 100%.",
+        "starts": "Bắt đầu ở {start}%",
+        "starts-stops": "Bắt đầu ở {start}% · Kết thúc ở {end}%",
+        "stops": "Kết thúc ở {end}%",
+        "title": "Sạc pin",
+        "unreadable": "Không khả dụng",
+        "unsupported": "Mức sạc không được hỗ trợ",
+        "use-thresholds": "Sử dụng mức sạc"
+      },
       "design-capacity": "Công suất thiết kế",
       "health": "Trình trạng pin",
       "performance-inhibited": "Hiệu suất không xác định",
@@ -518,6 +534,7 @@
         "opacity": "Độ trong suốt",
         "primary-color": "Màu chính",
         "reset-defaults": "Khôi phục về mặc định",
+        "reversed": "Đảo ngược",
         "ring-opacity": "Độ mờ vòng",
         "rotation-speed": "Tốc độ quay",
         "scroll-step": "Bước cuộn",
@@ -526,6 +543,7 @@
         "shadow": "Bóng",
         "show-caps-lock": "Cảnh báo phím Caps Lock",
         "show-device": "Hiển thị thiết bị",
+        "show-events": "Hiển thị sự kiện",
         "show-forecast": "Hiển thị dự báo",
         "show-keyboard-layout": "Bố cục bàn phím",
         "show-label": "Hiển thị nhãn",
@@ -536,13 +554,16 @@
         "show-unlock-hint": "Gợi ý mở khóa",
         "show-vpn-label": "Hiển thị nhãn VPN",
         "show-weather": "Thời tiết",
+        "show-week-numbers": "Hiển thị số tuần",
         "show-when-idle": "Hiển thị khi không hoạt động",
         "stat": "Trạng thái",
+        "stat-cpu-freq": "Tần số CPU",
         "stat-cpu-temp": "Nhiệt độ CPU",
         "stat-cpu-usage": "Mức sử dụng CPU",
         "stat-gpu-temp": "Nhiệt độ GPU",
         "stat-gpu-usage": "Mức sử dụng GPU",
         "stat-gpu-vram": "GPU VRAM",
+        "stat-gpu-vram-used": "VRAM GPU đã sử dụng",
         "stat-net-rx": "Nhận",
         "stat-net-tx": "Mạng truyền",
         "stat-none": "Không có",
@@ -573,9 +594,11 @@
         "grid": "Lưới"
       },
       "title": "Tiện ích màn hình nền",
+      "title-lockscreen": "Widget màn hình khóa",
       "types": {
         "audio-visualizer": "Trực quan hóa âm thanh",
         "button": "Nút",
+        "calendar": "Lịch",
         "clock": "Đồng hồ",
         "fancy-audio-visualizer": "Trình hiển thị âm thanh đẹp mắt",
         "label": "Nhãn",
@@ -643,12 +666,22 @@
     },
     "context-menu": {
       "open": "Mở",
+      "pin": "Ghim vào Launcher",
       "pin-to-dock": "Ghim vào Dock",
+      "unpin": "Bỏ ghim khỏi Launcher",
       "unpin-from-dock": "Bỏ ghim khỏi Dock"
     },
     "empty": {
       "no-results": "Không tìm thấy kết quả nào",
       "type-to-search": "Gõ để tìm kiếm..."
+    },
+    "origins": {
+      "appimage": "AppImage",
+      "flatpak": "Flatpak",
+      "nix": "Nix",
+      "snap": "Snap",
+      "system": "Hệ thống",
+      "user": "Người dùng"
     },
     "providers": {
       "applications": {
@@ -686,7 +719,8 @@
     },
     "source": {
       "address": "Địa chỉ",
-      "auto": "Tự động"
+      "auto": "Tự động",
+      "manual": "Thủ công"
     }
   },
   "lockscreen": {
@@ -716,7 +750,10 @@
       "battery-low-body": "{device}: còn {percent}%",
       "battery-low-title": "Pin yếu",
       "calendar": "Lịch",
+      "calendar-credential-locked-body": "Hãy mở khóa keyring mà Secret Service sử dụng, sau đó thử lại trong phần Cài đặt. Với GNOME Keyring, hãy đặt một chùm chìa khóa tự động mở khóa ví dụ như Login làm mặc định.",
+      "calendar-credential-locked-title": "Keyring của Lịch đang bị khóa",
       "calendar-google-connect-browser-failed": "Không thể khởi chạy trình mở trình duyệt để ủy quyền Google. Kiểm tra trình duyệt mặc định của bạn hoặc thiết lập xdg-open.",
+      "calendar-google-connect-credential-store-failed": "Xác minh hoàn tất, nhưng refresh token không thể được lưu. Vui lòng thử kết nối lại sau khi đã mở khóa hoặc bắt đầu Secret Service.",
       "calendar-google-connect-expired": "Ủy quyền Google đã hết hạn trước khi đăng nhập hoàn tất. Hãy bắt đầu lại kết nối.",
       "calendar-google-connect-failed-title": "Kết nối Lịch Google thất bại",
       "calendar-google-connect-missing-account": "Không tìm thấy tài khoản Google calendar nào phù hợp với \"{account}\".",
@@ -876,12 +913,15 @@
       "color-label": "Màu sắc",
       "credential-source-file": "Tệp mật khẩu",
       "credential-source-keyring": "Keyring",
+      "credential-source-label": "Lưu trữ thông tin xác thực",
       "delete-error": "Không thể xóa tài khoản lịch.",
       "edit-title": "Chỉnh sửa tài khoản lịch",
+      "ics-url-label": "ICS URL",
       "id-label": "ID tài khoản",
       "invalid": "Kiểm tra các trường tài khoản lịch được tô sáng.",
       "name-label": "Tên hiển thị",
       "name-placeholder": "Lịch cá nhân",
+      "password-file-error": "Không thể đọc tệp mật khẩu đã được cấu hình. Hãy kiểm tra xem tệp có tồn tại, là tệp thông thường có thể đọc được và có chứa mật khẩu hay không.",
       "password-file-label": "Tệp mật khẩu",
       "password-keep-placeholder": "Để trống nếu muốn giữ mật khẩu hiện tại",
       "password-label": "Mật khẩu ứng dụng",
@@ -890,12 +930,18 @@
       "provider": {
         "custom": "CalDAV",
         "google": "Google",
-        "icloud": "iCloud"
+        "icloud": "iCloud",
+        "ics": "ICS URL"
       },
       "provider-label": "Nhà cung cấp",
       "save": "Lưu",
       "save-connect": "Lưu và kết nối",
       "save-error": "Không thể lưu tài khoản lịch.",
+      "secret-cleanup-error": "Không thể lưu tài khoản, cũng như không thể khôi phục hoặc dọn dẹp thông tin xác thực trong keyring của tài khoản đó. Vui lòng thử lại sau khi mở khóa Secret Service.",
+      "secret-service-cancelled": "Yêu cầu của Secret Service đã bị hủy. Hãy thử lại khi bạn sẵn sàng mở khóa.",
+      "secret-service-error": "Không thể truy cập thông tin xác thực lịch trong Secret Service. Vui lòng thử lại thao tác.",
+      "secret-service-locked": "Thông tin xác thực lịch đang bị khóa hoặc truy cập đã bị từ chối. Vui lòng mở Secret Service và thử lại.",
+      "secret-service-unavailable": "Không có nhà cung cấp Secret Service nào khả dụng. Hãy khởi động một nhà cung cấp tương thích và thử lại.",
       "server-url-label": "URL máy chủ",
       "username-label": "Tên người dùng",
       "username-placeholder": "name@example.com"
@@ -960,7 +1006,9 @@
         },
         "group": {
           "accordion": "Phong cầm",
+          "accordion-description": "Chỉ hiển thị widget đầu tiên; di chuột qua phần bao chứa sẽ làm hiện ra các phần còn lại.",
           "accordion-direction": "Hiển thị hướng",
+          "accordion-direction-description": "Phía của tiện ích đầu tiên nơi các widget ẩn bung ra",
           "action": "Nhóm",
           "border": "Viền",
           "border-description": "Vai trò màu sắc đường viền của Vùng chứa; để Mặc định nếu không muốn có đường viền",
@@ -998,17 +1046,20 @@
           "remove-widget": "Bỏ khỏi thanh",
           "select": "Chọn để gộp lại",
           "selected": "{count} đã chọn",
+          "settings-widget": "Cài đặt Widget",
           "show": "Hiện nhóm này",
           "show-widget": "Hiện widget này",
           "style": "Phong cách",
           "title": "Nhóm khung",
           "ungroup": "Tách nhóm",
-          "widget-spacing": "Ngăn cách"
+          "widget-spacing": "Ngăn cách",
+          "widget-spacing-description": "Khoảng cách giữa các widget trong nhóm này (tính bằng pixel); chế độ Tự động sẽ kế thừa khoảng cách widget của thanh công cụ."
         },
         "inspector": {
           "add-instance-title": "Thêm mới tiện ích có tên {widget} vào khu vực {lane}",
           "add-title": "Thêm widget vào {lane}",
-          "move-to-lane": "Di chuyển đến {lane}"
+          "move-to-lane": "Di chuyển đến {lane}",
+          "reset-defaults": "Đặt lại về mặc định"
         },
         "instance": {
           "create-save": "Tạo",
@@ -1443,8 +1494,6 @@
         "empty": "Không tìm thấy plugin nào. Hãy thêm nguồn hoặc kiểm tra mạng của bạn.",
         "held-back": "phiên bản cũ",
         "incompatible-plugin-api": "API plugin không tương thích",
-        "loading": "Đang tải các plugin...",
-        "refreshing": "Đang làm mới các plugin...",
         "remove": "Loại bỏ plugin",
         "requires": "Cần: {dependencies}",
         "title": "Plugins",
@@ -1694,6 +1743,9 @@
         "corner-top-right": {
           "description": "Bán kính góc trên bên phải cho Bar"
         },
+        "dead-zone-action": {
+          "description": "Thực hiện hành động trên các phần của thanh không bị widget nào che khuất."
+        },
         "edge-margin": {
           "description": "Khoảng cách giữa thanh và mép màn hình mà nó nằm trên. Đặt 0 px để thanh nằm sát mép màn hình."
         },
@@ -1711,11 +1763,15 @@
           "description": "Phông chữ dùng cho các widget trên thanh này. Để trống để sử dụng phông chữ toàn cục. Thiết lập Họ phông chữ riêng của widget sẽ ưu tiên hơn tùy chọn này.",
           "label": "Phông chữ"
         },
+        "font-scale": {
+          "description": "Hệ số tỷ lệ cho văn bản trên tất cả các widget ở thanh này; hệ số này sẽ nhân với giá trị font_scale của từng widget."
+        },
         "font-weight": {
           "description": "Độ đậm mặc định cho nhãn tiện ích trên thanh này.",
           "label": "Độ đậm phông chữ"
         },
         "hover-highlight": {
+          "description": "Tô màu nhẹ cho widget nằm dưới con trỏ chuột bằng chính màu nền trước của nó.",
           "label": "Làm nổi bật khi di chuột lên"
         },
         "layer": {
@@ -2247,6 +2303,9 @@
           "description": "Dùng biểu tượng nhỏ hơn và hàng kết quả gọn hơn",
           "label": "Hàng gọn"
         },
+        "launcher-pinned-apps": {
+          "label": "Ứng dụng đã được ghim"
+        },
         "launcher-reset-usage": {
           "button": "Đặt lại",
           "description": "Xóa dữ liệu số lần mở ứng dụng và lịch sử dùng gần đây phục vụ cho việc sắp xếp trình khởi chạy",
@@ -2284,6 +2343,9 @@
           "description": "Đặt bảng chọn hình nền gần vị trí nhấp vào thanh thay vì căn giữa theo chiều dài thanh",
           "label": "Mở gần nhấp"
         },
+        "panel-anchor-bar": {
+          "description": "Các bảng thanh sẽ gắn vào vị trí kích hoạt khi được mở; hãy để trống để chúng đi theo widget, lối tắt hoặc thanh dock đã mở chúng."
+        },
         "placement-clipboard": {
           "description": "Chọn xem bảng tạm gắn vào Bar, lơ lửng gần đó, hay mở ở giữa",
           "label": "Vị trí"
@@ -2309,27 +2371,27 @@
           "label": "Vị trí"
         },
         "position-clipboard": {
-          "description": "Vị trí nổi của bảng nhớ tạm trên màn hình — Chế độ Theo thanh sẽ đặt nó gần thanh",
+          "description": "Vị trí nổi của bảng nhớ tạm trên màn hình; Chế độ Theo thanh sẽ đặt nó gần thanh",
           "label": "Vị trí"
         },
         "position-control-center": {
-          "description": "Vị trí nổi của Trung tâm điều khiển trên màn hình — Chế độ Theo thanh sẽ đặt nó gần thanh",
+          "description": "Vị trí nổi của Trung tâm điều khiển trên màn hình; Chế độ Theo thanh sẽ đặt nó gần thanh",
           "label": "Vị trí"
         },
         "position-launcher": {
-          "description": "Vị trí nổi của trình khởi chạy trên màn hình — Chế độ Theo thanh sẽ đặt nó gần thanh",
+          "description": "Vị trí nổi của trình khởi chạy trên màn hình; Chế độ Theo thanh sẽ đặt nó gần thanh",
           "label": "Vị trí"
         },
         "position-polkit": {
-          "description": "Vị trí nổi của hộp thoại polkit trên màn hình — Chế độ Theo thanh sẽ đặt nó gần thanh",
+          "description": "Vị trí nổi của hộp thoại polkit trên màn hình; Chế độ Theo thanh sẽ đặt nó gần thanh",
           "label": "Vị trí"
         },
         "position-session": {
-          "description": "Vị trí nổi của session menu trên màn hình — Tùy chọn Theo thanh sẽ giữ nó gần thanh",
+          "description": "Vị trí nổi của session menu trên màn hình; Tùy chọn Theo thanh sẽ giữ nó gần thanh",
           "label": "Vị trí"
         },
         "position-wallpaper": {
-          "description": "Vị trí nổi của trình chọn hình nền trên màn hình — Tùy chọn Theo thanh sẽ giữ nó gần thanh",
+          "description": "Vị trí nổi của trình chọn hình nền trên màn hình; Tùy chọn Theo thanh sẽ giữ nó gần thanh",
           "label": "Vị trí"
         },
         "shadow": {
@@ -2464,6 +2526,7 @@
             "label": "Khoảng thời gian thăm dò mạng"
           },
           "stats": {
+            "cpu-freq": "Tần số CPU",
             "cpu-temp": "Nhiệt độ CPU",
             "cpu-usage": "Mức sử dụng CPU",
             "disk-usage": "Sử dụng đĩa",
@@ -2912,6 +2975,24 @@
       "variant-label": "Kiểu nút"
     },
     "widgets": {
+      "actions": {
+        "command-placeholder": "Câu lệnh",
+        "default": "Mặc định",
+        "disabled": "Tắt",
+        "run-command": "Chạy một câu lệnh...",
+        "unset": "Chưa đặt"
+      },
+      "gestures": {
+        "back": "Nút quay lại",
+        "forward": "Nút tiếp tục",
+        "left": "Nút chuột trái",
+        "middle": "Nút chuột giữa (nút con lăn)",
+        "right": "Nút chuột phải",
+        "scroll-down": "Cuộn xuống",
+        "scroll-left": "Cuộn lên",
+        "scroll-right": "Cuộn trái",
+        "scroll-up": "Cuộn phải"
+      },
       "instances": {
         "cpu": "CPU",
         "date": "Ngày",
@@ -2922,31 +3003,63 @@
         "ram": "RAM",
         "temp": "Nhiệt độ"
       },
+      "map-placeholders": {
+        "effects-profile-name": "Tên cấu hình",
+        "glyph-name": "Tên ký tự",
+        "key": "Nút",
+        "label": "Nhãn",
+        "layout-name": "Tên layout",
+        "value": "Giá trị"
+      },
       "options": {
+        "after": "Sau",
         "always": "Luôn",
+        "auto": "Chế độ Tự động",
+        "before": "Trước",
+        "both": "Cả hai",
+        "compact": "Gọn",
+        "count": "Số lượng",
+        "cpu-freq": "Tần số CPU",
         "cpu-temp": "Nhiệt độ CPU",
         "cpu-usage": "Sử dụng CPU",
+        "disk-free": "Dung lượng ổ nhớ còn trống",
+        "disk-free-percent": "% dung lượng ổ nhớ còn trống",
+        "disk-used": "Dung lượng ổ nhớ đã dùng",
+        "disk-used-percent": "% dung lượng ổ nhớ đã dùng",
+        "dots": "Những dấu chấm",
+        "focus-hint": "Màu nổi bật",
         "full": "Đầy đủ",
         "gauge": "Đồng hồ",
         "glyph": "Biểu tượng",
         "gpu-temp": "Nhiệt độ GPU",
         "gpu-usage": "Mức sử dụng GPU",
         "gpu-vram": "GPU VRAM",
+        "gpu-vram-used": "VRAM GPU đã sử dụng",
         "graph": "Biểu đồ",
         "graphic": "Đồ họa",
+        "hidden": "Đã ẩn",
         "icon-and-text": "Biểu tượng và Văn bản",
         "icon-only": "Chỉ biểu tượng",
+        "icons": "Biểu tượng",
         "id": "ID",
         "input": "Đầu vào",
         "instance": "Theo vị trí",
+        "kilobytes": "kB/s",
+        "megabytes": "MB/s",
+        "minimal": "Tối giản",
         "name": "Tên",
         "net-rx": "Mạng nhận",
         "net-tx": "Mạng gửi đi",
         "none": "Không",
         "on-hover": "Khi di chuột qua",
         "output": "Đầu ra",
+        "percent": "Phần trăm",
         "ram-percent": "Phần trăm RAM",
         "ram-used": "RAM đã dùng",
+        "rate": "Tốc độ",
+        "regular": "Bình thường",
+        "replace": "Thay thế",
+        "scroll-gesture": "Một lần cho mỗi Cử chỉ",
         "shared": "Chung",
         "short": "Ngắn",
         "swap-percent": "Phần trăm Swap",
@@ -3257,7 +3370,11 @@
         },
         "pinned": {
           "description": "ID của các mục Tray sẽ luôn hiển thị trên Bar khi chế độ ngăn kéo được bật",
-          "label": "Mục đã ghim"
+          "label": "Mục đã ghim",
+          "taskbar-label": "Những ứng dụng đã ghim"
+        },
+        "pinned-opacity": {
+          "label": "Độ trong suốt của ứng dụng đã ghim"
         },
         "scale": {
           "description": "Tỉ lệ widget này theo tỉ lệ nội dung của Bar",

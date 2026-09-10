@@ -264,11 +264,12 @@ void CairoTextRenderer::initialize(RenderBackend* backend, TextureManager* textu
   }
 
   if (cairo_version() < CAIRO_VERSION_ENCODE(1, 18, 0)) {
-    kLog.warn("cairo version {} (<1.18) — COLR v1 color emoji will not render", cairo_version_string());
+    kLog.warn("cairo version {} (<1.18): COLR v1 color emoji will not render", cairo_version_string());
   }
 
   m_fontMap = pango_cairo_font_map_new();
   m_pangoContext = pango_font_map_create_context(m_fontMap);
+  pango_context_set_base_dir(m_pangoContext, m_baseDirRtl ? PANGO_DIRECTION_RTL : PANGO_DIRECTION_LTR);
 
   // Force grayscale AA only. The tinted fast path rasterizes to A8 coverage and
   // tints in the shader (u_tint), which cannot carry per-channel subpixel/LCD
@@ -357,6 +358,17 @@ void CairoTextRenderer::setFontFamily(std::string family) {
   }
   m_fontFamily = std::move(family);
   text::invalidateFontWeightCatalogCache();
+  clearCaches();
+}
+
+void CairoTextRenderer::setBaseDirection(bool rtl) {
+  if (m_baseDirRtl == rtl) {
+    return;
+  }
+  m_baseDirRtl = rtl;
+  if (m_pangoContext != nullptr) {
+    pango_context_set_base_dir(m_pangoContext, rtl ? PANGO_DIRECTION_RTL : PANGO_DIRECTION_LTR);
+  }
   clearCaches();
 }
 
@@ -733,7 +745,7 @@ void CairoTextRenderer::rasterizeLayout(
   // than the max). We clip rather than horizontally tile; horizontal tiling
   // would mean splitting glyphs across textures.
   if (pxWidth > maxTex) {
-    kLog.warn("text width {}px exceeds backend texture limit {} — clipping", pxWidth, maxTex);
+    kLog.warn("text width {}px exceeds backend texture limit {}; clipping", pxWidth, maxTex);
     pxWidth = maxTex;
   }
 

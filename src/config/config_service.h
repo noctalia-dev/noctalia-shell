@@ -4,6 +4,7 @@
 #include "config/config_types.h"
 #include "config/schema/diagnostics.h"
 #include "config/state_store.h"
+#include "core/inotify/inotify.h"
 #include "core/timer_manager.h"
 #include "core/toml.h"
 
@@ -41,7 +42,7 @@ public:
   };
 
   ConfigService();
-  ~ConfigService();
+  ~ConfigService() = default;
 
   ConfigService(const ConfigService&) = delete;
   ConfigService& operator=(const ConfigService&) = delete;
@@ -54,7 +55,7 @@ public:
   [[nodiscard]] const ConfigChangeSet& lastChange() const noexcept { return m_lastChange; }
   [[nodiscard]] const std::string& lastMutationError() const noexcept { return m_lastMutationError; }
   [[nodiscard]] bool matchesKeybind(KeybindAction action, std::uint32_t sym, std::uint32_t modifiers) const;
-  [[nodiscard]] int watchFd() const noexcept { return m_inotifyFd; }
+  [[nodiscard]] int watchFd() const noexcept { return m_inotify.fd(); }
   [[nodiscard]] std::string buildSupportReport() const;
   [[nodiscard]] std::string buildMergedUserConfig() const;
   [[nodiscard]] std::string buildEffectiveConfig() const;
@@ -116,9 +117,9 @@ public:
   void addPluginSource(const PluginSourceConfig& source);
   void removePluginSource(std::string_view name);
 
-  // Persist the global [plugins].auto_update override to settings.toml and trigger the
-  // reload pipeline. Drives background auto-update of every git source.
-  void setPluginsAutoUpdate(bool enabled);
+  // Persist the global [plugins].auto_update mode to settings.toml and trigger the
+  // reload pipeline. Drives background auto-update of git sources per mode.
+  void setPluginsAutoUpdate(PluginAutoUpdateMode mode);
 
   // Persist a theme-mode override to settings.toml and trigger the reload pipeline.
   void setThemeMode(ThemeMode mode);
@@ -162,6 +163,13 @@ public:
   );
   bool setOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides);
   bool setOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides, bool* changed);
+  // Sets and clears in one commit. Callers that both write new keys and retire keys the new shape no
+  // longer owns must use this: two separate commits publish an intermediate config that fails schema
+  // validation and raises a config-error notification.
+  bool mutateOverrides(
+      const std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>& overrides,
+      const std::vector<std::vector<std::string>>& clearPaths, bool* changed
+  );
   bool clearOverride(const std::vector<std::string>& path);
   bool clearOverrides(const std::vector<std::vector<std::string>>& paths, bool* changed);
   bool renameOverrideTable(const std::vector<std::string>& oldPath, const std::vector<std::string>& newPath);
@@ -261,7 +269,7 @@ private:
   NotificationManager* m_notificationManager = nullptr;
 
   // Single inotify fd, two watch descriptors (config dir + state dir).
-  int m_inotifyFd = -1;
+  Inotify m_inotify;
   int m_configWatchWd = -1;
   int m_overridesWatchWd = -1;
   struct SymlinkTargetWatch {

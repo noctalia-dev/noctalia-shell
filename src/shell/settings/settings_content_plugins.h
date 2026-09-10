@@ -6,9 +6,12 @@
 #include <functional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 class Flex;
+class Node;
 
 namespace scripting {
   struct PluginManifest;
@@ -25,6 +28,11 @@ namespace settings {
     std::string_view selectedSection;
     std::vector<scripting::PluginStatus> plugins;
     std::vector<PluginSourceConfig> sources;
+    bool searchActive = false;
+    Flex* pageTitleRow = nullptr;
+    Flex* groupJumpRow = nullptr;
+    std::function<void(const Node&)> scrollContentToTop;
+    std::unordered_map<std::string, std::unordered_set<std::string>>& expandedGroupsByPage;
     bool pluginsLoading = false;
 
     std::function<void(std::string id, bool enable)> setEnabled;
@@ -37,10 +45,10 @@ namespace settings {
     std::function<void(std::string source)> updateSource;
     std::function<void()> refresh;
 
-    // True when every enabled git source has background auto-update on; drives the
-    // single "auto-update plugins" toggle. setAutoUpdate flips it for all git sources.
-    bool autoUpdateEnabled = false;
-    std::function<void(bool)> setAutoUpdate;
+    // Background auto-update scope for git sources; drives the "auto-update plugins"
+    // dropdown. setAutoUpdate persists the mode for all git sources.
+    PluginAutoUpdateMode autoUpdateMode = PluginAutoUpdateMode::All;
+    std::function<void(PluginAutoUpdateMode)> setAutoUpdate;
     // Update every enabled git source at once (the "update all" action).
     std::function<void()> updateAll;
 

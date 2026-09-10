@@ -46,7 +46,7 @@
 #include <string_view>
 
 // The battery definition's finalize hook reaches into the warning-threshold helper, which would drag
-// UPower, notifications and i18n into a test about definition well-formedness. Threshold behaviour is
+// UPower, notifications and i18n into a test about definition well-formedness. Threshold behavior is
 // not under test here, so stand the helper in rather than link that tree.
 int batteryWarningThresholdForSelector(
     const BatteryConfig& /*config*/, const UPowerService* /*upower*/, std::string_view /*selector*/
@@ -101,7 +101,11 @@ namespace {
       WidgetConfig config;
       config.type = std::string(type);
       for (const auto& field : schema) {
-        config.settings[field.key] = field.defaultValue;
+        if (const auto* stringMap = std::get_if<WidgetSettingStringMap>(&field.defaultValue)) {
+          config.tables[field.key] = *stringMap;
+        } else {
+          config.settings[field.key] = field.defaultValue;
+        }
       }
       if (!definition.fieldValuesEqual(
               definition.resolve(&config, type, context...), definition.resolve(nullptr, type, context...)
@@ -170,6 +174,17 @@ int main() {
     fail("sysmon", "valid resolved options produced a semantic error");
   }
   checkDefinition("taskbar", taskbarWidgetDefinition);
+  WidgetConfig spacedTaskbar;
+  spacedTaskbar.type = "taskbar";
+  spacedTaskbar.settings["item_spacing"] = 3.0;
+  spacedTaskbar.settings["icon_scale"] = 0.75;
+  const auto resolvedTaskbar = taskbarWidgetDefinition().resolve(&spacedTaskbar, "taskbar");
+  if (resolvedTaskbar.itemSpacing != 3) {
+    fail("taskbar", "item spacing override did not resolve");
+  }
+  if (resolvedTaskbar.iconScale != 0.75F) {
+    fail("taskbar", "icon scale override did not resolve");
+  }
 
   Config taskbarConfig;
   WidgetConfig taskbar;
@@ -224,7 +239,7 @@ int main() {
   WidgetConfig inputVolume;
   inputVolume.type = "volume";
   inputVolume.settings["device"] = std::string("input");
-  inputVolume.settings["effects_profile_glyphs"] = WidgetSettingStringMap{{"Noise Canceling", "microphone"}};
+  inputVolume.tables["effects_profile_glyphs"] = WidgetSettingStringMap{{"Noise Canceling", "microphone"}};
   const auto inputOptions = volumeWidgetDefinition().resolve(&inputVolume, "volume");
   if (inputOptions.device != VolumeWidgetTarget::Input
       || inputOptions.effectsProfileGlyphs
@@ -258,6 +273,32 @@ int main() {
   }
   if (pickerGlyph("network-download") != "download") {
     fail("sysmon", "network receive stat did not select the download picker glyph");
+  }
+
+  // hide_when_inactive keys off microphone capture, so the settings UI must only offer it on a
+  // volume widget bound to the input device.
+  WidgetConfig outputVolume;
+  outputVolume.type = "volume";
+  glyphConfig.widgets.emplace("speaker", std::move(outputVolume));
+  const auto hideWhenInactiveVisible = [&](std::string_view widgetName) {
+    const WidgetConfig& widget = glyphConfig.widgets.at(std::string(widgetName));
+    const auto specs = settings::widgetSettingSpecs("volume", &widget, "", false);
+    const auto spec = std::ranges::find(specs, "hide_when_inactive", [](const settings::WidgetSettingSpec& candidate) {
+      return std::string_view(candidate.schema.key);
+    });
+    if (spec == specs.end()) {
+      fail("volume", "hide_when_inactive is missing from the settings specs");
+      return false;
+    }
+    return settings::widgetSettingIsVisible(
+        glyphConfig, widgetName, *spec, specs, settings::WidgetSettingCapabilities{}
+    );
+  };
+  if (!hideWhenInactiveVisible("mic")) {
+    fail("volume", "hide_when_inactive is hidden on an input widget");
+  }
+  if (hideWhenInactiveVisible("speaker")) {
+    fail("volume", "hide_when_inactive is offered on an output widget");
   }
   checkDefinition("wallpaper", wallpaperWidgetDefinition);
   checkDefinition("weather", weatherWidgetDefinition);

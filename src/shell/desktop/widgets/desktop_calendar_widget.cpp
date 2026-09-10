@@ -5,6 +5,7 @@
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
+#include "system/desktop_entry_launch.h"
 #include "time/time_format.h"
 #include "ui/builders.h"
 #include "ui/controls/button.h"
@@ -17,7 +18,6 @@
 #include <algorithm>
 #include <memory>
 #include <string>
-#include <string_view>
 #include <utility>
 #include <wayland-client-protocol.h>
 
@@ -34,8 +34,6 @@ namespace {
   constexpr float kDayButtonSize = 34.0F;
   constexpr float kDotDiameter = 4.0F;
   constexpr float kWeekColumnWidth = 24.0F;
-  constexpr std::string_view kEventDateFormat = "%A %e %B";
-  constexpr std::string_view kEventTimeFormat = "%H:%M";
 
 } // namespace
 
@@ -98,7 +96,7 @@ void DesktopCalendarWidget::create() {
   header->addChild(
       ui::button({
           .out = &m_previousButton,
-          .glyph = "chevron-left",
+          .glyph = Style::rtl() ? "chevron-right" : "chevron-left",
           .variant = ButtonVariant::Ghost,
           .onClick = [this]() { changeMonthBy(-1); },
       })
@@ -122,7 +120,7 @@ void DesktopCalendarWidget::create() {
   header->addChild(
       ui::button({
           .out = &m_nextButton,
-          .glyph = "chevron-right",
+          .glyph = Style::rtl() ? "chevron-left" : "chevron-right",
           .variant = ButtonVariant::Ghost,
           .onClick = [this]() { changeMonthBy(1); },
       })
@@ -154,6 +152,7 @@ void DesktopCalendarWidget::create() {
   eventsColumn->addChild(
       ui::scrollView({
           .out = &m_eventsScroll,
+          .contentScale = contentScale(),
           .fillWidth = true,
           .fillHeight = true,
           .flexGrow = 1.0F,
@@ -342,21 +341,25 @@ void DesktopCalendarWidget::rebuildCalendar() {
               .weekDaysGap = m_showWeekNumbers ? gap : 0.0F,
           },
       .fontFamily = m_fontFamily,
-      .onDateSelected = [this](calendar_view::Date date, int monthShift) {
-        m_selectedYear = date.year;
-        m_selectedMonth = date.month;
-        m_selectedDay = date.day;
-        m_monthOffset += monthShift;
-        m_dirty = true;
-        requestLayout();
-      },
+      .onDateSelected =
+          [this](calendar_view::Date date, int monthShift) {
+            m_selectedYear = date.year;
+            m_selectedMonth = date.month;
+            m_selectedDay = date.day;
+            m_monthOffset += monthShift;
+            m_dirty = true;
+            requestLayout();
+          },
+      .onDateRightClicked =
+          [](calendar_view::Date) { (void)desktop_entry_launch::launchDefaultForMimeType("text/calendar"); },
   });
 }
 
 void DesktopCalendarWidget::rebuildEventList() {
-  if (m_eventsScroll == nullptr) {
+  if (m_eventsScroll == nullptr || m_config == nullptr) {
     return;
   }
+  const auto& calendarConfig = m_config->config().calendar;
   calendar_view::rebuildEventList({
       .scroll = *m_eventsScroll,
       .reserveScrollbarGutter = true,
@@ -364,8 +367,8 @@ void DesktopCalendarWidget::rebuildEventList() {
       .snapshot = m_calendar != nullptr ? &m_calendar->snapshot() : nullptr,
       .selected = {.year = m_selectedYear, .month = m_selectedMonth, .day = m_selectedDay},
       .scale = contentScale(),
-      .dateFormat = kEventDateFormat,
-      .timeFormat = kEventTimeFormat,
+      .dateFormat = calendarConfig.eventDateFormat,
+      .timeFormat = calendarConfig.eventTimeFormat,
       .fontFamily = m_fontFamily,
       .state = &m_eventListState,
       .requestRedraw = [this]() { requestRedraw(); },

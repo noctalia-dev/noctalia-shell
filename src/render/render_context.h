@@ -16,6 +16,7 @@ class RenderBackend;
 class RenderTarget;
 enum class RenderGraphicsResetStatus;
 struct Mat3;
+struct WallpaperMaskDrawParams;
 
 class RenderContext {
 public:
@@ -31,7 +32,7 @@ public:
   void restoreAfterGraphicsReset(GlSharedContext& shared);
   void finishGraphicsResetRecovery() noexcept { m_graphicsResetPending = false; }
 
-  void renderScene(RenderTarget& target, Node* sceneRoot);
+  void renderScene(RenderTarget& target, Node* sceneRoot, const WallpaperMaskDrawParams* wallpaperMask = nullptr);
   void setGraphicsResetCallback(std::function<void(RenderGraphicsResetStatus)> callback) {
     m_graphicsResetCallback = std::move(callback);
   }
@@ -39,6 +40,7 @@ public:
   // best-effort callers may ignore it, render paths must skip the frame.
   bool makeCurrent(RenderTarget& target);
   void setTextFontFamily(std::string family);
+  void setTextBaseDirection(bool rtl);
   void notifyFontConfigChanged();
 
   // Request that uploaded text- and icon-glyph textures be dropped and
@@ -87,6 +89,7 @@ private:
   CairoTextRenderer m_textRenderer;
   CairoGlyphRenderer m_glyphRenderer;
   std::string m_textFontFamily = "sans-serif";
+  bool m_textBaseDirRtl = false;
   std::uint64_t m_textMetricsGeneration = 1;
   std::uint64_t m_gpuResourceGeneration = 0;
   bool m_glyphTexturesDirty = false;

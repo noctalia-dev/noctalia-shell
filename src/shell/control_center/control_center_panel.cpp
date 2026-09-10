@@ -61,9 +61,10 @@ ControlCenterPanel::ControlCenterPanel(const ControlCenterServices& services) {
   );
   m_tabs[tabIndex(TabId::Weather)] = std::make_unique<WeatherTab>(services.weather, services.config);
   m_tabs[tabIndex(TabId::Calendar)] = std::make_unique<CalendarTab>(services.config, services.calendar);
-  m_tabs[tabIndex(TabId::Notifications)] = std::make_unique<NotificationsTab>(services.notifications);
+  m_tabs[tabIndex(TabId::Notifications)] =
+      std::make_unique<NotificationsTab>(services.notifications, services.platform);
   m_tabs[tabIndex(TabId::Network)] =
-      std::make_unique<NetworkTab>(services.network, services.networkSecrets, services.externalIp);
+      std::make_unique<NetworkTab>(services.network, services.networkSecrets, services.externalIp, services.modem);
   m_tabs[tabIndex(TabId::Bluetooth)] = std::make_unique<BluetoothTab>(services.bluetooth, services.bluetoothAgent);
   m_tabs[tabIndex(TabId::Monitor)] = std::make_unique<MonitorTab>(services.brightness, services.config);
   m_tabs[tabIndex(TabId::System)] = std::make_unique<SystemTab>(services.sysmon);
@@ -142,6 +143,7 @@ void ControlCenterPanel::create() {
     auto sidebarScroll = ui::scrollView({
         .out = &m_sidebarScrollView,
         .state = &m_sidebarScrollState,
+        .contentScale = scale,
         .scrollbarVisible = true,
         .viewportPaddingH = 0.0F,
         .viewportPaddingV = 0.0F,
@@ -883,7 +885,7 @@ void ControlCenterPanel::layoutFullSidebarWidth(Renderer& renderer) {
     navConstraints.setExactWidth(contentWidth);
     const float navHeight = m_sidebarNav->measure(renderer, navConstraints).height;
     if (navHeight > scrollHeight + 0.5F) {
-      targetWidth = contentWidth + Style::scrollbarWidth + Style::scrollbarGap;
+      targetWidth = contentWidth + m_sidebarScrollView->scrollbarGutter();
     }
   }
 

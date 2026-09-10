@@ -200,6 +200,8 @@ namespace config_export {
         resolved.endWidgets = *ovr.endWidgets;
       if (ovr.scale)
         resolved.scale = *ovr.scale;
+      if (ovr.fontScale)
+        resolved.fontScale = *ovr.fontScale;
       if (ovr.widgetCapsuleDefault)
         resolved.widgetCapsuleDefault = *ovr.widgetCapsuleDefault;
       if (ovr.widgetCapsuleFill)
@@ -283,6 +285,8 @@ namespace config_export {
           item.insert_or_assign("output", widget.outputName);
           item.insert_or_assign("cx", static_cast<double>(widget.cx));
           item.insert_or_assign("cy", static_cast<double>(widget.cy));
+          item.insert_or_assign("placement_width", static_cast<double>(widget.placementWidth));
+          item.insert_or_assign("placement_height", static_cast<double>(widget.placementHeight));
           item.insert_or_assign("box_width", static_cast<double>(widget.boxWidth));
           item.insert_or_assign("box_height", static_cast<double>(widget.boxHeight));
           item.insert_or_assign("rotation", static_cast<double>(widget.rotationRad));

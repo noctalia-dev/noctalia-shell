@@ -8,6 +8,7 @@
 #include <cmath>
 #include <linux/input-event-codes.h>
 #include <memory>
+#include <utility>
 
 // Internal canvas that reports a virtual size set externally and never moves
 // its children during its own layout pass — VirtualGridView positions pool
@@ -67,23 +68,36 @@ VirtualGridView::VirtualGridView() {
   inputArea->setOnMotion([this](const InputArea::PointerData& data) { onPointerMotion(data.localX, data.localY); });
   inputArea->setOnLeave([this]() { onPointerLeave(); });
   inputArea->setOnPress([this](const InputArea::PointerData& data) {
-    if (!data.pressed) {
-      return;
-    }
     if (data.button == BTN_LEFT) {
-      onPointerPress(data.localX, data.localY);
-    } else if (data.button == BTN_RIGHT) {
+      if (data.pressed) {
+        onPointerPress(data.localX, data.localY);
+      } else {
+        onPointerRelease(data.localX, data.localY);
+      }
+    } else if (data.pressed && data.button == BTN_RIGHT) {
       onSecondaryPointerPress(data.localX, data.localY);
     }
   });
+  inputArea->setOnCancel([this]() {
+    if (m_adapterPointerCapture && m_adapter != nullptr) {
+      m_adapter->onPointerCancel();
+    }
+    m_adapterPointerCapture = false;
+  });
   m_inputArea = static_cast<InputArea*>(m_canvas->addChild(std::move(inputArea)));
 }
+
+void VirtualGridView::bindScrollState(ScrollViewState* state) { m_scroll->bindState(state); }
 
 void VirtualGridView::setAdapter(VirtualGridAdapter* adapter) {
   if (m_adapter == adapter) {
     return;
   }
+  if (m_adapterPointerCapture && m_adapter != nullptr) {
+    m_adapter->onPointerCancel();
+  }
   m_adapter = adapter;
+  m_adapterPointerCapture = false;
   // Drop the existing pool — tiles were built by the previous adapter's createTile().
   for (Node* tile : m_pool) {
     if (tile != nullptr) {
@@ -161,6 +175,25 @@ void VirtualGridView::setOverscanRows(std::size_t rows) {
   markLayoutDirty();
 }
 
+void VirtualGridView::setScale(float scale) {
+  m_scale = std::max(0.1F, scale);
+  if (m_scroll != nullptr) {
+    m_scroll->setContentScale(m_scale);
+  }
+}
+
+void VirtualGridView::setItemCursorShape(std::uint32_t shape) {
+  if (m_itemCursorShape == shape) {
+    return;
+  }
+  m_itemCursorShape = shape;
+  for (InputArea* area : m_poolTooltipAreas) {
+    if (area != nullptr) {
+      area->setCursorShape(shape);
+    }
+  }
+}
+
 void VirtualGridView::scrollToIndex(std::size_t index) {
   m_pendingScrollToIndex = true;
   m_pendingScrollIndex = index;
@@ -222,7 +255,7 @@ void VirtualGridView::doLayout(Renderer& renderer) {
   const float padV = m_scroll->viewportPaddingV();
   const float innerW = std::max(0.0F, ourW - 2.0F * padH);
   const float viewportH = std::max(0.0F, ourH - 2.0F * padV);
-  const float scrollbarGutter = Style::scrollbarWidth + Style::scrollbarGap;
+  const float scrollbarGutter = m_scroll->scrollbarGutter();
 
   m_itemCount = m_adapter->itemCount();
 
@@ -289,9 +322,9 @@ void VirtualGridView::doLayout(Renderer& renderer) {
       const float visibleTop = m_scroll->scrollOffset();
       const float visibleBottom = visibleTop + viewportH;
       if (rowTop < visibleTop) {
-        m_scroll->setScrollOffset(rowTop);
+        m_scroll->requestScrollToOffset(rowTop);
       } else if (rowBottom > visibleBottom) {
-        m_scroll->setScrollOffset(rowBottom - viewportH);
+        m_scroll->requestScrollToOffset(rowBottom - viewportH);
       }
     }
   }
@@ -335,9 +368,11 @@ void VirtualGridView::doLayout(Renderer& renderer) {
     m_slotBoundHovered.push_back(false);
     m_slotBoundOverlayHovered.push_back(false);
 
+    // Per-cell overlay: carries the item tooltip and the item cursor shape.
     auto tooltipArea = std::make_unique<InputArea>();
     tooltipArea->setVisible(false);
     tooltipArea->setAcceptedButtons(0);
+    tooltipArea->setCursorShape(m_itemCursorShape);
     tooltipArea->setOnEnter([this, slot](const InputArea::PointerData& data) {
       onPoolTooltipMotion(slot, data.localX, data.localY);
     });
@@ -379,7 +414,7 @@ void VirtualGridView::doLayout(Renderer& renderer) {
 
         slotActive[slot] = true;
 
-        const float x = static_cast<float>(col) * (cellW + m_columnGap);
+        const float x = static_cast<float>(visualCol(col)) * (cellW + m_columnGap);
         const float y = static_cast<float>(row) * (cellH + m_rowGap);
         tile->setPosition(x, y);
         tile->setSize(cellW, cellH);
@@ -387,6 +422,12 @@ void VirtualGridView::doLayout(Renderer& renderer) {
         InputArea* tooltipArea = m_poolTooltipAreas[slot];
         tooltipArea->setPosition(x, y);
         tooltipArea->setFrameSize(cellW, cellH);
+        const auto tooltipInsets = m_adapter->itemTooltipAnchorInsets(logicalIndex, cellW, cellH);
+        if (tooltipInsets.has_value()) {
+          tooltipArea->setTooltipAnchorInsets(*tooltipInsets);
+        } else {
+          tooltipArea->clearTooltipAnchorInsets();
+        }
         tooltipArea->setVisible(true);
         const bool selected = m_selectedIndex.has_value() && *m_selectedIndex == logicalIndex;
         const bool hovered = m_hoveredIndex.has_value() && *m_hoveredIndex == logicalIndex;
@@ -453,6 +494,10 @@ LayoutSize VirtualGridView::doMeasure(Renderer& /*renderer*/, const LayoutConstr
 void VirtualGridView::doArrange(Renderer& renderer, const LayoutRect& rect) { arrangeByLayout(renderer, rect); }
 
 void VirtualGridView::onScrollChanged(float /*offset*/) {
+  if (m_adapterPointerCapture && m_adapter != nullptr) {
+    m_adapter->onPointerCancel();
+    m_adapterPointerCapture = false;
+  }
   if (m_hoveredOverlayIndex.has_value()) {
     setOverlayHoveredForIndex(*m_hoveredOverlayIndex, false);
   }
@@ -465,6 +510,24 @@ void VirtualGridView::onPointerEnter(float localX, float localY) { onPointerMoti
 
 void VirtualGridView::onPointerMotion(float localX, float localY) {
   const auto idx = indexAt(localX, localY);
+
+  if (m_adapterPointerCapture && m_adapter != nullptr) {
+    // A held press only becomes a drag once the pointer has travelled the same
+    // distance the rest of the shell requires. Pointers emit motion between
+    // press and release (and enter is replayed as motion after a scene-root
+    // swap), so without this every click would reach the adapter as a
+    // zero-distance drag and never as a click.
+    if (!m_dragThresholdPassed) {
+      if (std::hypot(localX - m_pressLocalX, localY - m_pressLocalY) < Style::dragStartThreshold * m_scale) {
+        return;
+      }
+      m_dragThresholdPassed = true;
+    }
+    if (m_adapter->onPointerDrag(idx, localX, localY, m_cellWidth, m_cellHeightResolved)) {
+      notifyDataChanged();
+    }
+    return;
+  }
 
   std::optional<std::size_t> overlayIdx;
   if (idx.has_value() && m_adapter != nullptr) {
@@ -512,7 +575,7 @@ void VirtualGridView::onPoolTooltipMotion(std::size_t slot, float localX, float 
   const auto column = index % m_layoutColumns;
   const auto row = index / m_layoutColumns;
   onPointerMotion(
-      static_cast<float>(column) * (m_cellWidth + m_columnGap) + localX,
+      static_cast<float>(visualCol(column)) * (m_cellWidth + m_columnGap) + localX,
       static_cast<float>(row) * (m_cellHeightResolved + m_rowGap) + localY
   );
 }
@@ -533,16 +596,27 @@ void VirtualGridView::onPointerPress(float localX, float localY) {
     return;
   }
 
-  const float colStride = m_cellWidth + m_columnGap;
-  const float rowStride = m_cellHeightResolved + m_rowGap;
-  const auto col = *idx % m_layoutColumns;
-  const auto row = *idx / m_layoutColumns;
-  const float cellLocalX = localX - static_cast<float>(col) * colStride;
-  const float cellLocalY = localY - static_cast<float>(row) * rowStride;
+  float cellLocalX = 0.0F;
+  float cellLocalY = 0.0F;
+  cellLocalAt(localX, localY, *idx, cellLocalX, cellLocalY);
   if (m_adapter->onPointerPress(*idx, cellLocalX, cellLocalY, m_cellWidth, m_cellHeightResolved)) {
+    m_adapterPointerCapture = true;
+    m_pressLocalX = localX;
+    m_pressLocalY = localY;
+    m_dragThresholdPassed = false;
     return;
   }
   m_adapter->onActivate(*idx);
+}
+
+void VirtualGridView::onPointerRelease(float localX, float localY) {
+  if (!m_adapterPointerCapture || m_adapter == nullptr) {
+    return;
+  }
+  m_adapterPointerCapture = false;
+  if (m_adapter->onPointerRelease(indexAt(localX, localY))) {
+    notifyDataChanged();
+  }
 }
 
 void VirtualGridView::onSecondaryPointerPress(float localX, float localY) {
@@ -588,7 +662,7 @@ bool VirtualGridView::absoluteAnchorForIndex(std::size_t index, float& outX, flo
   float wx = 0.0F;
   float wy = 0.0F;
   Node::absolutePosition(m_inputArea, wx, wy);
-  outX = wx + static_cast<float>(col) * colStride + m_cellWidth * 0.5F;
+  outX = wx + static_cast<float>(visualCol(col)) * colStride + m_cellWidth * 0.5F;
   outY = wy + static_cast<float>(row) * rowStride + m_cellHeightResolved * 0.5F;
   return true;
 }
@@ -615,7 +689,7 @@ std::optional<std::size_t> VirtualGridView::indexAt(float localX, float localY) 
   if (cellLocalX > m_cellWidth || cellLocalY > m_cellHeightResolved) {
     return std::nullopt;
   }
-  const std::size_t idx = row * m_layoutColumns + col;
+  const std::size_t idx = row * m_layoutColumns + visualCol(col);
   if (idx >= m_itemCount) {
     return std::nullopt;
   }
@@ -627,7 +701,7 @@ void VirtualGridView::cellLocalAt(
 ) const noexcept {
   const float colStride = m_cellWidth + m_columnGap;
   const float rowStride = m_cellHeightResolved + m_rowGap;
-  const auto col = index % m_layoutColumns;
+  const auto col = visualCol(index % m_layoutColumns);
   const auto row = index / m_layoutColumns;
   cellLocalX = localX - static_cast<float>(col) * colStride;
   cellLocalY = localY - static_cast<float>(row) * rowStride;

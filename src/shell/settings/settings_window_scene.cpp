@@ -46,6 +46,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <format>
 #include <memory>
 #include <optional>
 #include <string>
@@ -61,6 +62,12 @@ namespace {
   constexpr auto kSearchDebounceInterval = std::chrono::milliseconds(120);
 
   bool useLightPalettePreview(ThemeMode mode) { return mode == ThemeMode::Light; }
+
+  // The IPC command set is closed (IpcService::bind takes a static cli::Command), so a missing key
+  // means en.json drifted from the schema; tr() surfaces that as !!key!! instead of hiding it.
+  std::string translatedIpcActionField(std::string_view command, std::string_view field) {
+    return i18n::tr(std::format("settings.widgets.actions.commands.{}.{}", command, field));
+  }
 
   ColorSwatchPreview palettePreviewFromMetadata(const noctalia::theme::AvailablePalette::PreviewMode& metadata) {
     ColorSwatchPreview preview;
@@ -744,7 +751,7 @@ settings::RegistryEnvironment SettingsWindow::buildRegistryEnvironment() const {
   env.gammaControlAvailable = (m_wayland != nullptr && m_wayland->hasGammaControl());
   env.greeterSyncAvailable =
       m_config != nullptr && greeter::appearanceSyncAvailable(m_config->config().shell.greeterSync);
-  const ThemeMode previewMode = m_config != nullptr ? m_config->config().theme.mode : ThemeMode::Dark;
+  const ThemeMode previewMode = m_config != nullptr ? shellThemeMode(m_config->config().theme) : ThemeMode::Dark;
   for (const auto& paletteInfo : noctalia::theme::availableCommunityPalettes()) {
     env.communityPalettes.push_back(
         settings::SelectOption{
@@ -847,9 +854,8 @@ std::vector<settings::GestureActionOption> SettingsWindow::gestureActionCatalog(
             .option =
                 settings::SelectOption{
                     .value = std::string(handler.command),
-                    // The verb is the label: it is what goes in the config and what errors name.
-                    .label = std::string(handler.command),
-                    .description = std::string(handler.description),
+                    .label = translatedIpcActionField(handler.command, "label"),
+                    .description = translatedIpcActionField(handler.command, "description"),
                 },
             .argsSpec = std::string(handler.args),
         }
@@ -901,11 +907,20 @@ settings::SettingsContentContext SettingsWindow::makeContentContext(
       .pendingGestureKey = m_pendingGestureKey,
       .pendingGestureVerb = m_pendingGestureVerb,
       .actionsExpandedFor = m_actionsExpandedFor,
+      .expandedGroupsByPage = m_expandedSettingGroups,
+      .pageTitleRow = m_pageTitleRow,
+      .groupJumpRow = m_groupJumpRow,
       .actionCatalog = gestureActionCatalog(),
       .requestRebuild = requestRebuild,
       .requestContentRebuild = requestContent,
       .resetContentScroll = [this]() { m_contentScrollState.offset = 0.0F; },
       .setScrollTarget = [this](Node* target) { m_pendingContentScrollTarget = target; },
+      .scrollContentToTop =
+          [this](const Node& target) {
+            if (m_contentScrollView != nullptr) {
+              scrollNodeToScrollViewTop(*m_contentScrollView, target, Style::spaceMd * uiScale());
+            }
+          },
       .focusArea = [this](InputArea* area) { m_inputDispatcher.setFocus(area); },
       .openBarWidgetAddPopup = [this](const std::vector<std::string>& lanePath) { openBarWidgetAddPopup(lanePath); },
       .openSearchPickerPopup =
@@ -984,6 +999,16 @@ void SettingsWindow::rebuildSettingsContent() {
   while (!m_contentContainer->children().empty()) {
     m_contentContainer->removeChild(m_contentContainer->children().back().get());
   }
+  if (m_pageTitleRow != nullptr) {
+    while (!m_pageTitleRow->children().empty()) {
+      m_pageTitleRow->removeChild(m_pageTitleRow->children().back().get());
+    }
+  }
+  if (m_groupJumpRow != nullptr) {
+    while (!m_groupJumpRow->children().empty()) {
+      m_groupJumpRow->removeChild(m_groupJumpRow->children().back().get());
+    }
+  }
   logSettingsProfile("rebuildContent clear", phaseProfileWatch);
   phaseProfileWatch.reset();
 
@@ -1038,6 +1063,7 @@ void SettingsWindow::rebuildSettingsContent() {
   const std::size_t visibleEntries = settings::addSettingsContentSections(
       *m_contentContainer, m_settingsRegistry, makeContentContext(cfg, selectedBar, selectedMonitorOverride)
   );
+
   logSettingsProfile("rebuildContent sections", phaseProfileWatch);
   phaseProfileWatch.reset();
 
@@ -1050,6 +1076,16 @@ void SettingsWindow::rebuildSettingsContent() {
             .selectedSection = m_selectedSection,
             .plugins = m_pluginList,
             .sources = cfg.plugins.sources,
+            .searchActive = !m_searchQuery.empty(),
+            .pageTitleRow = m_pageTitleRow,
+            .groupJumpRow = m_groupJumpRow,
+            .scrollContentToTop =
+                [this](const Node& target) {
+                  if (m_contentScrollView != nullptr) {
+                    scrollNodeToScrollViewTop(*m_contentScrollView, target, Style::spaceMd * uiScale());
+                  }
+                },
+            .expandedGroupsByPage = m_expandedSettingGroups,
             .pluginsLoading = m_pluginListDirty || m_pluginListRefreshInFlight,
             .setEnabled =
                 [this](std::string id, bool enable) {
@@ -1077,14 +1113,14 @@ void SettingsWindow::rebuildSettingsContent() {
                   markPluginListDirty();
                   requestSceneRebuild();
                 },
-            .autoUpdateEnabled = cfg.plugins.autoUpdate,
+            .autoUpdateMode = cfg.plugins.autoUpdate,
             .setAutoUpdate =
-                [this](bool on) {
-                  m_pluginManager->setAutoUpdateEnabled(on);
+                [this](PluginAutoUpdateMode mode) {
+                  m_pluginManager->setAutoUpdateMode(mode);
                   markPluginListDirty();
                   requestSceneRebuild();
                 },
-            .updateAll = [this]() { m_pluginManager->updateAll(); },
+            .updateAll = [this]() { m_pluginManager->updateAutoUpdateScope(PluginAutoUpdateMode::All); },
             .config = &cfg,
             .onConfigure = [this](std::string id) { openPluginSettingsEditor(std::move(id)); },
             .onRemove =
@@ -1110,6 +1146,17 @@ void SettingsWindow::rebuildSettingsContent() {
                 },
         }
     );
+  }
+
+  if (m_pageTitleRow != nullptr) {
+    const bool hasPageTitle = !m_pageTitleRow->children().empty();
+    m_pageTitleRow->setVisible(hasPageTitle);
+    m_pageTitleRow->setParticipatesInLayout(hasPageTitle);
+  }
+  if (m_groupJumpRow != nullptr) {
+    const bool hasJumpRow = !m_groupJumpRow->children().empty();
+    m_groupJumpRow->setVisible(hasJumpRow);
+    m_groupJumpRow->setParticipatesInLayout(hasJumpRow);
   }
   logSettingsProfile("rebuildContent plugins", phaseProfileWatch);
   logSettingsProfile("rebuildContent total", totalProfileWatch);
@@ -1328,9 +1375,11 @@ std::unique_ptr<Flex> SettingsWindow::buildStatusRow(float scale) {
 
   const bool transientStatus = !m_statusMessage.empty();
   const bool statusIsError = transientStatus ? m_statusIsError : true;
-  const std::string messageText = transientStatus
-      ? m_statusMessage
-      : i18n::tr("settings.window.legacy-config-warning", "issue", legacyIssue->path + ": " + legacyIssue->message);
+  const std::string issueDescription = legacyIssue != nullptr
+      ? legacyIssue->origin.prefixed(legacyIssue->path + ": " + legacyIssue->message)
+      : std::string{};
+  const std::string messageText =
+      transientStatus ? m_statusMessage : i18n::tr("settings.window.legacy-config-warning", "issue", issueDescription);
 
   return settings::makeSettingsStatusBanner({
       .message = messageText,
@@ -1390,9 +1439,34 @@ std::unique_ptr<Flex> SettingsWindow::buildBody(
   body->addChild(std::move(sidebar));
   body->addChild(ui::separator());
 
+  auto contentColumn = ui::column({.align = FlexAlign::Stretch, .gap = Style::spaceSm * scale, .flexGrow = 1.0F});
+  contentColumn->addChild(
+      ui::row({
+          .out = &m_pageTitleRow,
+          .align = FlexAlign::Center,
+          .fillWidth = true,
+          .configure = [scale](Flex& flex) {
+            flex.setPadding(Style::spaceMd * scale, Style::spaceLg * scale, 0.0F, Style::spaceLg * scale);
+          },
+      })
+  );
+  contentColumn->addChild(
+      ui::row({
+          .out = &m_groupJumpRow,
+          .align = FlexAlign::Center,
+          .wrap = true,
+          .gap = Style::spaceXs * scale,
+          .fillWidth = true,
+          .configure = [scale](Flex& flex) {
+            flex.setPadding(Style::spaceSm * scale, Style::spaceLg * scale, 0.0F, Style::spaceLg * scale);
+          },
+      })
+  );
+
   auto scroll = ui::scrollView({
       .out = &m_contentScrollView,
       .state = &m_contentScrollState,
+      .contentScale = scale,
       .scrollbarVisible = true,
       .viewportPaddingH = 0.0F,
       .viewportPaddingV = Style::spaceSm * scale,
@@ -1412,7 +1486,8 @@ std::unique_ptr<Flex> SettingsWindow::buildBody(
   content->setGap(Style::spaceMd * scale);
   rebuildSettingsContent();
 
-  body->addChild(std::move(scroll));
+  contentColumn->addChild(std::move(scroll));
+  body->addChild(std::move(contentColumn));
   return body;
 }
 
@@ -1479,6 +1554,7 @@ void SettingsWindow::refreshSettingsRegistry(const Config& cfg) {
                 .label = i18n::tr("settings.schema.services.calendar-credentials.button"),
                 .action = [this]() { m_calendarService->retryCredentialMigration(); },
                 .glyph = "refresh",
+                .variant = ButtonVariant::Secondary,
             },
         .searchText = "calendar credentials keyring secret service retry migration unlock",
     };
@@ -1535,6 +1611,7 @@ void SettingsWindow::refreshSettingsRegistry(const Config& cfg) {
                 .label = i18n::tr("settings.schema.services.calendar-storage.button"),
                 .action = [this]() { m_calendarService->retryCachePersistence(); },
                 .glyph = "refresh",
+                .variant = ButtonVariant::Secondary,
             },
         .searchText = "calendar events cache encryption storage keyring retry migration unlock",
         .visibleWhen = [](const Config& config) { return config.calendar.enabled; },
@@ -1642,7 +1719,7 @@ void SettingsWindow::refreshSettingsRegistry(const Config& cfg) {
                       }
                     },
                 .glyph = pendingConfirmation ? "warning" : "trash",
-                .destructive = pendingConfirmation,
+                .variant = pendingConfirmation ? ButtonVariant::Destructive : ButtonVariant::Default,
             },
         .searchText = "reset recover encrypted private storage clipboard calendar key",
     };
@@ -1865,37 +1942,52 @@ void SettingsWindow::refreshSettingsRegistry(const Config& cfg) {
                 .action = [this]() { openCalendarAccountEditor(std::nullopt); },
                 .glyph = "plus",
             },
-        .searchText = "calendar add account icloud caldav google ics ical subscription",
+        .searchText = "calendar add account icloud caldav google ics ical subscription vdir vdirsyncer local",
     };
     it = m_settingsRegistry.insert(it, std::move(addBtn));
     ++it;
 
     for (const CalendarConfig::Account& account : cfg.calendar.accounts) {
-      if (account.type != "google" && account.type != "caldav" && account.type != "ics") {
+      if (account.type != "google" && account.type != "caldav" && account.type != "ics" && account.type != "vdir") {
         continue;
       }
+      const bool credentialLocked = account.type == "google"
+          && m_calendarService != nullptr
+          && m_calendarService->googleAccountCredentialLocked(account.id);
       const bool reconnectRequired = account.type == "google"
           && m_calendarService != nullptr
           && m_calendarService->googleAccountNeedsReconnect(account.id);
+      const std::string_view descriptionKey = credentialLocked
+          ? "settings.schema.services.calendar-edit.description-locked"
+          : reconnectRequired ? "settings.schema.services.calendar-edit.description-reconnect"
+                              : "settings.schema.services.calendar-edit.description";
+      const std::string_view buttonKey = credentialLocked ? "settings.schema.services.calendar-edit.button-retry"
+          : reconnectRequired                             ? "settings.schema.services.calendar-edit.button-reconnect"
+                                                          : "settings.schema.services.calendar-edit.button";
       settings::SettingEntry btn{
           .section = settings::SettingsSection::Services,
           .group = "calendar",
           .title = account.displayName.empty() ? account.id : account.displayName,
-          .subtitle = i18n::tr(
-              reconnectRequired ? "settings.schema.services.calendar-edit.description-reconnect"
-                                : "settings.schema.services.calendar-edit.description"
-          ),
+          .subtitle = i18n::tr(descriptionKey),
           .path = {},
           .control =
               settings::ButtonSetting{
-                  .label = i18n::tr(
-                      reconnectRequired ? "settings.schema.services.calendar-edit.button-reconnect"
-                                        : "settings.schema.services.calendar-edit.button"
-                  ),
-                  .action = [this, id = account.id]() { openCalendarAccountEditor(id); },
-                  .glyph = reconnectRequired ? "brand-google" : "edit",
+                  .label = i18n::tr(buttonKey),
+                  .action =
+                      [this, id = account.id, credentialLocked]() {
+                        if (credentialLocked) {
+                          m_calendarService->requestRefresh();
+                          return;
+                        }
+                        openCalendarAccountEditor(id);
+                      },
+                  .glyph = credentialLocked ? "key"
+                      : reconnectRequired   ? "brand-google"
+                                            : "edit",
+                  .variant = credentialLocked ? ButtonVariant::Secondary : ButtonVariant::Default,
               },
-          .searchText = "calendar account edit connect authorize caldav icloud google password ics ical subscription "
+          .searchText =
+              "calendar account edit connect authorize caldav icloud google password ics ical subscription vdir local "
               + account.id,
           .visibleWhen = calendarOn,
       };
@@ -2002,6 +2094,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   const auto h = static_cast<float>(height);
   const float scale = uiScale();
   m_actionsMenuButton = nullptr;
+  m_pageTitleRow = nullptr;
+  m_groupJumpRow = nullptr;
   m_contentScrollView = nullptr;
   m_sidebarScrollView = nullptr;
   m_sidebarNav = nullptr;
@@ -2046,6 +2140,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   logSettingsProfile("buildScene navigationState", phaseProfileWatch);
   phaseProfileWatch.reset();
 
+  dismissOpenSelectDropdown();
+  m_modalHost.detach();
   m_inputDispatcher.setSceneRoot(nullptr);
   m_mainContainer = nullptr;
   m_headerRow = nullptr;
@@ -2062,7 +2158,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     m_sceneRoot->setPopupContext(m_selectPopup.get());
   }
 
-  const float bgOpacity = cfg.shell.settingsWindowTranslucent ? 0.75F : 1.0F;
+  const float bgOpacity = cfg.shell.settingsWindowTranslucent ? 0.8F : 1.0F;
 
   auto bg = ui::box({
       .width = w,
@@ -2110,6 +2206,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   logSettingsProfile("buildScene scrollTarget", phaseProfileWatch);
   phaseProfileWatch.reset();
   m_mainContainer = static_cast<Flex*>(m_sceneRoot->addChild(std::move(main)));
+  m_modalHost.attach(*m_sceneRoot, m_mainContainer, renderer, w, h);
 
   m_inputDispatcher.setTextInputContext(m_surface->wlSurface(), m_wayland->textInputService());
   m_inputDispatcher.setCursorShapeCallback([this](std::uint32_t serial, std::uint32_t shape) {
@@ -2125,7 +2222,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     }
   });
   m_inputDispatcher.setFocusChangeCallback([this](InputArea* /*old*/, InputArea* next) {
-    scrollFocusedAreaIntoView(next);
+    if (!m_modalHost.isOpen()) {
+      scrollFocusedAreaIntoView(next);
+    }
   });
   m_inputDispatcher.setSceneRoot(m_sceneRoot.get());
   m_surface->setSceneRoot(m_sceneRoot.get());

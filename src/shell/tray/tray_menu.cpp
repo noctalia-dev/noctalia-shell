@@ -400,7 +400,8 @@ bool TrayMenu::onPointerEvent(const PointerEvent& event) {
           sub->pointerInside = true;
         const bool pressed = event.pressed;
         sub->inputDispatcher.pointerButton(
-            static_cast<float>(event.sx), static_cast<float>(event.sy), event.button, pressed
+            static_cast<float>(event.sx), static_cast<float>(event.sy), event.button, pressed, event.serial, event.time,
+            event.touch
         );
         subConsumed = true;
       }
@@ -465,7 +466,8 @@ bool TrayMenu::onPointerEvent(const PointerEvent& event) {
       }
       const bool pressed = event.pressed;
       inst->inputDispatcher.pointerButton(
-          static_cast<float>(event.sx), static_cast<float>(event.sy), event.button, pressed
+          static_cast<float>(event.sx), static_cast<float>(event.sy), event.button, pressed, event.serial, event.time,
+          event.touch
       );
       consumed = true;
       if (!m_visible || m_instance == nullptr) {
@@ -910,6 +912,7 @@ void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
 
   auto scrollView = ui::scrollView({
       .state = &inst.scrollState,
+      .contentScale = contentScale(),
       .scrollbarVisible = true,
       .viewportPaddingH = 0.0F,
       .viewportPaddingV = 0.0F,
@@ -1270,6 +1273,7 @@ void TrayMenu::buildSubmenuScene(std::size_t levelIndex, MenuInstance& inst, uin
 
   auto scrollView = ui::scrollView({
       .state = &inst.scrollState,
+      .contentScale = contentScale(),
       .scrollbarVisible = true,
       .viewportPaddingH = 0.0F,
       .viewportPaddingV = 0.0F,

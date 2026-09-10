@@ -1,6 +1,7 @@
 #pragma once
 
 #include "compositors/compositor_platform.h"
+#include "core/timer_manager.h"
 #include "shell/bar/widget.h"
 #include "system/desktop_entry.h"
 #include "system/icon_resolver.h"
@@ -16,8 +17,10 @@
 
 class ContextMenuPopup;
 class ConfigService;
+class Box;
 class Flex;
 class InputArea;
+class Label;
 class TaskbarWidgetTestAccess;
 struct wl_output;
 struct zwlr_foreign_toplevel_handle_v1;
@@ -50,6 +53,8 @@ struct TaskbarWidgetOptions {
   ColorSpec activeIndicatorColor = colorSpecFromRole(ColorRole::Primary);
   float activeOpacity = 1.0F;
   float inactiveOpacity = 1.0F;
+  float iconScale = 1.0F;
+  int itemSpacing = 4;
   std::vector<std::string> pinned;
   float pinnedOpacity = 0.5F;
   ColorSpec focusedColor = colorSpecFromRole(ColorRole::Primary);
@@ -128,11 +133,43 @@ private:
     bool layoutEqual = false;
     // Meaningful only when layoutEqual is true and the existing task tiles will be retained.
     bool titlesChanged = false;
+    bool activesChanged = false;
   };
 
   struct TaskRef {
     std::size_t index = 0;
     std::uint64_t generation = 0;
+  };
+
+  struct TaskTile {
+    std::size_t taskIndex = 0;
+    InputArea* area = nullptr;
+    // Flat mode with visible titles; null otherwise.
+    Label* titleLabel = nullptr;
+    // Present when m_showActiveIndicator; visibility tracks task.active.
+    Box* activeIndicator = nullptr;
+  };
+
+  // Gesture state for drag-to-reorder of pinned tiles in the flat strip. Holds no obligation to
+  // restore the scene: that lives in m_dragFloatTile / m_dragSpacer, so resetting a gesture can
+  // never leave a tile stranded outside the layout flow.
+  struct DragState {
+    bool active = false;
+    bool armed = false; // hold fired; goes active on the next motion
+    std::size_t sourceIndex = 0;
+    std::size_t targetIndex = 0;
+    // m_taskGeneration when the drag began; a rebuild invalidates the indices above.
+    std::uint64_t generation = 0;
+    // Pointer position along the strip's layout axis: x when horizontal, y when vertical.
+    float startMain = 0.0F;
+    float currentMain = 0.0F;
+    // The held tile; also the "this tile owns the gesture" marker for motion and cancel.
+    InputArea* area = nullptr;
+    // Resting position of the held tile, captured before it left the layout flow.
+    float restMain = 0.0F;
+    float restCross = 0.0F;
+    std::size_t pinnedCount = 0; // pin count when the drag began; bounds the travel range
+    Timer holdTimer;
   };
 
   void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
@@ -146,7 +183,7 @@ private:
   [[nodiscard]] static std::string toLower(std::string value);
   [[nodiscard]] static std::string workspaceLabel(const Workspace& workspace, std::size_t index);
   [[nodiscard]] static ModelComparison compareModels(
-      bool showWindowTitle, const std::vector<TaskModel>& previousTasks,
+      bool groupByWorkspace, const std::vector<TaskModel>& previousTasks,
       const std::vector<WorkspaceModel>& previousWorkspaces, const std::vector<TaskModel>& nextTasks,
       const std::vector<WorkspaceModel>& nextWorkspaces
   );
@@ -176,6 +213,16 @@ private:
   void activateOrLaunchPinned(const TaskModel& task);
   void launchDesktopEntry(const TaskModel& task);
   [[nodiscard]] const std::vector<std::string>& pinnedConfigIds() const noexcept;
+  [[nodiscard]] bool reorderEnabled() const;
+  [[nodiscard]] float pointerMainOnStrip(const InputArea& area, float localX, float localY) const;
+  [[nodiscard]] std::size_t computeDragTargetIndex() const;
+  [[nodiscard]] bool commitDragReorder();
+  void beginDrag();
+  void updateDragTarget();
+  void moveDragTile();
+  void endDrag(bool commit);
+  void applyDragLayout();
+  void requestDragLayout();
   [[nodiscard]] static bool taskMatchesDesktopEntry(const TaskModel& task, const DesktopEntry& entry);
   void setEntryPinned(const DesktopEntry& entry, bool pinned);
   [[nodiscard]] std::optional<DesktopEntry> desktopEntryForTask(const TaskModel& task) const;
@@ -212,6 +259,19 @@ private:
   std::string m_barPosition;
   std::string m_barName;
   std::string m_widgetName;
+  DragState m_drag;
+  // Drag visuals, owned by the Layout phase and outliving the gesture: the tile currently lifted
+  // out of the flow, and the placeholder holding its drop gap open (the strip owns the node).
+  InputArea* m_dragFloatTile = nullptr;
+  Box* m_dragSpacer = nullptr;
+  // Set by a committed drop: layout must hold the tile parked in its target gap until the deferred
+  // pin-list write lands, otherwise it snaps back to the pre-write order for a frame.
+  bool m_dragParked = false;
+  bool m_suppressTileClick = false;
+  // Guards deferred callbacks: writing the pin list reloads the bar, which destroys this widget.
+  std::shared_ptr<void> m_aliveGuard = std::make_shared<int>(0);
+
+  float m_tilePitchMain = 0.0F; // Main-axis distance between adjacent tiles; set while building the flat strip.
   bool m_rebuildPending = true;
   bool m_vertical = false;
   float m_containerWidth = 0.0F;
@@ -225,7 +285,7 @@ private:
   // Retained controls resolve task indices only while this model generation matches.
   std::uint64_t m_taskGeneration = 0;
   // Non-owning; cleared before task-strip children are destroyed.
-  std::vector<InputArea*> m_taskTileAreas;
+  std::vector<TaskTile> m_taskTiles;
   std::vector<WorkspaceModel> m_workspaces;
   // Full workspace list before "hide empty" filtering; used for scroll navigation.
   std::vector<WorkspaceModel> m_allWorkspaces;

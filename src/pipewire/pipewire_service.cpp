@@ -4,6 +4,7 @@
 #include "core/log.h"
 #include "ipc/ipc_arg_parse.h"
 #include "ipc/ipc_service.h"
+#include "pipewire/audio_route_selection.h"
 #include "pipewire/wireplumber_mixer.h"
 #include "util/string_utils.h"
 
@@ -13,6 +14,7 @@
 #include <charconv>
 #include <chrono>
 #include <cmath>
+#include <concepts>
 #include <cstring>
 #include <memory>
 #include <optional>
@@ -48,6 +50,47 @@ namespace {
   // Write guard: keep optimistic local volume briefly and ignore echoes within epsilon.
   constexpr auto kVolumeWriteGuardDuration = std::chrono::milliseconds(400);
   constexpr auto kVolumeWriteGuardEpsilon = 0.02F;
+  constexpr auto kInitialSyncTimeout = std::chrono::seconds(1);
+
+  [[nodiscard]] bool pipeWireVersionSupportsPassiveFollow(std::string_view version) {
+    const auto majorEnd = version.find('.');
+    if (majorEnd == std::string_view::npos) {
+      return false;
+    }
+
+    std::uint32_t major = 0;
+    const auto* const begin = version.data();
+    const auto* const majorEndPtr = begin + majorEnd;
+    const auto [majorPtr, majorError] = std::from_chars(begin, majorEndPtr, major);
+    if (majorError != std::errc{} || majorPtr != majorEndPtr) {
+      return false;
+    }
+
+    std::uint32_t minor = 0;
+    const auto* const minorBegin = majorEndPtr + 1;
+    const auto* const end = begin + version.size();
+    const auto [minorPtr, minorError] = std::from_chars(minorBegin, end, minor);
+    if (minorError != std::errc{} || minorPtr == minorBegin) {
+      return false;
+    }
+
+    return major > 1 || (major == 1 && minor >= 7);
+  }
+
+  void onCoreInfo(void* data, const pw_core_info* info) {
+    auto* svc = static_cast<PipeWireService*>(data);
+    svc->onCoreInfo(info);
+  }
+  void onCoreDone(void* data, std::uint32_t id, int sequence) {
+    auto* svc = static_cast<PipeWireService*>(data);
+    svc->onCoreDone(id, sequence);
+  }
+
+  const pw_core_events kCoreEvents = {
+      .version = PW_VERSION_CORE_EVENTS,
+      .info = onCoreInfo,
+      .done = onCoreDone,
+  };
 
   // Registry events.
   void onRegistryGlobal(
@@ -166,12 +209,21 @@ namespace {
     spa_hook* listener = nullptr;
   };
 
-  int onMetadataProperty(void* data, std::uint32_t, const char* key, const char*, const char* value) {
-    if (key == nullptr || value == nullptr) {
+  constexpr Logger kLog("pipewire");
+
+  // Deprecated per-stream routing key in the "default" metadata; PipeWire ships no PW_KEY_* for it.
+  constexpr auto kMetadataTargetNodeKey = "target.node";
+
+  int onMetadataProperty(void* data, std::uint32_t subject, const char* key, const char*, const char* value) {
+    if (key == nullptr) {
       return 0;
     }
     auto* md = static_cast<MetadataData*>(data);
+
     if (std::strcmp(key, "default.audio.sink") == 0 || std::strcmp(key, "default.audio.source") == 0) {
+      if (value == nullptr) {
+        return 0;
+      }
       const std::string name = extractDefaultMetadataNodeName(std::string_view(value));
       if (!name.empty()) {
         spa_dict_item items[1];
@@ -179,7 +231,15 @@ namespace {
         spa_dict dict = SPA_DICT_INIT(items, 1);
         md->service->parseDefaultNodes(&dict);
       }
+      return 0;
     }
+
+    if (std::strcmp(key, PW_KEY_TARGET_OBJECT) == 0) {
+      // value == nullptr means the property was cleared (route reset to default).
+      md->service->onTargetObjectMetadata(subject, value != nullptr ? std::string(value) : std::string{});
+      return 0;
+    }
+
     return 0;
   }
 
@@ -252,11 +312,11 @@ namespace {
     return changed;
   }
 
-  std::uint32_t parseUint32Or(const std::string& value, std::uint32_t fallback = 0) {
+  template <std::integral T> T parseIntegerOr(const std::string& value, T fallback) {
     if (value.empty()) {
       return fallback;
     }
-    std::uint32_t out = fallback;
+    T out = fallback;
     const auto* begin = value.data();
     const auto* end = value.data() + value.size();
     const auto [ptr, ec] = std::from_chars(begin, end, out);
@@ -264,6 +324,18 @@ namespace {
       return fallback;
     }
     return out;
+  }
+
+  std::uint32_t parseUint32Or(const std::string& value, std::uint32_t fallback = 0) {
+    return parseIntegerOr(value, fallback);
+  }
+
+  std::uint64_t parseUint64Or(const std::string& value, std::uint64_t fallback = 0) {
+    return parseIntegerOr(value, fallback);
+  }
+
+  std::int32_t parseInt32Or(const std::string& value, std::int32_t fallback = kAnyProfileDevice) {
+    return parseIntegerOr(value, fallback);
   }
 
   std::optional<float> parseFloat(const std::string& value) {
@@ -473,35 +545,6 @@ namespace {
     return true;
   }
 
-  [[nodiscard]] bool routeIsSelectable(const PipeWireService::DeviceRouteData& route, std::uint32_t wantDir) {
-    return route.index >= 0 && route.direction == wantDir && route.available != SPA_PARAM_AVAILABILITY_no;
-  }
-
-  [[nodiscard]] bool routeIsBetterCandidate(
-      const PipeWireService::DeviceRouteData& candidate, const PipeWireService::DeviceRouteData& current
-  ) {
-    const bool candidateAvailable = candidate.available == SPA_PARAM_AVAILABILITY_yes;
-    const bool currentAvailable = current.available == SPA_PARAM_AVAILABILITY_yes;
-    if (candidateAvailable != currentAvailable) {
-      return candidateAvailable;
-    }
-    return candidate.priority > current.priority;
-  }
-
-  [[nodiscard]] const PipeWireService::DeviceRouteData*
-  activeRouteForDirection(const std::vector<PipeWireService::DeviceRouteData>& routes, std::uint32_t wantDir) {
-    const PipeWireService::DeviceRouteData* best = nullptr;
-    for (const auto& route : routes) {
-      if (!routeIsSelectable(route, wantDir)) {
-        continue;
-      }
-      if (best == nullptr || routeIsBetterCandidate(route, *best)) {
-        best = &route;
-      }
-    }
-    return best;
-  }
-
   void upsertRoute(std::vector<PipeWireService::DeviceRouteData>& routes, PipeWireService::DeviceRouteData route) {
     const std::int32_t lookupIndex = route.index >= 0 ? route.index : -1;
     if (lookupIndex < 0) {
@@ -524,8 +567,6 @@ namespace {
     }
     return 0;
   }
-
-  constexpr Logger kLog("pipewire");
 
   constexpr auto kTrackedNodeClasses = std::to_array<std::string_view>({
       "Audio/Sink",
@@ -555,6 +596,7 @@ namespace {
   });
 
   constexpr auto kScreenShareNamePrefixes = std::to_array<std::string_view>({
+      "xdpw-stream",
       "xdph-streaming",
       "gsr-default",
       "game capture",
@@ -743,8 +785,14 @@ PipeWireService::PipeWireService() {
     throw std::runtime_error("pipewire: failed to connect to daemon");
   }
 
+  m_coreListener = new spa_hook{};
+  spa_zero(*m_coreListener);
+  pw_core_add_listener(m_core, m_coreListener, &kCoreEvents, this);
+
   m_registry = pw_core_get_registry(m_core, PW_VERSION_REGISTRY, 0);
   if (m_registry == nullptr) {
+    spa_hook_remove(m_coreListener);
+    delete m_coreListener;
     pw_core_disconnect(m_core);
     pw_context_destroy(m_context);
     pw_loop_destroy(m_loop);
@@ -755,10 +803,35 @@ PipeWireService::PipeWireService() {
   spa_zero(*m_registryListener);
   pw_registry_add_listener(m_registry, m_registryListener, &kRegistryEvents, this);
 
-  // Do initial roundtrip to discover existing objects
+  pw_loop_enter(m_loop);
+
+  // Complete the initial roundtrip before consumers inspect daemon capabilities or discovered objects.
   auto* loop = m_loop;
-  pw_core_sync(m_core, PW_ID_CORE, 0);
-  while (pw_loop_iterate(loop, 0) > 0) {
+  m_initialSyncSequence = pw_core_sync(m_core, PW_ID_CORE, 0);
+  m_initialSyncPending = m_initialSyncSequence >= 0;
+  const auto syncDeadline = std::chrono::steady_clock::now() + kInitialSyncTimeout;
+  while (m_initialSyncPending) {
+    const auto remaining =
+        std::chrono::duration_cast<std::chrono::milliseconds>(syncDeadline - std::chrono::steady_clock::now());
+    if (remaining <= std::chrono::milliseconds::zero()) {
+      break;
+    }
+    const int result = pw_loop_iterate(loop, static_cast<int>(remaining.count()));
+    if (result < 0) {
+      kLog.warn("initial daemon sync failed: {}", spa_strerror(result));
+      break;
+    }
+  }
+  if (m_initialSyncPending) {
+    kLog.warn(
+        "initial daemon sync did not complete within {}ms",
+        std::chrono::duration_cast<std::chrono::milliseconds>(kInitialSyncTimeout).count()
+    );
+  }
+  if (m_serverVersion.empty()) {
+    kLog.warn("daemon version unavailable; using node.passive=true for the spectrum stream");
+  } else {
+    kLog.info("connected to daemon {} (client library {})", m_serverVersion, pw_get_library_version());
   }
 
   enumDefaultAudioDeviceParams();
@@ -766,7 +839,6 @@ PipeWireService::PipeWireService() {
   }
   rebuildState();
 
-  kLog.info("connected (version {})", pw_get_library_version());
   const auto* sink = defaultSink();
   if (sink != nullptr) {
     kLog.info("default sink \"{}\" vol={:.0F}%", sink->description, sink->volume * 100.0F);
@@ -813,6 +885,11 @@ PipeWireService::~PipeWireService() {
   }
   m_metadataCleanups.clear();
 
+  if (m_coreListener != nullptr) {
+    spa_hook_remove(m_coreListener);
+    delete m_coreListener;
+  }
+
   if (m_registryListener != nullptr) {
     spa_hook_remove(m_registryListener);
     delete m_registryListener;
@@ -828,10 +905,26 @@ PipeWireService::~PipeWireService() {
     pw_context_destroy(m_context);
   }
   if (m_loop != nullptr) {
+    pw_loop_leave(m_loop);
     pw_loop_destroy(m_loop);
   }
 
   pw_deinit();
+}
+
+void PipeWireService::onCoreInfo(const pw_core_info* info) {
+  if (info == nullptr || info->version == nullptr) {
+    kLog.warn("received PipeWire core info without a version");
+    return;
+  }
+  m_serverVersion = info->version;
+  m_serverSupportsPassiveFollow = pipeWireVersionSupportsPassiveFollow(m_serverVersion);
+}
+
+void PipeWireService::onCoreDone(std::uint32_t id, int sequence) {
+  if (id == PW_ID_CORE && sequence == m_initialSyncSequence) {
+    m_initialSyncPending = false;
+  }
 }
 
 int PipeWireService::fd() const noexcept {
@@ -967,6 +1060,7 @@ void PipeWireService::onRegistryGlobal(std::uint32_t id, const char* type, std::
     auto nd = std::make_unique<NodeData>();
     nd->service = this;
     nd->id = id;
+    nd->serial = parseUint64Or(dictGet(props, PW_KEY_OBJECT_SERIAL));
     nd->name = dictGet(props, PW_KEY_NODE_NAME);
     nd->description = dictGet(props, PW_KEY_NODE_DESCRIPTION);
     if (nd->description.empty()) {
@@ -977,6 +1071,7 @@ void PipeWireService::onRegistryGlobal(std::uint32_t id, const char* type, std::
     }
     nd->clientId = parseUint32Or(dictGet(props, "client.id"));
     nd->deviceId = parseUint32Or(dictGet(props, "device.id"));
+    nd->profileDevice = parseInt32Or(dictGet(props, "card.profile.device"));
     nd->applicationName = dictGet(props, "application.name");
     if (nd->applicationName.empty()) {
       nd->applicationName = dictGet(props, "client.name");
@@ -1132,6 +1227,8 @@ void PipeWireService::onRegistryGlobalRemove(std::uint32_t id) {
     pw_proxy_destroy(reinterpret_cast<pw_proxy*>(nd->proxy));
   }
   m_nodes.erase(it);
+  // Node ids are recycled, so a route left in the metadata must not carry over to the next node.
+  m_metadataTargetObjects.erase(id);
   rebuildState();
 }
 
@@ -1150,6 +1247,7 @@ void PipeWireService::onNodeInfo(std::uint32_t id, const pw_node_info* info) {
   const bool wasProgramStream = isProgramStreamClass(nd.mediaClass);
   const bool wasPrivacyCandidate = isPrivacyCandidateClass(nd.mediaClass);
   bool filterPropsChanged = false;
+  bool profileDeviceChanged = false;
 
   if (info->props != nullptr) {
     std::string mediaClass = dictGet(info->props, PW_KEY_MEDIA_CLASS);
@@ -1187,6 +1285,12 @@ void PipeWireService::onNodeInfo(std::uint32_t id, const pw_node_info* info) {
     if (deviceId != 0) {
       nd.deviceId = deviceId;
     }
+    // card.profile.device is absent from the registry-global props and only arrives here, after the
+    // card already published its routes. It selects which card route drives this node, so a change
+    // must re-derive the cached effective mute.
+    const std::int32_t profileDevice = parseInt32Or(dictGet(info->props, "card.profile.device"), nd.profileDevice);
+    profileDeviceChanged = profileDevice != nd.profileDevice;
+    nd.profileDevice = profileDevice;
     std::string appBinary = dictGet(info->props, "application.process.binary");
     if (!appBinary.empty()) {
       nd.applicationBinary = appBinary;
@@ -1224,7 +1328,11 @@ void PipeWireService::onNodeInfo(std::uint32_t id, const pw_node_info* info) {
   if (isStream) {
     nd.streamClassificationReady = true;
   }
-  if ((isStream && (!wasStreamReady || filterPropsChanged))
+  if (profileDeviceChanged) {
+    recomputeEffectiveMute(nd);
+  }
+  if (profileDeviceChanged
+      || (isStream && (!wasStreamReady || filterPropsChanged))
       || wasProgramStream != isStream
       || wasPrivacyCandidate
       || isPrivacyCandidate) {
@@ -1502,6 +1610,21 @@ void PipeWireService::onMixerVolumeChanged(std::uint32_t id, float volume, bool 
   }
 }
 
+void PipeWireService::onTargetObjectMetadata(std::uint32_t subject, const std::string& target) {
+  if (target.empty()) {
+    if (m_metadataTargetObjects.erase(subject) == 0) {
+      return;
+    }
+  } else {
+    const auto it = m_metadataTargetObjects.find(subject);
+    if (it != m_metadataTargetObjects.end() && it->second == target) {
+      return;
+    }
+    m_metadataTargetObjects.insert_or_assign(subject, target);
+  }
+  rebuildState();
+}
+
 void PipeWireService::refreshNodeIdentity(NodeData& nd) {
   const auto it = m_clients.find(nd.clientId);
   if (it == m_clients.end()) {
@@ -1618,20 +1741,14 @@ void PipeWireService::rebuildState() {
     // SPA_DIRECTION_INPUT == 0, so `wantDir != 0` would wrongly exclude every Audio/Source; guard on the
     // media class being a device node instead (matches the isDeviceNode check used during route parsing).
     const bool isDeviceNode = nd->mediaClass == "Audio/Sink" || nd->mediaClass == "Audio/Source";
-    const DeviceRouteData* activeRoute = isDeviceNode ? activeRouteForDirection(nd->routes, wantDir) : nullptr;
     const DeviceData* device = nullptr;
     if (nd->deviceId != 0) {
       if (const auto devIt = m_devices.find(nd->deviceId); devIt != m_devices.end()) {
         device = &devIt->second;
-        if (activeRoute == nullptr && isDeviceNode) {
-          activeRoute = activeRouteForDirection(device->routes, wantDir);
-        }
       }
     }
-    const auto matchesDir = [&](const DeviceRouteData& r) { return r.direction == wantDir; };
-    const bool hasDirRoutes = std::ranges::any_of(nd->routes, matchesDir)
-        || (device != nullptr && std::ranges::any_of(device->routes, matchesDir));
-    node.available = activeRoute != nullptr || !hasDirRoutes;
+    const AudioDeviceRoutes deviceRoutes = device != nullptr ? AudioDeviceRoutes{device->routes} : AudioDeviceRoutes{};
+    node.available = !isDeviceNode || audioNodeRouteAvailable(nd->routes, deviceRoutes, wantDir, nd->profileDevice);
 
     if (nd->mediaClass == "Audio/Sink") {
       node.isDefault = (nd->name == m_defaultSinkName);
@@ -1648,6 +1765,18 @@ void PipeWireService::rebuildState() {
     } else if (isProgramOutputNode(*nd)) {
       next.programOutputs.push_back(std::move(node));
     }
+  }
+
+  // A stream whose target.object metadata is set does not follow the default sink. The value is
+  // either an object.serial (what we write) or a node.name, per PipeWire's target.object contract;
+  // "-1" is its "no target" sentinel.
+  for (AudioNode& stream : next.programOutputs) {
+    const auto targetIt = m_metadataTargetObjects.find(stream.id);
+    if (targetIt == m_metadataTargetObjects.end() || targetIt->second == "-1") {
+      continue;
+    }
+    stream.routePinned = true;
+    stream.routeSinkId = resolveTargetObjectSink(targetIt->second);
   }
 
   for (const LinkData& link : std::views::values(m_links)) {
@@ -1686,16 +1815,31 @@ void PipeWireService::rebuildState() {
   emitChanged();
 }
 
+std::uint32_t PipeWireService::resolveTargetObjectSink(const std::string& target) const {
+  // Numeric values are object.serial, anything else is a node.name.
+  const std::uint64_t serial = parseUint64Or(target);
+  for (const auto& [id, nd] : m_nodes) {
+    if (nd->mediaClass != "Audio/Sink") {
+      continue;
+    }
+    if (serial != 0 ? nd->serial == serial : nd->name == target) {
+      return id;
+    }
+  }
+  return 0;
+}
+
 void PipeWireService::recomputeEffectiveMute(NodeData& nd) {
   const std::uint32_t wantDir = routeDirectionForMediaClass(nd.mediaClass);
   // SPA_DIRECTION_INPUT == 0, so guard on the media class rather than `wantDir != 0` (which would skip sources).
   const bool isDeviceNode = nd.mediaClass == "Audio/Sink" || nd.mediaClass == "Audio/Source";
-  const DeviceRouteData* nodeRoute = isDeviceNode ? activeRouteForDirection(nd.routes, wantDir) : nullptr;
+  const DeviceRouteData* nodeRoute =
+      isDeviceNode ? activeAudioDeviceRoute(nd.routes, wantDir, kAnyProfileDevice) : nullptr;
   const DeviceRouteData* deviceRoute = nullptr;
   if (nd.deviceId != 0 && isDeviceNode) {
     const auto it = m_devices.find(nd.deviceId);
     if (it != m_devices.end()) {
-      deviceRoute = activeRouteForDirection(it->second.routes, wantDir);
+      deviceRoute = activeAudioDeviceRoute(it->second.routes, wantDir, nd.profileDevice);
     }
   }
 
@@ -2049,15 +2193,61 @@ void PipeWireService::emitChanged() {
   }
 }
 
+void PipeWireService::moveProgramOutput(std::uint32_t programStreamId, std::uint32_t targetSinkId) {
+  if (m_defaultMetadata == nullptr) {
+    kLog.warn("moveProgramOutput: default metadata not available");
+    return;
+  }
+
+  if (!m_nodes.contains(programStreamId)) {
+    kLog.warn("moveProgramOutput: unknown program stream id {}", programStreamId);
+    return;
+  }
+
+  // pipewire-pulse writes the deprecated target.node (an object.id) next to target.object whenever a
+  // Pulse client moves a stream. target.object wins while it is set, so a leftover target.node would
+  // silently re-pin the stream the moment the route is cleared: drop it either way.
+  const auto clearProperty = [this, programStreamId](const char* key) {
+    const int ret = pw_metadata_set_property(m_defaultMetadata, programStreamId, key, nullptr, nullptr);
+    if (ret < 0) {
+      kLog.warn("moveProgramOutput: failed to clear {} for stream {} ({})", key, programStreamId, ret);
+    }
+  };
+
+  if (targetSinkId == 0) {
+    clearProperty(PW_KEY_TARGET_OBJECT);
+    clearProperty(kMetadataTargetNodeKey);
+    return;
+  }
+
+  const auto sinkIt = m_nodes.find(targetSinkId);
+  if (sinkIt == m_nodes.end()) {
+    kLog.warn("moveProgramOutput: unknown target sink id {}", targetSinkId);
+    return;
+  }
+  if (sinkIt->second->serial == 0) {
+    kLog.warn("moveProgramOutput: sink {} has no object.serial", targetSinkId);
+    return;
+  }
+
+  const std::string serial = std::to_string(sinkIt->second->serial);
+  const int ret =
+      pw_metadata_set_property(m_defaultMetadata, programStreamId, PW_KEY_TARGET_OBJECT, "Spa:Id", serial.c_str());
+  if (ret < 0) {
+    kLog.warn("moveProgramOutput: failed to move stream {} to sink {} ({})", programStreamId, targetSinkId, ret);
+    return;
+  }
+  clearProperty(kMetadataTargetNodeKey);
+}
+
 void PipeWireService::registerIpc(IpcService& ipc, const ConfigService& config) {
   const auto maxVolume = [&config] { return maxAudioVolume(config.config().audio); };
   const auto parseVolumeValueError =
       "error: invalid volume value (use percent like 65 or 65%, or normalized like 0.65)\n";
   const auto parseVolumeStepError = "error: invalid volume step (use percent like 5 or 5%, or normalized like 0.05)\n";
 
-  ipc.registerHandler(
-      "volume-set",
-      [this, maxVolume, parseVolumeValueError](const std::string& args) -> std::string {
+  ipc.bind(
+      noctalia::cli::msg::volumeSet, [this, maxVolume, parseVolumeValueError](const std::string& args) -> std::string {
         const auto parts = noctalia::ipc::splitWords(args);
         if (parts.size() != 1) {
           return "error: volume-set requires <value>\n";
@@ -2073,13 +2263,11 @@ void PipeWireService::registerIpc(IpcService& ipc, const ConfigService& config) 
 
         setVolume(std::clamp(*amount, 0.0F, maxVolume()));
         return "ok\n";
-      },
-      "<value>", "Set speaker volume"
+      }
   );
 
-  ipc.registerHandler(
-      "volume-up",
-      [this, maxVolume, parseVolumeStepError](const std::string& args) -> std::string {
+  ipc.bind(
+      noctalia::cli::msg::volumeUp, [this, maxVolume, parseVolumeStepError](const std::string& args) -> std::string {
         const auto parts = noctalia::ipc::splitWords(args);
         if (parts.size() > 1) {
           return "error: volume-up accepts at most one optional [step]\n";
@@ -2096,13 +2284,11 @@ void PipeWireService::registerIpc(IpcService& ipc, const ConfigService& config) 
 
         setVolume(relativeAdjustTarget(1, *step, 1.0F, sink->volume, maxVolume()));
         return "ok\n";
-      },
-      "[step]", "Increase speaker volume"
+      }
   );
 
-  ipc.registerHandler(
-      "volume-down",
-      [this, maxVolume, parseVolumeStepError](const std::string& args) -> std::string {
+  ipc.bind(
+      noctalia::cli::msg::volumeDown, [this, maxVolume, parseVolumeStepError](const std::string& args) -> std::string {
         const auto parts = noctalia::ipc::splitWords(args);
         if (parts.size() > 1) {
           return "error: volume-down accepts at most one optional [step]\n";
@@ -2119,24 +2305,19 @@ void PipeWireService::registerIpc(IpcService& ipc, const ConfigService& config) 
 
         setVolume(relativeAdjustTarget(2, *step, -1.0F, sink->volume, maxVolume()));
         return "ok\n";
-      },
-      "[step]", "Decrease speaker volume"
+      }
   );
 
-  ipc.registerHandler(
-      "volume-mute",
-      [this](const std::string&) -> std::string {
-        const auto* sink = defaultSink();
-        if (!sink)
-          return "error: no default output\n";
-        setMuted(!sink->muted);
-        return "ok\n";
-      },
-      "", "Toggle speaker mute"
-  );
+  ipc.bind(noctalia::cli::msg::volumeMute, [this](const std::string&) -> std::string {
+    const auto* sink = defaultSink();
+    if (!sink)
+      return "error: no default output\n";
+    setMuted(!sink->muted);
+    return "ok\n";
+  });
 
-  ipc.registerHandler(
-      "mic-volume-set",
+  ipc.bind(
+      noctalia::cli::msg::micVolumeSet,
       [this, maxVolume, parseVolumeValueError](const std::string& args) -> std::string {
         const auto parts = noctalia::ipc::splitWords(args);
         if (parts.size() != 1) {
@@ -2153,13 +2334,11 @@ void PipeWireService::registerIpc(IpcService& ipc, const ConfigService& config) 
 
         setMicVolume(std::clamp(*amount, 0.0F, maxVolume()));
         return "ok\n";
-      },
-      "<value>", "Set microphone volume"
+      }
   );
 
-  ipc.registerHandler(
-      "mic-volume-up",
-      [this, maxVolume, parseVolumeStepError](const std::string& args) -> std::string {
+  ipc.bind(
+      noctalia::cli::msg::micVolumeUp, [this, maxVolume, parseVolumeStepError](const std::string& args) -> std::string {
         const auto parts = noctalia::ipc::splitWords(args);
         if (parts.size() > 1) {
           return "error: mic-volume-up accepts at most one optional [step]\n";
@@ -2176,12 +2355,11 @@ void PipeWireService::registerIpc(IpcService& ipc, const ConfigService& config) 
 
         setMicVolume(relativeAdjustTarget(3, *step, 1.0F, source->volume, maxVolume()));
         return "ok\n";
-      },
-      "[step]", "Increase microphone volume"
+      }
   );
 
-  ipc.registerHandler(
-      "mic-volume-down",
+  ipc.bind(
+      noctalia::cli::msg::micVolumeDown,
       [this, maxVolume, parseVolumeStepError](const std::string& args) -> std::string {
         const auto parts = noctalia::ipc::splitWords(args);
         if (parts.size() > 1) {
@@ -2199,19 +2377,14 @@ void PipeWireService::registerIpc(IpcService& ipc, const ConfigService& config) 
 
         setMicVolume(relativeAdjustTarget(4, *step, -1.0F, source->volume, maxVolume()));
         return "ok\n";
-      },
-      "[step]", "Decrease microphone volume"
+      }
   );
 
-  ipc.registerHandler(
-      "mic-mute",
-      [this](const std::string&) -> std::string {
-        const auto* source = defaultSource();
-        if (!source)
-          return "error: no default input\n";
-        setMicMuted(!source->muted);
-        return "ok\n";
-      },
-      "", "Toggle microphone mute"
-  );
+  ipc.bind(noctalia::cli::msg::micMute, [this](const std::string&) -> std::string {
+    const auto* source = defaultSource();
+    if (!source)
+      return "error: no default input\n";
+    setMicMuted(!source->muted);
+    return "ok\n";
+  });
 }

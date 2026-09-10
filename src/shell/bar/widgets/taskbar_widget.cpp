@@ -11,6 +11,7 @@
 #include "render/scene/input_area.h"
 #include "shell/dock/pinned_apps.h"
 #include "shell/panel/panel_manager.h"
+#include "shell/tooltip/tooltip_manager.h"
 #include "system/app_identity.h"
 #include "system/desktop_entry.h"
 #include "system/desktop_entry_launch.h"
@@ -29,6 +30,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
+#include <chrono>
 #include <cmath>
 #include <functional>
 #include <linux/input-event-codes.h>
@@ -39,6 +41,10 @@
 #include <wayland-client-protocol.h>
 
 namespace {
+
+  constexpr auto kDragHoldDelay = std::chrono::milliseconds(300);
+  // Lifts the dragged tile above the rest of the strip while it follows the pointer.
+  constexpr std::int32_t kDragTileZIndex = 200;
 
   // Integer centering; optional odd spare pixel on the end side (right/bottom).
   [[nodiscard]] float centeredOffset(float extent, float content, float inset = 0.0F, bool oddSpareOnEnd = true) {
@@ -255,7 +261,7 @@ void TaskbarWidget::syncWorkspaceGroupingCapability() {
   }
 }
 
-TaskbarWidget::~TaskbarWidget() = default;
+TaskbarWidget::~TaskbarWidget() { m_aliveGuard.reset(); }
 
 bool TaskbarWidget::taskInWorkspaceGroup(const TaskModel& task, const WorkspaceModel& ws) {
   if (task.workspaceKey.empty()) {
@@ -326,6 +332,192 @@ void TaskbarWidget::closeTaskModel(const TaskModel& task) {
 }
 
 const std::vector<std::string>& TaskbarWidget::pinnedConfigIds() const noexcept { return m_configOptions.pinned; }
+
+bool TaskbarWidget::reorderEnabled() const {
+  if (m_groupByWorkspace || m_widgetName.empty()) {
+    return false;
+  }
+  return pinnedConfigIds().size() >= 2;
+}
+
+float TaskbarWidget::pointerMainOnStrip(const InputArea& area, float localX, float localY) const {
+  return m_vertical ? area.y() + localY : area.x() + localX;
+}
+
+std::size_t TaskbarWidget::computeDragTargetIndex() const {
+  // Snapshotted at drag start so the target keeps referring to the list the drag began against,
+  // even if the pin list changes underneath.
+  const std::size_t pinnedCount = m_drag.pinnedCount;
+  if (m_tilePitchMain <= 0.0F || pinnedCount == 0) {
+    return m_drag.sourceIndex;
+  }
+  const float slots = (m_drag.currentMain - m_drag.startMain) / m_tilePitchMain;
+  const auto shifted =
+      static_cast<std::ptrdiff_t>(m_drag.sourceIndex) + static_cast<std::ptrdiff_t>(std::lround(slots));
+  return static_cast<std::size_t>(std::clamp<std::ptrdiff_t>(shifted, 0, static_cast<std::ptrdiff_t>(pinnedCount) - 1));
+}
+
+bool TaskbarWidget::commitDragReorder() {
+  if (m_widgetName.empty() || m_drag.sourceIndex == m_drag.targetIndex) {
+    return false;
+  }
+  std::vector<std::string> pinned = pinnedConfigIds();
+  if (m_drag.sourceIndex >= pinned.size() || m_drag.targetIndex >= pinned.size()) {
+    return false;
+  }
+
+  std::string moved = std::move(pinned[m_drag.sourceIndex]);
+  pinned.erase(pinned.begin() + static_cast<std::ptrdiff_t>(m_drag.sourceIndex));
+  pinned.insert(pinned.begin() + static_cast<std::ptrdiff_t>(m_drag.targetIndex), std::move(moved));
+
+  // Writing config rebuilds the taskbar, which can destroy the InputArea whose handler we are
+  // inside — defer so the write happens after this event finishes dispatching.
+  ConfigService* config = &m_configService;
+  DeferredCall::callLater([config, widgetName = m_widgetName, pinned = std::move(pinned)]() mutable {
+    (void)config->setOverride({"widget", widgetName, "pinned"}, std::move(pinned));
+  });
+  return true;
+}
+
+void TaskbarWidget::requestDragLayout() {
+  if (Node* container = root(); container != nullptr) {
+    container->markLayoutDirty();
+  }
+  // Only requestUpdate() marks the surface as needing a layout pass; requestRedraw() would paint
+  // the scene again without ever running doLayout(), leaving the drag visuals stale.
+  requestUpdate();
+}
+
+void TaskbarWidget::beginDrag() {
+  if (m_drag.area == nullptr) {
+    return;
+  }
+  m_drag.active = true;
+  // Capture the resting position before leaving the flow — afterwards Flex closes the gap and the
+  // neighbours move, but this node keeps whatever position we give it.
+  m_drag.restMain = m_vertical ? m_drag.area->y() : m_drag.area->x();
+  m_drag.restCross = m_vertical ? m_drag.area->x() : m_drag.area->y();
+  m_drag.pinnedCount = pinnedConfigIds().size();
+  // The press that started this gesture has already shown the tile's tooltip; it would hang over
+  // the strip for the whole drag.
+  TooltipManager::instance().onHoverChange(nullptr, static_cast<zwlr_layer_surface_v1*>(nullptr), nullptr);
+  requestDragLayout();
+}
+
+void TaskbarWidget::updateDragTarget() {
+  const std::size_t targetIndex = computeDragTargetIndex();
+  if (targetIndex != m_drag.targetIndex) {
+    m_drag.targetIndex = targetIndex;
+    requestDragLayout();
+  }
+}
+
+void TaskbarWidget::moveDragTile() {
+  if (m_drag.area == nullptr || !m_drag.active) {
+    return;
+  }
+  // Slot i sits at restMain + (i - sourceIndex) * pitch, so clamping travel to the first and last
+  // slots keeps the tile from wandering somewhere it could never be dropped.
+  const auto source = static_cast<std::ptrdiff_t>(m_drag.sourceIndex);
+  const auto last = static_cast<std::ptrdiff_t>(m_drag.pinnedCount) - 1;
+  const float minMain = m_drag.restMain - static_cast<float>(source) * m_tilePitchMain;
+  const float maxMain = m_drag.restMain + static_cast<float>(last - source) * m_tilePitchMain;
+  const float travelled = m_drag.restMain + (m_drag.currentMain - m_drag.startMain);
+  const float main = (last > 0) ? std::clamp(travelled, minMain, maxMain) : travelled;
+  if (m_vertical) {
+    m_drag.area->setPosition(m_drag.restCross, main);
+  } else {
+    m_drag.area->setPosition(main, m_drag.restCross);
+  }
+  requestRedraw();
+}
+
+void TaskbarWidget::endDrag(bool commit) {
+  m_drag.holdTimer.stop();
+  const bool wasActive = m_drag.active;
+  if (wasActive || m_drag.armed) {
+    // A consumed gesture must not also activate or launch the app on release.
+    m_suppressTileClick = true;
+  }
+  const bool reordered = wasActive && commit && commitDragReorder();
+  if (reordered && m_drag.area != nullptr && m_dragSpacer != nullptr) {
+    // Park the tile in the gap so the strip looks settled while the deferred write lands.
+    m_drag.area->setPosition(m_dragSpacer->x(), m_dragSpacer->y());
+  }
+  // m_dragFloatTile and m_dragSpacer deliberately survive this reset: applyDragLayout() restores
+  // the tile and drops the spacer on the next layout pass, whichever path ended the gesture.
+  m_drag = {};
+  if (!wasActive) {
+    return;
+  }
+  if (!reordered) {
+    requestDragLayout();
+    return;
+  }
+  // Restoring now would put the tile back in the pre-write order for a frame, so it visibly jumps
+  // to an edge before the reordered strip appears. Deferred calls run FIFO, so this lands after
+  // the write — which normally destroys this widget outright, because a `widget.*` config change
+  // reloads the bar. It therefore only runs when the write failed or changed nothing.
+  m_dragParked = true;
+  DeferredCall::callLater([this, alive = std::weak_ptr<void>(m_aliveGuard)]() {
+    if (alive.expired()) {
+      return;
+    }
+    m_dragParked = false;
+    requestDragLayout();
+  });
+}
+
+void TaskbarWidget::applyDragLayout() {
+  if (m_taskStrip == nullptr) {
+    return;
+  }
+  if (m_dragParked) {
+    // A committed drop is holding its tile in the target gap until the write lands.
+    return;
+  }
+  InputArea* const floatTile = (m_drag.active && m_drag.area != nullptr) ? m_drag.area : nullptr;
+  if (m_dragFloatTile != nullptr && m_dragFloatTile != floatTile) {
+    m_dragFloatTile->setZIndex(0);
+    m_dragFloatTile->setParticipatesInLayout(true);
+    m_dragFloatTile = nullptr;
+  }
+  if (floatTile == nullptr) {
+    if (m_dragSpacer != nullptr) {
+      m_taskStrip->removeChild(m_dragSpacer);
+      m_dragSpacer = nullptr;
+    }
+    return;
+  }
+
+  m_dragFloatTile = floatTile;
+  floatTile->setParticipatesInLayout(false);
+  floatTile->setZIndex(kDragTileZIndex);
+  // The dragged tile is still a child at sourceIndex, just outside the flow, so a target past the
+  // source needs the gap one slot further along.
+  const std::size_t insertAt = m_drag.targetIndex > m_drag.sourceIndex ? m_drag.targetIndex + 1 : m_drag.targetIndex;
+  if (m_dragSpacer == nullptr) {
+    // The fill is not redundant: a Box copies RectNode's default style, whose fill is opaque black,
+    // and only resolves a ColorSpec once one is set. Setting it also resolves the zero-width border.
+    m_taskStrip->insertChildAt(
+        insertAt,
+        ui::box({
+            .out = &m_dragSpacer,
+            .fill = clearColorSpec(),
+            .width = floatTile->width(),
+            .height = floatTile->height(),
+            .configure = [](Box& box) { box.setHitTestVisible(false); },
+        })
+    );
+    return;
+  }
+  // Re-seating the spacer dirties the strip, so only move it when the slot actually changed.
+  const auto& children = m_taskStrip->children();
+  const auto it = std::ranges::find_if(children, [this](const auto& child) { return child.get() == m_dragSpacer; });
+  if (it != children.end() && static_cast<std::size_t>(std::distance(children.begin(), it)) != insertAt) {
+    m_taskStrip->insertChildAt(insertAt, m_taskStrip->removeChild(m_dragSpacer));
+  }
+}
 
 bool TaskbarWidget::taskMatchesDesktopEntry(const TaskModel& task, const DesktopEntry& entry) {
   const std::string entryIdLower = StringUtils::toLower(entry.id);
@@ -571,7 +763,7 @@ void TaskbarWidget::doLayout(Renderer& renderer, float containerWidth, float con
   m_taskStrip->setDirection(m_vertical ? FlexDirection::Vertical : FlexDirection::Horizontal);
   m_taskStrip->setAlign(FlexAlign::Center);
   if (!m_groupByWorkspace) {
-    m_taskStrip->setGap(Style::spaceSm * m_contentScale);
+    m_taskStrip->setGap(static_cast<float>(m_configOptions.itemSpacing) * m_contentScale);
   }
 
   if (m_rebuildPending) {
@@ -579,6 +771,7 @@ void TaskbarWidget::doLayout(Renderer& renderer, float containerWidth, float con
     m_rebuildPending = false;
   }
 
+  applyDragLayout();
   m_root->layout(renderer);
   if (Node* container = root(); container != nullptr && container != m_root) {
     container->setFrameSize(m_root->width(), m_root->height());
@@ -604,8 +797,14 @@ void TaskbarWidget::rebuild(Renderer& renderer) {
     return;
   }
   m_activeUsesFocusedColor = !m_focusedOutputOnly || isFocusedOutput();
-  m_taskTileAreas.clear();
-  m_taskTileAreas.reserve(m_tasks.size());
+  m_taskTiles.clear();
+  m_taskTiles.reserve(m_tasks.size());
+  // The strip's children are about to be destroyed; drop the gesture and its visuals so nothing
+  // outlives the nodes they point at.
+  m_drag = {};
+  m_dragFloatTile = nullptr;
+  m_dragSpacer = nullptr;
+  m_dragParked = false;
   clearChildren(m_taskStrip);
   buildTaskButtons(renderer);
 }
@@ -620,7 +819,9 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
   if (m_taskStrip == nullptr) {
     return;
   }
-  float iconSize = std::round(Style::baseGlyphSize * m_contentScale);
+  const float effectiveIconScale =
+      m_groupByWorkspace && m_workspaceGroupContent != WorkspaceGroupContent::Icons ? 1.0F : m_configOptions.iconScale;
+  float iconSize = std::round(Style::baseGlyphSize * effectiveIconScale * m_contentScale);
   float tilePadding = Style::spaceXs * 0.35F * m_contentScale;
   float tileSize = std::round(iconSize + tilePadding * 2.0F);
   const float barCross = m_vertical ? m_containerWidth : m_containerHeight;
@@ -650,7 +851,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       tileSize = std::round(iconSize + tilePadding * 2.0F);
     }
   }
-  const float tileGap = Style::spaceSm * m_contentScale;
+  const float tileGap = static_cast<float>(m_configOptions.itemSpacing) * m_contentScale;
 
   const FontWeight fontWeight = labelFontWeight();
   const std::string fontFamily = labelFontFamily();
@@ -662,7 +863,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
             / static_cast<float>(m_tasks.size())
         );
   // If the title text is too narrow, all it shows is "..." which isn't useful, so we hide it instead.
-  const auto metric = renderer.measureText("...", Style::fontSizeCaption * m_contentScale, fontWeight);
+  const auto metric = renderer.measureText("...", Style::fontSizeCaption * fontScale(), fontWeight);
   const float minWindowTitleWidth = (metric.right - metric.left) * 2;
   const float windowTitleGap = Style::spaceXs * m_contentScale;
   const float windowTitleWidth =
@@ -732,6 +933,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
     };
   };
 
+  const std::size_t draggableTileCount = reorderEnabled() ? pinnedConfigIds().size() : 0;
   auto createTaskTile = [&](TaskRef taskRef, std::vector<TaskRef> cycleCandidates = {}, std::string cycleKey = {},
                             std::size_t badgeCount = 1) {
     // Unreachable at build time: every ref is built from a live m_tasks element at the current
@@ -751,6 +953,81 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
     }
     area->setOpacity(tileOpacity);
     area->setAcceptedButtons(InputArea::buttonMask({BTN_LEFT, BTN_RIGHT, BTN_MIDDLE}));
+    auto* dragArea = area.get();
+    const bool tileDraggable = taskRef.index < draggableTileCount;
+    area->setOnPress([this, dragArea, taskRef, tileDraggable](const InputArea::PointerData& data) {
+      // m_drag.area is set on press and cleared when the gesture ends, so pointer identity alone
+      // says whether this tile owns the live gesture.
+      const bool ownsGesture = m_drag.area == dragArea;
+      if (!data.pressed) {
+        if (data.button != BTN_LEFT || !ownsGesture) {
+          return;
+        }
+        // Only commit against the pin list the drag was measured on.
+        endDrag(m_drag.generation == m_taskGeneration);
+        return;
+      }
+      if (data.button != BTN_LEFT) {
+        // A second button during a live gesture must not clear its click suppression, otherwise the
+        // release opens a context menu on top of the drag.
+        if (!m_drag.active && !m_drag.armed) {
+          m_suppressTileClick = false;
+        }
+        return;
+      }
+      // A left press always starts fresh: abandon a tile still held from a lost release or grab,
+      // then drop suppression left over from a gesture that ended outside its tile.
+      endDrag(false);
+      m_suppressTileClick = false;
+      if (!tileDraggable) {
+        return;
+      }
+      m_drag.generation = m_taskGeneration;
+      m_drag.sourceIndex = taskRef.index;
+      m_drag.targetIndex = taskRef.index;
+      m_drag.startMain = pointerMainOnStrip(*dragArea, data.localX, data.localY);
+      m_drag.currentMain = m_drag.startMain;
+      m_drag.area = dragArea;
+      m_drag.holdTimer.start(kDragHoldDelay, [this, dragArea]() {
+        if (m_drag.area == dragArea && !m_drag.active) {
+          m_drag.armed = true;
+        }
+      });
+    });
+    if (tileDraggable) {
+      area->setOnMotion([this, dragArea](const InputArea::PointerData& data) {
+        // Without the ownership check a plain hover would satisfy the distance check below and
+        // start a drag on a tile nobody is holding.
+        if (m_drag.area != dragArea) {
+          return;
+        }
+        if (m_drag.generation != m_taskGeneration) {
+          endDrag(false);
+          return;
+        }
+        const float main = pointerMainOnStrip(*dragArea, data.localX, data.localY);
+        if (!m_drag.active) {
+          const bool travelled = std::abs(main - m_drag.startMain) >= Style::dragStartThreshold * m_contentScale;
+          if (!m_drag.armed && !travelled) {
+            return;
+          }
+          m_drag.holdTimer.stop();
+          m_drag.armed = true;
+          beginDrag();
+        }
+        m_drag.currentMain = main;
+        updateDragTarget();
+        moveDragTile();
+      });
+      area->setOnCancel([this, dragArea]() {
+        if (m_drag.area != dragArea) {
+          return;
+        }
+        // Pointer capture is gone (leave or compositor grab), so no release will arrive: tear the
+        // whole gesture down, hold timer included.
+        endDrag(false);
+      });
+    }
 
     const WorkspaceModel* taskWorkspace = nullptr;
     if (m_groupByWorkspace && !task.workspaceKey.empty()) {
@@ -770,6 +1047,15 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       auto* areaPtr = area.get();
       area->setOnClick([this, taskRef, areaPtr, cycleCandidates = std::move(cycleCandidates),
                         cycleKey = std::move(cycleKey)](const InputArea::PointerData& data) {
+        if (m_drag.active || m_drag.armed) {
+          // A click arriving mid-gesture is a second button pressed during a drag: it must neither
+          // activate the app nor open a context menu over the moving tile.
+          return;
+        }
+        if (m_suppressTileClick) {
+          m_suppressTileClick = false;
+          return;
+        }
         const TaskModel* current = resolveTask(m_tasks, taskRef, m_taskGeneration);
         if (current == nullptr) {
           return;
@@ -868,15 +1154,17 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       content->addChild(std::move(glyph));
     }
 
+    Label* titleLabelPtr = nullptr;
     if (showWindowTitle) {
       auto label = ui::label({
           .text = task.title,
-          .fontSize = Style::fontSizeCaption * m_contentScale,
+          .fontSize = Style::fontSizeCaption * fontScale(),
           .fontWeight = fontWeight,
           .fontFamily = fontFamily,
           .maxWidth = windowTitleWidth,
           .maxLines = 1,
       });
+      titleLabelPtr = label.get();
       label->measure(renderer);
       content->addChild(std::move(label));
     }
@@ -906,7 +1194,8 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       }
     }
 
-    if (task.active && m_showActiveIndicator) {
+    Box* indicatorPtr = nullptr;
+    if (m_showActiveIndicator) {
       const float d = std::max(4.0F, std::round(Style::baseGlyphSize * 0.32F * m_contentScale));
       const float groupedCapsuleInset =
           (m_groupByWorkspace && m_workspaceGroupCapsule ? Style::borderWidth : 0.0F) * m_contentScale;
@@ -919,6 +1208,8 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
             .width = tileWidthWithTitle - tilePadding * 2,
             .height = lineThickness,
         });
+        indicatorPtr = indicator.get();
+        indicator->setVisible(task.active);
         indicator->setPosition(tilePadding, std::round(tileSize));
         area->addChild(std::move(indicator));
       } else {
@@ -928,6 +1219,8 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
             .width = d,
             .height = d,
         });
+        indicatorPtr = indicator.get();
+        indicator->setVisible(task.active);
         indicator->setPosition(std::round((tileSize - d) * 0.5F), std::round(tileSize - d - bottomInset));
         area->addChild(std::move(indicator));
       }
@@ -939,7 +1232,12 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       return current != nullptr && !current->title.empty() ? TooltipContent{current->title}
                                                            : TooltipContent{std::monostate{}};
     });
-    m_taskTileAreas.push_back(area.get());
+    m_taskTiles.push_back({
+        .taskIndex = taskRef.index,
+        .area = area.get(),
+        .titleLabel = titleLabelPtr,
+        .activeIndicator = indicatorPtr,
+    });
     attachHover(*area, tileWidthWithTitle, tileSize);
     return area;
   };
@@ -951,7 +1249,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
     const bool inlineBadge = m_showWorkspaceLabel && m_workspaceLabelPlacement == WorkspaceLabelPlacement::Inside;
     const bool externalBadge = m_showWorkspaceLabel && !inlineBadge;
     const float badgeBase = std::round(std::max(11.0F, Style::baseGlyphSize * 0.72F) * m_contentScale);
-    const float externalBadgeFontSize = std::round(Style::fontSizeCaption * 0.72F * m_contentScale);
+    const float externalBadgeFontSize = std::round(Style::fontSizeCaption * 0.72F * fontScale());
 
     const float externalBadgeCrossLimit = m_vertical && crossExtent > 0.0F
         ? std::max(0.0F, (m_workspaceGroupCapsule ? groupedCrossInner : crossExtent) - 2.0F * groupOutlineInset)
@@ -999,7 +1297,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       badgePalette.borderWidth = 0.0F;
 
       const float badgeFontSize =
-          fitBadgeFontSize(renderer, ws.label, disc.width, disc.height, m_contentScale, fontWeight);
+          fitBadgeFontSize(renderer, ws.label, disc.width, disc.height, fontScale(), fontWeight);
 
       auto badge = ui::button({
           .text = ws.label,
@@ -1050,7 +1348,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
 
       if (m_workspaceGroupContent == WorkspaceGroupContent::Count) {
         const std::string countText = std::to_string(tasks.size());
-        const float countFontSize = std::round(Style::fontSizeCaption * m_contentScale);
+        const float countFontSize = std::round(Style::fontSizeCaption * fontScale());
         auto content = ui::flex(
             FlexDirection::Horizontal,
             {
@@ -1106,7 +1404,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
 
       const float dotSize = std::round(std::max(4.0F, Style::baseGlyphSize * 0.28F * m_contentScale));
       const float dotGap = std::round(std::max(2.0F, Style::spaceXs * 0.5F * m_contentScale));
-      const float overflowFontSize = std::round(Style::fontSizeCaption * 0.85F * m_contentScale);
+      const float overflowFontSize = std::round(Style::fontSizeCaption * 0.85F * fontScale());
       float overflowLabelWidth = 0.0F;
       float overflowLabelHeight = 0.0F;
       std::string overflowText;
@@ -1299,7 +1597,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       group->setPadding(groupPadTop, groupPadRight, groupPadBottom, groupPadLeft);
 
       if (inlineBadge && m_showWorkspaceLabel) {
-        const float inlineBadgeFontSize = std::round(Style::fontSizeCaption * 0.85F * m_contentScale);
+        const float inlineBadgeFontSize = std::round(Style::fontSizeCaption * 0.85F * fontScale());
         const float inlineBadgeHeight = std::round(std::max(10.0F, iconSize - (Style::spaceXs * m_contentScale)));
         WorkspaceDiscSize disc = measureWorkspaceDiscSize(
             renderer, ws.label, inlineBadgeFontSize, inlineBadgeHeight, m_contentScale, fontWeight
@@ -1372,6 +1670,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
   }
   m_taskStrip->setPadding(0.0F, 0.0F, 0.0F, 0.0F);
   m_taskStrip->setGap(tileGap);
+  m_tilePitchMain = (m_vertical ? tileSize : tileWidthWithTitle) + tileGap;
   std::unordered_set<std::string> pinnedCycleKeysThisFrame;
   for (std::size_t i = 0; i < m_tasks.size(); ++i) {
     const auto& task = m_tasks[i];
@@ -2465,15 +2764,44 @@ void TaskbarWidget::updateModels() {
     applyPinnedMerge(nextTasks);
   }
 
-  const ModelComparison comparison = compareModels(m_showWindowTitle, m_tasks, m_workspaces, nextTasks, nextWorkspaces);
+  const ModelComparison comparison =
+      compareModels(m_groupByWorkspace, m_tasks, m_workspaces, nextTasks, nextWorkspaces);
   if (comparison.layoutEqual) {
     m_tasks = std::move(nextTasks);
     m_workspaces = std::move(nextWorkspaces);
-    if (comparison.titlesChanged) {
-      for (InputArea* area : m_taskTileAreas) {
-        if (area != nullptr) {
-          area->requestTooltipRefresh();
+    if (comparison.titlesChanged || comparison.activesChanged) {
+      bool textChanged = false;
+      for (const TaskTile& tile : m_taskTiles) {
+        if (tile.taskIndex >= m_tasks.size()) {
+          continue;
         }
+        const TaskModel& task = m_tasks[tile.taskIndex];
+        if (comparison.titlesChanged) {
+          if (tile.titleLabel != nullptr && tile.titleLabel->setText(task.title)) {
+            textChanged = true;
+          }
+          if (tile.area != nullptr) {
+            tile.area->requestTooltipRefresh();
+          }
+        }
+        if (comparison.activesChanged) {
+          if (tile.area != nullptr) {
+            float opacity = task.active ? m_activeOpacity : m_inactiveOpacity;
+            if (task.pinned && !task.running) {
+              opacity *= m_pinnedOpacity;
+            }
+            tile.area->setOpacity(opacity);
+          }
+          if (tile.activeIndicator != nullptr) {
+            tile.activeIndicator->setVisible(task.active);
+          }
+        }
+      }
+      if (textChanged && root() != nullptr) {
+        root()->markLayoutDirty();
+      }
+      if (comparison.activesChanged) {
+        requestRedraw();
       }
     }
     return;
@@ -2829,7 +3157,7 @@ std::string TaskbarWidget::workspaceLabel(const Workspace& workspace, std::size_
 }
 
 TaskbarWidget::ModelComparison TaskbarWidget::compareModels(
-    bool showWindowTitle, const std::vector<TaskModel>& previousTasks,
+    bool groupByWorkspace, const std::vector<TaskModel>& previousTasks,
     const std::vector<WorkspaceModel>& previousWorkspaces, const std::vector<TaskModel>& nextTasks,
     const std::vector<WorkspaceModel>& nextWorkspaces
 ) {
@@ -2837,20 +3165,23 @@ TaskbarWidget::ModelComparison TaskbarWidget::compareModels(
     return {};
   }
   bool titlesChanged = false;
+  bool activesChanged = false;
   for (std::size_t i = 0; i < nextTasks.size(); ++i) {
     const bool titleChanged = nextTasks[i].title != previousTasks[i].title;
+    const bool activeChanged = nextTasks[i].active != previousTasks[i].active;
     titlesChanged = titlesChanged || titleChanged;
+    activesChanged = activesChanged || activeChanged;
     if (nextTasks[i].appId != previousTasks[i].appId
         || nextTasks[i].iconPath != previousTasks[i].iconPath
-        || nextTasks[i].active != previousTasks[i].active
         || nextTasks[i].firstHandle != previousTasks[i].firstHandle
-        || nextTasks[i].workspaceKey != previousTasks[i].workspaceKey
-        || nextTasks[i].workspaceWindowId != previousTasks[i].workspaceWindowId
-        || nextTasks[i].exactWindowId != previousTasks[i].exactWindowId
+        || (groupByWorkspace
+            && (activeChanged
+                || nextTasks[i].workspaceKey != previousTasks[i].workspaceKey
+                || nextTasks[i].workspaceWindowId != previousTasks[i].workspaceWindowId
+                || nextTasks[i].exactWindowId != previousTasks[i].exactWindowId))
         || nextTasks[i].order != previousTasks[i].order
         || nextTasks[i].workspaceOrder != previousTasks[i].workspaceOrder
         || nextTasks[i].handleKey != previousTasks[i].handleKey
-        || (showWindowTitle && titleChanged)
         || nextTasks[i].pinned != previousTasks[i].pinned
         || nextTasks[i].running != previousTasks[i].running
         || nextTasks[i].instanceCount != previousTasks[i].instanceCount
@@ -2872,7 +3203,7 @@ TaskbarWidget::ModelComparison TaskbarWidget::compareModels(
       return {};
     }
   }
-  return {.layoutEqual = true, .titlesChanged = titlesChanged};
+  return {.layoutEqual = true, .titlesChanged = titlesChanged, .activesChanged = activesChanged};
 }
 
 void TaskbarWidget::buildDesktopIconIndex() {
@@ -2896,7 +3227,8 @@ void TaskbarWidget::buildDesktopIconIndex() {
 }
 
 std::string TaskbarWidget::resolveIconPath(const std::string& appId, const std::string& iconNameOrPath) {
-  const int iconTargetSize = std::max(1, static_cast<int>(std::round(Style::baseGlyphSize * m_contentScale)));
+  const int iconTargetSize =
+      std::max(1, static_cast<int>(std::round(Style::baseGlyphSize * m_configOptions.iconScale * m_contentScale)));
 
   auto resolveIconName = [this, iconTargetSize](const std::string& name) -> std::string {
     if (name.empty()) {

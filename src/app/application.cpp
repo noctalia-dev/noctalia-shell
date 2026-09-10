@@ -16,6 +16,7 @@
 #include "dbus/idle/screensaver_poll_source.h"
 #include "dbus/idle/screensaver_service.h"
 #include "dbus/logind/logind_service.h"
+#include "dbus/modem/modem_manager_service.h"
 #include "dbus/mpris/mpris_service.h"
 #include "dbus/network/inetwork_service.h"
 #include "dbus/network/iwd_secret_agent.h"
@@ -98,13 +99,22 @@
 #include <cmath>
 #include <csignal>
 #include <cstdint>
+#include <cstring>
 #include <filesystem>
 #include <limits>
 #include <malloc.h>
+#ifdef NOCTALIA_USE_JEMALLOC
+#include <jemalloc/jemalloc.h>
+#endif
 #include <optional>
 #include <stdexcept>
 #include <string_view>
 #include <utility>
+
+#ifdef NOCTALIA_USE_JEMALLOC
+#define NOCTALIA_STRINGIFY_HELPER(x) #x
+#define NOCTALIA_STRINGIFY(x) NOCTALIA_STRINGIFY_HELPER(x)
+#endif
 
 std::atomic<bool> Application::s_shutdownRequested{false};
 
@@ -162,10 +172,19 @@ Application::Application()
     scheduleNotificationShellRefresh();
   });
 
-  m_notificationManager.setStateCallback([this]() { scheduleNotificationShellRefresh(); });
+  m_notificationManager.setStateCallback([this]() {
+    if (m_notificationManager.doNotDisturb()) {
+      m_notificationToast.hideDndSuppressed();
+    }
+    scheduleNotificationShellRefresh();
+  });
 }
 
 Application::~Application() {
+  ColorPickerDialog::setPresenter(nullptr);
+  GlyphPickerDialog::setPresenter(nullptr);
+  FileDialog::setPresenter(nullptr);
+  m_settingsWindow.shutdownDialogPresenter();
   // m_systemMonitor is declared after the plugin hosts, so it is destroyed first; drop the script
   // API's pointer to it here, while both are still alive, or a plugin that used noctalia.cpuCores
   // releases its reference through a dangling pointer as its host is torn down.
@@ -243,7 +262,18 @@ void Application::run(std::function<void()> startupReadyCallback) {
   });
 
 #ifdef __GLIBC__
-  runStartupPhase("malloc_trim", []() { malloc_trim(0); });
+  runStartupPhase("allocator_trim", []() {
+#ifdef NOCTALIA_USE_JEMALLOC
+    // jemalloc exports no malloc_trim; purge unused pages in every arena.
+    const int purgeResult =
+        mallctl("arena." NOCTALIA_STRINGIFY(MALLCTL_ARENAS_ALL) ".purge", nullptr, nullptr, nullptr, 0);
+    if (purgeResult != 0) {
+      kLog.warn("failed to purge jemalloc arenas: {}", std::strerror(purgeResult));
+    }
+#else
+    malloc_trim(0);
+#endif
+  });
 #endif
 
   m_trayInitTimer.start(std::chrono::milliseconds(500), [this]() { startTrayService(); });

@@ -129,6 +129,8 @@ void Application::initUiRenderSurfacesAndSettings() {
     m_asyncTextureCache.setMakeCurrentCallback([this]() { m_renderContext.backend().makeCurrentNoSurface(); });
   }
   m_renderContext.setTextFontFamily(m_configService.config().shell.fontFamily);
+  Style::setRtl(i18n::Service::instance().rtl());
+  m_renderContext.setTextBaseDirection(i18n::Service::instance().rtl());
   m_wallpaper.initialize(m_wayland, &m_configService, &m_renderContext, &m_sharedTextureCache, &m_themeService);
   m_backdrop.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
   m_settingsWindow.initialize(
@@ -168,9 +170,6 @@ void Application::initUiRenderSurfacesAndSettings() {
     const bool wasEditing = m_lockscreenWidgetsController.isEditing();
     m_lockscreenWidgetsController.toggleEdit();
     if (!wasEditing && m_lockscreenWidgetsController.isEditing()) {
-      if (m_settingsWindow.isOpen()) {
-        DeferredCall::callLater([this]() { m_settingsWindow.close(); });
-      }
       notify::info(
           "Noctalia", i18n::tr("notifications.internal.lockscreen-widgets-editor"),
           i18n::tr("notifications.internal.lockscreen-widgets-editor-enabled")
@@ -201,26 +200,23 @@ void Application::performGreeterSync(bool quiet) {
     return;
   }
 
-  const std::uint64_t generation = ++m_greeterSyncGeneration;
-  m_greeterSyncTimeoutTimer.stop();
+  const std::uint64_t generation = m_greeterSyncGeneration + 1;
 
   const auto complete = [this, generation, quiet](bool success) {
-    if (generation != m_greeterSyncGeneration) {
-      return;
-    }
-    m_greeterSyncTimeoutTimer.stop();
-    if (success) {
-      if (!quiet) {
-        DeferredCall::callLater([this]() {
+    DeferredCall::callLater([this, generation, quiet, success]() {
+      if (generation != m_greeterSyncGeneration) {
+        return;
+      }
+      m_greeterSyncTimeoutTimer.stop();
+      if (success) {
+        if (!quiet) {
           notify::info(
               "Noctalia", i18n::tr("notifications.internal.greeter-sync"),
               i18n::tr("notifications.internal.greeter-sync-success")
           );
-        });
+        }
+        return;
       }
-      return;
-    }
-    DeferredCall::callLater([this, quiet]() {
       if (quiet) {
         notify::error(
             "Noctalia", i18n::tr("notifications.internal.greeter-sync"), i18n::tr("settings.errors.sync-greeter")
@@ -231,12 +227,15 @@ void Application::performGreeterSync(bool quiet) {
     });
   };
 
-  if (m_configService.config().shell.polkitAgent && m_polkitAgent != nullptr) {
-    m_polkitAgent->markNextRequestInternal();
-  }
   const auto launch = greeter::syncAppearanceToGreeterAsync(
-      m_configService, m_themeService.resolvedMode(), complete, &m_compositorPlatform, m_logindService != nullptr
+      m_configService, m_themeService.resolvedShellMode(), complete, &m_compositorPlatform, m_logindService != nullptr
   );
+  if (launch == greeter::GreeterSyncLaunch::Busy) {
+    return;
+  }
+
+  m_greeterSyncGeneration = generation;
+  m_greeterSyncTimeoutTimer.stop();
   if (launch == greeter::GreeterSyncLaunch::Failed) {
     if (quiet) {
       notify::error(
@@ -260,16 +259,17 @@ void Application::performGreeterSync(bool quiet) {
     }
     return;
   }
-
+  const bool legacySync = launch == greeter::GreeterSyncLaunch::LaunchedLegacy;
   if (!quiet) {
     const bool customPrivilege =
         !StringUtils::trim(m_configService.config().shell.greeterSync.privilegeCommand).empty();
     const bool polkitAgentActive = m_configService.config().shell.polkitAgent && m_polkitAgent != nullptr;
     const bool inSessionPolkit = likelySupportsInSessionPolkit();
-    const char* pendingBodyKey = "notifications.internal.greeter-sync-pending";
-    if (!customPrivilege && !polkitAgentActive && !inSessionPolkit) {
-      pendingBodyKey = "notifications.internal.greeter-sync-pending-manual";
-    } else if (!customPrivilege && !polkitAgentActive) {
+    const char* pendingBodyKey = legacySync ? "notifications.internal.greeter-sync-pending-legacy"
+                                            : "notifications.internal.greeter-sync-pending";
+    if (!legacySync && !customPrivilege && !polkitAgentActive && !inSessionPolkit) {
+      pendingBodyKey = "notifications.internal.greeter-sync-pending-manual-pkexec";
+    } else if (!legacySync && !customPrivilege && !polkitAgentActive) {
       pendingBodyKey = "notifications.internal.greeter-sync-pending-console";
     }
     notify::info("Noctalia", i18n::tr("notifications.internal.greeter-sync"), i18n::tr(pendingBodyKey));
@@ -277,21 +277,27 @@ void Application::performGreeterSync(bool quiet) {
 
   if (!quiet) {
     const bool inSessionPolkit = likelySupportsInSessionPolkit();
-    m_greeterSyncTimeoutTimer.start(std::chrono::seconds(90), [this, generation, inSessionPolkit]() {
+    m_greeterSyncTimeoutTimer.start(std::chrono::seconds(90), [this, generation, inSessionPolkit, legacySync]() {
       if (generation != m_greeterSyncGeneration) {
         return;
       }
-      DeferredCall::callLater([this, inSessionPolkit]() {
+      DeferredCall::callLater([this, generation, inSessionPolkit, legacySync]() {
+        if (generation != m_greeterSyncGeneration) {
+          return;
+        }
         notify::error(
             "Noctalia", i18n::tr("notifications.internal.greeter-sync"),
             i18n::tr(
-                inSessionPolkit ? "notifications.internal.greeter-sync-timeout"
-                                : "notifications.internal.greeter-sync-timeout-manual"
+                inSessionPolkit  ? "notifications.internal.greeter-sync-timeout"
+                    : legacySync ? "notifications.internal.greeter-sync-timeout-manual"
+                                 : "notifications.internal.greeter-sync-timeout-manual-pkexec"
             )
         );
         m_settingsWindow.markSettingsWriteError(
             i18n::tr(
-                inSessionPolkit ? "settings.errors.sync-greeter-timeout" : "settings.errors.sync-greeter-timeout-manual"
+                inSessionPolkit  ? "settings.errors.sync-greeter-timeout"
+                    : legacySync ? "settings.errors.sync-greeter-timeout-manual"
+                                 : "settings.errors.sync-greeter-timeout-manual-pkexec"
             )
         );
       });
@@ -326,20 +332,31 @@ void Application::initLockScreenAndSession() {
       [this]() {
         m_idleGraceOverlay.hide();
         m_lockscreenWidgetsController.onLockStateChanged();
+        m_idleManager.setSessionLocked(true);
+        m_screenTimeService.setSessionLocked(true);
         m_hookManager.fire(HookKind::SessionLocked);
+        if (m_logindService != nullptr) {
+          m_logindService->setSessionLockedHint(true);
+        }
         releaseSleepDelayInhibitIfPending();
       },
       [this]() {
         m_idleGraceOverlay.hide();
         m_lockscreenWidgetsController.onLockStateChanged();
+        m_idleManager.setSessionLocked(false);
+        m_screenTimeService.setSessionLocked(false);
         m_hookManager.fire(HookKind::SessionUnlocked);
-        // Lock aborted before engage (e.g. compositor finished the lock object) — still release
-        // so PrepareForSleep is not stuck on the delay inhibit.
         releaseSleepDelayInhibitIfPending();
         requestAllSurfacesRedraw();
         if (m_logindService != nullptr) {
-          m_logindService->syncSessionUnlocked();
+          m_logindService->setSessionLockedHint(false);
         }
+      },
+      [this]() {
+        m_idleGraceOverlay.hide();
+        m_lockscreenWidgetsController.onLockStateChanged();
+        releaseSleepDelayInhibitIfPending();
+        requestAllSurfacesRedraw();
       }
   );
   if (m_logindService != nullptr) {
@@ -357,12 +374,6 @@ void Application::initLockScreenAndSession() {
       if (m_lockScreen.isActive()) {
         m_lockScreen.unlock();
       }
-    });
-    m_lockScreen.setLockEngagedCallback([this]() {
-      if (!m_configService.isLockScreenEnabled() || m_logindService == nullptr) {
-        return;
-      }
-      m_logindService->syncSessionLocked();
     });
   }
 
@@ -443,7 +454,7 @@ void Application::initInputDispatch() {
       m_lockScreen.onKeyboardEvent(event);
       return;
     }
-    // Grab popups are modal — while one is open it owns the keyboard and ESC
+    // Grab popups are modal: while one is open it owns the keyboard and ESC
     // dismisses it before anything behind can react.
     if (ContextMenuPopup::dispatchKeyboardEvent(event)) {
       return;
@@ -575,6 +586,7 @@ void Application::initPanelManagerAndPanels() {
           .upower = m_upowerService.get(),
           .powerProfiles = m_powerProfilesService.get(),
           .network = m_networkService.get(),
+          .modem = m_modemManagerService.get(),
           .networkSecrets = m_networkSecretAgent.get(),
           .externalIp = &m_externalIpService,
           .bluetooth = m_bluetoothService.get(),
@@ -676,6 +688,7 @@ void Application::initPanelManagerAndPanels() {
   });
   m_panelManager.setPanelClosedCallback([this]() {
     m_overviewLauncherCapture.sync();
+    m_bar.rearmTooltipForHoveredWidget();
     m_bar.reevaluateAutoHide();
     // Widgets that stay visible while their panel is open re-evaluate on the next update.
     m_bar.refresh();
@@ -710,6 +723,11 @@ void Application::initNotificationAndOsd() {
   auto applyHistoryRetention = [this]() {
     m_notificationManager.setHistoryRetentionHours(m_configService.config().notification.historyRetentionHours);
   };
+  auto applyDismissedHistory = [this]() {
+    m_notificationManager.setKeepDismissedInHistory(m_configService.config().notification.keepDismissedInHistory);
+  };
+  applyDismissedHistory();
+  m_configService.addReloadCallback(applyDismissedHistory);
   applyHistoryRetention();
   m_configService.addReloadCallback(applyHistoryRetention);
   applyNotificationFilterConfig();
@@ -828,6 +846,7 @@ void Application::initBarDockAndLayout() {
       .sysmon = m_systemMonitor.get(),
       .powerProfiles = m_powerProfilesService.get(),
       .network = m_networkService.get(),
+      .modem = m_modemManagerService.get(),
       .externalIp = &m_externalIpService,
       .idleInhibitor = &m_idleInhibitor,
       .mpris = m_mprisService.get(),
@@ -924,13 +943,16 @@ void Application::initBarDockAndLayout() {
   );
 
   m_colorPickerDialogPopup.initialize(m_wayland, m_configService, m_renderContext, m_layerPopupHosts);
-  ColorPickerDialog::setPresenter(&m_colorPickerDialogPopup);
 
   m_glyphPickerDialogPopup.initialize(m_wayland, m_configService, m_renderContext, m_layerPopupHosts);
-  GlyphPickerDialog::setPresenter(&m_glyphPickerDialogPopup);
 
   m_fileDialogPopup.initialize(m_wayland, m_configService, m_renderContext, m_layerPopupHosts, m_thumbnailService);
-  FileDialog::setPresenter(&m_fileDialogPopup);
+  m_settingsWindow.initializeDialogPresenter(
+      m_colorPickerDialogPopup, m_glyphPickerDialogPopup, m_fileDialogPopup, m_thumbnailService
+  );
+  ColorPickerDialog::setPresenter(m_settingsWindow.colorPickerDialogPresenter());
+  GlyphPickerDialog::setPresenter(m_settingsWindow.glyphPickerDialogPresenter());
+  FileDialog::setPresenter(m_settingsWindow.fileDialogPresenter());
 }
 
 void Application::initWidgetControllersAndCallbacks() {
@@ -965,6 +987,7 @@ void Application::initWidgetControllersAndCallbacks() {
       .config = &m_configService,
       .renderContext = &m_renderContext,
       .runtime = desktopWidgetRuntime,
+      .textureCache = &m_sharedTextureCache,
   };
   m_lockscreenWidgetsController.initialize({
       .widgets = lockscreenWidgetServices,
@@ -977,11 +1000,17 @@ void Application::initWidgetControllersAndCallbacks() {
       .widgets = desktopWidgetServices,
       .lockscreenWidgets = &m_lockscreenWidgetsController,
   });
-  m_desktopWidgetsController.setOnEnterEditCallback([this]() {
-    if (m_settingsWindow.isOpen()) {
-      DeferredCall::callLater([this]() { m_settingsWindow.close(); });
-    }
-  });
+  m_desktopWidgetsController.setOnEnterEditCallback([this]() { m_settingsWindow.closeForWidgetEditor(); });
+  m_lockscreenWidgetsController.setOnEnterEditCallback([this]() { m_settingsWindow.closeForWidgetEditor(); });
+  const auto restoreSettingsAfterWidgetEditor = [this]() {
+    DeferredCall::callLater([this]() {
+      if (!m_desktopWidgetsController.isEditing() && !m_lockscreenWidgetsController.isEditing()) {
+        m_settingsWindow.reopenAfterWidgetEditor();
+      }
+    });
+  };
+  m_desktopWidgetsController.setOnExitEditCallback(restoreSettingsAfterWidgetEditor);
+  m_lockscreenWidgetsController.setOnExitEditCallback(restoreSettingsAfterWidgetEditor);
   m_iconThemePollSource.setChangeCallback([this]() { onIconThemeChanged(); });
 
   std::string lastShellFontFamily = m_configService.config().shell.fontFamily;
@@ -995,7 +1024,7 @@ void Application::initWidgetControllersAndCallbacks() {
         lastShellFontFamily = newShellFontFamily;
         text::invalidateFontWeightCatalogCache();
         m_renderContext.setTextFontFamily(newShellFontFamily);
-        m_bar.requestLayout();
+        m_bar.reload();
         m_dock.requestLayout();
         m_desktopWidgetsController.requestLayout();
         m_lockscreenWidgetsController.requestLayout();
@@ -1012,6 +1041,36 @@ void Application::initWidgetControllersAndCallbacks() {
         scheduleGreeterAutoSync();
       },
       "shell-font-family"
+  );
+
+  bool lastRtl = i18n::Service::instance().rtl();
+  m_configService.addReloadCallback(
+      [this, lastRtl]() mutable {
+        const bool rtl = i18n::Service::instance().rtl();
+        if (rtl == lastRtl) {
+          return;
+        }
+
+        lastRtl = rtl;
+        Style::setRtl(rtl);
+        m_renderContext.setTextBaseDirection(rtl);
+        m_bar.requestLayout();
+        m_dock.requestLayout();
+        m_desktopWidgetsController.requestLayout();
+        m_lockscreenWidgetsController.requestLayout();
+        m_panelManager.requestLayout();
+        m_notificationToast.requestLayout();
+        m_lockScreen.onFontChanged();
+        m_osdOverlay.requestLayout();
+        m_trayMenu.onFontChanged();
+        m_backdrop.onFontChanged();
+        m_settingsWindow.onFontChanged();
+        m_colorPickerDialogPopup.requestLayout();
+        m_glyphPickerDialogPopup.requestLayout();
+        m_fileDialogPopup.requestLayout();
+        scheduleGreeterAutoSync();
+      },
+      "shell-language-direction"
   );
 
   m_timeService.setTickSecondCallback([this]() {
