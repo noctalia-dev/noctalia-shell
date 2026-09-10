@@ -3107,6 +3107,10 @@
           "description": "Open screenshots in the annotation editor before applying the output actions",
           "label": "Edit Before Saving or Copying"
         },
+        "screenshot-annotate-skip-on-copy-save": {
+          "description": "Copy and Save in the region overlay deliver immediately; Enter and Space still open the editor",
+          "label": "Skip Editor on Copy or Save"
+        },
         "screenshot-close-on-copy": {
           "description": "Close after a successful copy from the editor, including when opened directly",
           "label": "Close Editor After Copying"
