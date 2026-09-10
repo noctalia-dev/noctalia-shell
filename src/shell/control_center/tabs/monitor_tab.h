@@ -30,6 +30,7 @@ public:
 private:
   void doLayout(Renderer& renderer, float contentWidth, float bodyHeight) override;
   void doUpdate(Renderer& renderer) override;
+  void syncHeaderActions();
   void rebuildCards(Renderer& renderer);
   void queueBrightness(const std::string& displayId, float value);
   void flushPendingBrightness(bool force = false);

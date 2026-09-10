@@ -286,7 +286,7 @@
     "display": {
       "disabled": "Disabled",
       "no-displays": "No monitors available",
-      "rescan": "Rescan monitors",
+      "rescan": "Rescan DDC/CI monitors",
       "unknown-resolution": "Unknown resolution"
     },
     "home": {

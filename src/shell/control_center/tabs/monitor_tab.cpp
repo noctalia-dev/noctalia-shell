@@ -116,12 +116,11 @@ std::unique_ptr<Flex> MonitorTab::create() {
 
 std::unique_ptr<Flex> MonitorTab::createHeaderActions() {
   const float scale = contentScale();
-  return ui::row(
+  auto row = ui::row(
       {.align = FlexAlign::Center, .gap = Style::spaceSm * scale},
       ui::button({
           .out = &m_rescanButton,
           .glyph = "refresh",
-          .enabled = m_configService != nullptr && m_configService->config().brightness.enableDdcutil,
           .tooltip = i18n::tr("control-center.display.rescan"),
           .onClick =
               [this]() {
@@ -132,6 +131,15 @@ std::unique_ptr<Flex> MonitorTab::createHeaderActions() {
           .configure = [scale](Button& button) { panel_button_style::configureHeaderIconButton(button, scale); },
       })
   );
+  syncHeaderActions();
+  return row;
+}
+
+// The rescan only re-runs ddcutil detect, so it is meaningless without DDC/CI.
+void MonitorTab::syncHeaderActions() {
+  if (m_rescanButton != nullptr) {
+    m_rescanButton->setVisible(m_configService != nullptr && m_configService->config().brightness.enableDdcutil);
+  }
 }
 
 void MonitorTab::setActive(bool active) {
@@ -199,9 +207,7 @@ void MonitorTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
 void MonitorTab::doUpdate(Renderer& renderer) {
   rebuildCards(renderer);
 
-  if (m_rescanButton != nullptr && m_configService != nullptr) {
-    m_rescanButton->setEnabled(m_configService->config().brightness.enableDdcutil);
-  }
+  syncHeaderActions();
 
   if (m_brightness == nullptr) {
     return;
