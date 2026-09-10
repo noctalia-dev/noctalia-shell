@@ -141,6 +141,7 @@ private:
   void buildScene(std::uint32_t width, std::uint32_t height);
   void rebuildSettingsContent();
   [[nodiscard]] settings::RegistryEnvironment buildRegistryEnvironment() const;
+  [[nodiscard]] std::vector<settings::SelectOption> availableOutputs() const;
   void refreshSettingsRegistry(const Config& cfg);
   void syncSelectedBarState(const Config& cfg, const std::vector<std::string>& availableBars);
   [[nodiscard]] std::unique_ptr<Flex> buildHeaderRow(float scale);

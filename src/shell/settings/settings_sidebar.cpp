@@ -352,6 +352,44 @@ namespace settings {
       });
       inputPtr->setOnSubmit([doCreate](const std::string& text) mutable { doCreate(text); });
 
+      // Picker of detected outputs so the common "override this monitor" case does not need the
+      // exact connector typed by hand. Free-text entry via the input below stays available, since
+      // `match` also matches description/make/model tokens and overrides can be pre-created for
+      // monitors that are currently disconnected.
+      std::vector<std::string> outputLabels;
+      std::vector<std::string> outputValues;
+      outputLabels.reserve(ctx.availableOutputs.size());
+      outputValues.reserve(ctx.availableOutputs.size());
+      for (const auto& option : ctx.availableOutputs) {
+        outputLabels.push_back(option.label.empty() ? option.value : option.label);
+        outputValues.push_back(option.value);
+      }
+
+      if (!outputValues.empty()) {
+        createPanel->addChild(
+            ui::select({
+                .options = std::move(outputLabels),
+                .clearSelection = true,
+                .placeholder = i18n::tr("settings.entities.monitor-override.match-pick-placeholder"),
+                .fontSize = Style::fontSizeCaption * scale,
+                .controlHeight = Style::controlHeightSm * scale,
+                .horizontalPadding = Style::spaceXs * scale,
+                .width = 112.0F * scale,
+                .height = Style::controlHeightSm * scale,
+                .onSelectionChanged = [creatingMonitorOverrideMatch, inputPtr,
+                                       outputValues =
+                                           std::move(outputValues)](std::size_t index, std::string_view /*label*/) {
+                  if (index >= outputValues.size()) {
+                    return;
+                  }
+                  *creatingMonitorOverrideMatch = outputValues[index];
+                  inputPtr->setValue(outputValues[index]);
+                  inputPtr->setInvalid(false);
+                },
+            })
+        );
+      }
+
       createPanel->addChild(std::move(input));
       createPanel->addChild(
           ui::row(

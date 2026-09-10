@@ -1,5 +1,7 @@
 #pragma once
 
+#include "shell/settings/settings_registry.h"
+
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -19,6 +21,7 @@ namespace settings {
     const Config& config;
     const std::vector<SettingsSection>& sections;
     const std::vector<std::string>& availableBars;
+    const std::vector<SelectOption>& availableOutputs;
     float scale = 1.0F;
     bool globalSearchActive = false;
 
