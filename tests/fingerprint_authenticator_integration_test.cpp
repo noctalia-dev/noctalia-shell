@@ -1,3 +1,31 @@
+// Regression tests for the fingerprint authorization race reported in #3602:
+// logind can emit PrepareForSleep(false) before the user's session becomes active,
+// causing fprintd to deny Claim or VerifyStart. Previously, the authenticator did
+// not retry those denials, leaving the reader idle even after activation.
+//
+// These tests run the real FingerprintAuthenticator, SystemBus, and TimerManager
+// against fake fprintd/logind services on a private D-Bus. The fake services hold
+// asynchronous replies until the test explicitly returns PermissionDenied or
+// success. This imposes the wake/denial/recovery ordering deterministically;
+// timer dispatch is controlled by the test, but delays use the real clock.
+// No actual suspend, session activation, polkit policy, or fingerprint hardware
+// is exercised: the tests simulate the authorization results of that race.
+//
+// Specifically, they verify that:
+// - Repeated Claim and VerifyStart denials after wake recover once allowed.
+// - A denied Claim is retried before verification, and a retained claim is reused.
+// - Permanent denial stops after 20 retries, clears the status, and does not
+//   consume match attempts; a later lock activation gets a fresh retry budget.
+// - Stop and suspend cancel scheduled retries; a denial delivered afterward does
+//   not schedule new work (stop cancels the proxy callback, suspend guards it).
+// - AlreadyInUse is not retried, while ClaimDevice still triggers reacquisition.
+// - Authorization retries preserve the failed-match count and the pending
+//   match-retry increment, so repeated mismatches still reach the match limit.
+//
+// On the unpatched implementation, the first denied Claim fails the assertion
+// that a retry is pending. Meson runs this test through dbus-run-session with
+// DBUS_SYSTEM_BUS_ADDRESS redirected to the private session bus.
+
 #include "auth/fingerprint_authenticator.h"
 #include "core/timer_manager.h"
 #include "dbus/system_bus.h"
