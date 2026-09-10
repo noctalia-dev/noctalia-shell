@@ -34,6 +34,7 @@ namespace settings {
     ControlCenter,
     Notifications,
     Osd,
+    Screenshot,
     Shell,
     Keybinds,
     Security,

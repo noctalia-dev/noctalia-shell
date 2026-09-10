@@ -325,6 +325,7 @@ namespace settings {
     case SettingsSection::ControlCenter:
     case SettingsSection::Notifications:
     case SettingsSection::Osd:
+    case SettingsSection::Screenshot:
     case SettingsSection::Shell:
     case SettingsSection::Keybinds:
     case SettingsSection::System:
@@ -359,6 +360,7 @@ namespace settings {
     case SettingsSection::ControlCenter:
     case SettingsSection::Notifications:
     case SettingsSection::Osd:
+    case SettingsSection::Screenshot:
     case SettingsSection::Shell:
     case SettingsSection::Keybinds:
     case SettingsSection::System:
