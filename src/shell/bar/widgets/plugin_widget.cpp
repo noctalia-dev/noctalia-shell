@@ -330,6 +330,8 @@ void PluginWidget::doLayout(Renderer& renderer, float containerWidth, float cont
   if (!m_flex)
     return;
 
+  const ColorSpec fallback = colorSpecFromRole(ColorRole::OnSurface);
+
   m_flex->setDirection(m_isVertical ? FlexDirection::Vertical : FlexDirection::Horizontal);
 
   if (m_tree.has_value() && m_uiHost != nullptr) {
@@ -337,7 +339,6 @@ void PluginWidget::doLayout(Renderer& renderer, float containerWidth, float cont
     m_reconciler.setScale(contentScale());
     m_reconciler.setFontScale(fontScaleMultiplier());
     m_reconciler.setTextDefaults(labelFontFamily(), labelFontWeight());
-    const ColorSpec fallback = colorSpecFromRole(ColorRole::OnSurface);
     m_reconciler.setColorDefaults(widgetForegroundOr(fallback), widgetIconColorOr(fallback));
     (void)m_reconciler.reconcile(*m_uiHost, *m_tree, renderer);
     m_uiHost->layout(renderer);
@@ -346,7 +347,6 @@ void PluginWidget::doLayout(Renderer& renderer, float containerWidth, float cont
     return;
   }
 
-  const ColorSpec fallback = colorSpecFromRole(ColorRole::OnSurface);
   m_label->setColor(resolveScriptColor(m_textColor, widgetForegroundOr(fallback)));
   m_label->setFontWeight(labelFontWeight());
   m_label->setVisible(!m_label->text().empty());
@@ -537,6 +537,9 @@ PluginWidget::dispatchIpc(std::string_view event, std::string_view payload, cons
   return DispatchResult::Handled;
 }
 
+// `on_surface` from an imperative setColor/setGlyphColor means "host default", so the widget's
+// `color`/`icon_color` still applies; a `script` mode color or any other role is taken literally.
+// The declarative path has no such sentinel: `ui.label{color = "on_surface"}` stays on_surface.
 ColorSpec PluginWidget::resolveScriptColor(const ScriptColorState& state, const ColorSpec& defaultColor) noexcept {
   if (!state.color.has_value()) {
     return defaultColor;

@@ -89,9 +89,9 @@ namespace ui {
       m_defaultFontWeight = fontWeight;
     }
     // Host colors for labels and glyphs whose tree nodes leave color unset.
-    void setColorDefaults(ColorSpec labelColor, ColorSpec glyphColor) {
-      m_defaultLabelColor = std::move(labelColor);
-      m_defaultGlyphColor = std::move(glyphColor);
+    void setColorDefaults(const ColorSpec& labelColor, const ColorSpec& glyphColor) {
+      m_defaultLabelColor = labelColor;
+      m_defaultGlyphColor = glyphColor;
     }
     // Compact control chrome for space-tight hosts (bar widgets): buttons drop
     // the settings-tier min-height/padding and hug their content instead.
