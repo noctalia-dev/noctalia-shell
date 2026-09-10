@@ -802,6 +802,12 @@ settings::RegistryEnvironment SettingsWindow::buildRegistryEnvironment() const {
     }
   }
   env.keyboardLayoutNames = m_wayland != nullptr ? m_wayland->keyboardLayoutNames() : std::vector<std::string>{};
+  env.availableOutputs = availableOutputs();
+  return env;
+}
+
+std::vector<settings::SelectOption> SettingsWindow::availableOutputs() const {
+  std::vector<settings::SelectOption> outputs;
   if (m_wayland != nullptr) {
     for (const auto& output : m_wayland->outputs()) {
       if (output.output == nullptr || output.connectorName.empty()) {
@@ -811,10 +817,10 @@ settings::RegistryEnvironment SettingsWindow::buildRegistryEnvironment() const {
       if (!output.description.empty()) {
         label += " (" + output.description + ")";
       }
-      env.availableOutputs.push_back(settings::SelectOption{output.connectorName, std::move(label)});
+      outputs.push_back(settings::SelectOption{output.connectorName, std::move(label)});
     }
   }
-  return env;
+  return outputs;
 }
 
 void SettingsWindow::syncSelectedBarState(const Config& cfg, const std::vector<std::string>& availableBars) {
@@ -1410,11 +1416,13 @@ std::unique_ptr<Flex> SettingsWindow::buildBody(
       .gap = Style::spaceMd * scale,
   });
 
+  const auto sidebarAvailableOutputs = availableOutputs();
   auto sidebar = settings::buildSettingsSidebar(
       settings::SettingsSidebarContext{
           .config = cfg,
           .sections = sections,
           .availableBars = availableBars,
+          .availableOutputs = sidebarAvailableOutputs,
           .scale = scale,
           .globalSearchActive = !m_searchQuery.empty(),
           .sidebarScrollState = m_sidebarScrollState,

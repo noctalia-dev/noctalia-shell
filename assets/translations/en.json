@@ -1071,6 +1071,7 @@
         "delete-confirm-title": "Delete \"{name}\"?",
         "label": "Monitor: {name}",
         "management": "Monitor Override",
+        "match-pick-placeholder": "Pick a monitor",
         "match-placeholder": "Monitor match",
         "new": "Monitor Override",
         "rename": "Rename",
